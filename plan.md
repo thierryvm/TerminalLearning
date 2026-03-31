@@ -113,8 +113,19 @@ Page `/privacy` à créer. Pas de bannière cookie si Vercel Analytics sans cook
 - Usage : `og:image`, header app, README badges
 
 #### Commandes terminal nouvelles
-- `donate` / `support` : bloc ASCII avec liens dons
+- `donate` / `support` : bloc ASCII avec liens GitHub Sponsors + Ko-fi
 - `about` : infos projet, version, licence MIT
+- `hall-of-fame` : liste des supporters publics
+
+#### Page À propos
+- Histoire du projet (bénévole, open source, 100% gratuit)
+- Sans données personnelles sensibles
+- Lien GitHub Sponsors (désactivé jusqu'à autorisation mutuelle)
+
+#### Hall of Fame
+- Section publique sur la landing ET dans l'app
+- Opt-in : les supporters choisissent d'apparaître publiquement
+- Structure préparée dès Phase 1, alimentée manuellement en Phase 4
 
 #### Documentation obligatoire
 - `README.md` — restructuré : badges, démo live, install, architecture, roadmap, licence
@@ -172,11 +183,69 @@ Page `/privacy` à créer. Pas de bannière cookie si Vercel Analytics sans cook
 ---
 
 ### 🔮 Phase 4 — Admin Panel (hyper-sécurisé)
-- Route `/admin` : RBAC strict, JWT rotation courte, 2FA obligatoire
-- Rate limiting endpoint auth admin
-- Logs structurés sans PII
-- CSP strict + HSTS preload
-- Features : stats users, santé Sentry, npm audit, Dependabot alerts, monitoring attaques
+
+#### Backend stack
+- **Supabase** : PostgreSQL + Auth + RLS + Edge Functions + Audit Log
+- **Pas de Prisma** : Supabase génère les types TS automatiquement (`supabase gen types`)
+- **GitHub Actions cron** : npm audit quotidien, vérification versions frameworks, Dependabot
+- **Vercel Analytics** : usage graphs, sessions, page views
+- **Sentry** : erreurs front en temps réel
+- **UptimeRobot** (free) : monitoring uptime externe
+
+#### Sécurité admin — 7 couches
+| Couche | Mécanisme |
+|--------|-----------|
+| Auth | Supabase Auth + 2FA TOTP obligatoire (Google Authenticator) |
+| JWT | Access token 15min + refresh 7j + rotation auto |
+| RBAC | Rôle `admin` vérifié Edge Function + RLS Supabase |
+| Rate limit | Max 5 tentatives login → lockout 30min |
+| Audit log | Qui / quoi / quand / IP — table Supabase immuable |
+| CSP | Nonce-based strict pour `/admin` uniquement |
+| Secrets | Supabase Vault + Vercel env vars — jamais en clair |
+
+#### Dashboard /admin — fonctionnalités
+
+**📊 Analytics**
+- Visiteurs, sessions, leçons les plus consultées
+- Taux de complétion par module
+- Graphiques utilisation (Recharts — déjà installé)
+- Retention utilisateurs
+
+**🏥 Santé du site**
+- Uptime (UptimeRobot free)
+- Temps de réponse, status build Vercel
+- Erreurs Sentry feed temps réel
+- Score headers sécurisés
+
+**🔐 Sécurité**
+- npm audit résultats (cron GitHub Actions quotidien)
+- CVEs détectés dans les 87 dépendances actuelles
+- Alertes Dependabot via GitHub API
+- Tentatives connexion échouées + IPs bloquées
+- Rapport HACKER BLACK (dernière analyse offensive)
+
+**🔄 Mises à jour frameworks**
+- React / Vite / Tailwind / shadcn / React Router / Motion
+- Badge "Mise à jour disponible" + niveau risque (patch/minor/major)
+- Lien direct vers le CHANGELOG du package
+
+**👥 Utilisateurs** *(Phase 3 requise)*
+- Users actifs, progression individuelle, modération
+
+**🏆 Hall of Fame** *(depuis Terminal Learning.md)*
+- Liste supporters opt-in, validation avant affichage public
+
+#### Fichiers à créer Phase 4
+- `src/app/components/admin/AdminLayout.tsx`
+- `src/app/components/admin/AnalyticsDashboard.tsx`
+- `src/app/components/admin/HealthMonitor.tsx`
+- `src/app/components/admin/SecurityCenter.tsx`
+- `src/app/components/admin/UpdatesPanel.tsx`
+- `src/app/components/admin/HallOfFameManager.tsx`
+- `supabase/functions/audit-log/index.ts`
+- `supabase/functions/security-report/index.ts`
+- `.github/workflows/security-audit.yml`
+- `.github/workflows/deps-check.yml`
 
 ---
 
