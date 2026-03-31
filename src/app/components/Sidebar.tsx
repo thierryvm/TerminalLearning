@@ -6,7 +6,7 @@ import {
   CheckCircle2, Circle, X, Menu,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
-import { useProgress } from '../hooks/useProgress';
+import { useProgress } from '../context/ProgressContext';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
