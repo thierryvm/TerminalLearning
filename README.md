@@ -2,7 +2,7 @@
 
 > An interactive web application for learning terminal commands — built with modern AI-assisted development practices.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminal-learning-git-main-thierry-vanmeeterens-projects.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminal-learning.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
 [![Built with Vite](https://img.shields.io/badge/Built%20with-Vite%206-646cff?style=flat-square&logo=vite)](https://vitejs.dev)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
@@ -21,7 +21,7 @@
 - 6 progressive modules from navigation to advanced redirection
 - 100% free, forever
 
-🌐 **[Try it live →](https://terminal-learning-git-main-thierry-vanmeeterens-projects.vercel.app)**
+🌐 **[Try it live →](https://terminal-learning.vercel.app)**
 
 ---
 
@@ -198,6 +198,6 @@ This means you can use, copy, modify, merge, publish, distribute, sublicense, an
 
 <p align="center">
   Made with ♥ in Belgium &nbsp;·&nbsp;
-  <a href="https://terminal-learning-git-main-thierry-vanmeeterens-projects.vercel.app">Live Demo</a> &nbsp;·&nbsp;
+  <a href="https://terminal-learning.vercel.app">Live Demo</a> &nbsp;·&nbsp;
   <a href="https://github.com/thierryvm/TerminalLearning/issues">Report a Bug</a>
 </p>

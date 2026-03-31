@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: https://terminal-learning-git-main-thierry-vanmeeterens-projects.vercel.app/sitemap.xml
+Sitemap: https://terminal-learning.vercel.app/sitemap.xml
