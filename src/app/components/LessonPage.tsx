@@ -7,7 +7,7 @@ import {
 import {
   getModuleById, getLessonById, getNextLesson, getPrevLesson, ContentBlock,
 } from '../data/curriculum';
-import { useProgress } from '../hooks/useProgress';
+import { useProgress } from '../context/ProgressContext';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 
