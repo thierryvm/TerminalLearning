@@ -632,7 +632,11 @@ const HELP_TEXT = `Commandes disponibles:
   ps [aux]     Lister les processus
   history      Historique des commandes
   clear        Effacer le terminal
-  help         Afficher cette aide`;
+  help         Afficher cette aide
+  about        Informations sur le projet
+  donate       Soutenir le projet (GitHub Sponsors / Ko-fi)
+  support      Alias de donate
+  hall-of-fame Liste des contributeurs`;
 
 const MAN_PAGES: Record<string, string> = {
   pwd: 'PWD(1)\n\nNOM\n  pwd - afficher le répertoire de travail courant\n\nSYNOPSIS\n  pwd\n\nDESCRIPTION\n  Affiche le chemin absolu du répertoire courant.',
@@ -827,6 +831,61 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
     case 'exit':
     case 'logout':
       return { lines: [{ text: 'logout', type: 'output' }], newState };
+
+    case 'about':
+      return {
+        lines: [
+          { text: '╔══════════════════════════════════════════════════╗', type: 'info' },
+          { text: '║           Terminal Learning  v0.1.0              ║', type: 'info' },
+          { text: '╠══════════════════════════════════════════════════╣', type: 'info' },
+          { text: '║  Application interactive d\'apprentissage         ║', type: 'info' },
+          { text: '║  du terminal pour débutants.                     ║', type: 'info' },
+          { text: '║                                                  ║', type: 'info' },
+          { text: '║  Licence   : MIT                                 ║', type: 'info' },
+          { text: '║  Auteur    : Thierry Vanmeeteren                 ║', type: 'info' },
+          { text: '║  GitHub    : github.com/thierryvm/TerminalLearning ║', type: 'info' },
+          { text: '║  Live      : terminal-learning.vercel.app        ║', type: 'info' },
+          { text: '║                                                  ║', type: 'info' },
+          { text: '║  Stack     : React 18 · Vite 6 · Tailwind 4     ║', type: 'info' },
+          { text: '╚══════════════════════════════════════════════════╝', type: 'info' },
+        ],
+        newState,
+      };
+
+    case 'donate':
+    case 'support':
+      return {
+        lines: [
+          { text: '╔══════════════════════════════════════════════════╗', type: 'success' },
+          { text: '║        Soutenir Terminal Learning  ♥             ║', type: 'success' },
+          { text: '╠══════════════════════════════════════════════════╣', type: 'success' },
+          { text: '║  Ce projet est 100% gratuit et open source.      ║', type: 'success' },
+          { text: '║  Si l\'app t\'a aidé, tu peux soutenir :           ║', type: 'success' },
+          { text: '║                                                  ║', type: 'success' },
+          { text: '║  ⭐ Star le repo GitHub                          ║', type: 'success' },
+          { text: '║     github.com/thierryvm/TerminalLearning        ║', type: 'output' },
+          { text: '║                                                  ║', type: 'success' },
+          { text: '║  💜 GitHub Sponsors (bientôt disponible)         ║', type: 'success' },
+          { text: '║  ☕ Ko-fi (bientôt disponible)                   ║', type: 'success' },
+          { text: '║                                                  ║', type: 'success' },
+          { text: '║  Merci pour ton soutien !                        ║', type: 'success' },
+          { text: '╚══════════════════════════════════════════════════╝', type: 'success' },
+        ],
+        newState,
+      };
+
+    case 'hall-of-fame':
+      return {
+        lines: [
+          { text: '╔══════════════════════════════════════════════════╗', type: 'info' },
+          { text: '║           Hall of Fame — Contributeurs           ║', type: 'info' },
+          { text: '╠══════════════════════════════════════════════════╣', type: 'info' },
+          { text: '║  Aucun contributeur pour le moment.              ║', type: 'info' },
+          { text: '║  Sois le premier ! → tapez "donate"              ║', type: 'info' },
+          { text: '╚══════════════════════════════════════════════════╝', type: 'info' },
+        ],
+        newState,
+      };
 
     default:
       return {
