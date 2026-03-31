@@ -1,13 +1,14 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, redirect } from 'react-router';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { LessonPage } from './components/LessonPage';
 import { CommandReference } from './components/CommandReference';
 import { Landing } from './components/Landing';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { NotFound } from './components/NotFound';
 
 export const router = createBrowserRouter([
-  // Public landing
+  // Public pages
   { path: '/', Component: Landing },
   { path: '/privacy', Component: PrivacyPolicy },
 
@@ -21,4 +22,17 @@ export const router = createBrowserRouter([
       { path: 'reference', Component: CommandReference },
     ],
   },
+
+  // Backward-compatibility redirects (old routes without /app prefix)
+  {
+    path: '/learn/:moduleId/:lessonId',
+    loader: ({ params }) => redirect(`/app/learn/${params.moduleId}/${params.lessonId}`),
+  },
+  {
+    path: '/reference',
+    loader: () => redirect('/app/reference'),
+  },
+
+  // Catch-all 404
+  { path: '*', Component: NotFound },
 ]);
