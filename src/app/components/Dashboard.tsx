@@ -46,7 +46,7 @@ export function Dashboard() {
   const handleContinue = () => {
     const next = firstIncompleteLesson();
     if (next) {
-      navigate(`/learn/${next.moduleId}/${next.lessonId}`);
+      navigate(`/app/learn/${next.moduleId}/${next.lessonId}`);
     } else {
       navigate(`/learn/${curriculum[0].id}/${curriculum[0].lessons[0].id}`);
     }
@@ -132,7 +132,7 @@ export function Dashboard() {
               <div
                 key={mod.id}
                 className={`relative bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 cursor-pointer transition-all duration-200 group`}
-                onClick={() => navigate(`/learn/${mod.id}/${mod.lessons[0].id}`)}
+                onClick={() => navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">

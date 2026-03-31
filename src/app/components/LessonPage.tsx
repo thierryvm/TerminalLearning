@@ -117,7 +117,7 @@ export function LessonPage() {
         <div className="text-center">
           <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
           <p>Leçon introuvable</p>
-          <button onClick={() => navigate('/')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
             Retour au tableau de bord
           </button>
         </div>
@@ -142,7 +142,7 @@ export function LessonPage() {
 
   const handleNavigate = (target: { moduleId: string; lessonId: string } | null) => {
     if (!target) return;
-    navigate(`/learn/${target.moduleId}/${target.lessonId}`);
+    navigate(`/app/learn/${target.moduleId}/${target.lessonId}`);
   };
 
   const welcomeMessage = lesson.exercise
@@ -159,7 +159,7 @@ export function LessonPage() {
       {/* Top bar */}
       <div className="shrink-0 border-b border-[#30363d] bg-[#161b22] px-4 py-3 flex items-center gap-3">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/app')}
           className="flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors text-sm"
         >
           <ChevronLeft size={16} />
@@ -270,7 +270,7 @@ export function LessonPage() {
               </button>
             ) : (
               <button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/app')}
                 className="flex items-center gap-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 transition-colors"
               >
                 <span>Tableau de bord</span>

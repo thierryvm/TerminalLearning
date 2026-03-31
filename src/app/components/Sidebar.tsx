@@ -31,7 +31,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleLessonClick = (moduleId: string, lessonId: string) => {
-    navigate(`/learn/${moduleId}/${lessonId}`);
+    navigate(`/app/learn/${moduleId}/${lessonId}`);
     onClose();
   };
 
@@ -53,7 +53,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="shrink-0 flex items-center justify-between px-4 py-4 border-b border-[#30363d]">
-          <NavLink to="/" className="flex items-center gap-2.5" onClick={onClose}>
+          <NavLink to="/app" className="flex items-center gap-2.5" onClick={onClose}>
             <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <Terminal size={18} className="text-emerald-400" />
             </div>
@@ -87,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Nav */}
         <nav className="shrink-0 p-2 border-b border-[#30363d] space-y-0.5">
           <NavLink
-            to="/"
+            to="/app"
             end
             onClick={onClose}
             className={({ isActive }) =>
@@ -102,7 +102,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             Tableau de bord
           </NavLink>
           <NavLink
-            to="/reference"
+            to="/app/reference"
             onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${

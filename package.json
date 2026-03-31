@@ -1,7 +1,9 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "terminal-learning",
   "private": true,
   "version": "0.0.1",
+  "description": "Terminal Learning — une app pour apprendre et pratiquer les commandes du terminal (design issu de Figma, build avec Vite + React).",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "vite build",
