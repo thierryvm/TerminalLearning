@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { TerminalState, OutputLine, processCommand, getPrompt, createInitialState } from '../data/terminalEngine';
+import { TerminalState, OutputLine, processCommand, getPrompt, getTabCompletions, createInitialState } from '../data/terminalEngine';
 
 interface TerminalLine {
   id: number;
@@ -90,10 +90,17 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '' }: 
       setInput(newIndex === -1 ? '' : history[history.length - 1 - newIndex] ?? '');
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      // Simple tab completion for common commands
-      const cmds = ['pwd', 'ls', 'cd', 'mkdir', 'touch', 'cat', 'echo', 'rm', 'cp', 'mv', 'grep', 'head', 'tail', 'wc', 'chmod', 'whoami', 'date', 'uname', 'history', 'ps', 'kill', 'clear', 'help', 'man'];
-      const match = cmds.find((c) => c.startsWith(input));
-      if (match) setInput(match + ' ');
+      const completions = getTabCompletions(input, termState);
+      if (completions.length === 1) {
+        setInput(completions[0]);
+      } else if (completions.length > 1) {
+        const prompt = getPrompt(termState);
+        setLines((prev) => [
+          ...prev,
+          { id: nextId(), type: 'prompt', text: input, prompt },
+          { id: nextId(), type: 'output', text: completions.join('  ') },
+        ]);
+      }
     } else if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
       setLines((prev) => [

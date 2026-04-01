@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processCommand } from '../app/data/terminalEngine';
+import { processCommand, getTabCompletions, createInitialState } from '../app/data/terminalEngine';
 import type { TerminalState } from '../app/data/terminalEngine';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -101,5 +101,76 @@ describe('empty input', () => {
   it('does not add empty string to history', () => {
     const result = processCommand(makeState(), '');
     expect(result.newState.commandHistory).toHaveLength(0);
+  });
+});
+
+// ─── getTabCompletions ────────────────────────────────────────────────────────
+// cwd in createInitialState() = ['home', 'user']
+// children: documents/, downloads/, projets/, .bashrc, .profile
+
+describe('getTabCompletions — command name (no space)', () => {
+  const state = createInitialState();
+
+  it('completes a unique prefix', () => {
+    expect(getTabCompletions('pw', state)).toEqual(['pwd']);
+  });
+
+  it('returns multiple matches for ambiguous prefix', () => {
+    const completions = getTabCompletions('c', state);
+    expect(completions).toContain('cd');
+    expect(completions).toContain('cat');
+    expect(completions).toContain('chmod');
+    expect(completions.length).toBeGreaterThan(2);
+  });
+
+  it('returns empty array for no match', () => {
+    expect(getTabCompletions('xyz', state)).toHaveLength(0);
+  });
+
+  it('includes new commands', () => {
+    expect(getTabCompletions('ab', state)).toContain('about');
+    expect(getTabCompletions('don', state)).toContain('donate');
+    expect(getTabCompletions('hall', state)).toContain('hall-of-fame');
+  });
+
+  it('returns all commands for empty input', () => {
+    expect(getTabCompletions('', state).length).toBeGreaterThan(20);
+  });
+});
+
+describe('getTabCompletions — path completion (with space)', () => {
+  const state = createInitialState();
+
+  it('completes a directory in cwd with trailing slash', () => {
+    expect(getTabCompletions('cd doc', state)).toContain('cd documents/');
+  });
+
+  it('completes a file in cwd without trailing slash', () => {
+    const completions = getTabCompletions('cat .bash', state);
+    expect(completions).toContain('cat .bashrc');
+    expect(completions[0]).not.toMatch(/\/$/);
+  });
+
+  it('returns multiple matches for ambiguous path prefix', () => {
+    // documents/ and downloads/ both start with 'd'
+    const completions = getTabCompletions('ls d', state);
+    expect(completions).toContain('ls documents/');
+    expect(completions).toContain('ls downloads/');
+    expect(completions.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('completes inside a subdirectory', () => {
+    expect(getTabCompletions('cat documents/n', state)).toContain('cat documents/notes.txt');
+  });
+
+  it('lists all entries when path arg is empty', () => {
+    const completions = getTabCompletions('ls ', state);
+    expect(completions).toContain('ls documents/');
+    expect(completions).toContain('ls downloads/');
+    expect(completions).toContain('ls .bashrc');
+  });
+
+  it('returns empty array for non-existent parent directory', () => {
+    expect(getTabCompletions('cd /nonexistent/', state)).toHaveLength(0);
   });
 });
