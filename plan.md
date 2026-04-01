@@ -60,13 +60,12 @@ Page `/privacy` à créer. Pas de bannière cookie si Vercel Analytics sans cook
 
 ## Statut des phases
 
-### ✅ Phase 0 — Déploiement Vercel
+### ✅ Phase 0 — Déploiement Vercel (TERMINÉ)
 - [x] Build validé (`npm run build` → 2.37s, 0 erreur)
 - [x] `vercel.json` créé (SPA routing + headers sécurisés)
 - [x] `.gitignore` vérifié (conforme)
-- [ ] `vercel login` (OAuth 2.0 Device Flow — en attente utilisateur)
-- [ ] `vercel --prod` → URL publique live
-- [ ] Vérification headers sécurisés (securityheaders.com)
+- [x] Déployé sur Vercel — URL live : https://terminal-learning.vercel.app
+- [ ] Vérification headers sécurisés (securityheaders.com) — à faire
 
 **Fichiers créés :**
 - `vercel.json` — SPA rewrites + X-Content-Type-Options, X-Frame-Options, X-XSS-Protection,
@@ -74,7 +73,7 @@ Page `/privacy` à créer. Pas de bannière cookie si Vercel Analytics sans cook
 
 ---
 
-### 🔄 Phase 1 — Landing Page + /app routing + Documentation
+### ✅ Phase 1 — Landing Page + /app routing + Documentation (TERMINÉ)
 
 #### Routing
 ```
