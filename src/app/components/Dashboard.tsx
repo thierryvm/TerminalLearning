@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import {
   Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
-  CheckCircle2, Circle, ChevronRight, Terminal, Award, BookOpen, Zap,
+  CheckCircle2, ChevronRight, Terminal, Award, BookOpen, Zap,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
@@ -137,7 +137,7 @@ export function Dashboard() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-black/20">
-                      <Icon size={18} style={{ color: mod.color }} />
+                      <span style={{ color: mod.color }}><Icon size={18} /></span>
                     </div>
                     <div>
                       <div className="text-[#e6edf3] text-sm">{mod.title}</div>
@@ -208,7 +208,7 @@ export function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-[#e6edf3] truncate">{lesson.title}</div>
                       <div className="text-xs text-[#8b949e] flex items-center gap-1">
-                        <Icon size={10} style={{ color: mod.color }} />
+                        <span style={{ color: mod.color }}><Icon size={10} /></span>
                         {mod.title}
                       </div>
                     </div>

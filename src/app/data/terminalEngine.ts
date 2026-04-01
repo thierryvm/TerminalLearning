@@ -115,19 +115,13 @@ function getNode(root: DirectoryNode, path: string[]): FSNode | null {
   let current: FSNode = root;
   for (const seg of path) {
     if (current.type !== 'directory') return null;
-    const child = current.children[seg];
+    const child: FSNode | undefined = current.children[seg];
     if (!child) return null;
     current = child;
   }
   return current;
 }
 
-function getParentNode(root: DirectoryNode, path: string[]): DirectoryNode | null {
-  if (path.length === 0) return root;
-  const parentPath = path.slice(0, -1);
-  const node = getNode(root, parentPath);
-  return node?.type === 'directory' ? node : null;
-}
 
 function resolvePath(state: TerminalState, input: string): string[] {
   if (!input || input === '~') return ['home', 'user'];

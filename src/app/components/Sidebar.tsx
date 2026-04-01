@@ -132,7 +132,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => toggleModule(mod.id)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[#161b22] text-[#c9d1d9] group"
                 >
-                  <Icon size={15} style={{ color: mod.color }} />
+                  <span style={{ color: mod.color }}><Icon size={15} /></span>
                   <span className="flex-1 text-left truncate">{mod.title}</span>
                   <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
                   {isExpanded ? (
