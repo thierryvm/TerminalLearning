@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Terminal,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import {
   getModuleById, getLessonById, getNextLesson, getPrevLesson, ContentBlock,
+  Module, Lesson,
 } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { TerminalState } from '../data/terminalEngine';
@@ -88,57 +89,38 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
   }
 }
 
-export function LessonPage() {
-  const { moduleId = '', lessonId = '' } = useParams();
+// Separated so the parent can remount it with a key when the lesson changes,
+// resetting all local state without needing useEffect + setState.
+function LessonContent({ mod, lesson, moduleId, lessonId }: {
+  mod: Module;
+  lesson: Lesson;
+  moduleId: string;
+  lessonId: string;
+}) {
   const navigate = useNavigate();
   const { completeLesson, isLessonCompleted } = useProgress();
-  const [exerciseCompleted, setExerciseCompleted] = useState(() => isLessonCompleted(moduleId, lessonId));
+  // Derived from context on every render — no local state needed
+  const exerciseCompleted = isLessonCompleted(moduleId, lessonId);
   const [exerciseMessage, setExerciseMessage] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [showTerminal, setShowTerminal] = useState(true);
   const [terminalKey, setTerminalKey] = useState(`${moduleId}-${lessonId}`);
 
-  // Reset state when lesson changes
-  useEffect(() => {
-    setExerciseCompleted(isLessonCompleted(moduleId, lessonId));
-    setExerciseMessage('');
-    setShowHint(false);
-    setTerminalKey(`${moduleId}-${lessonId}`);
-  }, [moduleId, lessonId]);
-
-  const mod = getModuleById(moduleId);
-  const lesson = getLessonById(moduleId, lessonId);
   const nextLesson = getNextLesson(moduleId, lessonId);
   const prevLesson = getPrevLesson(moduleId, lessonId);
-
-  if (!mod || !lesson) {
-    return (
-      <div className="min-h-full bg-[#0d1117] flex items-center justify-center text-[#8b949e]">
-        <div className="text-center">
-          <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
-          <p>Leçon introuvable</p>
-          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
-            Retour au tableau de bord
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const lessonIndex = mod.lessons.findIndex((l) => l.id === lessonId);
-  const already = isLessonCompleted(moduleId, lessonId);
 
   const handleCommand = useCallback(
     (command: string, _state: TerminalState) => {
       if (!lesson.exercise || exerciseCompleted) return;
       if (lesson.exercise.validate(command)) {
         completeLesson(moduleId, lessonId);
-        setExerciseCompleted(true);
         setExerciseMessage(lesson.exercise.successMessage);
       }
     },
     [lesson, exerciseCompleted, completeLesson, moduleId, lessonId]
   );
+
+  const lessonIndex = mod.lessons.findIndex((l) => l.id === lessonId);
 
   const handleNavigate = (target: { moduleId: string; lessonId: string } | null) => {
     if (!target) return;
@@ -175,7 +157,7 @@ export function LessonPage() {
           {lessonIndex + 1}/{mod.lessons.length}
         </span>
 
-        {already && <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
+        {exerciseCompleted && <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
 
         {/* Mobile toggle */}
         <button
@@ -290,7 +272,6 @@ export function LessonPage() {
             <button
               onClick={() => {
                 setTerminalKey(`${moduleId}-${lessonId}-${Date.now()}`);
-                setExerciseCompleted(isLessonCompleted(moduleId, lessonId));
                 setExerciseMessage('');
               }}
               className="flex items-center gap-1.5 text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors"
@@ -308,5 +289,39 @@ export function LessonPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Thin wrapper: resolves params, handles not-found, then mounts LessonContent
+// with a key so all child state resets naturally on lesson navigation.
+export function LessonPage() {
+  const { moduleId = '', lessonId = '' } = useParams();
+  const navigate = useNavigate();
+
+  const mod = getModuleById(moduleId);
+  const lesson = getLessonById(moduleId, lessonId);
+
+  if (!mod || !lesson) {
+    return (
+      <div className="min-h-full bg-[#0d1117] flex items-center justify-center text-[#8b949e]">
+        <div className="text-center">
+          <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
+          <p>Leçon introuvable</p>
+          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <LessonContent
+      key={`${moduleId}-${lessonId}`}
+      mod={mod}
+      lesson={lesson}
+      moduleId={moduleId}
+      lessonId={lessonId}
+    />
   );
 }
