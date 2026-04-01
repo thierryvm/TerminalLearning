@@ -13,7 +13,7 @@ export function initSentry() {
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
     // Don't send events in development unless DSN is explicitly set
     enabled: import.meta.env.PROD,
-    beforeSend(event) {
+    beforeSend(event: Sentry.ErrorEvent) {
       // Strip any potential PII from request URLs
       if (event.request?.url) {
         try {
