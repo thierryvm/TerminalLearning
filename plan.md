@@ -167,17 +167,76 @@ Page `/privacy` à créer. Pas de bannière cookie si Vercel Analytics sans cook
 
 ---
 
-### 🔜 Phase 2 — Analytics + Monitoring
-- Vercel Analytics (GDPR-friendly, sans cookies)
-- Sentry free tier erreurs front
+### ✅ Phase 2 — Analytics + Monitoring (TERMINÉ)
+- Vercel Analytics (GDPR-friendly, sans cookies) ✅
+- Sentry free tier erreurs front ✅ (PR #9)
 - Pas de bannière cookie si Analytics sans cookies
 
 ---
 
 ### 🔮 Phase 3 — Supabase Auth (sur signal trafic)
-- Auth + DB + RLS sur toutes les tables
-- Progression utilisateur sauvegardée + streaks/badges
-- Prérequis : autorisation mutuelle pour GitHub Sponsors
+
+> Décisions architecturales (01 avril 2026)
+
+#### Auth
+- Email/password + GitHub OAuth + Google OAuth
+- Supabase Auth (pas de lib custom)
+- 2FA TOTP optionnel pour l'utilisateur standard (obligatoire pour admin en Phase 4)
+- Rate limiting : 5 tentatives → lockout progressif (Supabase Auth built-in)
+- JWT access token 1h + refresh 7j + rotation auto
+- Protection brute-force, CSRF, session fixation
+
+#### Stratégie progression — Hybrid Sync
+- **Supabase = source de vérité** (connecté)
+- **localStorage = cache offline** (non connecté ou session expirée)
+- **Merge à la connexion** : `Math.max(local, remote)` par leçon — jamais rétrograder
+- **Sync en temps réel** : upsert Supabase à chaque leçon complétée
+- **ProgressContext.tsx** étendu : `syncStatus: 'local' | 'synced' | 'syncing' | 'error'`
+
+#### DB Schema (Supabase)
+```sql
+-- profiles (étend auth.users)
+id uuid references auth.users primary key
+username text unique
+created_at timestamptz default now()
+
+-- progress
+user_id uuid references profiles(id)
+lesson_id text not null
+completed boolean default false
+completed_at timestamptz
+score integer  -- 0-100
+primary key (user_id, lesson_id)
+
+-- RLS obligatoire sur les 2 tables
+```
+
+#### Sécurité
+- RLS activé sur toutes les tables (users ne voient que leurs données)
+- Zod validation sur tout input avant upsert
+- Pas de service_role key côté client
+- PKCE flow pour OAuth (pas implicit flow)
+
+#### Fichiers à créer/modifier
+- `src/app/context/AuthContext.tsx` — nouveau
+- `src/app/context/ProgressContext.tsx` — étendre avec sync Supabase
+- `src/app/components/auth/LoginModal.tsx` — email + GitHub + Google
+- `src/app/components/auth/UserMenu.tsx` — avatar, déconnexion, sync status
+- `src/app/lib/supabase.ts` — client Supabase
+- `src/app/lib/progressSync.ts` — logique merge local/remote
+- `supabase/migrations/001_init.sql` — schema initial
+- `src/test/progressSync.test.ts` — tests merge obligatoires
+
+#### Tests obligatoires
+| Scénario | Test |
+|---------|------|
+| Merge local > remote | local wins |
+| Merge remote > local | remote wins |
+| Merge égal | no upsert |
+| Sync offline → online | queue flushed |
+| RLS bypass attempt | rejected |
+
+- Prérequis : autorisation mutuelle pour GitHub Sponsors (indépendant de la Phase 3)
 
 ---
 
