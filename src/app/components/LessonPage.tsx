@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Terminal,
@@ -105,6 +105,8 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const [showHint, setShowHint] = useState(false);
   const [showTerminal, setShowTerminal] = useState(true);
   const [terminalKey, setTerminalKey] = useState(`${moduleId}-${lessonId}`);
+  // True only when exercise was completed in this session (not on a previous visit)
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const nextLesson = getNextLesson(moduleId, lessonId);
   const prevLesson = getPrevLesson(moduleId, lessonId);
@@ -115,10 +117,26 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
       if (lesson.exercise.validate(command)) {
         completeLesson(moduleId, lessonId);
         setExerciseMessage(lesson.exercise.successMessage);
+        setJustCompleted(true);
       }
     },
     [lesson, exerciseCompleted, completeLesson, moduleId, lessonId]
   );
+
+  // Auto-navigate to next lesson after completion.
+  // wasAlreadyCompleted guards against navigating when arriving on an already-done lesson.
+  const wasAlreadyCompleted = useRef(exerciseCompleted);
+  useEffect(() => {
+    if (!exerciseCompleted || wasAlreadyCompleted.current) return;
+    const timer = setTimeout(() => {
+      if (nextLesson) {
+        navigate(`/app/learn/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+      } else {
+        navigate('/app');
+      }
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [exerciseCompleted, nextLesson, navigate]);
 
   const lessonIndex = mod.lessons.findIndex((l) => l.id === lessonId);
 
@@ -209,6 +227,12 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                   <p className="text-emerald-400 text-sm">{exerciseMessage}</p>
                 ) : (
                   <p className="text-[#c9d1d9] text-sm">{lesson.exercise.instruction}</p>
+                )}
+
+                {justCompleted && (
+                  <p className="mt-2 text-xs text-emerald-400/70 font-mono animate-pulse">
+                    {nextLesson ? '→ Passage à la leçon suivante...' : '→ Retour au tableau de bord...'}
+                  </p>
                 )}
 
                 {!exerciseCompleted && (

@@ -157,6 +157,61 @@ export function getPrompt(state: TerminalState): string {
   return `${state.user}@${state.hostname}:${displayPath(state.cwd)}$`;
 }
 
+// ─── Tab Completion ───────────────────────────────────────────────────────────
+
+const COMPLETION_COMMANDS = [
+  'pwd', 'ls', 'cd', 'mkdir', 'touch', 'cat', 'echo', 'rm', 'cp', 'mv',
+  'grep', 'head', 'tail', 'wc', 'chmod', 'whoami', 'hostname', 'date',
+  'uname', 'history', 'ps', 'kill', 'clear', 'help', 'man', 'exit',
+  'about', 'donate', 'support', 'hall-of-fame',
+];
+
+/**
+ * Returns possible completions for the current input.
+ * - No space: completes command names
+ * - With space: completes filesystem paths (relative or absolute)
+ */
+export function getTabCompletions(input: string, state: TerminalState): string[] {
+  const firstSpaceIdx = input.indexOf(' ');
+
+  // No space yet → complete the command name
+  if (firstSpaceIdx === -1) {
+    return COMPLETION_COMMANDS.filter((c) => c.startsWith(input));
+  }
+
+  // Has space → complete a path argument (use last token as the partial path)
+  const lastSpaceIdx = input.lastIndexOf(' ');
+  const inputPrefix = input.slice(0, lastSpaceIdx + 1); // "cmd " or "cmd arg1 "
+  const partial = input.slice(lastSpaceIdx + 1);        // partial path to complete
+
+  let parentPath: string[];
+  let namePrefix: string;
+  let pathPrefix: string;
+
+  if (partial.includes('/')) {
+    const slashIdx = partial.lastIndexOf('/');
+    pathPrefix = partial.slice(0, slashIdx + 1); // e.g. "documents/"
+    namePrefix = partial.slice(slashIdx + 1);    // e.g. "n"
+    const dirPart = pathPrefix.length > 1 ? pathPrefix.slice(0, -1) : '/';
+    parentPath = resolvePath(state, dirPart);
+  } else {
+    pathPrefix = '';
+    namePrefix = partial;
+    parentPath = state.cwd;
+  }
+
+  const parentNode = getNode(state.root, parentPath);
+  if (!parentNode || parentNode.type !== 'directory') return [];
+
+  const matches = Object.keys(parentNode.children).filter((n) => n.startsWith(namePrefix));
+
+  return matches.map((name) => {
+    const node = (parentNode as DirectoryNode).children[name];
+    const suffix = node.type === 'directory' ? '/' : '';
+    return inputPrefix + pathPrefix + name + suffix;
+  });
+}
+
 function deepCloneRoot(root: DirectoryNode): DirectoryNode {
   return JSON.parse(JSON.stringify(root));
 }
