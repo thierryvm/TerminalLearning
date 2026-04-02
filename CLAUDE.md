@@ -38,8 +38,14 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 0 ✅ Vercel live
 - Phase 1 ✅ Landing + routing + RGPD + SEO + CI
 - Phase 2 ✅ Analytics (Vercel Analytics + Sentry)
-- Phase 3 🔜 Supabase Auth + DB (projet: `jdnukbpkjyyyjpuwgxhv`, region: eu-west-1)
-- Phase 4 🔮 Admin panel
+- Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
+- Phase 4 🔮 Admin panel (attendre signal trafic)
+
+## Tech debt Phase 3 (post-merge)
+- `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
+  → à terme : déplacer vers `src/types/database.ts`
+- OAuth GitHub + Google : non configurés dans Supabase dashboard (email only pour l'instant)
 
 ## Décisions en attente
 - GitHub Sponsors + Ko-fi — activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
+- OAuth GitHub + Google — à configurer ensemble quand prêt (Supabase dashboard → Authentication → Providers)
