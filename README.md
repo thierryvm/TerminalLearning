@@ -49,25 +49,22 @@
 ```
 src/
 ├── lib/
-│   ├── supabase.ts          # Typed Supabase client (null-safe)
-│   └── sentry.ts            # Sentry init + error boundary
+│   └── sentry.ts                 # Sentry init + error boundary
 ├── app/
+│   ├── App.tsx                   # Root component + providers
 │   ├── components/
-│   │   ├── auth/
-│   │   │   ├── LoginModal.tsx    # Email + OAuth modal
-│   │   │   ├── UserMenu.tsx      # Avatar + sync status + logout
-│   │   │   └── AuthCallback.tsx  # OAuth PKCE callback handler
 │   │   ├── Landing.tsx           # Public landing page (/)
 │   │   ├── Layout.tsx            # App shell with sidebar (/app)
+│   │   ├── Sidebar.tsx           # Navigation sidebar
 │   │   ├── Dashboard.tsx         # Progress dashboard
 │   │   ├── LessonPage.tsx        # Individual lesson view
 │   │   ├── TerminalEmulator.tsx  # Interactive terminal
 │   │   ├── CommandReference.tsx  # Command reference sheet
 │   │   ├── PrivacyPolicy.tsx     # GDPR compliance (/privacy)
+│   │   ├── NotFound.tsx          # 404 page
 │   │   └── ui/                   # shadcn/ui component library
 │   ├── context/
-│   │   ├── AuthContext.tsx       # Session, user, signOut
-│   │   └── ProgressContext.tsx   # Progress state (local + Supabase sync)
+│   │   └── ProgressContext.tsx   # Progress state (localStorage)
 │   ├── data/
 │   │   ├── curriculum.ts         # All lessons and modules content
 │   │   └── terminalEngine.ts     # Terminal command interpreter
@@ -83,6 +80,8 @@ public/
 └── robots.txt                    # SEO crawl rules
 vercel.json                       # SPA routing + security headers (CSP)
 ```
+
+> Phase 3 (PR #11 in progress) will add `src/lib/supabase.ts`, `src/app/components/auth/`, `src/app/context/AuthContext.tsx`, and `src/app/lib/progressSync.ts`.
 
 Full architecture details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -122,8 +121,8 @@ Security is built into every layer from day one:
 
 - **HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` via `vercel.json`
 - **Content Security Policy** — strict CSP, no `unsafe-eval`
-- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting
-- **Database** — Row Level Security (RLS) on all tables, anon key only client-side
+- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting *(Phase 3 — PR #11)*
+- **Database** — Row Level Security (RLS) on all tables, anon key only client-side *(Phase 3 — PR #11)*
 - **No secrets client-side** — environment variables only
 - **GDPR compliant** — cookieless analytics, privacy page at `/privacy`
 - **Dependency auditing** — `npm audit` in CI + GitHub Dependabot
