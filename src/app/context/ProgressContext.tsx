@@ -1,7 +1,11 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { curriculum, getTotalLessons } from '../data/curriculum';
+import { supabase } from '../../lib/supabase';
+import { mergeProgress, getDelta } from '../lib/progressSync';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type SyncStatus = 'local' | 'syncing' | 'synced' | 'error';
 
 interface ProgressState {
   completedLessons: Record<string, boolean>;
@@ -9,6 +13,7 @@ interface ProgressState {
 
 interface ProgressContextValue {
   progress: ProgressState;
+  syncStatus: SyncStatus;
   completeLesson: (moduleId: string, lessonId: string) => void;
   isLessonCompleted: (moduleId: string, lessonId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
@@ -26,7 +31,7 @@ const STORAGE_KEY = 'terminal-master-progress';
 function loadProgress(): ProgressState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return JSON.parse(raw) as ProgressState;
   } catch {}
   return { completedLessons: {} };
 }
@@ -44,18 +49,90 @@ const ProgressContext = createContext<ProgressContextValue | null>(null);
 /**
  * @component ProgressProvider
  * @description Single source of truth for lesson progress.
- * Wrap the app root so all components share the same state instance —
- * fixes the sidebar not updating in real-time when a lesson is completed.
+ * - Offline: localStorage only (syncStatus = 'local')
+ * - Online: merges with Supabase on auth, upserts on each lesson completion
+ * - Merge rule: Math.max — completed is never downgraded
  */
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<ProgressState>(loadProgress);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
 
+  // ── Sync on auth change ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!supabase) return;
+    const client = supabase; // narrow to non-null for TypeScript in async callbacks
+
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setSyncStatus('local');
+        return;
+      }
+
+      setSyncStatus('syncing');
+      try {
+        const { data: remote, error } = await client
+          .from('progress')
+          .select('*')
+          .eq('user_id', session.user.id);
+
+        if (error) throw error;
+
+        const local = loadProgress();
+        const merged = mergeProgress(local.completedLessons, remote ?? []);
+        const mergedState: ProgressState = { completedLessons: merged };
+
+        // Push local-only lessons to Supabase
+        const delta = getDelta(local.completedLessons, remote ?? []);
+        if (delta.length > 0) {
+          const upserts = delta.map((lesson_id) => ({
+            user_id: session.user.id,
+            lesson_id,
+            completed: true as const,
+            completed_at: new Date().toISOString(),
+          }));
+          await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
+        }
+
+        saveProgress(mergedState);
+        setProgress(mergedState);
+        setSyncStatus('synced');
+      } catch {
+        setSyncStatus('error');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Complete a lesson + upsert to Supabase ─────────────────────────────────
   const completeLesson = useCallback((moduleId: string, lessonId: string) => {
     const key = `${moduleId}/${lessonId}`;
     setProgress((prev) => {
-      if (prev.completedLessons[key]) return prev; // already done, skip re-render
-      const next = { ...prev, completedLessons: { ...prev.completedLessons, [key]: true } };
+      if (prev.completedLessons[key]) return prev;
+      const next: ProgressState = {
+        ...prev,
+        completedLessons: { ...prev.completedLessons, [key]: true },
+      };
       saveProgress(next);
+
+      // Fire-and-forget upsert (no await in setState callback)
+      const client = supabase;
+      if (client) {
+        client.auth.getSession().then(({ data }) => {
+          if (!data.session?.user) return;
+          client
+            .from('progress')
+            .upsert(
+              { user_id: data.session.user.id, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
+              { onConflict: 'user_id,lesson_id' }
+            )
+            .then(({ error }) => {
+              if (!error) setSyncStatus('synced');
+              else setSyncStatus('error');
+            });
+        });
+      }
+
       return next;
     });
   }, []);
@@ -101,6 +178,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     <ProgressContext.Provider
       value={{
         progress,
+        syncStatus,
         completeLesson,
         isLessonCompleted,
         isModuleCompleted,
