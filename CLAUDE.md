@@ -19,7 +19,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Stack
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
 - Tailwind CSS v4 + shadcn/ui + Motion
-- Vitest (tests unitaires) — pas de Playwright encore (Phase 2)
+- Supabase (Auth + PostgreSQL + RLS) — Phase 3
+- Vitest (tests unitaires) — pas de Playwright encore (Phase 3+)
 - Vercel (déploiement auto sur push main)
 
 ## Fichiers critiques — toucher avec précaution
@@ -36,10 +37,9 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Phases
 - Phase 0 ✅ Vercel live
 - Phase 1 ✅ Landing + routing + RGPD + SEO + CI
-- Phase 2 🔜 Analytics (Vercel Analytics ✅) + Sentry
-- Phase 3 🔮 Supabase Auth + DB
+- Phase 2 ✅ Analytics (Vercel Analytics + Sentry)
+- Phase 3 🔜 Supabase Auth + DB (projet: `jdnukbpkjyyyjpuwgxhv`, region: eu-west-1)
 - Phase 4 🔮 Admin panel
 
 ## Décisions en attente
-- `og:image` PNG pour Twitter/X — décision réseaux sociaux pas encore prise (compte perso vs compte projet)
-- GitHub Sponsors + Ko-fi — activation suspendue jusqu'à accord mutuelle RIZIV/INAMI
+- GitHub Sponsors + Ko-fi — activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
