@@ -16,7 +16,7 @@
 
 **Key differentiators:**
 - No account required — start learning immediately
-- Progress saved locally in the browser (no server, no tracking)
+- Progress saved locally, optionally synced to the cloud with a free account
 - Real terminal emulator with a simulated filesystem
 - 6 progressive modules from navigation to advanced redirection
 - 100% free, forever
@@ -35,7 +35,10 @@
 | **Styling** | Tailwind CSS | 4.x |
 | **Components** | shadcn/ui (Radix UI) | latest |
 | **Animations** | Motion (Framer Motion) | 12.x |
+| **Auth & Database** | Supabase (PostgreSQL + RLS) | 2.x |
+| **Error Tracking** | Sentry (free tier) | 8.x |
 | **Icons** | Lucide React | 0.487 |
+| **Tests** | Vitest + Testing Library | — |
 | **Design Origin** | Figma Make + Claude Code | — |
 | **Deployment** | Vercel (free tier) | — |
 
@@ -45,32 +48,42 @@
 
 ```
 src/
+├── lib/
+│   └── sentry.ts                 # Sentry init + error boundary
 ├── app/
+│   ├── App.tsx                   # Root component + providers
 │   ├── components/
-│   │   ├── Landing.tsx          # Public landing page (/)
-│   │   ├── Layout.tsx           # App shell with sidebar (/app)
-│   │   ├── Dashboard.tsx        # Progress dashboard
-│   │   ├── LessonPage.tsx       # Individual lesson view
-│   │   ├── TerminalEmulator.tsx # Interactive terminal
-│   │   ├── CommandReference.tsx # Command reference sheet
-│   │   ├── PrivacyPolicy.tsx    # GDPR compliance (/privacy)
-│   │   └── ui/                  # shadcn/ui component library
+│   │   ├── Landing.tsx           # Public landing page (/)
+│   │   ├── Layout.tsx            # App shell with sidebar (/app)
+│   │   ├── Sidebar.tsx           # Navigation sidebar
+│   │   ├── Dashboard.tsx         # Progress dashboard
+│   │   ├── LessonPage.tsx        # Individual lesson view
+│   │   ├── TerminalEmulator.tsx  # Interactive terminal
+│   │   ├── CommandReference.tsx  # Command reference sheet
+│   │   ├── PrivacyPolicy.tsx     # GDPR compliance (/privacy)
+│   │   ├── NotFound.tsx          # 404 page
+│   │   └── ui/                   # shadcn/ui component library
+│   ├── context/
+│   │   └── ProgressContext.tsx   # Progress state (localStorage)
 │   ├── data/
-│   │   ├── curriculum.ts        # All lessons and modules content
-│   │   └── terminalEngine.ts    # Terminal command interpreter
-│   ├── hooks/
-│   │   └── useProgress.ts       # Learning progress state
-│   └── routes.ts                # React Router configuration
+│   │   ├── curriculum.ts         # All lessons and modules content
+│   │   └── terminalEngine.ts     # Terminal command interpreter
+│   └── routes.ts                 # React Router configuration
 ├── styles/
-│   ├── theme.css                # Design tokens (colors, radius)
-│   ├── fonts.css                # JetBrains Mono + Inter
-│   └── tailwind.css             # Tailwind configuration
+│   ├── theme.css                 # Design tokens (colors, radius)
+│   ├── fonts.css                 # JetBrains Mono + Inter
+│   └── tailwind.css              # Tailwind configuration
 public/
-├── logo.svg                     # App logo (>_ terminal mark)
-├── favicon.svg                  # Favicon
-└── robots.txt                   # SEO crawl rules
-vercel.json                      # SPA routing + security headers
+├── logo.svg                      # App logo (>_ terminal mark)
+├── favicon.svg                   # Favicon
+├── og-image.png                  # OpenGraph image (1200x630)
+└── robots.txt                    # SEO crawl rules
+vercel.json                       # SPA routing + security headers (CSP)
 ```
+
+> Phase 3 (PR #11 in progress) will add `src/lib/supabase.ts`, `src/app/components/auth/`, `src/app/context/AuthContext.tsx`, and `src/app/lib/progressSync.ts`.
+
+Full architecture details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -107,10 +120,12 @@ This project is developed using a **multi-agent AI workflow** with Claude Code a
 Security is built into every layer from day one:
 
 - **HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` via `vercel.json`
+- **Content Security Policy** — strict CSP, no `unsafe-eval`
+- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting *(Phase 3 — PR #11)*
+- **Database** — Row Level Security (RLS) on all tables, anon key only client-side *(Phase 3 — PR #11)*
 - **No secrets client-side** — environment variables only
-- **GDPR compliant** — no personal data collected, local-only storage
-- **Dependency auditing** — `npm audit` + GitHub Dependabot
-- **Planned** — 2FA admin panel, Supabase RLS, rate limiting, HACKER BLACK offensive tests
+- **GDPR compliant** — cookieless analytics, privacy page at `/privacy`
+- **Dependency auditing** — `npm audit` in CI + GitHub Dependabot
 
 See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability reporting process.
 
@@ -120,11 +135,11 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| **Phase 0** | ✅ Live | Initial deployment on Vercel |
-| **Phase 1** | 🔄 In progress | Landing page, `/app` routing, SEO/OpenGraph, GDPR |
-| **Phase 2** | 🔜 Planned | Vercel Analytics (GDPR-friendly) + Sentry error monitoring |
-| **Phase 3** | 🔮 Future | Supabase Auth + user progress sync + streaks/badges |
-| **Phase 4** | 🔮 Future | Hyper-secure admin panel — analytics, health monitoring, security center, framework update alerts |
+| **Phase 0** | ✅ Done | Initial deployment on Vercel |
+| **Phase 1** | ✅ Done | Landing page, routing, SEO/OpenGraph, GDPR |
+| **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
+| **Phase 3** | 🔜 In progress | Supabase Auth + user progress sync |
+| **Phase 4** | 🔮 Planned | Hyper-secure admin panel — RBAC, 2FA, audit log, analytics |
 
 Full details in [docs/plan.md](docs/plan.md).
 
@@ -143,6 +158,7 @@ Full details in [docs/plan.md](docs/plan.md).
 git clone https://github.com/thierryvm/TerminalLearning.git
 cd TerminalLearning
 npm install
+cp .env.example .env.local   # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
 npm run dev
 ```
 
@@ -160,6 +176,8 @@ npm run build        # Production build → dist/
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
+Development workflow and repository rules are documented in [docs/CONVENTIONS.md](./docs/CONVENTIONS.md).
+
 - Fork the repository
 - Create a feature branch: `git checkout -b feature/my-feature`
 - Commit with conventional commits: `feat(scope): description`
@@ -172,10 +190,8 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 Terminal Learning is free and will always remain free. If it helped you, consider supporting development:
 
 - ⭐ **Star the repo** — helps visibility
-- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — recurring support
-- ☕ **Ko-fi** — one-time coffee *(link coming soon)*
-
-Every contribution helps cover hosting costs and development time.
+- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — recurring support *(activation pending)*
+- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — one-time coffee *(activation pending)*
 
 ---
 
@@ -183,15 +199,13 @@ Every contribution helps cover hosting costs and development time.
 
 MIT License — see [LICENSE](LICENSE) for details.
 
-This means you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software freely. Attribution appreciated but not required.
-
 ---
 
 ## Acknowledgments
 
 - UI components from [shadcn/ui](https://ui.shadcn.com/) (MIT)
 - Initial design created with [Figma Make](https://www.figma.com/make/)
-- Developed with [Claude Code](https://claude.ai/code) (Anthropic)
+- Developed with [Claude Code](https://claude.com/claude-code) (Anthropic)
 - Icons by [Lucide](https://lucide.dev/)
 
 ---
