@@ -14,3 +14,6 @@ pnpm-debug.log*
 .env
 .env.*
 
+# Claude Code local settings (permissions, not for repo)
+.claude/
+
