@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase';
 
@@ -20,22 +20,17 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Reset all state when modal closes
-  useEffect(() => {
-    if (!open) {
-      setEmail('');
-      setPassword('');
-      setError(null);
-      setSuccess(false);
-    }
-  }, [open]);
-
-  // Reset success message when switching mode
-  useEffect(() => {
-    setSuccess(false);
-  }, [mode]);
-
   if (!open) return null;
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setError(null);
+    setSuccess(false);
+  };
+
+  const handleClose = () => { resetForm(); onClose(); };
+  const switchMode = (next: Mode) => { setSuccess(false); setError(null); setMode(next); };
 
   const validate = (): string | null => {
     const emailResult = emailSchema.safeParse(email);
@@ -67,7 +62,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     } else if (mode === 'signup') {
       setSuccess(true);
     } else {
-      onClose();
+      handleClose();
     }
   };
 
@@ -86,14 +81,14 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold text-[#e6edf3] font-mono">
             {mode === 'login' ? 'Connexion' : 'Créer un compte'}
           </h2>
-          <button onClick={onClose} className="text-[#8b949e] hover:text-[#e6edf3] transition-colors text-xl leading-none">
+          <button onClick={handleClose} className="text-[#8b949e] hover:text-[#e6edf3] transition-colors text-xl leading-none">
             ×
           </button>
         </div>
@@ -168,7 +163,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             <p className="mt-4 text-center text-xs text-[#8b949e] font-mono">
               {mode === 'login' ? "Pas encore de compte ? " : 'Déjà un compte ? '}
               <button
-                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
+                onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
                 className="text-emerald-400 hover:text-emerald-300 transition-colors"
               >
                 {mode === 'login' ? 'Créer un compte' : 'Se connecter'}
