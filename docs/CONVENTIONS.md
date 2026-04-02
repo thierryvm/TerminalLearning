@@ -1,6 +1,6 @@
 # Conventions de travail — Terminal Learning
 
-> Dernière mise à jour : 1 avril 2026  
+> Dernière mise à jour : 3 avril 2026  
 > Issue Linear : [THI-8](https://linear.app/thierryvm/issue/THI-8/set-project-workflow-conventions)
 
 ---
@@ -123,3 +123,37 @@ Claude Code -> Aide à coder
 Linear -> Suit l'avancement
 Slack -> Notifie et permet d'en discuter
 ```
+
+---
+
+## Validation visuelle obligatoire (projet vitrine)
+
+**Toute PR sur `main` doit passer par cette checklist avant merge :**
+
+1. CI passe (type-check + lint + test + build) — automatique
+2. Vercel génère une **preview URL** automatiquement pour chaque PR (visible dans les commentaires GitHub)
+3. **Thierry valide visuellement** sur la preview Vercel (Chrome + mobile)
+4. Merge seulement après validation explicite
+
+> Ne jamais merger sur `main` sans avoir validé la preview Vercel.
+
+---
+
+## Synchronisation de la documentation
+
+**À la fin de chaque session de développement, vérifier :**
+
+| Fichier | Quand le mettre à jour |
+|---------|----------------------|
+| `docs/plan.md` | Statut de phase changé, item coché, décision prise |
+| `docs/CONVENTIONS.md` | Nouvelle règle ou workflow ajouté |
+| `README.md` | Stack change, nouvelle phase live, nouvelle URL |
+| `CLAUDE.md` | Règle projet ou décision technique durable |
+
+**Règle anti-doublon :**
+- `plan.md` = état du projet (phases, to-do, décisions en attente)
+- `CONVENTIONS.md` = règles de travail (git, PR, workflow)
+- `README.md` = documentation publique (stack, démo, setup)
+- `CLAUDE.md` = instructions pour Claude Code (règles projet, stack, fichiers critiques)
+
+Ne jamais copier le même contenu dans deux fichiers — pointer vers la source si nécessaire.

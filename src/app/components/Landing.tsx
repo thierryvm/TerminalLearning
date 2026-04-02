@@ -1,6 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart, CheckCircle2, Clock, Star } from 'lucide-react';
+import {
+  Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
+  CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
+  Compass, FolderOpen, FileText, Cpu, GitMerge,
+} from 'lucide-react';
+import { curriculum } from '../data/curriculum';
+import { TerminalPreview } from './landing/TerminalPreview';
+import { useAuth } from '../context/AuthContext';
+import { UserMenu } from './auth/UserMenu';
+import { LoginModal } from './auth/LoginModal';
+
+// ── Static data ──────────────────────────────────────────────────────────────
 
 const FEATURES = [
   {
@@ -22,7 +34,7 @@ const FEATURES = [
   {
     icon: Zap,
     title: 'Progression sauvegardée',
-    description: 'Reprends exactement où tu t\'es arrêté. Tes accomplissements sont mémorisés localement.',
+    description: "Reprends exactement où tu t'es arrêté. Tes accomplissements sont mémorisés localement.",
     color: 'text-amber-400',
     border: 'border-amber-500/20',
     bg: 'bg-amber-500/5',
@@ -30,7 +42,7 @@ const FEATURES = [
   {
     icon: Shield,
     title: '100% gratuit & open source',
-    description: 'Pas d\'inscription, pas de paywall, pas de tracking agressif. Juste apprendre.',
+    description: "Pas d'inscription, pas de paywall, pas de tracking agressif. Juste apprendre.",
     color: 'text-purple-400',
     border: 'border-purple-500/20',
     bg: 'bg-purple-500/5',
@@ -41,7 +53,7 @@ const ROADMAP = [
   { phase: 'Phase 0', label: 'Lancement public', status: 'done' },
   { phase: 'Phase 1', label: 'Landing + donations', status: 'done' },
   { phase: 'Phase 2', label: 'Analytics + monitoring', status: 'done' },
-  { phase: 'Phase 3', label: 'Comptes utilisateurs', status: 'current' },
+  { phase: 'Phase 3', label: 'Comptes utilisateurs', status: 'done' },
   { phase: 'Phase 4', label: 'Admin panel sécurisé', status: 'future' },
 ];
 
@@ -49,18 +61,43 @@ const SUPPORTERS: string[] = [
   // Populated when Hall of Fame is active
 ];
 
+const TRUST_BADGES = [
+  { icon: ShieldCheck, label: 'A+ Security Rating', href: undefined },
+  {
+    icon: Github,
+    label: '100% Open Source',
+    href: 'https://github.com/thierryvm/TerminalLearning',
+  },
+  { icon: Infinity, label: 'Free Forever', href: undefined },
+  { icon: Lock, label: 'GDPR Compliant', href: undefined },
+] as const;
+
+const MODULE_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+  Compass,
+  FolderOpen,
+  FileText,
+  Shield,
+  Cpu,
+  GitMerge,
+};
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 /** Landing page — public entry point at "/" */
 export function Landing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
       <nav className="border-b border-[#30363d]/50 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-            <Terminal size={18} className="text-emerald-400" />
+            <Terminal size={18} className="text-emerald-400" aria-hidden="true" />
           </div>
           <span className="font-mono text-[#e6edf3] text-sm">Terminal Learning</span>
         </div>
@@ -70,15 +107,25 @@ export function Landing() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#8b949e] hover:text-[#e6edf3] transition-colors"
-            aria-label="GitHub"
+            aria-label="Voir le projet sur GitHub"
           >
-            <Github size={18} />
+            <Github size={18} aria-hidden="true" />
           </a>
+          {user ? (
+            <UserMenu syncStatus="local" />
+          ) : (
+            <button
+              onClick={() => setLoginOpen(true)}
+              className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-mono transition-colors"
+            >
+              Se connecter
+            </button>
+          )}
           <button
             onClick={() => navigate('/app')}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] text-sm font-medium transition-colors"
           >
-            Commencer <ChevronRight size={14} />
+            Commencer <ChevronRight size={14} aria-hidden="true" />
           </button>
         </div>
       </nav>
@@ -86,7 +133,7 @@ export function Landing() {
       {/* ── HERO ────────────────────────────────────────────────── */}
       <section className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
         {/* Glow background */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
           <div className="w-[600px] h-[300px] bg-emerald-500/5 rounded-full blur-3xl" />
         </div>
 
@@ -96,7 +143,7 @@ export function Landing() {
           transition={{ duration: 0.5 }}
         >
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
             Gratuit · Open Source · Pour débutants
           </span>
 
@@ -110,72 +157,128 @@ export function Landing() {
             Pratique réelle, progression sauvegardée, aucune inscription requise.
           </p>
 
-          {/* Terminal preview card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="relative max-w-xl mx-auto mb-10 rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-black/50"
-          >
-            {/* Window chrome */}
-            <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-              <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-              <span className="ml-3 text-xs text-[#8b949e] font-mono">terminal-learning ~ bash</span>
-            </div>
-            <div className="p-5 text-left space-y-2 font-mono text-sm">
-              <div className="text-[#8b949e]">
-                <span className="text-emerald-400">user@terminal</span>
-                <span className="text-[#8b949e]">:</span>
-                <span className="text-blue-400">~</span>
-                <span className="text-[#8b949e]">$ </span>
-                <span className="text-[#e6edf3]">ls -la</span>
-              </div>
-              <div className="text-[#8b949e] space-y-0.5">
-                <div>total 48</div>
-                <div><span className="text-blue-400">drwxr-xr-x</span> documents/ <span className="text-emerald-400">✓</span></div>
-                <div><span className="text-blue-400">drwxr-xr-x</span> projets/   <span className="text-emerald-400">✓</span></div>
-                <div><span className="text-amber-400">-rw-r--r--</span> script.sh</div>
-              </div>
-              <div>
-                <span className="text-emerald-400">user@terminal</span>
-                <span className="text-[#8b949e]">:</span>
-                <span className="text-blue-400">~</span>
-                <span className="text-[#8b949e]">$ </span>
-                <span className="text-[#e6edf3] animate-pulse">▋</span>
-              </div>
-            </div>
-          </motion.div>
-
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => navigate('/app')}
               className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/20"
+              aria-label="Commencer l'apprentissage gratuitement"
             >
-              <Terminal size={18} />
+              <Terminal size={18} aria-hidden="true" />
               Commencer l'apprentissage
-              <ChevronRight size={16} />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
 
-            {/* Donation CTA — disabled until RIZIV authorization obtained */}
             <a
-              href="https://github.com/sponsors/thierryvm"
+              href="https://ko-fi.com/thierryvm"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-[#8b949e] text-[#8b949e] hover:text-[#e6edf3] font-medium text-base transition-all"
-              aria-label="Soutenir le projet sur GitHub Sponsors"
+              className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-pink-500/40 text-[#8b949e] hover:text-pink-400 font-medium text-base transition-all"
+              aria-label="Soutenir Terminal Learning sur Ko-fi"
             >
-              <Heart size={16} className="text-pink-400" />
+              <Heart size={16} aria-hidden="true" />
               Soutenir le projet
             </a>
           </div>
         </motion.div>
       </section>
 
+      {/* ── TRUST BADGES ────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex flex-wrap gap-3 justify-center">
+          {TRUST_BADGES.map((badge, i) => {
+            const Icon = badge.icon;
+            const pill = (
+              <motion.span
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: i * 0.07 }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-medium"
+              >
+                <Icon size={13} aria-hidden="true" />
+                {badge.label}
+              </motion.span>
+            );
+
+            if (badge.href) {
+              return (
+                <a
+                  key={badge.label}
+                  href={badge.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={badge.label}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  {pill}
+                </a>
+              );
+            }
+            return <span key={badge.label}>{pill}</span>;
+          })}
+        </div>
+      </section>
+
+      {/* ── TERMINAL PREVIEW (animated) ─────────────────────────── */}
+      <TerminalPreview />
+
+      {/* ── MODULE PREVIEW ──────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+        >
+          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">6 modules progressifs</h2>
+          <p className="text-[#8b949e] text-center mb-10">Du système de fichiers à la redirection de flux — sans prérequis.</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {curriculum.map((mod, i) => {
+              const Icon = MODULE_ICONS[mod.iconName] ?? BookOpen;
+              return (
+                <motion.div
+                  key={mod.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: i * 0.06 }}
+                  className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm cursor-pointer"
+                  onClick={() => navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`);
+                    }
+                  }}
+                  aria-label={`Accéder au module ${mod.title}`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
+                      <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
+                    </div>
+                    <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
+                  </div>
+                  <h3 className="text-[#e6edf3] font-semibold text-sm mb-1">{mod.title}</h3>
+                  <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
+                    <span className="text-emerald-400 text-xs">{mod.lessons.length} leçons disponibles</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <p className="mt-8 text-center text-[#8b949e] text-sm">6 modules inclus — aucun compte requis.</p>
+        </motion.div>
+      </section>
+
       {/* ── FEATURES ────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -199,7 +302,7 @@ export function Landing() {
                 >
                   <div className="flex items-start gap-4">
                     <div className={`p-2 rounded-lg bg-[#0d1117]/60 border ${f.border}`}>
-                      <Icon size={18} className={f.color} />
+                      <Icon size={18} className={f.color} aria-hidden="true" />
                     </div>
                     <div>
                       <h3 className="text-[#e6edf3] font-medium mb-1">{f.title}</h3>
@@ -228,10 +331,14 @@ export function Landing() {
             {ROADMAP.map((item) => (
               <div key={item.phase} className="flex items-center gap-4 p-4 rounded-xl border border-[#30363d] bg-[#161b22]">
                 <div className="shrink-0">
-                  {item.status === 'done' && <CheckCircle2 size={18} className="text-emerald-400" />}
-                  {item.status === 'current' && <span className="w-4 h-4 flex items-center justify-center"><span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" /></span>}
-                  {item.status === 'soon' && <Clock size={18} className="text-amber-400" />}
-                  {item.status === 'future' && <div className="w-4 h-4 rounded-full border-2 border-[#30363d]" />}
+                  {item.status === 'done' && <CheckCircle2 size={18} className="text-emerald-400" aria-hidden="true" />}
+                  {item.status === 'current' && (
+                    <span className="w-4 h-4 flex items-center justify-center" aria-hidden="true">
+                      <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+                    </span>
+                  )}
+                  {item.status === 'soon' && <Clock size={18} className="text-amber-400" aria-hidden="true" />}
+                  {item.status === 'future' && <div className="w-4 h-4 rounded-full border-2 border-[#30363d]" aria-hidden="true" />}
                 </div>
                 <div className="flex-1">
                   <span className="text-xs text-[#8b949e] font-mono">{item.phase}</span>
@@ -251,7 +358,7 @@ export function Landing() {
         </motion.div>
       </section>
 
-      {/* ── ABOUT ───────────────────────────────────────────────── */}
+      {/* ── ABOUT + KO-FI ───────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
         <motion.div
           initial={{ opacity: 0 }}
@@ -261,7 +368,7 @@ export function Landing() {
           className="max-w-2xl mx-auto text-center"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-mono mb-6">
-            <Star size={12} className="text-amber-400" /> Projet bénévole · Belgique
+            <Star size={12} className="text-amber-400" aria-hidden="true" /> Projet bénévole · Belgique
           </div>
           <h2 className="text-2xl font-bold text-[#e6edf3] mb-4">À propos du projet</h2>
           <p className="text-[#8b949e] leading-relaxed mb-4">
@@ -274,25 +381,39 @@ export function Landing() {
             Si l'application t'a été utile, tu peux soutenir le développement. Chaque contribution
             aide à couvrir les frais d'hébergement et de maintenance.
           </p>
-          <a
-            href="https://github.com/sponsors/thierryvm"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[#30363d] hover:border-pink-500/40 hover:bg-pink-500/5 text-[#8b949e] hover:text-[#e6edf3] transition-all text-sm"
-          >
-            <Heart size={16} className="text-pink-400" />
-            Soutenir sur GitHub Sponsors
-          </a>
+
+          {/* Ko-fi support card */}
+          <div className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] max-w-sm mx-auto text-left">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
+                <Coffee size={16} className="text-amber-400" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-[#e6edf3] text-sm font-medium">Soutenir le projet</p>
+                <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
+                  Terminal Learning est gratuit pour toujours. Un café aide beaucoup.
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://ko-fi.com/thierryvm"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/5 text-amber-400 hover:text-amber-300 text-sm font-medium transition-all"
+              aria-label="Soutenir Terminal Learning sur Ko-fi"
+            >
+              <Coffee size={14} aria-hidden="true" />
+              Offrir un café sur Ko-fi
+            </a>
+          </div>
         </motion.div>
       </section>
 
       {/* ── HALL OF FAME ────────────────────────────────────────── */}
       {SUPPORTERS.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-8">
-            🏆 Hall of Fame
-          </h2>
-          <div className="flex flex-wrap gap-2 justify-center">
+          <h2 className="text-2xl font-bold text-[#e6edf3] mb-8">Hall of Fame</h2>
+          <div className="flex flex-wrap gap-2">
             {SUPPORTERS.map((name) => (
               <span key={name} className="px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/5 text-amber-400 text-sm font-mono">
                 {name}
@@ -306,16 +427,17 @@ export function Landing() {
       <footer className="border-t border-[#30363d]/50 px-6 py-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[#8b949e] text-sm font-mono">
-            <Terminal size={14} className="text-emerald-400" />
+            <Terminal size={14} className="text-emerald-400" aria-hidden="true" />
             Terminal Learning · MIT License
           </div>
           <div className="flex items-center gap-6 text-sm text-[#8b949e]">
             <button onClick={() => navigate('/app')} className="hover:text-[#e6edf3] transition-colors">Application</button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
+            <a href="https://ko-fi.com/thierryvm" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">Ko-fi</a>
             <button onClick={() => navigate('/privacy')} className="hover:text-[#e6edf3] transition-colors">Confidentialité</button>
           </div>
-          <p className="text-[#8b949e] text-xs">
-            Fait avec <Heart size={10} className="inline text-pink-400" /> en Belgique
+          <p className="text-[#8b949e] text-xs flex items-center gap-1">
+            Fait avec <Heart size={10} className="text-pink-400" aria-hidden="true" /> en Belgique
           </p>
         </div>
       </footer>

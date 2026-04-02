@@ -1,7 +1,8 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 2 avril 2026
-> Statut global : **Phase 3 TERMINÉE** — en production depuis le 2 avril 2026
+> Dernière mise à jour : 3 avril 2026
+> Statut global : **Phase 3 TERMINÉE** — en production depuis le 2 avril 2026  
+> Travail en cours : `feat/landing-upgrade` (non mergé — en attente validation visuelle)
 
 ---
 
@@ -74,8 +75,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [ ] Activer Google OAuth dans Supabase dashboard (quand prêt)
 
 #### Tech debt noté
-- `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
-  → à terme : déplacer vers `src/types/database.ts`
+→ Voir `CLAUDE.md § Tech debt Phase 3` (source de vérité unique)
 
 ### 🔮 Phase 4 — Admin Panel (après signal trafic)
 
@@ -139,5 +139,17 @@ Fichiers : `public/logo.svg` ✅, `public/favicon.svg` ✅, `public/og-image.png
 
 ## Décisions en attente
 
-- **GitHub Sponsors + Ko-fi** : activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
+- **GitHub Sponsors** : activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
+- **Ko-fi** : compte créé (https://ko-fi.com/thierryvm), même risque RIZIV — attente autorisation
 - **OAuth GitHub + Google** : à configurer dans Supabase dashboard quand prêt
+
+---
+
+## Sentry — validation en prod requise
+
+Sentry est configuré et déployé via Vercel. Pour confirmer que les events remontent :
+1. Vérifier que `VITE_SENTRY_DSN` est bien présent dans Vercel → Settings → Environment Variables
+2. Sur le live, ouvrir la console DevTools et taper `throw new Error("test sentry")`
+3. Vérifier dans le dashboard Sentry que l'event est bien reçu
+
+> Sentry est désactivé en local (`enabled: import.meta.env.PROD`). Ne capture rien hors production.

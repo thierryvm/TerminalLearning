@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Sentry } from '../lib/sentry';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
@@ -28,6 +29,7 @@ export default function App() {
         <ProgressProvider>
           <RouterProvider router={router} />
           <Analytics />
+          <SpeedInsights />
         </ProgressProvider>
       </AuthProvider>
     </Sentry.ErrorBoundary>
