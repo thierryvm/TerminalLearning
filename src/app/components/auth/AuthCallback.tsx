@@ -13,7 +13,12 @@ export function AuthCallback() {
     }
 
     // Supabase detects the code in the URL and exchanges it automatically.
-    supabase.auth.getSession().then(() => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error || !data.session) {
+        // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
+        navigate('/', { replace: true });
+        return;
+      }
       navigate('/app', { replace: true });
     });
   }, [navigate]);

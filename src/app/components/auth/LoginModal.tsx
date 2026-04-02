@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase';
 
@@ -19,6 +19,21 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Reset all state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setEmail('');
+      setPassword('');
+      setError(null);
+      setSuccess(false);
+    }
+  }, [open]);
+
+  // Reset success message when switching mode
+  useEffect(() => {
+    setSuccess(false);
+  }, [mode]);
 
   if (!open) return null;
 
@@ -58,13 +73,14 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
 
   const handleOAuth = async (provider: 'github' | 'google') => {
     if (!supabase) return;
-    await supabase.auth.signInWithOAuth({
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         scopes: provider === 'github' ? 'read:user user:email' : undefined,
       },
     });
+    if (oauthError) setError(oauthError.message);
   };
 
   return (
