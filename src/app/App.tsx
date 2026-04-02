@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { Sentry } from '../lib/sentry';
 import { router } from './routes';
+import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
 
 function FallbackUI() {
@@ -23,10 +24,12 @@ function FallbackUI() {
 export default function App() {
   return (
     <Sentry.ErrorBoundary fallback={<FallbackUI />}>
-      <ProgressProvider>
-        <RouterProvider router={router} />
-        <Analytics />
-      </ProgressProvider>
+      <AuthProvider>
+        <ProgressProvider>
+          <RouterProvider router={router} />
+          <Analytics />
+        </ProgressProvider>
+      </AuthProvider>
     </Sentry.ErrorBoundary>
   );
 }

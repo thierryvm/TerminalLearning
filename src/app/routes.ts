@@ -6,11 +6,13 @@ import { CommandReference } from './components/CommandReference';
 import { Landing } from './components/Landing';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { NotFound } from './components/NotFound';
+import { AuthCallback } from './components/auth/AuthCallback';
 
 export const router = createBrowserRouter([
   // Public pages
   { path: '/', Component: Landing },
   { path: '/privacy', Component: PrivacyPolicy },
+  { path: '/auth/callback', Component: AuthCallback },
 
   // App — all learning routes under /app
   {

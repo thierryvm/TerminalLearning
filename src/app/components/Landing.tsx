@@ -39,9 +39,9 @@ const FEATURES = [
 
 const ROADMAP = [
   { phase: 'Phase 0', label: 'Lancement public', status: 'done' },
-  { phase: 'Phase 1', label: 'Landing + donations', status: 'current' },
-  { phase: 'Phase 2', label: 'Analytics + monitoring', status: 'soon' },
-  { phase: 'Phase 3', label: 'Comptes utilisateurs', status: 'future' },
+  { phase: 'Phase 1', label: 'Landing + donations', status: 'done' },
+  { phase: 'Phase 2', label: 'Analytics + monitoring', status: 'done' },
+  { phase: 'Phase 3', label: 'Comptes utilisateurs', status: 'current' },
   { phase: 'Phase 4', label: 'Admin panel sécurisé', status: 'future' },
 ];
 
