@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 2 avril 2026
-> Statut global : **Phase 3 en cours** (Supabase Auth implémenté — PR #11 ouverte)
+> Statut global : **Phase 3 TERMINÉE** — en production depuis le 2 avril 2026
 
 ---
 
@@ -28,23 +28,6 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 ---
 
-## PRs ouvertes (2 avril 2026)
-
-| PR | Branche | Contenu | Statut |
-|----|---------|---------|--------|
-| #10 | `chore/update-project-state` | CLAUDE.md ✅, og-image.png, Sourcery fixes | CI ✅ — prêt à merger |
-| #11 | `feat/supabase-phase3-auth` | Phase 3 complète (Auth + DB + ProgressSync) | ⚠️ Configurer env vars Vercel avant merge |
-| #12 | `docs/restructure-project` | /docs structure, zombie hook supprimé, docs à jour | CI en attente |
-
-**Ordre de merge recommandé : #10 → #12 → #11**
-
-**Avant de merger #11 :**
-1. Supabase dashboard → Authentication → Providers → activer GitHub OAuth
-2. Supabase dashboard → Authentication → Providers → activer Google OAuth
-3. Vercel → Settings → Environment Variables → ajouter `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
-
----
-
 ## Statut des phases
 
 ### ✅ Phase 0 — Déploiement (TERMINÉ)
@@ -62,11 +45,11 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 ### ✅ Phase 2 — Analytics + Monitoring (TERMINÉ)
 - [x] Vercel Analytics (GDPR-friendly, sans cookies)
-- [x] Sentry free tier erreurs front (PR #9)
+- [x] Sentry free tier — projet `terminal-learning`, DSN configuré dans Vercel env vars
 
-### 🔜 Phase 3 — Supabase Auth (EN COURS — PR #11)
+### ✅ Phase 3 — Supabase Auth (TERMINÉ — en production)
 
-#### Implémenté (PR #11, pas encore mergé)
+#### Implémenté et mergé
 - [x] Supabase project `jdnukbpkjyyyjpuwgxhv` — `ACTIVE_HEALTHY`, eu-west-1
 - [x] Migration SQL appliquée : `profiles` + `progress` + RLS
 - [x] `src/lib/supabase.ts` — client typé, null-safe (fallback localStorage)
@@ -74,21 +57,23 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [x] `src/app/context/AuthContext.tsx` — session, user, signOut
 - [x] `src/app/context/ProgressContext.tsx` — étendu avec syncStatus + upsert Supabase
 - [x] `src/app/lib/progressSync.ts` — mergeProgress() + getDelta()
-- [x] `src/app/components/auth/LoginModal.tsx` — email + GitHub + Google OAuth
+- [x] `src/app/components/auth/LoginModal.tsx` — email/password (OAuth GitHub+Google prêt mais non activé)
 - [x] `src/app/components/auth/UserMenu.tsx` — avatar + sync badge + logout
 - [x] `src/app/components/auth/AuthCallback.tsx` — handler /auth/callback PKCE
 - [x] `/auth/callback` route ajoutée dans `routes.ts`
-- [x] `vercel.json` CSP : connect-src += *.supabase.co
+- [x] `vercel.json` CSP : connect-src += *.supabase.co + *.supabase.io
 - [x] 10 nouveaux tests (progressSync) — total 42/42
+- [x] Variables Vercel configurées : `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` + `VITE_SENTRY_DSN`
+- [x] `.env.local` créé localement (non commité)
+- [x] Sentry projet `terminal-learning` créé et connecté à Vercel
 
-#### À faire avant mise en production
-- [ ] Activer GitHub OAuth dans Supabase dashboard
-- [ ] Activer Google OAuth dans Supabase dashboard
-- [ ] Ajouter VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY dans Vercel env vars
-- [ ] Tester login/logout/OAuth en local avec .env.local
+#### À faire (post-Phase 3)
+- [ ] Tester login/logout/email en local avec `.env.local`
 - [ ] Vérifier sync local→remote après connexion
+- [ ] Activer GitHub OAuth dans Supabase dashboard (quand prêt)
+- [ ] Activer Google OAuth dans Supabase dashboard (quand prêt)
 
-#### Tech debt noté (post-merge)
+#### Tech debt noté
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
   → à terme : déplacer vers `src/types/database.ts`
 
@@ -155,4 +140,4 @@ Fichiers : `public/logo.svg` ✅, `public/favicon.svg` ✅, `public/og-image.png
 ## Décisions en attente
 
 - **GitHub Sponsors + Ko-fi** : activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
-- **og:image compte social** : compte perso (@thierryvm) vs compte projet — pas encore décidé
+- **OAuth GitHub + Google** : à configurer dans Supabase dashboard quand prêt

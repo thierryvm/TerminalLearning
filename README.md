@@ -49,10 +49,15 @@
 ```
 src/
 ├── lib/
+│   ├── supabase.ts               # Typed Supabase client (null-safe, fallback to localStorage)
 │   └── sentry.ts                 # Sentry init + error boundary
 ├── app/
-│   ├── App.tsx                   # Root component + providers
+│   ├── App.tsx                   # Root: ErrorBoundary > AuthProvider > ProgressProvider
 │   ├── components/
+│   │   ├── auth/
+│   │   │   ├── LoginModal.tsx    # Email/password + OAuth modal (Zod validation)
+│   │   │   ├── UserMenu.tsx      # Avatar + sync status badge + logout
+│   │   │   └── AuthCallback.tsx  # /auth/callback PKCE handler
 │   │   ├── Landing.tsx           # Public landing page (/)
 │   │   ├── Layout.tsx            # App shell with sidebar (/app)
 │   │   ├── Sidebar.tsx           # Navigation sidebar
@@ -64,7 +69,12 @@ src/
 │   │   ├── NotFound.tsx          # 404 page
 │   │   └── ui/                   # shadcn/ui component library
 │   ├── context/
-│   │   └── ProgressContext.tsx   # Progress state (localStorage)
+│   │   ├── AuthContext.tsx       # Session, user, signOut
+│   │   └── ProgressContext.tsx   # Progress state (local + Supabase sync)
+│   ├── lib/
+│   │   └── progressSync.ts       # mergeProgress() + getDelta() utilities
+│   ├── types/
+│   │   └── database.ts           # Supabase DB types
 │   ├── data/
 │   │   ├── curriculum.ts         # All lessons and modules content
 │   │   └── terminalEngine.ts     # Terminal command interpreter
@@ -80,8 +90,6 @@ public/
 └── robots.txt                    # SEO crawl rules
 vercel.json                       # SPA routing + security headers (CSP)
 ```
-
-> Phase 3 (PR #11 in progress) will add `src/lib/supabase.ts`, `src/app/components/auth/`, `src/app/context/AuthContext.tsx`, and `src/app/lib/progressSync.ts`.
 
 Full architecture details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -121,8 +129,8 @@ Security is built into every layer from day one:
 
 - **HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` via `vercel.json`
 - **Content Security Policy** — strict CSP, no `unsafe-eval`
-- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting *(Phase 3 — PR #11)*
-- **Database** — Row Level Security (RLS) on all tables, anon key only client-side *(Phase 3 — PR #11)*
+- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting
+- **Database** — Row Level Security (RLS) on all tables, anon key only client-side
 - **No secrets client-side** — environment variables only
 - **GDPR compliant** — cookieless analytics, privacy page at `/privacy`
 - **Dependency auditing** — `npm audit` in CI + GitHub Dependabot
@@ -138,7 +146,7 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 | **Phase 0** | ✅ Done | Initial deployment on Vercel |
 | **Phase 1** | ✅ Done | Landing page, routing, SEO/OpenGraph, GDPR |
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
-| **Phase 3** | 🔜 In progress | Supabase Auth + user progress sync |
+| **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | 🔮 Planned | Hyper-secure admin panel — RBAC, 2FA, audit log, analytics |
 
 Full details in [docs/plan.md](docs/plan.md).
