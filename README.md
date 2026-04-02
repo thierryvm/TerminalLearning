@@ -126,7 +126,7 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 | **Phase 3** | 🔮 Future | Supabase Auth + user progress sync + streaks/badges |
 | **Phase 4** | 🔮 Future | Hyper-secure admin panel — analytics, health monitoring, security center, framework update alerts |
 
-Full details in [plan.md](plan.md).
+Full details in [docs/plan.md](docs/plan.md).
 
 ---
 
