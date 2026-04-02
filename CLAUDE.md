@@ -42,4 +42,4 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 4 🔮 Admin panel
 
 ## Décisions en attente
-- GitHub Sponsors + Ko-fi — activation suspendue jusqu'à accord mutuelle RIZIV/INAMI
+- GitHub Sponsors + Ko-fi — activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
