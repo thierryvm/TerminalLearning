@@ -83,3 +83,43 @@ Pourquoi ce changement est nécessaire.
 type: description courte en anglais
 ```
 Exemples : `feat: add progress export`, `fix: lesson 3 typo`, `docs: update roadmap`
+
+---
+
+## Workflow simple (débutant)
+
+### Rôle de chaque outil
+
+- **Linear** = définir et suivre le travail
+- **Claude Code** = aider à réaliser le travail
+- **GitHub** = héberger le code, les branches et les pull requests
+- **Slack** = recevoir les notifications et discuter des changements
+
+### Ordre de travail recommandé
+
+1. Créer ou choisir une issue dans Linear
+2. Passer l'issue en **Todo** si elle est prête
+3. Créer une branche GitHub liée à l'issue
+4. Travailler avec Claude Code dans cette branche
+5. Ouvrir une pull request sur GitHub
+6. Passer l'issue en **In Review** si une PR est ouverte
+7. Vérifier que la CI passe
+8. Merger la pull request
+9. Passer l'issue en **Done** une fois mergée dans `main`
+
+### Règle mentale simple
+
+- **Pas commencé** → Todo
+- **En train de faire** → In Progress
+- **PR ouverte** → In Review
+- **Terminé et mergé** → Done
+
+### Schéma rapide
+
+```text
+Linear -> Issue à faire
+GitHub -> Branche + PR
+Claude Code -> Aide à coder
+Linear -> Suit l'avancement
+Slack -> Notifie et permet d'en discuter
+```

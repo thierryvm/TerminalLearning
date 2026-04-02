@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "generate-og": "node scripts/generate-og-image.mjs",
     "dev": "vite",
     "type-check": "tsc --noEmit",
     "lint": "eslint src",
@@ -74,6 +75,7 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "4.1.12",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
