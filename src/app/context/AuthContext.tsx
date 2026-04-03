@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase?.auth.signOut();
+    setSession(null); // immediate UI reset — don't wait for onAuthStateChange
   }, []);
 
   return (

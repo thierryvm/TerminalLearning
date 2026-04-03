@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 2 April 2026
+> Last updated: 3 April 2026
 
 ---
 
@@ -17,15 +17,22 @@
 
 ## Phase 2 — Observability ✅
 - [x] Vercel Analytics (cookieless, GDPR-compliant)
-- [x] Sentry error tracking (frontend)
+- [x] Sentry error tracking (frontend) — EU endpoint (ingest.de.sentry.io)
 
-## Phase 3 — User Accounts 🔜
+## Phase 3 — User Accounts ✅
 - [x] Supabase project provisioned (jdnukbpkjyyyjpuwgxhv, eu-west-1)
-- [x] DB schema + RLS (profiles + progress tables)
-- [x] AuthContext + LoginModal (email + GitHub OAuth + Google OAuth)
+- [x] DB schema + RLS (profiles + progress tables, policies optimisées)
+- [x] AuthContext + LoginModal (email/password live, OAuth code ready)
 - [x] Progress sync: localStorage + Supabase hybrid (never downgrades)
-- [ ] Configure OAuth providers in Supabase dashboard
-- [ ] Set env vars in Vercel (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
+- [x] Env vars Vercel configurées (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SENTRY_DSN)
+- [x] Security hardening: HSTS, CSP renforcé, dépendances auditées
+- [ ] OAuth GitHub + Google — à activer dans Supabase dashboard quand prêt
+
+## Phase 3.5 — Landing upgrade (en cours, PR #18)
+- [x] Terminal animé dans le hero (Version B — above the fold)
+- [x] Section support split 2 colonnes (Ko-fi + GitHub Sponsors coming-soon)
+- [x] Fix déconnexion UserMenu
+- [x] 66 tests unitaires (auth, landing, terminal, progress, sync)
 
 ## Phase 4 — Admin Panel 🔮
 - [ ] /admin route — protected (RBAC + 2FA TOTP)
