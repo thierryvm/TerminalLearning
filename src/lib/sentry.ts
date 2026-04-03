@@ -7,6 +7,7 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
+    tunnel: '/api/sentry-tunnel',
     environment: import.meta.env.MODE,
     integrations: [Sentry.browserTracingIntegration()],
     // Capture 10% of transactions in production, 100% in dev
