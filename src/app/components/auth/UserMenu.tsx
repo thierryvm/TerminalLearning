@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 
 interface UserMenuProps {
@@ -14,7 +15,20 @@ const SYNC_LABELS: Record<UserMenuProps['syncStatus'], { label: string; color: s
 
 export function UserMenu({ syncStatus }: UserMenuProps) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    setSigningOut(true);
+    try {
+      await signOut();
+      navigate('/', { replace: true });
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -56,10 +70,11 @@ export function UserMenu({ syncStatus }: UserMenuProps) {
               <p className="text-xs text-[#8b949e] font-mono truncate">{user.email}</p>
             </div>
             <button
-              onClick={async () => { setOpen(false); await signOut(); }}
-              className="w-full text-left px-3 py-2.5 text-sm text-[#f85149] hover:bg-[#0d1117] font-mono transition-colors"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="w-full text-left px-3 py-2.5 text-sm text-[#f85149] hover:bg-[#0d1117] font-mono transition-colors disabled:opacity-50"
             >
-              Déconnexion
+              {signingOut ? 'Déconnexion…' : 'Déconnexion'}
             </button>
           </div>
         </>
