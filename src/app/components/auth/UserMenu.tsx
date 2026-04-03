@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 interface UserMenuProps {
   syncStatus: 'local' | 'synced' | 'syncing' | 'error';
+  placement?: 'bottom' | 'top';
 }
 
 const SYNC_LABELS: Record<UserMenuProps['syncStatus'], { label: string; color: string }> = {
@@ -13,7 +14,7 @@ const SYNC_LABELS: Record<UserMenuProps['syncStatus'], { label: string; color: s
   error:   { label: 'erreur',  color: 'text-[#f85149]' },
 };
 
-export function UserMenu({ syncStatus }: UserMenuProps) {
+export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -65,7 +66,7 @@ export function UserMenu({ syncStatus }: UserMenuProps) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl overflow-hidden">
+          <div className={`absolute right-0 z-20 w-48 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl overflow-hidden ${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
             <div className="px-3 py-2 border-b border-[#30363d]">
               <p className="text-xs text-[#8b949e] font-mono truncate">{user.email}</p>
             </div>
