@@ -19,8 +19,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Stack
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
 - Tailwind CSS v4 + shadcn/ui + Motion
-- Supabase (Auth + PostgreSQL + RLS) — Phase 3
-- Vitest (tests unitaires) — pas de Playwright encore (Phase 3+)
+- Supabase (Auth + PostgreSQL + RLS + OAuth GitHub + Google)
+- Vitest (tests unitaires) — pas de Playwright encore
 - Vercel (déploiement auto sur push main)
 
 ## Fichiers critiques — toucher avec précaution
@@ -33,19 +33,21 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Zéro secret côté client
 - Zéro `any` TypeScript
 - CSP configuré dans `vercel.json` — mettre à jour si nouveaux domaines externes ajoutés
+- HSTS activé : `max-age=63072000; includeSubDomains; preload`
+- Avatars OAuth (GitHub/Google) : couverts par `img-src 'self' data: https:`
 
 ## Phases
 - Phase 0 ✅ Vercel live
 - Phase 1 ✅ Landing + routing + RGPD + SEO + CI
 - Phase 2 ✅ Analytics (Vercel Analytics + Sentry)
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
+- Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 🔮 Admin panel (attendre signal trafic)
 
-## Tech debt Phase 3 (post-merge)
+## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
   → à terme : déplacer vers `src/types/database.ts`
-- OAuth GitHub + Google : non configurés dans Supabase dashboard (email only pour l'instant)
+- `Dashboard.tsx` lignes 51 + 204 : `navigate('/learn/...')` → `navigate('/app/learn/...')` (redirect actif mais incohérent)
 
 ## Décisions en attente
 - GitHub Sponsors + Ko-fi — activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
-- OAuth GitHub + Google — à configurer ensemble quand prêt (Supabase dashboard → Authentication → Providers)
