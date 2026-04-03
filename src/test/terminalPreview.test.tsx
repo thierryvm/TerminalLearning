@@ -57,9 +57,9 @@ describe('TerminalPreview — scroll regression', () => {
 // ── Reduced motion ────────────────────────────────────────────────────────────
 
 describe('TerminalPreview — prefers-reduced-motion', () => {
-  it('renders the terminal section', () => {
+  it('renders the terminal window', () => {
     const { container } = renderPreview(true);
-    expect(container.querySelector('section')).not.toBeNull();
+    expect(container.querySelector('[data-testid="terminal-preview"]')).not.toBeNull();
   });
 
   it('shows static lines immediately when reduced motion is active', () => {

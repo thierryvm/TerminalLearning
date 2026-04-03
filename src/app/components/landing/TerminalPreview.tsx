@@ -156,59 +156,47 @@ export function TerminalPreview() {
   );
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
-      >
-        <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">
-          Ce que tu apprendras
-        </h2>
-        <p className="text-[#8b949e] text-center mb-8">
-          Des commandes réelles, dans un vrai terminal interactif.
-        </p>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.35 }}
+      className="w-full max-w-2xl mx-auto rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-emerald-500/10"
+      data-testid="terminal-preview"
+    >
+      {/* Title bar */}
+      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]">
+        <div className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
+        <div className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
+        <div className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
+        <span className="ml-3 text-xs text-[#8b949e] font-mono">terminal — bash</span>
+      </div>
 
-        {/* Terminal window */}
-        <div className="max-w-2xl mx-auto rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-black/50">
-          {/* Title bar */}
-          <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
-            <div className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
-            <div className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
-            <span className="ml-3 text-xs text-[#8b949e] font-mono">terminal — bash</span>
-          </div>
-
-          {/* Content — scrolls internally, never scrolls the page */}
-          <div ref={containerRef} className="p-5 font-mono text-sm min-h-[200px] max-h-[280px] overflow-y-auto space-y-1">
-            {lines.map((line, i) => (
-              <div key={i} className="leading-relaxed">
-                {line.type === 'prompt' ? (
-                  <div>
-                    {prompt}
-                    <span className="text-[#e6edf3]">{line.text}</span>
-                  </div>
-                ) : (
-                  <div className="text-[#8b949e] pl-1">{line.text}</div>
-                )}
+      {/* Content — scrolls internally, never scrolls the page */}
+      <div ref={containerRef} className="p-5 font-mono text-sm min-h-[200px] max-h-[280px] overflow-y-auto space-y-1">
+        {lines.map((line, i) => (
+          <div key={i} className="leading-relaxed">
+            {line.type === 'prompt' ? (
+              <div>
+                {prompt}
+                <span className="text-[#e6edf3]">{line.text}</span>
               </div>
-            ))}
-
-            {/* Active typing line */}
-            <div className="leading-relaxed">
-              {prompt}
-              <span className="text-[#e6edf3]">{typingText}</span>
-              <span
-                className="inline-block w-[7px] h-[14px] bg-[#e6edf3] align-middle ml-px"
-                style={{ opacity: showCursor ? 1 : 0 }}
-                aria-hidden="true"
-              />
-            </div>
+            ) : (
+              <div className="text-[#8b949e] pl-1">{line.text}</div>
+            )}
           </div>
-        </div>
+        ))}
 
-      </motion.div>
-    </section>
+        {/* Active typing line */}
+        <div className="leading-relaxed">
+          {prompt}
+          <span className="text-[#e6edf3]">{typingText}</span>
+          <span
+            className="inline-block w-[7px] h-[14px] bg-[#e6edf3] align-middle ml-px"
+            style={{ opacity: showCursor ? 1 : 0 }}
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+    </motion.div>
   );
 }

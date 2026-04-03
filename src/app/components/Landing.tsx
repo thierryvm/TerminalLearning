@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
-  Compass, FolderOpen, FileText, Cpu, GitMerge,
+  Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { TerminalPreview } from './landing/TerminalPreview';
@@ -134,7 +134,7 @@ export function Landing() {
       <section className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
         {/* Glow background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-          <div className="w-[600px] h-[300px] bg-emerald-500/5 rounded-full blur-3xl" />
+          <div className="w-[700px] h-[500px] bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
 
         <motion.div
@@ -157,6 +157,11 @@ export function Landing() {
             Pratique réelle, progression sauvegardée, aucune inscription requise.
           </p>
 
+          {/* Terminal preview — proof before CTA */}
+          <div className="mb-10">
+            <TerminalPreview />
+          </div>
+
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
@@ -176,7 +181,7 @@ export function Landing() {
               className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-pink-500/40 text-[#8b949e] hover:text-pink-400 font-medium text-base transition-all"
               aria-label="Soutenir Terminal Learning sur Ko-fi"
             >
-              <Heart size={16} aria-hidden="true" />
+              <Heart size={16} className="text-pink-500" aria-hidden="true" />
               Soutenir le projet
             </a>
           </div>
@@ -219,9 +224,6 @@ export function Landing() {
           })}
         </div>
       </section>
-
-      {/* ── TERMINAL PREVIEW (animated) ─────────────────────────── */}
-      <TerminalPreview />
 
       {/* ── MODULE PREVIEW ──────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
@@ -358,53 +360,89 @@ export function Landing() {
         </motion.div>
       </section>
 
-      {/* ── ABOUT + KO-FI ───────────────────────────────────────── */}
+      {/* ── ABOUT + SUPPORT ─────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-          className="max-w-2xl mx-auto text-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-mono mb-6">
-            <Star size={12} className="text-amber-400" aria-hidden="true" /> Projet bénévole · Belgique
-          </div>
-          <h2 className="text-2xl font-bold text-[#e6edf3] mb-4">À propos du projet</h2>
-          <p className="text-[#8b949e] leading-relaxed mb-4">
-            Terminal Learning est un projet open source créé avec passion pour rendre
-            l'apprentissage du terminal accessible à tous. L'application restera
-            <strong className="text-[#e6edf3]"> toujours gratuite</strong> — sans publicité,
-            sans données vendues, sans friction.
-          </p>
-          <p className="text-[#8b949e] leading-relaxed mb-8">
-            Si l'application t'a été utile, tu peux soutenir le développement. Chaque contribution
-            aide à couvrir les frais d'hébergement et de maintenance.
-          </p>
-
-          {/* Ko-fi support card */}
-          <div className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] max-w-sm mx-auto text-left">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
-                <Coffee size={16} className="text-amber-400" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-[#e6edf3] text-sm font-medium">Soutenir le projet</p>
-                <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
-                  Terminal Learning est gratuit pour toujours. Un café aide beaucoup.
-                </p>
-              </div>
+          {/* Left — About (SEO) */}
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-mono mb-6">
+              <Star size={12} className="text-amber-400" aria-hidden="true" />
+              Projet bénévole · Belgique
             </div>
-            <a
-              href="https://ko-fi.com/thierryvm"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/5 text-amber-400 hover:text-amber-300 text-sm font-medium transition-all"
-              aria-label="Soutenir Terminal Learning sur Ko-fi"
+            <h2 className="text-2xl font-bold text-[#e6edf3] mb-4">À propos du projet</h2>
+            <p className="text-[#8b949e] leading-relaxed mb-4">
+              Terminal Learning est un projet open source créé avec passion pour rendre
+              l'apprentissage du terminal accessible à tous. L'application restera
+              <strong className="text-[#e6edf3]"> toujours gratuite</strong> — sans publicité,
+              sans données vendues, sans friction.
+            </p>
+            <p className="text-[#8b949e] leading-relaxed">
+              Si l'application t'a été utile, tu peux soutenir le développement. Chaque contribution
+              aide à couvrir les frais d'hébergement et de maintenance.
+            </p>
+          </div>
+
+          {/* Right — Support cards */}
+          <div className="space-y-4">
+            {/* Ko-fi */}
+            <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/5">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
+                  <Coffee size={16} className="text-amber-400" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-[#e6edf3] text-sm font-semibold">Ko-fi — Don ponctuel</p>
+                  <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
+                    Offre un café. Chaque don, même petit, aide à couvrir l'hébergement.
+                  </p>
+                </div>
+              </div>
+              <a
+                href="https://ko-fi.com/thierryvm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/15 text-amber-400 hover:text-amber-300 text-sm font-medium transition-all"
+                aria-label="Soutenir Terminal Learning sur Ko-fi"
+              >
+                <Coffee size={14} aria-hidden="true" />
+                Offrir un café sur Ko-fi
+                <ExternalLink size={12} className="opacity-60" aria-hidden="true" />
+              </a>
+            </div>
+
+            {/* GitHub Sponsors — coming soon */}
+            <div
+              className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
+              title="En attente d'accord RIZIV/INAMI — bientôt disponible"
+              aria-label="GitHub Sponsors — bientôt disponible"
             >
-              <Coffee size={14} aria-hidden="true" />
-              Offrir un café sur Ko-fi
-            </a>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">
+                  <Github size={16} className="text-[#8b949e]" aria-hidden="true" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[#e6edf3] text-sm font-semibold">GitHub Sponsors</p>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[#30363d] text-[#8b949e] font-mono">
+                      bientôt
+                    </span>
+                  </div>
+                  <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
+                    Sponsoring mensuel récurrent — en cours d'activation.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#30363d] text-[#8b949e] text-sm font-medium select-none">
+                <Github size={14} aria-hidden="true" />
+                Bientôt disponible
+              </span>
+            </div>
           </div>
         </motion.div>
       </section>
