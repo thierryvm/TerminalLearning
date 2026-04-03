@@ -37,6 +37,15 @@ function renderLanding() {
   );
 }
 
+// ── TerminalPreview presence ──────────────────────────────────────────────────
+
+describe('Landing — terminal preview', () => {
+  it('renders the animated terminal preview in the hero', () => {
+    renderLanding();
+    expect(screen.getByTestId('terminal-preview')).toBeInTheDocument();
+  });
+});
+
 // ── Hero structure regression ─────────────────────────────────────────────────
 
 describe('Landing — hero section', () => {

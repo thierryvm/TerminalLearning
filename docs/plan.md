@@ -2,7 +2,7 @@
 
 > Dernière mise à jour : 3 avril 2026
 > Statut global : **Phase 3 TERMINÉE** — en production depuis le 2 avril 2026  
-> Travail en cours : `feat/landing-upgrade` (non mergé — en attente validation visuelle)
+> Travail en cours : `feat/landing-upgrade` (non mergé — en attente de validation visuelle)
 
 ---
 
@@ -140,7 +140,7 @@ Fichiers : `public/logo.svg` ✅, `public/favicon.svg` ✅, `public/og-image.png
 ## Décisions en attente
 
 - **GitHub Sponsors** : activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
-- **Ko-fi** : compte créé (https://ko-fi.com/thierryvm), même risque RIZIV — attente autorisation
+- **Ko-fi** : compte créé (https://ko-fi.com/thierryvm), même risque RIZIV — en attente d'autorisation
 - **OAuth GitHub + Google** : à configurer dans Supabase dashboard quand prêt
 
 ---

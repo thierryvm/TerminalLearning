@@ -39,12 +39,16 @@ function renderPreview(reducedMotion = false) {
 // ── Critical regression: no page scroll ──────────────────────────────────────
 
 describe('TerminalPreview — scroll regression', () => {
+  let originalScrollIntoView: typeof Element.prototype.scrollIntoView;
+
   beforeEach(() => {
     // scrollIntoView must never be called — it scrolls the whole page
+    originalScrollIntoView = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = vi.fn();
   });
 
   afterEach(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
     vi.restoreAllMocks();
   });
 
