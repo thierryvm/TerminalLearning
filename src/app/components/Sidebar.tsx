@@ -3,8 +3,9 @@ import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen, Compass, FolderOpen,
   FileText, Shield, Cpu, GitMerge, ChevronDown, ChevronRight,
-  CheckCircle2, Circle, X, Menu,
+  CheckCircle2, Circle, X, Menu, Home,
 } from 'lucide-react';
+import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 
@@ -19,7 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
-  const { isLessonCompleted, getModuleProgress, overallProgress } = useProgress();
+  const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus } = useProgress();
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -170,10 +171,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#30363d] px-4 py-3">
-          <p className="text-[10px] text-[#8b949e] text-center font-mono">
-            Terminal Master · v2.0
-          </p>
+        <div className="shrink-0 border-t border-[#30363d] px-3 py-3 space-y-2">
+          <UserMenu syncStatus={syncStatus} placement="top" />
+          <NavLink
+            to="/"
+            onClick={onClose}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono"
+          >
+            <Home size={14} aria-hidden="true" />
+            Accueil
+          </NavLink>
         </div>
       </aside>
     </>
