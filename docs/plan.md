@@ -1,8 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 3 avril 2026
-> Statut global : **Phase 3 TERMINÉE** — en production depuis le 2 avril 2026  
-> Travail en cours : `feat/landing-upgrade` (non mergé — en attente de validation visuelle)
+> Statut global : **Phase 3.5 TERMINÉE** — OAuth GitHub + Google + sidebar auth en prod depuis le 3 avril 2026
 
 ---
 
@@ -58,7 +57,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [x] `src/app/context/AuthContext.tsx` — session, user, signOut
 - [x] `src/app/context/ProgressContext.tsx` — étendu avec syncStatus + upsert Supabase
 - [x] `src/app/lib/progressSync.ts` — mergeProgress() + getDelta()
-- [x] `src/app/components/auth/LoginModal.tsx` — email/password (OAuth GitHub+Google prêt mais non activé)
+- [x] `src/app/components/auth/LoginModal.tsx` — email/password + OAuth GitHub + Google (activés le 3 avril 2026)
 - [x] `src/app/components/auth/UserMenu.tsx` — avatar + sync badge + logout
 - [x] `src/app/components/auth/AuthCallback.tsx` — handler /auth/callback PKCE
 - [x] `/auth/callback` route ajoutée dans `routes.ts`
@@ -68,11 +67,11 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [x] `.env.local` créé localement (non commité)
 - [x] Sentry projet `terminal-learning` créé et connecté à Vercel
 
-#### À faire (post-Phase 3)
-- [ ] Tester login/logout/email en local avec `.env.local`
-- [ ] Vérifier sync local→remote après connexion
-- [ ] Activer GitHub OAuth dans Supabase dashboard (quand prêt)
-- [ ] Activer Google OAuth dans Supabase dashboard (quand prêt)
+#### Complété post-Phase 3 (3 avril 2026)
+- [x] OAuth GitHub activé — App créée sur github.com/settings/developers
+- [x] OAuth Google activé — Projet Google Cloud Console "Terminal Learning"
+- [x] Supabase URL Configuration : Site URL + Redirect URLs prod + localhost
+- [x] Sidebar : UserMenu + lien Accueil dans le footer (PR #19)
 
 #### Tech debt noté
 → Voir `CLAUDE.md § Tech debt Phase 3` (source de vérité unique)
@@ -141,7 +140,6 @@ Fichiers : `public/logo.svg` ✅, `public/favicon.svg` ✅, `public/og-image.png
 
 - **GitHub Sponsors** : activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
 - **Ko-fi** : compte créé (https://ko-fi.com/thierryvm), même risque RIZIV — en attente d'autorisation
-- **OAuth GitHub + Google** : à configurer dans Supabase dashboard quand prêt
 
 ---
 
