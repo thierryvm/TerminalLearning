@@ -6,6 +6,10 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  /** True once the initial auth state has been fully resolved (one-way flag).
+   *  Use this instead of `!loading` for redirect guards — `loading` can
+   *  theoretically flap during token rotation, `initialized` never reverts. */
+  initialized: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -46,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, initialized: !loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,7 +8,7 @@ import { Landing } from '../app/components/Landing';
 
 // Auth context — default to logged out
 vi.mock('../app/context/AuthContext', () => ({
-  useAuth: () => ({ user: null, session: null, loading: false, signOut: vi.fn() }),
+  useAuth: () => ({ user: null, session: null, loading: false, initialized: true, signOut: vi.fn() }),
 }));
 
 // Suppress motion animations in tests

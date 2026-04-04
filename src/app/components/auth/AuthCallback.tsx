@@ -7,20 +7,22 @@ import { useAuth } from '../../context/AuthContext';
  * (via onAuthStateChange) then redirects. Avoids a duplicate getSession() call
  * that would race with AuthContext's own getSession() and trigger navigator.locks contention.
  *
- * `redirected` ref prevents double-navigation if session/loading change after
- * the first redirect fires (e.g. onAuthStateChange re-firing during token rotation).
+ * Uses `initialized` (one-way flag) rather than `!loading` so that a transient
+ * null session during token rotation cannot trigger a premature redirect to "/".
+ * `redirected` ref guarantees at most one navigation even if `initialized` or
+ * `session` change again after the first redirect fires.
  */
 export function AuthCallback() {
   const navigate = useNavigate();
-  const { session, loading } = useAuth();
+  const { session, initialized } = useAuth();
   const redirected = useRef(false);
 
   useEffect(() => {
-    if (loading || redirected.current) return;
+    if (!initialized || redirected.current) return;
     redirected.current = true;
     // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
     navigate(session ? '/app' : '/', { replace: true });
-  }, [loading, session, navigate]);
+  }, [initialized, session, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
