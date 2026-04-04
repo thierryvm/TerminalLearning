@@ -9,26 +9,26 @@
   <rect x="60" y="60" width="1080" height="4" rx="2" fill="#10b981"/>
 
   <!-- Terminal prompt icon (large) -->
-  <text x="100" y="220" font-family="monospace, 'Courier New'" font-size="96" font-weight="bold" fill="#10b981">&gt;_</text>
+  <text x="100" y="220" font-family="JetBrains Mono, monospace" font-size="96" font-weight="bold" fill="#10b981">&gt;_</text>
 
   <!-- Main title -->
-  <text x="100" y="310" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="52" font-weight="700" fill="#e6edf3">Terminal Learning</text>
+  <text x="100" y="310" font-family="Inter, sans-serif" font-size="52" font-weight="700" fill="#e6edf3">Terminal Learning</text>
 
   <!-- Subtitle -->
-  <text x="100" y="375" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" font-weight="400" fill="#8b949e">Apprends le terminal pas à pas — gratuit, open source</text>
+  <text x="100" y="375" font-family="Inter, sans-serif" font-size="28" font-weight="400" fill="#8b949e">Apprends le terminal pas à pas — gratuit, open source</text>
 
   <!-- Feature pills -->
   <rect x="100" y="420" width="180" height="40" rx="8" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="190" y="446" font-family="monospace" font-size="16" fill="#10b981" text-anchor="middle">6 modules</text>
+  <text x="190" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">6 modules</text>
 
   <rect x="296" y="420" width="220" height="40" rx="8" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="406" y="446" font-family="monospace" font-size="16" fill="#10b981" text-anchor="middle">terminal réel</text>
+  <text x="406" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">terminal réel</text>
 
   <rect x="532" y="420" width="240" height="40" rx="8" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="652" y="446" font-family="monospace" font-size="16" fill="#10b981" text-anchor="middle">100% gratuit</text>
+  <text x="652" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">100% gratuit</text>
 
   <!-- URL bottom right -->
-  <text x="1100" y="530" font-family="monospace, 'Courier New'" font-size="20" fill="#30363d" text-anchor="end">terminal-learning.vercel.app</text>
+  <text x="1100" y="530" font-family="JetBrains Mono, monospace" font-size="20" fill="#30363d" text-anchor="end">terminal-learning.vercel.app</text>
 
   <!-- Grid dots decoration -->
   <g fill="#30363d" opacity="0.4">
@@ -42,8 +42,8 @@
 
   <!-- Animated terminal lines (decorative) -->
   <rect x="840" y="350" width="260" height="1" fill="#30363d" opacity="0.6"/>
-  <text x="850" y="385" font-family="monospace" font-size="14" fill="#8b949e">$ ls -la /home/user</text>
-  <text x="850" y="410" font-family="monospace" font-size="14" fill="#10b981">drwxr-xr-x  user  docs</text>
-  <text x="850" y="435" font-family="monospace" font-size="14" fill="#10b981">-rw-r--r--  user  notes.txt</text>
-  <text x="850" y="460" font-family="monospace" font-size="14" fill="#8b949e">$ <tspan fill="#10b981" opacity="0.8">▋</tspan></text>
+  <text x="850" y="385" font-family="JetBrains Mono, monospace" font-size="14" fill="#8b949e">$ ls -la /home/user</text>
+  <text x="850" y="410" font-family="JetBrains Mono, monospace" font-size="14" fill="#10b981">drwxr-xr-x  user  docs</text>
+  <text x="850" y="435" font-family="JetBrains Mono, monospace" font-size="14" fill="#10b981">-rw-r--r--  user  notes.txt</text>
+  <text x="850" y="460" font-family="JetBrains Mono, monospace" font-size="14" fill="#8b949e">$ <tspan fill="#10b981" opacity="0.8">▋</tspan></text>
 </svg>
