@@ -21,3 +21,4 @@ pnpm-debug.log*
 # Supabase CLI temp files
 supabase/.temp/
 
+# scripts/fonts/ — TTF files committed intentionally (SIL OFL), do NOT gitignore
