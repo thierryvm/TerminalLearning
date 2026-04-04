@@ -49,6 +49,95 @@
     <!-- Theme color (browser chrome) -->
     <meta name="theme-color" content="#0d1117" />
     <meta name="color-scheme" content="dark" />
+
+    <!-- Structured data — JSON-LD (Schema.org) -->
+    <!-- Helps search engines AND LLM crawlers understand the site semantically -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://terminal-learning.vercel.app/#website",
+          "url": "https://terminal-learning.vercel.app/",
+          "name": "Terminal Learning",
+          "description": "Application interactive gratuite pour apprendre les commandes du terminal Linux/Unix.",
+          "inLanguage": "fr",
+          "creator": {
+            "@type": "Person",
+            "name": "Thierry Vanmeeteren",
+            "url": "https://github.com/thierryvm"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://terminal-learning.vercel.app/#app",
+          "name": "Terminal Learning",
+          "url": "https://terminal-learning.vercel.app/",
+          "description": "Apprends les commandes du terminal Linux/Unix dans ton navigateur. 6 modules progressifs, émulateur interactif, progression sauvegardée. Gratuit, open source, sans installation.",
+          "applicationCategory": "EducationalApplication",
+          "applicationSubCategory": "Terminal / Shell Learning",
+          "operatingSystem": "Any (Web Browser)",
+          "browserRequirements": "Requires JavaScript",
+          "inLanguage": "fr",
+          "isAccessibleForFree": true,
+          "isFamilyFriendly": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          "author": {
+            "@type": "Person",
+            "name": "Thierry Vanmeeteren",
+            "url": "https://github.com/thierryvm"
+          },
+          "codeRepository": "https://github.com/thierryvm/TerminalLearning",
+          "keywords": ["terminal", "bash", "linux", "shell", "apprendre", "débutant", "commandes", "open source"],
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "student",
+            "audienceType": "Beginners, students, developers switching to Linux/macOS"
+          }
+        },
+        {
+          "@type": "Course",
+          "@id": "https://terminal-learning.vercel.app/#course",
+          "name": "Apprendre le terminal Linux/Unix — de zéro à autonome",
+          "description": "Formation interactive et gratuite aux commandes du terminal. 6 modules progressifs : navigation, fichiers, lecture, permissions, processus, redirection et pipes.",
+          "url": "https://terminal-learning.vercel.app/app",
+          "inLanguage": "fr",
+          "isAccessibleForFree": true,
+          "educationalLevel": "Beginner",
+          "teaches": [
+            "Navigation dans le système de fichiers (pwd, ls, cd)",
+            "Gestion des fichiers et dossiers (mkdir, touch, cp, mv, rm)",
+            "Lecture de fichiers (cat, head, tail, grep, wc)",
+            "Permissions Unix (chmod)",
+            "Gestion des processus (ps, kill)",
+            "Redirection et pipes (>, >>, |)"
+          ],
+          "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT3H"
+          },
+          "provider": {
+            "@type": "Organization",
+            "name": "Terminal Learning",
+            "url": "https://terminal-learning.vercel.app/"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

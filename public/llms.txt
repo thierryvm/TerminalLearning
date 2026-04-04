@@ -1,0 +1,41 @@
+# Terminal Learning
+
+> Free, open-source, browser-based interactive platform to learn Linux/Unix terminal commands — no installation required, works on any device.
+
+Terminal Learning is a beginner-friendly educational web app built with React and TypeScript. Users type real commands in a browser-based terminal emulator and receive immediate feedback. Progress is saved locally (localStorage) and optionally synced to the cloud via a free account (Supabase). The app is 100% free, open source, and requires no installation.
+
+- **Live app**: https://terminal-learning.vercel.app
+- **Source code**: https://github.com/thierryvm/TerminalLearning
+- **Author**: Thierry Vanmeeteren (Belgium)
+- **Language**: French (UI and lessons) — commands are universal Linux/Unix
+- **License**: Open source
+- **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS, Supabase, Vercel
+
+## Curriculum (6 modules, 19 lessons)
+
+- [Navigation](https://terminal-learning.vercel.app/app/learn/navigation/pwd): `pwd`, `ls`, `ls -la`, `cd` — moving through the file system
+- [Fichiers & Dossiers](https://terminal-learning.vercel.app/app/learn/fichiers/mkdir): `mkdir`, `touch`, `cp`, `mv`, `rm` — creating, copying, moving, deleting
+- [Lecture de fichiers](https://terminal-learning.vercel.app/app/learn/lecture/cat): `cat`, `head`, `tail`, `grep`, `wc` — viewing and searching file content
+- [Permissions](https://terminal-learning.vercel.app/app/learn/permissions/comprendre-permissions): Unix permission model, `chmod`
+- [Processus](https://terminal-learning.vercel.app/app/learn/processus/ps): `ps`, `kill` — managing running processes
+- [Redirection & Pipes](https://terminal-learning.vercel.app/app/learn/redirection/redirection-sortie): `>`, `>>`, `|` — chaining and redirecting command output
+
+## Key Features
+
+- Interactive terminal emulator with real command validation in the browser
+- Progressive curriculum designed for absolute beginners
+- No account required to start — progress saved in localStorage
+- Optional cloud sync via GitHub or Google OAuth (Supabase Auth)
+- GDPR/RGPD compliant, hosted on Vercel (EU region, Paris)
+- Fully open source — contributions welcome
+
+## Who is this for?
+
+Beginners who want to learn the terminal for the first time: developers switching to Linux or macOS, students in CS or DevOps programs, sysadmin newcomers, and anyone who finds the command line intimidating.
+
+## Optional
+
+- [Full README](https://github.com/thierryvm/TerminalLearning/blob/main/README.md): complete project documentation, setup instructions, contributing guide
+- [Command reference](https://terminal-learning.vercel.app/app/reference): all commands covered, with syntax and examples
+- [Privacy policy](https://terminal-learning.vercel.app/privacy): GDPR-compliant data usage details
+- [GitHub source](https://github.com/thierryvm/TerminalLearning): full source code, issues, pull requests
