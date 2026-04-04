@@ -22,7 +22,10 @@ try {
 
 const resvg = new Resvg(svg, {
   fitTo: { mode: 'width', value: OG_WIDTH },
-  font: { loadSystemFonts: false },
+  // System fonts required so that font-family declarations in the SVG
+  // (Segoe UI, monospace, etc.) resolve correctly during PNG rasterisation.
+  // Without this, text elements render invisible, producing a near-blank image.
+  font: { loadSystemFonts: true },
 });
 
 const rendered = resvg.render();
