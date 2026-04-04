@@ -9,6 +9,8 @@ import {
   Module, Lesson,
 } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
+import { useAuth } from '../context/AuthContext';
+import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 
@@ -99,6 +101,8 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 }) {
   const navigate = useNavigate();
   const { completeLesson, isLessonCompleted } = useProgress();
+  const { user } = useAuth();
+  const terminalUsername = toUnixUsername(user);
   // Derived from context on every render — no local state needed
   const exerciseCompleted = isLessonCompleted(moduleId, lessonId);
   const [exerciseMessage, setExerciseMessage] = useState('');
@@ -309,6 +313,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             onCommand={handleCommand}
             welcomeMessage={welcomeMessage}
             className="flex-1 min-h-0"
+            username={terminalUsername}
           />
         </div>
       </div>
