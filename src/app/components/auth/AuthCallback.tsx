@@ -1,27 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
-/** Handles OAuth PKCE callback — exchanges the code for a session then redirects. */
+/**
+ * Handles OAuth PKCE callback — waits for AuthContext to resolve the session
+ * (via onAuthStateChange) then redirects. Avoids a duplicate getSession() call
+ * that would race with AuthContext's own getSession() and trigger navigator.locks contention.
+ *
+ * Uses `initialized` (one-way flag) rather than `!loading` so that a transient
+ * null session during token rotation cannot trigger a premature redirect to "/".
+ * `redirected` ref guarantees at most one navigation even if `initialized` or
+ * `session` change again after the first redirect fires.
+ */
 export function AuthCallback() {
   const navigate = useNavigate();
+  const { session, initialized } = useAuth();
+  const redirected = useRef(false);
 
   useEffect(() => {
-    if (!supabase) {
-      navigate('/app', { replace: true });
-      return;
-    }
-
-    // Supabase detects the code in the URL and exchanges it automatically.
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error || !data.session) {
-        // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
-        navigate('/', { replace: true });
-        return;
-      }
-      navigate('/app', { replace: true });
-    });
-  }, [navigate]);
+    if (!initialized || redirected.current) return;
+    redirected.current = true;
+    // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
+    navigate(session ? '/app' : '/', { replace: true });
+  }, [initialized, session, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">

@@ -32,6 +32,7 @@ vi.mock('../app/context/AuthContext', () => ({
     user: { email: 'test@example.com', user_metadata: {} },
     session: {},
     loading: false,
+    initialized: true,
     signOut: mockSignOut,
   }),
 }));
