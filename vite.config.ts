@@ -19,4 +19,25 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime — stable, cache-friendly
+          'react-vendor': ['react', 'react-dom', 'react-router'],
+          // Animation library — large, loaded on every page
+          'motion': ['motion'],
+          // Error monitoring — loaded synchronously but isolated for caching
+          'sentry': ['@sentry/react'],
+          // Database client
+          'supabase': ['@supabase/supabase-js'],
+          // Charts — only used in app pages, not landing
+          'charts': ['recharts'],
+          // Icons — tree-shaken by Vite but isolated for better caching
+          'icons': ['lucide-react'],
+        },
+      },
+    },
+  },
 })
