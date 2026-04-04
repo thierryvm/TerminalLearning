@@ -23,19 +23,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React runtime — stable, cache-friendly
-          'react-vendor': ['react', 'react-dom', 'react-router'],
-          // Animation library — large, loaded on every page
-          'motion': ['motion'],
-          // Error monitoring — loaded synchronously but isolated for caching
-          'sentry': ['@sentry/react'],
-          // Database client
-          'supabase': ['@supabase/supabase-js'],
-          // Charts — only used in app pages, not landing
-          'charts': ['recharts'],
-          // Icons — tree-shaken by Vite but isolated for better caching
-          'icons': ['lucide-react'],
+        // Function form automatically captures sub-modules and stays in sync
+        // as imports evolve, unlike a static object which can silently drift.
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/motion')) return 'motion';
+          if (id.includes('node_modules/@sentry')) return 'sentry';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+          if (id.includes('node_modules/recharts')) return 'charts';
+          if (id.includes('node_modules/lucide-react')) return 'icons';
         },
       },
     },
