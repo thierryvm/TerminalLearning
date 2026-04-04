@@ -12,13 +12,17 @@ interface TerminalEmulatorProps {
   onCommand?: (command: string, state: TerminalState) => void;
   welcomeMessage?: string[];
   className?: string;
+  username?: string;
 }
 
 let lineCounter = 0;
 const nextId = () => ++lineCounter;
 
-export function TerminalEmulator({ onCommand, welcomeMessage, className = '' }: TerminalEmulatorProps) {
-  const [termState, setTermState] = useState<TerminalState>(createInitialState);
+export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username }: TerminalEmulatorProps) {
+  const [termState, setTermState] = useState<TerminalState>(() => {
+    const s = createInitialState();
+    return username ? { ...s, user: username } : s;
+  });
   const [lines, setLines] = useState<TerminalLine[]>(() => {
     const welcome = welcomeMessage ?? [
       "Bienvenue dans Terminal Lab ! Tapez 'help' pour la liste des commandes.",
