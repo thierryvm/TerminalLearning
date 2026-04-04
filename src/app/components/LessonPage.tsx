@@ -10,18 +10,9 @@ import {
 } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useAuth } from '../context/AuthContext';
+import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
-
-function toUnixUsername(user: { email?: string | null; user_metadata?: Record<string, unknown> } | null): string | undefined {
-  if (!user) return undefined;
-  const raw =
-    (user.user_metadata?.user_name as string | undefined) ??
-    (user.user_metadata?.preferred_username as string | undefined) ??
-    user.email?.split('@')[0];
-  if (!raw) return undefined;
-  return raw.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 16) || undefined;
-}
 
 function BlockRenderer({ block }: { block: ContentBlock }) {
   const renderText = (text: string) => {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { TerminalState, OutputLine, processCommand, getPrompt, getTabCompletions, createInitialState } from '../data/terminalEngine';
 
 interface TerminalLine {
@@ -12,6 +12,7 @@ interface TerminalEmulatorProps {
   onCommand?: (command: string, state: TerminalState) => void;
   welcomeMessage?: string[];
   className?: string;
+  /** Unix username to show in prompt. Defaults to 'user' when not authenticated. */
   username?: string;
 }
 
@@ -19,10 +20,7 @@ let lineCounter = 0;
 const nextId = () => ++lineCounter;
 
 export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username }: TerminalEmulatorProps) {
-  const [termState, setTermState] = useState<TerminalState>(() => {
-    const s = createInitialState();
-    return username ? { ...s, user: username } : s;
-  });
+  const [termState, setTermState] = useState<TerminalState>(createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
     const welcome = welcomeMessage ?? [
       "Bienvenue dans Terminal Lab ! Tapez 'help' pour la liste des commandes.",
@@ -41,18 +39,25 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
   const focusInput = () => inputRef.current?.focus();
 
+  // Derive active state from the username prop so auth changes (login/logout)
+  // are reflected immediately without a setState round-trip.
+  const activeState = useMemo<TerminalState>(
+    () => (username ? { ...termState, user: username } : termState),
+    [termState, username]
+  );
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = input.trim();
-      const prompt = getPrompt(termState);
+      const prompt = getPrompt(activeState);
 
       if (!trimmed) {
         setLines((prev) => [...prev, { id: nextId(), type: 'prompt', text: '', prompt }]);
         return;
       }
 
-      const result = processCommand(termState, trimmed);
+      const result = processCommand(activeState, trimmed);
 
       if (result.clear) {
         setLines([]);
@@ -77,11 +82,11 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       setInput('');
       setHistoryIndex(-1);
     },
-    [input, termState, onCommand]
+    [input, activeState, onCommand]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const history = termState.commandHistory;
+    const history = activeState.commandHistory;
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       const newIndex = Math.min(historyIndex + 1, history.length - 1);
@@ -94,11 +99,11 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       setInput(newIndex === -1 ? '' : history[history.length - 1 - newIndex] ?? '');
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      const completions = getTabCompletions(input, termState);
+      const completions = getTabCompletions(input, activeState);
       if (completions.length === 1) {
         setInput(completions[0]);
       } else if (completions.length > 1) {
-        const prompt = getPrompt(termState);
+        const prompt = getPrompt(activeState);
         setLines((prev) => [
           ...prev,
           { id: nextId(), type: 'prompt', text: input, prompt },
@@ -109,7 +114,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       e.preventDefault();
       setLines((prev) => [
         ...prev,
-        { id: nextId(), type: 'prompt', text: input + '^C', prompt: getPrompt(termState) },
+        { id: nextId(), type: 'prompt', text: input + '^C', prompt: getPrompt(activeState) },
       ]);
       setInput('');
       setHistoryIndex(-1);
@@ -119,7 +124,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
     }
   };
 
-  const prompt = getPrompt(termState);
+  const prompt = getPrompt(activeState);
 
   return (
     <div
@@ -134,7 +139,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           <div className="w-3 h-3 rounded-full bg-[#28ca42]" />
         </div>
         <span className="ml-2 text-[#8b949e] text-xs font-mono">
-          {termState.user}@{termState.hostname}
+          {activeState.user}@{activeState.hostname}
         </span>
       </div>
 
