@@ -1,6 +1,6 @@
 # Terminal Learning
 
-> Free, open-source, browser-based interactive platform to learn Linux/Unix terminal commands — no installation required, works on any device.
+> Free, open-source, browser-based interactive platform to learn Linux/Unix terminal commands — no installation required; works on any device.
 
 Terminal Learning is a beginner-friendly educational web app built with React and TypeScript. Users type real commands in a browser-based terminal emulator and receive immediate feedback. Progress is saved locally (localStorage) and optionally synced to the cloud via a free account (Supabase). The app is 100% free, open source, and requires no installation.
 
