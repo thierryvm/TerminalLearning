@@ -1,27 +1,25 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
-/** Handles OAuth PKCE callback — exchanges the code for a session then redirects. */
+/**
+ * Handles OAuth PKCE callback — waits for AuthContext to resolve the session
+ * (via onAuthStateChange) then redirects. Avoids a duplicate getSession() call
+ * that would race with AuthContext's own getSession() and trigger navigator.locks contention.
+ */
 export function AuthCallback() {
   const navigate = useNavigate();
+  const { session, loading } = useAuth();
 
   useEffect(() => {
-    if (!supabase) {
+    if (loading) return;
+    if (session) {
       navigate('/app', { replace: true });
-      return;
+    } else {
+      // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
+      navigate('/', { replace: true });
     }
-
-    // Supabase detects the code in the URL and exchanges it automatically.
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error || !data.session) {
-        // Exchange failed (expired code, wrong redirect URL, etc.) — send back to landing
-        navigate('/', { replace: true });
-        return;
-      }
-      navigate('/app', { replace: true });
-    });
-  }, [navigate]);
+  }, [loading, session, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
