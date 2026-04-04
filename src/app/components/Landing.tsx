@@ -137,11 +137,8 @@ export function Landing() {
           <div className="w-[700px] h-[500px] bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        {/* Hero content — no JS animation so the h1 (LCP element) is visible on first paint */}
+        <div>
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
             Gratuit · Open Source · Pour débutants
@@ -185,7 +182,7 @@ export function Landing() {
               Soutenir le projet
             </a>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── TRUST BADGES ────────────────────────────────────────── */}

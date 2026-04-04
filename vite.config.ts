@@ -19,4 +19,23 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  build: {
+    rollupOptions: {
+      output: {
+        // Function form automatically captures sub-modules and stays in sync
+        // as imports evolve, unlike a static object which can silently drift.
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/motion')) return 'motion';
+          if (id.includes('node_modules/@sentry')) return 'sentry';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+          if (id.includes('node_modules/recharts')) return 'charts';
+          if (id.includes('node_modules/lucide-react')) return 'icons';
+        },
+      },
+    },
+  },
 })
