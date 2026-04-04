@@ -2,4 +2,34 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
+# AI crawlers — explicitly allowed (open-source educational project)
+# Allowing indexing helps learners find this tool via AI-powered search engines.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
 Sitemap: https://terminal-learning.vercel.app/sitemap.xml
+
+# LLM context file
+# https://terminal-learning.vercel.app/llms.txt
