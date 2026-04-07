@@ -28,6 +28,12 @@ export interface Module {
   iconName: string;
   color: string;
   lessons: Lesson[];
+  /** Pedagogical level (1-5). Populated from commandCatalogue. */
+  level?: 1 | 2 | 3 | 4 | 5;
+  /** Module IDs that must be completed before this one unlocks. */
+  prerequisites?: string[];
+  /** Module IDs that this module unlocks upon completion. */
+  unlocks?: string[];
 }
 
 export const curriculum: Module[] = [
@@ -37,6 +43,9 @@ export const curriculum: Module[] = [
     description: 'Maîtrisez vos déplacements dans le système de fichiers',
     iconName: 'Compass',
     color: '#22c55e',
+    level: 1,
+    prerequisites: [],
+    unlocks: ['fichiers', 'lecture', 'search'],
     lessons: [
       {
         id: 'pwd',
@@ -206,6 +215,9 @@ export const curriculum: Module[] = [
     description: 'Créez, copiez, déplacez et supprimez fichiers et répertoires',
     iconName: 'FolderOpen',
     color: '#3b82f6',
+    level: 1,
+    prerequisites: ['navigation'],
+    unlocks: ['permissions', 'git', 'docker'],
     lessons: [
       {
         id: 'mkdir',
@@ -402,6 +414,9 @@ export const curriculum: Module[] = [
     description: 'Affichez, recherchez et analysez le contenu des fichiers',
     iconName: 'FileText',
     color: '#a855f7',
+    level: 1,
+    prerequisites: ['navigation', 'fichiers'],
+    unlocks: ['search', 'logs', 'ssh_vps'],
     lessons: [
       {
         id: 'cat',
@@ -554,6 +569,9 @@ export const curriculum: Module[] = [
     description: 'Contrôlez l\'accès aux fichiers et répertoires',
     iconName: 'Shield',
     color: '#f59e0b',
+    level: 2,
+    prerequisites: ['navigation', 'fichiers', 'lecture'],
+    unlocks: ['shell_scripts', 'ssh_vps', 'docker', 'security_basics'],
     lessons: [
       {
         id: 'comprendre-permissions',
@@ -640,6 +658,9 @@ export const curriculum: Module[] = [
     description: 'Gérez les programmes en cours d\'exécution',
     iconName: 'Cpu',
     color: '#ef4444',
+    level: 2,
+    prerequisites: ['navigation', 'fichiers'],
+    unlocks: ['ssh_vps', 'docker', 'sysadmin'],
     lessons: [
       {
         id: 'ps',
@@ -720,6 +741,9 @@ export const curriculum: Module[] = [
     description: 'Chaînez les commandes et redirigez les flux de données',
     iconName: 'GitMerge',
     color: '#06b6d4',
+    level: 2,
+    prerequisites: ['navigation', 'fichiers', 'lecture'],
+    unlocks: ['shell_scripts', 'logs_observability'],
     lessons: [
       {
         id: 'redirection-sortie',
