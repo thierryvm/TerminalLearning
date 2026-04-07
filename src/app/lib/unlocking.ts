@@ -77,20 +77,34 @@ export function getMissingPrerequisites(
  */
 export interface ModuleUnlockStatus {
   moduleId: string;
+  title: string;
+  color: string;
+  iconName: string;
   unlocked: boolean;
   completed: boolean;
   missingPrerequisites: string[];
+  /** Human-readable names of missing prerequisites */
+  missingPrerequisiteLabels: string[];
   level: number;
 }
 
 export function getModuleUnlockTree(
   completedModuleIds: Set<string>,
 ): ModuleUnlockStatus[] {
-  return curriculum.map((mod) => ({
-    moduleId: mod.id,
-    unlocked: isModuleUnlocked(mod.id, completedModuleIds),
-    completed: completedModuleIds.has(mod.id),
-    missingPrerequisites: getMissingPrerequisites(mod.id, completedModuleIds),
-    level: mod.level ?? 1,
-  }));
+  return curriculum.map((mod) => {
+    const missing = getMissingPrerequisites(mod.id, completedModuleIds);
+    return {
+      moduleId: mod.id,
+      title: mod.title,
+      color: mod.color,
+      iconName: mod.iconName,
+      unlocked: isModuleUnlocked(mod.id, completedModuleIds),
+      completed: completedModuleIds.has(mod.id),
+      missingPrerequisites: missing,
+      missingPrerequisiteLabels: missing.map(
+        (id) => curriculum.find((m) => m.id === id)?.title ?? id,
+      ),
+      level: mod.level ?? 1,
+    };
+  });
 }

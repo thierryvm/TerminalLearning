@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   ENVIRONMENTS,
   LEVELS,
+  ROADMAP_PRIORITIES,
   getLevelById,
   getActiveEnvironments,
 } from '../app/types/curriculum';
 import { curriculum } from '../app/data/curriculum';
+import { commandCatalogue } from '../app/data/commandCatalogue';
 
 describe('curriculum types', () => {
   describe('ENVIRONMENTS', () => {
@@ -97,6 +99,36 @@ describe('curriculum types', () => {
     it('total lessons should be 19', () => {
       const total = curriculum.reduce((acc, mod) => acc + mod.lessons.length, 0);
       expect(total).toBe(19);
+    });
+  });
+
+  describe('consistency guard: catalogue ↔ curriculum', () => {
+    it('every curriculum module with prerequisites should match its catalogue counterpart', () => {
+      for (const mod of curriculum) {
+        const catEntry = commandCatalogue.find((c) => c.id === mod.id);
+        if (catEntry && mod.prerequisites) {
+          expect(mod.prerequisites).toEqual(catEntry.prerequisites);
+        }
+      }
+    });
+
+    it('every curriculum module level should match its catalogue counterpart', () => {
+      for (const mod of curriculum) {
+        const catEntry = commandCatalogue.find((c) => c.id === mod.id);
+        if (catEntry && mod.level) {
+          expect(mod.level).toBe(catEntry.level);
+        }
+      }
+    });
+
+    it('ROADMAP_PRIORITIES p0 IDs should all exist in catalogue or curriculum', () => {
+      const allIds = new Set([
+        ...commandCatalogue.map((c) => c.id),
+        ...curriculum.map((m) => m.id),
+      ]);
+      for (const id of ROADMAP_PRIORITIES.p0) {
+        expect(allIds.has(id)).toBe(true);
+      }
     });
   });
 });

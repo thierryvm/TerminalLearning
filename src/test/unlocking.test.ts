@@ -121,13 +121,16 @@ describe('unlocking logic', () => {
       expect(nav?.unlocked).toBe(true);
       expect(nav?.completed).toBe(false);
       expect(nav?.missingPrerequisites).toEqual([]);
+      expect(nav?.title).toBe('Navigation');
+      expect(nav?.color).toBeTruthy();
     });
 
-    it('should mark fichiers as locked with empty progress', () => {
+    it('should mark fichiers as locked with empty progress and include labels', () => {
       const tree = getModuleUnlockTree(new Set());
       const fichiers = tree.find((m) => m.moduleId === 'fichiers');
       expect(fichiers?.unlocked).toBe(false);
       expect(fichiers?.missingPrerequisites).toContain('navigation');
+      expect(fichiers?.missingPrerequisiteLabels).toContain('Navigation');
     });
 
     it('should include level for each module', () => {

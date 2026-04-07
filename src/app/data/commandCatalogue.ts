@@ -583,11 +583,9 @@ export function getCategoryById(id: string): CategoryMeta | undefined {
 }
 
 export function getCommandById(commandId: string): EnrichedCommand | undefined {
-  for (const category of commandCatalogue) {
-    const cmd = category.commands.find((c) => c.id === commandId);
-    if (cmd) return cmd;
-  }
-  return undefined;
+  return commandCatalogue
+    .flatMap((category) => category.commands)
+    .find((cmd) => cmd.id === commandId);
 }
 
 export function getCommandsForEnvironment(

@@ -74,8 +74,8 @@ export interface CategoryMeta {
 export type RoadmapTier = 'p0' | 'p1' | 'p2' | 'p3';
 
 export const ROADMAP_PRIORITIES: Record<RoadmapTier, string[]> = {
-  p0: ['navigation', 'files_dirs', 'reading', 'search', 'permissions', 'processes', 'pipes_redirections'],
-  p1: ['network', 'variables_shell', 'terminal_editors', 'archives_compression', 'package_managers'],
+  p0: ['navigation', 'fichiers', 'lecture', 'search', 'permissions', 'processus', 'redirection'],
+  p1: ['network', 'variables_shell', 'terminal_editors', 'archives', 'package_managers'],
   p2: ['git', 'shell_scripts', 'ssh_vps', 'docker'],
   p3: ['logs_observability', 'sysadmin', 'security_basics', 'advanced_workflows'],
 };
