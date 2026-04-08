@@ -69,11 +69,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     const client = supabase; // narrow to non-null for TypeScript in async callbacks
 
-    const { data: { subscription } } = client.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (!session?.user) {
         setSyncStatus('local');
         return;
       }
+
+      // Only sync on initial load or explicit sign-in.
+      // TOKEN_REFRESHED, USER_UPDATED, etc. must not re-trigger a full sync —
+      // that would cause "sync..." to flash every ~50 min while the user is active.
+      if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
       setSyncStatus('syncing');
       try {

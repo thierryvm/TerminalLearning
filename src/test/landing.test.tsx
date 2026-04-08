@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
 import { Landing } from '../app/components/Landing';
 import { EnvironmentProvider } from '../app/context/EnvironmentContext';
+import { ProgressProvider } from '../app/context/ProgressContext';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,9 @@ function renderLanding() {
   return render(
     <MemoryRouter>
       <EnvironmentProvider>
-        <Landing />
+        <ProgressProvider>
+          <Landing />
+        </ProgressProvider>
       </EnvironmentProvider>
     </MemoryRouter>,
   );

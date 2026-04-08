@@ -20,6 +20,7 @@ import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
+import { useProgress } from '../context/ProgressContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
@@ -212,6 +213,7 @@ const ENV_LEVELS: Record<SelectedEnvironment, {
 export function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { syncStatus } = useProgress();
   const [loginOpen, setLoginOpen] = useState(false);
   const { selectedEnv, setEnvironment } = useEnvironment();
 
@@ -238,7 +240,7 @@ export function Landing() {
             <Github size={18} aria-hidden="true" />
           </a>
           {user ? (
-            <UserMenu syncStatus="local" />
+            <UserMenu syncStatus={syncStatus} />
           ) : (
             <button
               onClick={() => setLoginOpen(true)}

@@ -197,9 +197,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#30363d] px-3 py-3 space-y-2">
+        <div className="shrink-0 border-t border-[#30363d] px-3 py-4 space-y-3">
           {/* Environment switcher */}
-          <div className="px-1 pb-1">
+          <div className="px-1">
             <p className="text-[9px] text-[#484f58] uppercase tracking-widest font-mono mb-1.5 px-1">
               Environnement
             </p>
@@ -231,15 +231,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-[#484f58] font-mono mt-1 px-1 truncate">
+            <p className="text-[9px] text-[#484f58] font-mono mt-1.5 px-1 truncate">
               {ENV_META[selectedEnv].promptPreview}
             </p>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-[#21262d]" />
+
           <UserMenu syncStatus={syncStatus} placement="top" />
           <NavLink
             to="/"
             onClick={onClose}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono border border-transparent hover:border-[#30363d]"
           >
             <Home size={14} aria-hidden="true" />
             Accueil
