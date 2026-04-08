@@ -7,13 +7,23 @@ import {
   Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
   Monitor,
 } from 'lucide-react';
+
+// ── Environment icon helper ──────────────────────────────────────────────────
+
+function EnvIcon({ envId, size = 14 }: { envId: SelectedEnvironment; size?: number }) {
+  if (envId === 'linux') return <Terminal size={size} aria-hidden="true" />;
+  if (envId === 'macos') return <span className="text-[13px] leading-none select-none" aria-hidden="true"></span>;
+  return <span className="text-[11px] leading-none select-none" aria-hidden="true">⊞</span>;
+}
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
+import { useProgress } from '../context/ProgressContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
+import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 
 // ── Static data ──────────────────────────────────────────────────────────────
 
@@ -67,9 +77,9 @@ const ROADMAP_AVAILABLE = [
 
 const ROADMAP_IN_PROGRESS = [
   "Plus d'exercices pratiques",
-  'Sélection d\'environnement (Linux / macOS / Windows)',
-  'Système de déblocage par niveau',
+  'Sélection d\'environnement Linux / macOS / Windows ⚡',
   'Adaptation des commandes par OS',
+  'Quiz par section',
 ];
 
 const ROADMAP_PLANNED = [
@@ -116,13 +126,96 @@ const STATS = [
   { value: String(ACTIVE_ENVIRONMENTS.length), label: 'Environnements', icon: Monitor },
 ];
 
+/** Competency levels showcased per environment in the hero */
+const ENV_LEVELS: Record<SelectedEnvironment, {
+  level: number;
+  label: string;
+  description: string;
+  commands: string[];
+  color: string;
+  bg: string;
+  border: string;
+}[]> = {
+  linux: [
+    {
+      level: 1,
+      label: 'Navigation & fichiers',
+      description: 'Tu te déplaces, crées, copies et lis des fichiers — tu n\'es plus perdu dans un terminal.',
+      commands: ['pwd', 'ls', 'ls -la', 'cd', 'mkdir', 'touch', 'cp', 'mv', 'rm', 'cat', 'less', 'echo'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2,
+      label: 'Système & recherche',
+      description: 'Tu surveilles les processus, filtres les contenus et chaînes les commandes — usage développeur quotidien.',
+      commands: ['chmod', 'chown', 'ps aux', 'grep', 'grep -r', 'find', 'kill', 'killall', '|', '>', '>>', 'wc -l'],
+      color: 'text-blue-400', bg: 'bg-blue-500/5', border: 'border-blue-500/20',
+    },
+    {
+      level: 3,
+      label: 'Automatisation & réseau',
+      description: 'Tu scripts, te connectes à distance et déploies — workflows de professionnel Linux.',
+      commands: ['ssh', 'scp', 'curl', 'wget', 'git', 'bash script.sh', 'export', 'env', 'tar -czf', 'cron', 'systemctl'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+  macos: [
+    {
+      level: 1,
+      label: 'Navigation & fichiers',
+      description: 'Tu te déplaces dans le système de fichiers macOS et ouvres des apps depuis le terminal.',
+      commands: ['pwd', 'ls', 'ls -la', 'cd', 'mkdir', 'touch', 'cp', 'mv', 'rm', 'cat', 'open', 'echo'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2,
+      label: 'Système & outils macOS',
+      description: 'Tu contrôles les processus, searches dans les fichiers et utilises les outils natifs macOS.',
+      commands: ['chmod', 'ps aux', 'grep', 'grep -r', 'find', 'kill', '|', '>', 'open -a', 'pbcopy', 'pbpaste', 'defaults read'],
+      color: 'text-violet-400', bg: 'bg-violet-500/5', border: 'border-violet-500/20',
+    },
+    {
+      level: 3,
+      label: 'Homebrew & automatisation',
+      description: 'Tu gères les packages, configures le système et automatises tes workflows macOS.',
+      commands: ['brew install', 'brew update', 'brew list', 'ssh', 'git', 'launchctl', 'caffeinate', 'defaults write', 'xcode-select', 'curl', 'xargs'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+  windows: [
+    {
+      level: 1,
+      label: 'Navigation & fichiers',
+      description: 'Tu navigues dans PowerShell, crées et lis des fichiers — les bases solides de Windows.',
+      commands: ['Get-Location', 'Set-Location', 'Get-ChildItem', 'dir', 'mkdir', 'New-Item', 'Get-Content', 'Copy-Item', 'Move-Item', 'Remove-Item', 'Write-Host', 'Clear-Host'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2,
+      label: 'Système & recherche',
+      description: 'Tu gères les processus, services, filtres les données et rediriges les flux PowerShell.',
+      commands: ['Get-Process', 'Stop-Process', 'Get-Service', 'Start-Service', 'Select-String', 'Where-Object', '|', 'Out-File', 'Set-ExecutionPolicy', 'Get-Acl', 'tasklist', 'netstat'],
+      color: 'text-sky-400', bg: 'bg-sky-500/5', border: 'border-sky-500/20',
+    },
+    {
+      level: 3,
+      label: 'Développeur & automatisation',
+      description: 'Tu installes des outils, scriptes des tâches et maîtrises l\'environnement développeur Windows.',
+      commands: ['winget install', 'Invoke-WebRequest', 'ssh', 'git', '$env:PATH', 'Set-Item env:', 'Start-Job', 'Get-EventLog', 'Register-ScheduledTask', 'Invoke-Expression', 'New-PSDrive'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 /** Landing page — public entry point at "/" */
 export function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { syncStatus } = useProgress();
   const [loginOpen, setLoginOpen] = useState(false);
+  const { selectedEnv, setEnvironment } = useEnvironment();
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -147,7 +240,7 @@ export function Landing() {
             <Github size={18} aria-hidden="true" />
           </a>
           {user ? (
-            <UserMenu syncStatus="local" />
+            <UserMenu syncStatus={syncStatus} />
           ) : (
             <button
               onClick={() => setLoginOpen(true)}
@@ -189,17 +282,76 @@ export function Landing() {
             Pratique réelle dans un terminal simulé — progression sauvegardée, aucune inscription requise.
           </p>
 
-          {/* Environment badges — documentation covers these 3 environments */}
-          <div className="flex gap-2 justify-center mb-10">
-            {ACTIVE_ENVIRONMENTS.map((env) => (
+          {/* ── Environment selector ─────────────────────────────── */}
+          <div className="mb-8">
+            <p className="text-[#8b949e] text-xs font-mono mb-3 uppercase tracking-widest">
+              Choisissez votre environnement
+            </p>
+            <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
+              {(['linux', 'macos', 'windows'] as SelectedEnvironment[]).map((envId) => {
+                const meta = ENV_META[envId];
+                const active = selectedEnv === envId;
+                return (
+                  <button
+                    key={envId}
+                    onClick={() => setEnvironment(envId)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[100px] justify-center ${
+                      active
+                        ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
+                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] border border-transparent'
+                    }`}
+                    aria-pressed={active}
+                  >
+                    <EnvIcon envId={envId} size={14} />
+                    {meta.label}
+                  </button>
+                );
+              })}
+              {/* WSL — future only */}
               <span
-                key={env.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] text-[#8b949e] text-xs font-mono"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#484f58] cursor-not-allowed border border-transparent"
+                title="WSL — bientôt disponible"
+                aria-disabled="true"
               >
-                <Monitor size={12} aria-hidden="true" />
-                {env.label}
+                <Monitor size={14} aria-hidden="true" />
+                WSL
+                <span className="text-[10px] font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">bientôt</span>
               </span>
-            ))}
+            </div>
+
+            {/* ── 3 levels per environment ──────────────────────── */}
+            <motion.div
+              key={selectedEnv}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto"
+            >
+              {ENV_LEVELS[selectedEnv].map((lvl) => (
+                <div
+                  key={lvl.level}
+                  className={`${lvl.bg} border ${lvl.border} rounded-xl p-4`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${lvl.border} ${lvl.color} bg-black/20`}>
+                      Niveau {lvl.level}
+                    </span>
+                  </div>
+                  <div className={`text-sm font-semibold ${lvl.color} mb-1`}>{lvl.label}</div>
+                  <div className="text-[#8b949e] text-xs mb-3 leading-relaxed">{lvl.description}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {lvl.commands.map((cmd) => (
+                      <code
+                        key={cmd}
+                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/30 text-[#e6edf3] border border-[#30363d]"
+                      >
+                        {cmd}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
           </div>
 
           {/* Terminal preview — proof before CTA */}

@@ -1,6 +1,6 @@
 # Terminal Learning
 
-> An interactive web application for learning terminal commands — built with modern AI-assisted development practices.
+> An open-source, free pedagogical platform for learning the terminal and the full developer workflow — from absolute beginners to autonomous full-stack developers who leverage AI as a tool.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminal-learning.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
@@ -16,10 +16,13 @@
 
 **Key differentiators:**
 - No account required — start learning immediately
+- Multi-environment: choose Linux, macOS, or Windows — commands, exercises and prompts adapt
+- Terminal profiles: authentic prompt per env (`user@host:~$` / `➜ ~` / `PS C:\Users\user>`)
+- Contextual help: `help <cmd>` returns targeted usage + examples for your environment
 - Progress saved locally, optionally synced to the cloud with a free account
-- Real terminal emulator with a simulated filesystem
-- 6 progressive modules from navigation to advanced redirection
-- 100% free, forever
+- Real terminal emulator with a simulated filesystem — 50+ commands, 30+ PowerShell aliases
+- Progressive curriculum: 6 modules now → 11 planned (Git, GitHub, AI as a dev tool)
+- 100% free, forever — designed for schools and universities
 
 🌐 **[Try it live →](https://terminal-learning.vercel.app)**
 
@@ -147,9 +150,12 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 | **Phase 1** | ✅ Done | Landing page, routing, SEO/OpenGraph, GDPR |
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
-| **Phase 4** | 🔮 Planned | Hyper-secure admin panel — RBAC, 2FA, audit log, analytics |
+| **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles (192 tests) |
+| **Phase 5** | 🔜 Next | Curriculum expansion: Variables, SSH, Git, GitHub, AI as a dev tool |
+| **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
+| **Phase 7** | 🔮 Planned | Admin panel — RBAC, 2FA, audit log |
 
-Full details in [docs/plan.md](docs/plan.md).
+Full details in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/plan.md](docs/plan.md).
 
 ---
 

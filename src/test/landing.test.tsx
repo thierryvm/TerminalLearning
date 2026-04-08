@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
 import { Landing } from '../app/components/Landing';
+import { EnvironmentProvider } from '../app/context/EnvironmentContext';
+import { ProgressProvider } from '../app/context/ProgressContext';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +34,11 @@ vi.mock('../app/components/landing/TerminalPreview', () => ({
 function renderLanding() {
   return render(
     <MemoryRouter>
-      <Landing />
+      <EnvironmentProvider>
+        <ProgressProvider>
+          <Landing />
+        </ProgressProvider>
+      </EnvironmentProvider>
     </MemoryRouter>,
   );
 }

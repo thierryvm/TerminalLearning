@@ -1,14 +1,15 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 3 avril 2026
-> Statut global : **Phase 3.5 TERMINÉE** — OAuth GitHub + Google + sidebar auth en prod depuis le 3 avril 2026
+> Dernière mise à jour : 8 avril 2026
+> Statut global : **Phase 4 TERMINÉE** — Curriculum v2 + sélection d'environnement + terminal profiles en prod
 
 ---
 
 ## Objectif
 
-Publier Terminal Learning en ligne, attirer des débutants, et ouvrir une voie de revenu
-passif via dons sans agressivité. Projet portfolio IA-assisted dev.
+Devenir l'outil pédagogique de référence pour apprendre le terminal et le workflow développeur,
+proposé aux **écoles et universités** pour former des développeurs full-stack autonomes à 100%.
+Projet open source, 100% gratuit, IA-assisted dev.
 
 ---
 
@@ -76,7 +77,31 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 #### Tech debt noté
 → Voir `CLAUDE.md § Tech debt Phase 3` (source de vérité unique)
 
-### 🔮 Phase 4 — Admin Panel (après signal trafic)
+### ✅ Phase 4 — Curriculum v2 + Environment Selection (TERMINÉ — 8 avril 2026)
+
+- Multi-environnement : Linux / macOS / Windows avec sélecteur landing + sidebar
+- Terminal profiles : prompt zsh/bash/PS, chemin Windows-style, MOTD par env
+- Help contextuel : `help <cmd>` retourne aide ciblée + exemples par env
+- 30+ alias PowerShell, commandes macOS/Windows
+- 192 tests unitaires
+- Fix sync TOKEN_REFRESHED, OAuth loading states
+
+### 🔜 Phase 5 — Curriculum Expansion (prochain sprint)
+
+5 nouveaux modules vers fullstack autonome :
+- Module 7 : Variables & Scripts bash
+- Module 8 : Réseau & SSH
+- Module 9 : Git Fondamentaux
+- Module 10 : GitHub & Collaboration (+ workflow Linear)
+- Module 11 : L'IA comme outil dev
+
+### 🔮 Phase 6 — Terminal Multi-Session + Changelog
+
+- Onglets multiples dans le terminal (architecture TerminalManager)
+- Changelog visible hebdomadaire/mensuel sur l'app
+- Mobile : max 3 sessions, compact tab switcher
+
+### 🔮 Phase 7 — Admin Panel (après signal trafic)
 
 #### Backend stack
 - Supabase PostgreSQL + Auth + RLS + Edge Functions + Audit Log

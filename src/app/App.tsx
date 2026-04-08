@@ -5,6 +5,7 @@ import { Sentry } from '../lib/sentry';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
+import { EnvironmentProvider } from './context/EnvironmentContext';
 
 function FallbackUI() {
   return (
@@ -26,11 +27,13 @@ export default function App() {
   return (
     <Sentry.ErrorBoundary fallback={<FallbackUI />}>
       <AuthProvider>
-        <ProgressProvider>
-          <RouterProvider router={router} />
-          <Analytics />
-          <SpeedInsights />
-        </ProgressProvider>
+        <EnvironmentProvider>
+          <ProgressProvider>
+            <RouterProvider router={router} />
+            <Analytics />
+            <SpeedInsights />
+          </ProgressProvider>
+        </EnvironmentProvider>
       </AuthProvider>
     </Sentry.ErrorBoundary>
   );

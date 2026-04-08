@@ -8,6 +8,7 @@ import {
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
+import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
@@ -21,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
+  const { selectedEnv, setEnvironment } = useEnvironment();
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -195,12 +197,53 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#30363d] px-3 py-3 space-y-2">
+        <div className="shrink-0 border-t border-[#30363d] px-3 py-4 space-y-3">
+          {/* Environment switcher */}
+          <div className="px-1">
+            <p className="text-[9px] text-[#484f58] uppercase tracking-widest font-mono mb-1.5 px-1">
+              Environnement
+            </p>
+            <div className="flex gap-1">
+              {(['linux', 'macos', 'windows'] as SelectedEnvironment[]).map((envId) => {
+                const meta = ENV_META[envId];
+                const active = selectedEnv === envId;
+                return (
+                  <button
+                    key={envId}
+                    onClick={() => setEnvironment(envId)}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-mono transition-all ${
+                      active
+                        ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}`
+                        : 'text-[#484f58] hover:text-[#8b949e] hover:bg-[#161b22] border border-transparent'
+                    }`}
+                    title={`${meta.label} — ${meta.shell}`}
+                    aria-pressed={active}
+                  >
+                    {envId === 'linux' ? (
+                      <Terminal size={10} aria-hidden="true" />
+                    ) : envId === 'macos' ? (
+                      <span className="text-[10px] leading-none select-none" aria-hidden="true"></span>
+                    ) : (
+                      <span className="text-[9px] leading-none select-none" aria-hidden="true">⊞</span>
+                    )}
+                    {meta.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[9px] text-[#484f58] font-mono mt-1.5 px-1 truncate">
+              {ENV_META[selectedEnv].promptPreview}
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-[#21262d]" />
+
           <UserMenu syncStatus={syncStatus} placement="top" />
           <NavLink
             to="/"
             onClick={onClose}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono border border-transparent hover:border-[#30363d]"
           >
             <Home size={14} aria-hidden="true" />
             Accueil
