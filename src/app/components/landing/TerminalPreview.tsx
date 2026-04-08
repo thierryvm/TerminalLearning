@@ -172,7 +172,7 @@ export function TerminalPreview() {
       </div>
 
       {/* Content — scrolls internally, never scrolls the page */}
-      <div ref={containerRef} className="p-5 font-mono text-sm min-h-[200px] max-h-[280px] overflow-y-auto space-y-1">
+      <div ref={containerRef} className="p-5 font-mono text-sm h-[260px] overflow-y-auto overflow-x-hidden space-y-1">
         {lines.map((line, i) => (
           <div key={i} className="leading-relaxed">
             {line.type === 'prompt' ? (

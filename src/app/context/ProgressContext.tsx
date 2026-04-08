@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { curriculum, getTotalLessons } from '../data/curriculum';
 import { supabase } from '../../lib/supabase';
 import { mergeProgress, getDelta } from '../lib/progressSync';
+import { isModuleUnlocked as checkModuleUnlocked, getModuleUnlockTree, type ModuleUnlockStatus } from '../lib/unlocking';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,12 @@ interface ProgressContextValue {
   isLessonCompleted: (moduleId: string, lessonId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
   getModuleProgress: (moduleId: string) => { completed: number; total: number };
+  /** Set of module IDs where all lessons are completed */
+  completedModuleIds: Set<string>;
+  /** Check if a module is unlocked (all prerequisites completed) */
+  isModuleUnlocked: (moduleId: string) => boolean;
+  /** Full unlock tree for rendering lock states in UI */
+  unlockTree: ModuleUnlockStatus[];
   totalCompleted: number;
   totalLessons: number;
   overallProgress: number;
@@ -174,6 +181,27 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const totalLessons = getTotalLessons();
   const overallProgress = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
 
+  // Derive completed module IDs from lesson-level progress
+  const completedModuleIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const mod of curriculum) {
+      if (mod.lessons.every((l) => progress.completedLessons[`${mod.id}/${l.id}`])) {
+        ids.add(mod.id);
+      }
+    }
+    return ids;
+  }, [progress]);
+
+  const isModUnlocked = useCallback(
+    (moduleId: string) => checkModuleUnlocked(moduleId, completedModuleIds),
+    [completedModuleIds],
+  );
+
+  const unlockTree = useMemo(
+    () => getModuleUnlockTree(completedModuleIds),
+    [completedModuleIds],
+  );
+
   return (
     <ProgressContext.Provider
       value={{
@@ -183,6 +211,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         isLessonCompleted,
         isModuleCompleted,
         getModuleProgress,
+        completedModuleIds,
+        isModuleUnlocked: isModUnlocked,
+        unlockTree,
         totalCompleted,
         totalLessons,
         overallProgress,

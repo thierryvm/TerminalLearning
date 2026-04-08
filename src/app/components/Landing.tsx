@@ -5,14 +5,21 @@ import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
   Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
+  Monitor,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
+import { commandCatalogue } from '../data/commandCatalogue';
+import { ENVIRONMENTS } from '../types/curriculum';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
 
 // ── Static data ──────────────────────────────────────────────────────────────
+
+const TOTAL_LESSONS = curriculum.reduce((sum, mod) => sum + mod.lessons.length, 0);
+const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
+const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active');
 
 const FEATURES = [
   {
@@ -25,8 +32,8 @@ const FEATURES = [
   },
   {
     icon: BookOpen,
-    title: '6 modules progressifs',
-    description: 'Navigation, fichiers, lecture, permissions, processus, redirection — du débutant au confirmé.',
+    title: `${TOTAL_COMMANDS}+ commandes documentées`,
+    description: 'Chaque commande avec syntaxe, exemples, erreurs courantes et variantes par environnement.',
     color: 'text-blue-400',
     border: 'border-blue-500/20',
     bg: 'bg-blue-500/5',
@@ -34,7 +41,7 @@ const FEATURES = [
   {
     icon: Zap,
     title: 'Progression sauvegardée',
-    description: "Reprends exactement où tu t'es arrêté. Tes accomplissements sont mémorisés localement.",
+    description: "Reprends exactement où tu t'es arrêté. Connexion optionnelle pour synchroniser entre appareils.",
     color: 'text-amber-400',
     border: 'border-amber-500/20',
     bg: 'bg-amber-500/5',
@@ -42,19 +49,35 @@ const FEATURES = [
   {
     icon: Shield,
     title: '100% gratuit & open source',
-    description: "Pas d'inscription, pas de paywall, pas de tracking agressif. Juste apprendre.",
+    description: "Pas d'inscription obligatoire, pas de paywall, pas de tracking agressif. Juste apprendre.",
     color: 'text-purple-400',
     border: 'border-purple-500/20',
     bg: 'bg-purple-500/5',
   },
 ];
 
-const ROADMAP = [
-  { phase: 'Phase 0', label: 'Lancement public', status: 'done' },
-  { phase: 'Phase 1', label: 'Landing + donations', status: 'done' },
-  { phase: 'Phase 2', label: 'Analytics + monitoring', status: 'done' },
-  { phase: 'Phase 3', label: 'Comptes utilisateurs', status: 'done' },
-  { phase: 'Phase 4', label: 'Admin panel sécurisé', status: 'future' },
+const ROADMAP_AVAILABLE = [
+  '6 modules progressifs (navigation → redirection)',
+  'Terminal interactif avec validation',
+  'Dashboard de progression',
+  'Sauvegarde locale + cloud (optionnel)',
+  `Référence enrichie (${TOTAL_COMMANDS}+ commandes)`,
+  'Parcours guidé par niveaux',
+];
+
+const ROADMAP_IN_PROGRESS = [
+  "Plus d'exercices pratiques",
+  'Sélection d\'environnement (Linux / macOS / Windows)',
+  'Système de déblocage par niveau',
+  'Adaptation des commandes par OS',
+];
+
+const ROADMAP_PLANNED = [
+  'Mode histoire narratif',
+  'Multilingue (EN / NL)',
+  'Badges et défis',
+  'Révisions intelligentes',
+  'Parcours avancés (Git, Docker, SSH)',
 ];
 
 const SUPPORTERS: string[] = [
@@ -80,6 +103,18 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ size?: number; classNam
   Cpu,
   GitMerge,
 };
+
+const LEVEL_BADGE: Record<number, { label: string; text: string; border: string; bg: string }> = {
+  1: { label: 'Niveau 1', text: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
+  2: { label: 'Niveau 2', text: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' },
+};
+
+const STATS = [
+  { value: String(curriculum.length), label: 'Modules', icon: BookOpen },
+  { value: String(TOTAL_LESSONS), label: 'Leçons', icon: FileText },
+  { value: `${TOTAL_COMMANDS}+`, label: 'Commandes', icon: Terminal },
+  { value: String(ACTIVE_ENVIRONMENTS.length), label: 'Environnements', icon: Monitor },
+];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -144,15 +179,28 @@ export function Landing() {
             Gratuit · Open Source · Pour débutants
           </span>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-[#e6edf3] leading-tight mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-[#e6edf3] leading-tight mb-4">
             Maîtrise le terminal{' '}
             <span className="text-emerald-400">pas à pas</span>
           </h1>
 
-          <p className="text-[#8b949e] text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Un environnement interactif pour apprendre les commandes du terminal.
-            Pratique réelle, progression sauvegardée, aucune inscription requise.
+          <p className="text-[#8b949e] text-lg md:text-xl max-w-2xl mx-auto mb-6 leading-relaxed">
+            {TOTAL_LESSONS} leçons interactives, {TOTAL_COMMANDS}+ commandes documentées.
+            Pratique réelle dans un terminal simulé — progression sauvegardée, aucune inscription requise.
           </p>
+
+          {/* Environment badges — documentation covers these 3 environments */}
+          <div className="flex gap-2 justify-center mb-10">
+            {ACTIVE_ENVIRONMENTS.map((env) => (
+              <span
+                key={env.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] text-[#8b949e] text-xs font-mono"
+              >
+                <Monitor size={12} aria-hidden="true" />
+                {env.label}
+              </span>
+            ))}
+          </div>
 
           {/* Terminal preview — proof before CTA */}
           <div className="mb-10">
@@ -171,16 +219,13 @@ export function Landing() {
               <ChevronRight size={16} aria-hidden="true" />
             </button>
 
-            <a
-              href="https://ko-fi.com/thierryvm"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-pink-500/40 text-[#8b949e] hover:text-pink-400 font-medium text-base transition-all"
-              aria-label="Soutenir Terminal Learning sur Ko-fi"
+            <button
+              onClick={() => document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth' })}
+              className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-base transition-all"
             >
-              <Heart size={16} className="text-pink-500" aria-hidden="true" />
-              Soutenir le projet
-            </a>
+              <Compass size={16} aria-hidden="true" />
+              Voir la roadmap
+            </button>
           </div>
         </div>
       </section>
@@ -222,6 +267,28 @@ export function Landing() {
         </div>
       </section>
 
+      {/* ── STATS BAR ───────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 py-6 border-t border-[#30363d]/50">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {STATS.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="flex flex-col items-center gap-1 p-4 rounded-xl border border-[#30363d] bg-[#161b22]">
+                <Icon size={16} className="text-emerald-400 mb-1" aria-hidden="true" />
+                <span className="text-2xl font-bold text-[#e6edf3] font-mono">{stat.value}</span>
+                <span className="text-[#8b949e] text-xs">{stat.label}</span>
+              </div>
+            );
+          })}
+        </motion.div>
+      </section>
+
       {/* ── MODULE PREVIEW ──────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
         <motion.div
@@ -230,12 +297,17 @@ export function Landing() {
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
         >
-          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">6 modules progressifs</h2>
-          <p className="text-[#8b949e] text-center mb-10">Du système de fichiers à la redirection de flux — sans prérequis.</p>
+          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">
+            {curriculum.length} modules progressifs
+          </h2>
+          <p className="text-[#8b949e] text-center mb-10">
+            Du système de fichiers à la redirection de flux — deux niveaux, sans prérequis pour commencer.
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {curriculum.map((mod, i) => {
               const Icon = MODULE_ICONS[mod.iconName] ?? BookOpen;
+              const levelBadge = LEVEL_BADGE[mod.level ?? 1] ?? LEVEL_BADGE[1];
               return (
                 <motion.div
                   key={mod.id}
@@ -256,11 +328,18 @@ export function Landing() {
                   }}
                   aria-label={`Accéder au module ${mod.title}`}
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
-                      <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
+                        <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
+                      </div>
+                      <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
                     </div>
-                    <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full border font-mono ${levelBadge.text} ${levelBadge.border} ${levelBadge.bg}`}
+                    >
+                      {levelBadge.label}
+                    </span>
                   </div>
                   <h3 className="text-[#e6edf3] font-semibold text-sm mb-1">{mod.title}</h3>
                   <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
@@ -273,7 +352,9 @@ export function Landing() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-[#8b949e] text-sm">6 modules inclus — aucun compte requis.</p>
+          <p className="mt-8 text-center text-[#8b949e] text-sm">
+            6 modules inclus — aucun compte requis.
+          </p>
         </motion.div>
       </section>
 
@@ -317,7 +398,7 @@ export function Landing() {
       </section>
 
       {/* ── ROADMAP ─────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+      <section id="roadmap" className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -325,35 +406,60 @@ export function Landing() {
           transition={{ duration: 0.4 }}
         >
           <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">Roadmap publique</h2>
-          <p className="text-[#8b949e] text-center mb-10">Ce que nous construisons, et ce qui vient ensuite.</p>
+          <p className="text-[#8b949e] text-center mb-10">Ce qui est disponible, ce qu'on construit, et ce qui vient ensuite.</p>
 
-          <div className="max-w-lg mx-auto space-y-3">
-            {ROADMAP.map((item) => (
-              <div key={item.phase} className="flex items-center gap-4 p-4 rounded-xl border border-[#30363d] bg-[#161b22]">
-                <div className="shrink-0">
-                  {item.status === 'done' && <CheckCircle2 size={18} className="text-emerald-400" aria-hidden="true" />}
-                  {item.status === 'current' && (
-                    <span className="w-4 h-4 flex items-center justify-center" aria-hidden="true">
-                      <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-                    </span>
-                  )}
-                  {item.status === 'soon' && <Clock size={18} className="text-amber-400" aria-hidden="true" />}
-                  {item.status === 'future' && <div className="w-4 h-4 rounded-full border-2 border-[#30363d]" aria-hidden="true" />}
-                </div>
-                <div className="flex-1">
-                  <span className="text-xs text-[#8b949e] font-mono">{item.phase}</span>
-                  <p className={`text-sm font-medium ${item.status === 'done' ? 'text-[#e6edf3]' : item.status === 'current' ? 'text-emerald-400' : 'text-[#8b949e]'}`}>
-                    {item.label}
-                  </p>
-                </div>
-                {item.status === 'done' && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">live</span>
-                )}
-                {item.status === 'current' && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">en cours</span>
-                )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Available */}
+            <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 size={16} className="text-emerald-400" aria-hidden="true" />
+                <span className="text-emerald-400 text-sm font-semibold">Disponible</span>
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">live</span>
               </div>
-            ))}
+              <ul className="space-y-2">
+                {ROADMAP_AVAILABLE.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
+                    <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* In progress */}
+            <div className="p-5 rounded-xl border border-blue-500/20 bg-blue-500/5">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-4 h-4 flex items-center justify-center shrink-0" aria-hidden="true">
+                  <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
+                </span>
+                <span className="text-blue-400 text-sm font-semibold">En cours</span>
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">beta</span>
+              </div>
+              <ul className="space-y-2">
+                {ROADMAP_IN_PROGRESS.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
+                    <Zap size={12} className="text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Planned */}
+            <div className="p-5 rounded-xl border border-[#30363d] bg-[#161b22]">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock size={16} className="text-amber-400" aria-hidden="true" />
+                <span className="text-[#8b949e] text-sm font-semibold">Plus tard</span>
+              </div>
+              <ul className="space-y-2">
+                {ROADMAP_PLANNED.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
+                    <span className="w-3 h-3 rounded-full border border-[#30363d] mt-0.5 shrink-0" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </motion.div>
       </section>
@@ -469,7 +575,7 @@ export function Landing() {
           <div className="flex items-center gap-6 text-sm text-[#8b949e]">
             <button onClick={() => navigate('/app')} className="hover:text-[#e6edf3] transition-colors">Application</button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
-            <a href="https://ko-fi.com/thierryvm" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">Ko-fi</a>
+            <a href="https://ko-fi.com/thierryvm" target="_blank" rel="noopener noreferrer" aria-label="Ko-fi" className="hover:text-[#e6edf3] transition-colors">Ko-fi</a>
             <button onClick={() => navigate('/privacy')} className="hover:text-[#e6edf3] transition-colors">Confidentialité</button>
           </div>
           <p className="text-[#8b949e] text-xs flex items-center gap-1">
