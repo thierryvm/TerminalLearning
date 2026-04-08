@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Terminal,
-  Lightbulb, AlertTriangle, Info, Code2, RotateCcw, BookOpen,
+  Lightbulb, AlertTriangle, Info, Code2, RotateCcw, BookOpen, Lock,
 } from 'lucide-react';
 import {
   getModuleById, getLessonById, getNextLesson, getPrevLesson, ContentBlock,
@@ -321,11 +321,12 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   );
 }
 
-// Thin wrapper: resolves params, handles not-found, then mounts LessonContent
-// with a key so all child state resets naturally on lesson navigation.
+// Thin wrapper: resolves params, handles not-found and locked modules,
+// then mounts LessonContent with a key so all child state resets naturally.
 export function LessonPage() {
   const { moduleId = '', lessonId = '' } = useParams();
   const navigate = useNavigate();
+  const { isModuleUnlocked } = useProgress();
 
   const mod = getModuleById(moduleId);
   const lesson = getLessonById(moduleId, lessonId);
@@ -336,6 +337,21 @@ export function LessonPage() {
         <div className="text-center">
           <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
           <p>Leçon introuvable</p>
+          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+            Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isModuleUnlocked(moduleId)) {
+    return (
+      <div className="min-h-full bg-[#0d1117] flex items-center justify-center text-[#8b949e]">
+        <div className="text-center">
+          <Lock size={48} className="mx-auto mb-4 opacity-30" />
+          <p>Ce module est verrouillé</p>
+          <p className="text-xs mt-2">Complétez les prérequis pour y accéder.</p>
           <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
             Retour au tableau de bord
           </button>

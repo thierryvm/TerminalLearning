@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen, Compass, FolderOpen,
   FileText, Shield, Cpu, GitMerge, ChevronDown, ChevronRight,
-  CheckCircle2, Circle, X, Menu, Home,
+  CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -20,7 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
-  const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus } = useProgress();
+  const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -125,26 +125,50 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
             const isExpanded = expandedModules[mod.id];
+            const unlockStatus = unlockTree.find((u) => u.moduleId === mod.id);
+            const locked = unlockStatus ? !unlockStatus.unlocked : false;
 
             return (
               <div key={mod.id}>
                 {/* Module header */}
                 <button
-                  onClick={() => toggleModule(mod.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[#161b22] text-[#c9d1d9] group"
+                  onClick={() => !locked && toggleModule(mod.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group ${
+                    locked
+                      ? 'opacity-50 cursor-not-allowed text-[#8b949e]'
+                      : 'hover:bg-[#161b22] text-[#c9d1d9]'
+                  }`}
+                  title={locked ? `Prérequis : ${unlockStatus?.missingPrerequisiteLabels.join(', ')}` : undefined}
                 >
-                  <span style={{ color: mod.color }}><Icon size={15} /></span>
-                  <span className="flex-1 text-left truncate">{mod.title}</span>
-                  <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
-                  {isExpanded ? (
-                    <ChevronDown size={14} className="text-[#8b949e] shrink-0" />
+                  {locked ? (
+                    <Lock size={15} className="text-[#8b949e] shrink-0" />
                   ) : (
-                    <ChevronRight size={14} className="text-[#8b949e] shrink-0" />
+                    <span style={{ color: mod.color }}><Icon size={15} /></span>
+                  )}
+                  <span className="flex-1 text-left truncate">{mod.title}</span>
+                  {locked ? (
+                    <span className="text-[10px] text-[#8b949e] font-mono shrink-0">Niv. {unlockStatus?.level}</span>
+                  ) : (
+                    <>
+                      <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
+                      {isExpanded ? (
+                        <ChevronDown size={14} className="text-[#8b949e] shrink-0" />
+                      ) : (
+                        <ChevronRight size={14} className="text-[#8b949e] shrink-0" />
+                      )}
+                    </>
                   )}
                 </button>
 
-                {/* Lessons */}
-                {isExpanded && (
+                {/* Locked hint */}
+                {locked && (
+                  <div className="ml-8 px-2 py-1 text-[10px] text-[#8b949e] leading-tight">
+                    Complétez {unlockStatus?.missingPrerequisiteLabels.join(' & ')} pour débloquer
+                  </div>
+                )}
+
+                {/* Lessons — only for unlocked modules */}
+                {!locked && isExpanded && (
                   <div className="ml-3 pl-3 border-l border-[#21262d] space-y-0.5 mt-0.5 mb-1">
                     {mod.lessons.map((lesson) => {
                       const done = isLessonCompleted(mod.id, lesson.id);

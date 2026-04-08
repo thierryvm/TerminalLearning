@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import {
   Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
-  CheckCircle2, ChevronRight, Terminal, Award, BookOpen, Zap,
+  CheckCircle2, ChevronRight, Terminal, Award, BookOpen, Zap, Lock,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
@@ -30,10 +30,11 @@ const MODULE_BORDER: Record<string, string> = {
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { overallProgress, totalCompleted, totalLessons, getModuleProgress, isLessonCompleted } = useProgress();
+  const { overallProgress, totalCompleted, totalLessons, getModuleProgress, isLessonCompleted, isModuleUnlocked, unlockTree } = useProgress();
 
   const firstIncompleteLesson = () => {
     for (const mod of curriculum) {
+      if (!isModuleUnlocked(mod.id)) continue;
       for (const lesson of mod.lessons) {
         if (!isLessonCompleted(mod.id, lesson.id)) {
           return { moduleId: mod.id, lessonId: lesson.id };
@@ -48,7 +49,7 @@ export function Dashboard() {
     if (next) {
       navigate(`/app/learn/${next.moduleId}/${next.lessonId}`);
     } else {
-      navigate(`/learn/${curriculum[0].id}/${curriculum[0].lessons[0].id}`);
+      navigate(`/app/learn/${curriculum[0].id}/${curriculum[0].lessons[0].id}`);
     }
   };
 
@@ -125,58 +126,84 @@ export function Dashboard() {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
             const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-            const gradient = MODULE_GRADIENTS[mod.id] ?? 'from-gray-500/20 to-gray-500/5';
-            const border = MODULE_BORDER[mod.id] ?? 'border-gray-500/30 hover:border-gray-500/60';
+            const unlockStatus = unlockTree.find((u) => u.moduleId === mod.id);
+            const locked = unlockStatus ? !unlockStatus.unlocked : false;
+            const gradient = locked
+              ? 'from-gray-500/10 to-gray-500/5'
+              : (MODULE_GRADIENTS[mod.id] ?? 'from-gray-500/20 to-gray-500/5');
+            const border = locked
+              ? 'border-[#30363d]'
+              : (MODULE_BORDER[mod.id] ?? 'border-gray-500/30 hover:border-gray-500/60');
 
             return (
               <div
                 key={mod.id}
-                className={`relative bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 cursor-pointer transition-all duration-200 group`}
-                onClick={() => navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
+                className={`relative bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 transition-all duration-200 group ${
+                  locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+                onClick={() => !locked && navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-black/20">
-                      <span style={{ color: mod.color }}><Icon size={18} /></span>
+                      {locked ? (
+                        <Lock size={18} className="text-[#8b949e]" />
+                      ) : (
+                        <span style={{ color: mod.color }}><Icon size={18} /></span>
+                      )}
                     </div>
                     <div>
-                      <div className="text-[#e6edf3] text-sm">{mod.title}</div>
-                      <div className="text-[#8b949e] text-xs">{total} leçons</div>
+                      <div className={`text-sm ${locked ? 'text-[#8b949e]' : 'text-[#e6edf3]'}`}>{mod.title}</div>
+                      <div className="text-[#8b949e] text-xs">
+                        {locked ? `Niveau ${unlockStatus?.level}` : `${total} leçons`}
+                      </div>
                     </div>
                   </div>
-                  {completed === total && total > 0 ? (
+                  {locked ? (
+                    <Lock size={16} className="text-[#8b949e] shrink-0 mt-1" />
+                  ) : completed === total && total > 0 ? (
                     <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-1" />
                   ) : (
                     <ChevronRight size={16} className="text-[#8b949e] shrink-0 mt-1 group-hover:translate-x-0.5 transition-transform" />
                   )}
                 </div>
 
-                <p className="text-[#8b949e] text-xs mb-3 leading-relaxed">{mod.description}</p>
+                {locked ? (
+                  <p className="text-[#8b949e] text-xs mb-3 leading-relaxed">
+                    Complétez {unlockStatus?.missingPrerequisiteLabels.join(' & ')} pour débloquer
+                  </p>
+                ) : (
+                  <p className="text-[#8b949e] text-xs mb-3 leading-relaxed">{mod.description}</p>
+                )}
 
-                {/* Progress */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1 bg-black/30 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%`, backgroundColor: mod.color }}
-                    />
-                  </div>
-                  <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
-                </div>
+                {/* Progress — only for unlocked modules */}
+                {!locked && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-black/30 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, backgroundColor: mod.color }}
+                        />
+                      </div>
+                      <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
+                    </div>
 
-                {/* Lessons dots */}
-                <div className="flex gap-1 mt-2.5">
-                  {mod.lessons.map((lesson) => (
-                    <div
-                      key={lesson.id}
-                      className="flex-1 h-1 rounded-full"
-                      style={{
-                        backgroundColor: isLessonCompleted(mod.id, lesson.id) ? mod.color : 'rgba(255,255,255,0.1)',
-                      }}
-                      title={lesson.title}
-                    />
-                  ))}
-                </div>
+                    {/* Lessons dots */}
+                    <div className="flex gap-1 mt-2.5">
+                      {mod.lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="flex-1 h-1 rounded-full"
+                          style={{
+                            backgroundColor: isLessonCompleted(mod.id, lesson.id) ? mod.color : 'rgba(255,255,255,0.1)',
+                          }}
+                          title={lesson.title}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}
@@ -201,7 +228,7 @@ export function Dashboard() {
                 return (
                   <button
                     key={`${mod.id}/${lesson.id}`}
-                    onClick={() => navigate(`/learn/${mod.id}/${lesson.id}`)}
+                    onClick={() => navigate(`/app/learn/${mod.id}/${lesson.id}`)}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition-colors text-left"
                   >
                     <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
