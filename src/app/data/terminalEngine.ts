@@ -27,6 +27,8 @@ export interface TerminalState {
   commandHistory: string[];
   user: string;
   hostname: string;
+  /** Environment variables (export VAR=value / $env:VAR = "value"). */
+  envVars: Record<string, string>;
 }
 
 export interface CommandOutput {
@@ -84,9 +86,15 @@ export function createInitialState(): TerminalState {
               'README.md': makeFile(
                 '# Mes Projets\n\nBienvenue dans mon répertoire de projets.\n\n## Projets actuels\n- script.sh : Script de démonstration'
               ),
+              '.env': makeFile(
+                '# Variables d\'environnement du projet\n# NE JAMAIS committer ce fichier !\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=myapp\nDB_USER=admin\nDB_PASSWORD=secret123\nAPI_KEY=sk-abc123xyz456\nNODE_ENV=development'
+              ),
             }),
             '.bashrc': makeFile(
               '# Configuration Bash\nalias ll="ls -la"\nalias la="ls -a"\nexport PATH=$PATH:/usr/local/bin\nexport EDITOR=nano'
+            ),
+            '.zshrc': makeFile(
+              '# Configuration Zsh (Oh My Zsh)\nexport ZSH="$HOME/.oh-my-zsh"\nZSH_THEME="robbyrussell"\nplugins=(git node npm)\nalias ll="ls -la"\nalias la="ls -a"\nexport PATH=$PATH:/usr/local/bin'
             ),
             '.profile': makeFile(
               '# ~/.profile\n# Chargé lors de la connexion\nif [ -f ~/.bashrc ]; then\n  . ~/.bashrc\nfi'
@@ -108,6 +116,15 @@ export function createInitialState(): TerminalState {
     commandHistory: [],
     user: 'user',
     hostname: 'terminal-lab',
+    envVars: {
+      PATH: '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+      HOME: '/home/user',
+      USER: 'user',
+      SHELL: '/bin/bash',
+      TERM: 'xterm-256color',
+      LANG: 'en_US.UTF-8',
+      EDITOR: 'nano',
+    },
   };
 }
 
@@ -190,6 +207,7 @@ const COMPLETION_COMMANDS = [
   'grep', 'head', 'tail', 'wc', 'chmod', 'whoami', 'hostname', 'date',
   'uname', 'history', 'ps', 'kill', 'clear', 'help', 'man', 'exit',
   'about', 'donate', 'support', 'hall-of-fame',
+  'export', 'env', 'printenv', 'source', 'crontab',
 ];
 
 /**
@@ -419,8 +437,16 @@ function cmdCat(state: TerminalState, args: string[]): OutputLine[] {
   return lines;
 }
 
-function cmdEcho(args: string[]): OutputLine[] {
-  return [{ text: args.join(' '), type: 'output' }];
+function cmdEcho(args: string[], envVars?: Record<string, string>): OutputLine[] {
+  const text = args.join(' ');
+  if (!envVars) return [{ text, type: 'output' }];
+  // Interpolate $env:VAR (PowerShell) and $VAR (bash) from envVars
+  const expanded = text.replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) =>
+    Object.prototype.hasOwnProperty.call(envVars, name) ? envVars[name] : ''
+  ).replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) =>
+    Object.prototype.hasOwnProperty.call(envVars, name) ? envVars[name] : ''
+  );
+  return [{ text: expanded, type: 'output' }];
 }
 
 function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
@@ -610,6 +636,79 @@ function cmdChmod(state: TerminalState, args: string[]): { lines: OutputLine[]; 
     node.permissions = cur.slice(0, 4) + 'x' + cur.slice(5, 7) + 'x' + cur.slice(8, 10) + 'x';
   }
   return { lines: [{ text: `Mode de '${filePath}' changé`, type: 'success' }], newRoot };
+}
+
+// ─── Environment Variable Commands ───────────────────────────────────────────
+
+function cmdExport(args: string[], state: TerminalState): { lines: OutputLine[]; envVars: Record<string, string> } {
+  if (args.length === 0) {
+    // `export` with no args — list all vars
+    const lines = Object.entries(state.envVars).map(([k, v]) => ({
+      text: `declare -x ${k}="${v}"`,
+      type: 'output' as const,
+    }));
+    return { lines, envVars: state.envVars };
+  }
+  const newEnv = { ...state.envVars };
+  const lines: OutputLine[] = [];
+  for (const arg of args) {
+    const eqIdx = arg.indexOf('=');
+    if (eqIdx === -1) {
+      // `export VAR` without value — just marks for export (no-op here)
+      lines.push({ text: '', type: 'output' });
+    } else {
+      const name = arg.slice(0, eqIdx);
+      const value = arg.slice(eqIdx + 1).replace(/^["']|["']$/g, '');
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+        lines.push({ text: `export: '${name}': not a valid identifier`, type: 'error' });
+      } else {
+        newEnv[name] = value;
+        lines.push({ text: '', type: 'output' });
+      }
+    }
+  }
+  return { lines: lines.filter((l) => l.text !== ''), envVars: newEnv };
+}
+
+function cmdEnv(state: TerminalState): OutputLine[] {
+  return Object.entries(state.envVars).map(([k, v]) => ({
+    text: `${k}=${v}`,
+    type: 'output' as const,
+  }));
+}
+
+function cmdPrintenv(args: string[], state: TerminalState): OutputLine[] {
+  if (args.length === 0) return cmdEnv(state);
+  return args.map((name) => {
+    if (Object.prototype.hasOwnProperty.call(state.envVars, name)) {
+      return { text: state.envVars[name], type: 'output' as const };
+    }
+    return { text: '', type: 'error' as const };
+  }).filter((l) => l.text !== '');
+}
+
+function cmdSource(args: string[]): OutputLine[] {
+  const file = args[0] ?? '(unknown)';
+  const display = file.replace('~/', '$HOME/');
+  return [{ text: `${display}: loaded`, type: 'success' }];
+}
+
+function cmdCrontab(args: string[]): OutputLine[] {
+  if (args.includes('-l')) {
+    return [
+      { text: '# Crontab — tâches planifiées', type: 'output' },
+      { text: '# Format: minute heure jour mois jour_semaine commande', type: 'output' },
+      { text: '0 9 * * 1-5 /home/user/projets/script.sh   # Tous les jours de semaine à 9h', type: 'output' },
+      { text: '*/30 * * * * /usr/local/bin/backup.sh       # Toutes les 30 minutes', type: 'output' },
+    ];
+  }
+  if (args.includes('-e')) {
+    return [{ text: 'crontab: ouverture de l\'éditeur (nano). En mode simulé, utilisez "crontab -l" pour voir les entrées.', type: 'info' }];
+  }
+  if (args.includes('-r')) {
+    return [{ text: 'crontab supprimé.', type: 'success' }];
+  }
+  return [{ text: 'Usage: crontab [-l] [-e] [-r]', type: 'error' }];
 }
 
 function cmdEchoRedirect(
@@ -916,6 +1015,47 @@ const CMD_HELP: Record<string, CmdHelp> = {
       macos: ['open notes.txt', 'open .', 'open https://example.com'],
     },
   },
+  export: {
+    synopsis: 'export [NOM[=VALEUR]]',
+    description: 'Définit ou affiche les variables d\'environnement exportées.',
+    examples: {
+      linux: ['export GREETING=Hello', 'export PATH=$PATH:/opt/bin', 'export'],
+      macos: ['export GREETING=Hello', 'export NODE_ENV=development', 'export'],
+    },
+  },
+  env: {
+    synopsis: 'env',
+    description: 'Affiche toutes les variables d\'environnement.',
+    examples: {
+      linux: ['env', 'env | grep PATH'],
+      macos: ['env', 'env | grep USER'],
+      windows: ['Get-ChildItem Env:', 'Get-ChildItem Env: | Where-Object { $_.Name -eq "PATH" }'],
+    },
+  },
+  printenv: {
+    synopsis: 'printenv [NOM...]',
+    description: 'Affiche la valeur d\'une ou plusieurs variables d\'environnement.',
+    examples: {
+      linux: ['printenv PATH', 'printenv USER HOME', 'printenv'],
+      macos: ['printenv PATH', 'printenv SHELL'],
+    },
+  },
+  source: {
+    synopsis: 'source fichier  ou  . fichier',
+    description: 'Exécute un fichier de configuration dans le shell courant (recharge .bashrc, .zshrc, etc.).',
+    examples: {
+      linux: ['source ~/.bashrc', '. ~/.profile'],
+      macos: ['source ~/.zshrc', '. ~/.profile'],
+    },
+  },
+  crontab: {
+    synopsis: 'crontab [-l] [-e] [-r]',
+    description: 'Gère les tâches planifiées (cron jobs). -l liste, -e édite, -r supprime.',
+    examples: {
+      linux: ['crontab -l', 'crontab -e'],
+      macos: ['crontab -l', 'crontab -e'],
+    },
+  },
 };
 
 // Alias map: maps PS cmdlet names / aliases back to CMD_HELP keys
@@ -938,23 +1078,25 @@ const CMD_HELP_ALIASES: Record<string, string> = {
 function getHelpText(env: TerminalEnv = 'linux'): string {
   if (env === 'windows') {
     return `Commandes disponibles — PowerShell / Windows:
-  Get-Location (gl)         Afficher le répertoire courant
-  Set-Location (sl) [path]  Changer de répertoire
-  Get-ChildItem (dir)       Lister les fichiers et dossiers
-  Get-Content (gc) [file]   Afficher le contenu d'un fichier
-  New-Item (ni) [name]      Créer un fichier ou dossier
-  Copy-Item (copy) src dst  Copier un fichier
-  Move-Item (move) src dst  Déplacer / renommer
-  Remove-Item (del) [file]  Supprimer un fichier
-  Write-Host [texte]        Afficher du texte
-  Get-Process (gps)         Lister les processus
-  Stop-Process -Name [nom]  Arrêter un processus
-  Select-String pat file    Rechercher dans un fichier
-  Clear-Host (cls)          Effacer le terminal
-  history                   Historique des commandes
-  winget install|list       Gestionnaire de paquets
-  help [commande]           Aide sur une commande
-  about                     Informations sur le projet`;
+  Get-Location (gl)           Afficher le répertoire courant
+  Set-Location (sl) [path]    Changer de répertoire
+  Get-ChildItem (dir)         Lister les fichiers et dossiers
+  Get-Content (gc) [file]     Afficher le contenu d'un fichier
+  New-Item (ni) [name]        Créer un fichier ou dossier
+  Copy-Item (copy) src dst    Copier un fichier
+  Move-Item (move) src dst    Déplacer / renommer
+  Remove-Item (del) [file]    Supprimer un fichier
+  Write-Host [texte]          Afficher du texte (supporte $env:VAR)
+  $env:VAR = "val"            Définir une variable d'environnement
+  Get-ChildItem Env:           Lister toutes les variables d'env
+  Get-Process (gps)           Lister les processus
+  Stop-Process -Name [nom]    Arrêter un processus
+  Select-String pat file      Rechercher dans un fichier
+  Clear-Host (cls)            Effacer le terminal
+  history                     Historique des commandes
+  winget install|list         Gestionnaire de paquets
+  help [commande]             Aide sur une commande
+  about                       Informations sur le projet`;
   }
   if (env === 'macos') {
     return `Commandes disponibles — macOS / zsh:
@@ -964,7 +1106,7 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   mkdir [-p] [nom] Créer un répertoire
   touch [nom]      Créer un fichier
   cat [file]       Afficher le contenu d'un fichier
-  echo [texte]     Afficher du texte
+  echo [texte]     Afficher du texte (supporte $VAR)
   rm [-r] [file]   Supprimer un fichier
   cp [-r] src dst  Copier
   mv src dst       Déplacer / renommer
@@ -972,6 +1114,10 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   head / tail      Début / fin d'un fichier (-n N)
   wc [-lwc] [file] Compter lignes/mots/octets
   chmod m file     Changer les permissions
+  export [VAR=val] Définir une variable d'environnement
+  env / printenv   Afficher les variables d'environnement
+  source ~/.zshrc  Recharger la configuration shell
+  crontab [-l|-e]  Gérer les tâches planifiées
   open [file|URL]  Ouvrir avec l'app par défaut
   pbcopy/pbpaste   Presse-papiers
   brew install|list Gestionnaire de paquets Homebrew
@@ -990,7 +1136,7 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   mkdir [-p] [nom] Créer un répertoire
   touch [nom]      Créer un fichier
   cat [file]       Afficher le contenu d'un fichier
-  echo [texte]     Afficher du texte
+  echo [texte]     Afficher du texte (supporte $VAR)
   rm [-r] [file]   Supprimer un fichier (-r: répertoire)
   cp [-r] src dst  Copier un fichier
   mv src dst       Déplacer / renommer
@@ -998,6 +1144,10 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   head / tail      Début / fin d'un fichier (-n N)
   wc [-lwc] [file] Compter lignes/mots/octets
   chmod m file     Changer les permissions
+  export [VAR=val] Définir une variable d'environnement
+  env / printenv   Afficher les variables d'environnement
+  source fichier   Recharger la configuration shell
+  crontab [-l|-e]  Gérer les tâches planifiées
   whoami           Utilisateur courant
   date             Date et heure
   uname [-a]       Informations système
@@ -1079,6 +1229,30 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     }
   }
 
+  // Handle PowerShell $env: variable assignment ($env:VAR = "value")
+  const psEnvSet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+  if (psEnvSet) {
+    const [, varName, rawValue] = psEnvSet;
+    const varValue = rawValue.replace(/^["']|["']$/g, '');
+    return {
+      lines: [{ text: `$env:${varName} défini à "${varValue}"`, type: 'success' }],
+      newState: { ...newState, envVars: { ...newState.envVars, [varName]: varValue } },
+    };
+  }
+
+  // Handle PowerShell standalone $env:VAR read
+  const psEnvGet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)$/);
+  if (psEnvGet) {
+    const [, varName] = psEnvGet;
+    const value = newState.envVars[varName];
+    return {
+      lines: value !== undefined
+        ? [{ text: value, type: 'output' }]
+        : [{ text: `La variable $env:${varName} n'est pas définie.`, type: 'error' }],
+      newState,
+    };
+  }
+
   // Parse command
   const parts = parseArgs(trimmed);
   const cmd = parts[0]?.toLowerCase();
@@ -1113,7 +1287,26 @@ export function processCommand(state: TerminalState, input: string, env: Termina
       return { lines: cmdCat(newState, args), newState };
 
     case 'echo':
-      return { lines: cmdEcho(args), newState };
+      return { lines: cmdEcho(args, newState.envVars), newState };
+
+    case 'export': {
+      if (env === 'windows') return { lines: [{ text: 'Utilisez $env:VAR = "value" en PowerShell pour définir une variable.', type: 'info' }], newState };
+      const { lines: exportLines, envVars: newEnv } = cmdExport(args, newState);
+      return { lines: exportLines, newState: { ...newState, envVars: newEnv } };
+    }
+
+    case 'env':
+      return { lines: cmdEnv(newState), newState };
+
+    case 'printenv':
+      return { lines: cmdPrintenv(args, newState), newState };
+
+    case 'source':
+    case '.':
+      return { lines: cmdSource(args), newState };
+
+    case 'crontab':
+      return { lines: cmdCrontab(args), newState };
 
     case 'rm': {
       const { lines, newRoot } = cmdRm(newState, args);
@@ -1309,10 +1502,13 @@ export function processCommand(state: TerminalState, input: string, env: Termina
       return { lines: slLines, newState };
     }
 
-    // ls equivalents
+    // ls equivalents (get-childitem also handles Env: provider)
     case 'get-childitem':
     case 'gci':
     case 'dir':
+      if (args[0]?.toLowerCase() === 'env:') {
+        return { lines: cmdEnv(newState), newState };
+      }
       return { lines: cmdLs(newState, args), newState };
 
     // cat equivalents
@@ -1378,7 +1574,9 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     // echo equivalents
     case 'write-host':
     case 'write-output':
-      return { lines: cmdEcho(args.filter((a) => !a.startsWith('-'))), newState };
+      return { lines: cmdEcho(args.filter((a) => !a.startsWith('-')), newState.envVars), newState };
+
+    // PowerShell env var listing — handled inline in get-childitem below
 
     // ps equivalents
     case 'get-process':

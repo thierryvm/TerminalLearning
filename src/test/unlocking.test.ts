@@ -86,6 +86,7 @@ describe('unlocking logic', () => {
         'permissions',
         'processus',
         'redirection',
+        'variables',
       ]);
       const next = getNextRecommendedModule(allModuleIds);
       expect(next).toBeNull();

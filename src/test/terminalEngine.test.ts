@@ -17,6 +17,12 @@ function makeState(overrides: Partial<TerminalState> = {}): TerminalState {
     commandHistory: [],
     user: 'user',
     hostname: 'terminal-learning',
+    envVars: {
+      PATH: '/usr/local/bin:/usr/bin:/bin',
+      HOME: '/home/user',
+      USER: 'user',
+      SHELL: '/bin/bash',
+    },
     ...overrides,
   };
 }
@@ -551,5 +557,177 @@ describe('uname — env-aware', () => {
     const state = makeState();
     const result = processCommand(state, 'uname', 'windows');
     expect(result.lines[0].type).toBe('error');
+  });
+});
+
+// ─── Module 7: Variables & Scripts — engine commands ─────────────────────────
+
+describe('export — set environment variable', () => {
+  it('export VAR=value sets the variable', () => {
+    const state = makeState();
+    const result = processCommand(state, 'export GREETING=Hello', 'linux');
+    expect(result.newState.envVars['GREETING']).toBe('Hello');
+  });
+
+  it('export with quotes strips them', () => {
+    const state = makeState();
+    const result = processCommand(state, 'export NODE_ENV="production"', 'linux');
+    expect(result.newState.envVars['NODE_ENV']).toBe('production');
+  });
+
+  it('export with no args lists all variables', () => {
+    const state = makeState();
+    const result = processCommand(state, 'export', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('PATH');
+  });
+
+  it('export with invalid name returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'export 1INVALID=val', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('export in windows env returns info message', () => {
+    const state = makeState();
+    const result = processCommand(state, 'export GREETING=Hello', 'windows');
+    expect(result.lines[0].type).toBe('info');
+  });
+});
+
+describe('env — list environment variables', () => {
+  it('env lists all KEY=value pairs', () => {
+    const state = makeState();
+    const result = processCommand(state, 'env', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('PATH=');
+    expect(text).toContain('USER=user');
+  });
+
+  it('env output has one line per variable', () => {
+    const state = makeState();
+    const result = processCommand(state, 'env', 'linux');
+    expect(result.lines.length).toBeGreaterThan(0);
+    result.lines.forEach((l) => expect(l.text).toContain('='));
+  });
+});
+
+describe('printenv — print specific variables', () => {
+  it('printenv PATH returns its value', () => {
+    const state = makeState();
+    const result = processCommand(state, 'printenv PATH', 'linux');
+    expect(result.lines[0].text).toBe('/usr/local/bin:/usr/bin:/bin');
+  });
+
+  it('printenv with no args lists all variables', () => {
+    const state = makeState();
+    const result = processCommand(state, 'printenv', 'linux');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('printenv UNDEFINED returns no output lines', () => {
+    const state = makeState();
+    const result = processCommand(state, 'printenv UNDEFINED_VAR_XYZ', 'linux');
+    expect(result.lines.length).toBe(0);
+  });
+});
+
+describe('echo — $VAR interpolation', () => {
+  it('echo $PATH expands to the PATH value', () => {
+    const state = makeState();
+    const result = processCommand(state, 'echo $PATH', 'linux');
+    expect(result.lines[0].text).toBe('/usr/local/bin:/usr/bin:/bin');
+  });
+
+  it('echo $USER returns username', () => {
+    const state = makeState();
+    const result = processCommand(state, 'echo $USER', 'linux');
+    expect(result.lines[0].text).toBe('user');
+  });
+
+  it('echo $env:PATH (PowerShell) expands to PATH value', () => {
+    const state = makeState();
+    const result = processCommand(state, 'echo $env:PATH', 'windows');
+    expect(result.lines[0].text).toBe('/usr/local/bin:/usr/bin:/bin');
+  });
+
+  it('echo $UNDEFINED returns empty string', () => {
+    const state = makeState();
+    const result = processCommand(state, 'echo $UNDEFINED_XYZ', 'linux');
+    expect(result.lines[0].text).toBe('');
+  });
+});
+
+describe('source — reload config file', () => {
+  it('source ~/.bashrc returns success', () => {
+    const state = makeState();
+    const result = processCommand(state, 'source ~/.bashrc', 'linux');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('loaded');
+  });
+
+  it('. ~/.profile (dot operator) returns success', () => {
+    const state = makeState();
+    const result = processCommand(state, '. ~/.profile', 'linux');
+    expect(result.lines[0].type).toBe('success');
+  });
+});
+
+describe('crontab — task scheduling', () => {
+  it('crontab -l lists scheduled tasks', () => {
+    const state = makeState();
+    const result = processCommand(state, 'crontab -l', 'linux');
+    expect(result.lines.length).toBeGreaterThan(0);
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('tâches');
+  });
+
+  it('crontab -e returns info about editor', () => {
+    const state = makeState();
+    const result = processCommand(state, 'crontab -e', 'linux');
+    expect(result.lines[0].type).toBe('info');
+  });
+
+  it('crontab -r returns success', () => {
+    const state = makeState();
+    const result = processCommand(state, 'crontab -r', 'linux');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('crontab without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'crontab', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+describe('PowerShell $env: variable handling', () => {
+  it('$env:VAR = "value" sets a variable', () => {
+    const state = makeState();
+    const result = processCommand(state, '$env:GREETING = "Hello"', 'windows');
+    expect(result.newState.envVars['GREETING']).toBe('Hello');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('$env:PATH reads the PATH variable', () => {
+    const state = makeState();
+    const result = processCommand(state, '$env:PATH', 'windows');
+    expect(result.lines[0].text).toBe('/usr/local/bin:/usr/bin:/bin');
+  });
+
+  it('$env:UNDEFINED returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, '$env:UNDEFINED_XYZ', 'windows');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+describe('Get-ChildItem Env: — PowerShell env listing', () => {
+  it('Get-ChildItem Env: lists all env variables', () => {
+    const state = makeState();
+    const result = processCommand(state, 'Get-ChildItem Env:', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('PATH');
+    expect(text).toContain('USER');
   });
 });
