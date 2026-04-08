@@ -14,6 +14,7 @@ import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
+import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 
 // ── Static data ──────────────────────────────────────────────────────────────
 
@@ -67,9 +68,9 @@ const ROADMAP_AVAILABLE = [
 
 const ROADMAP_IN_PROGRESS = [
   "Plus d'exercices pratiques",
-  'Sélection d\'environnement (Linux / macOS / Windows)',
-  'Système de déblocage par niveau',
+  'Sélection d\'environnement Linux / macOS / Windows ⚡',
   'Adaptation des commandes par OS',
+  'Quiz par section',
 ];
 
 const ROADMAP_PLANNED = [
@@ -116,6 +117,69 @@ const STATS = [
   { value: String(ACTIVE_ENVIRONMENTS.length), label: 'Environnements', icon: Monitor },
 ];
 
+/** Competency levels showcased per environment in the hero */
+const ENV_LEVELS: Record<SelectedEnvironment, {
+  level: number;
+  label: string;
+  description: string;
+  commands: string[];
+  color: string;
+  bg: string;
+  border: string;
+}[]> = {
+  linux: [
+    {
+      level: 1, label: 'Fondamentaux', description: 'Naviguer et manipuler des fichiers',
+      commands: ['pwd', 'ls', 'cd', 'mkdir', 'cat', 'rm'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2, label: 'Quotidien', description: 'Contrôler le système',
+      commands: ['chmod', 'ps', 'grep', 'kill', '|', '>'],
+      color: 'text-blue-400', bg: 'bg-blue-500/5', border: 'border-blue-500/20',
+    },
+    {
+      level: 3, label: 'Intermédiaire', description: 'Workflows réels',
+      commands: ['ssh', 'git', 'bash script.sh', 'export', 'tar'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+  macos: [
+    {
+      level: 1, label: 'Fondamentaux', description: 'Naviguer et manipuler des fichiers',
+      commands: ['pwd', 'ls', 'cd', 'mkdir', 'cat', 'rm'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2, label: 'Quotidien', description: 'Contrôler le système',
+      commands: ['chmod', 'ps', 'grep', 'kill', '|', 'open'],
+      color: 'text-blue-400', bg: 'bg-blue-500/5', border: 'border-blue-500/20',
+    },
+    {
+      level: 3, label: 'Intermédiaire', description: 'Workflows réels',
+      commands: ['ssh', 'git', 'brew install', 'launchctl', 'xcode-select'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+  windows: [
+    {
+      level: 1, label: 'Fondamentaux', description: 'PowerShell & CMD — bases',
+      commands: ['Get-Location', 'dir', 'cd', 'mkdir', 'Get-Content', 'del'],
+      color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+    },
+    {
+      level: 2, label: 'Quotidien', description: 'Contrôler le système Windows',
+      commands: ['Get-Acl', 'tasklist', 'Select-String', 'Stop-Process', 'Out-File'],
+      color: 'text-blue-400', bg: 'bg-blue-500/5', border: 'border-blue-500/20',
+    },
+    {
+      level: 3, label: 'Intermédiaire', description: 'Workflows développeur',
+      commands: ['ssh', 'git', 'winget install', '$env:PATH', 'Invoke-WebRequest'],
+      color: 'text-purple-400', bg: 'bg-purple-500/5', border: 'border-purple-500/20',
+    },
+  ],
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 /** Landing page — public entry point at "/" */
@@ -123,6 +187,7 @@ export function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
+  const { selectedEnv, setEnvironment } = useEnvironment();
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -189,17 +254,76 @@ export function Landing() {
             Pratique réelle dans un terminal simulé — progression sauvegardée, aucune inscription requise.
           </p>
 
-          {/* Environment badges — documentation covers these 3 environments */}
-          <div className="flex gap-2 justify-center mb-10">
-            {ACTIVE_ENVIRONMENTS.map((env) => (
+          {/* ── Environment selector ─────────────────────────────── */}
+          <div className="mb-8">
+            <p className="text-[#8b949e] text-xs font-mono mb-3 uppercase tracking-widest">
+              Choisissez votre environnement
+            </p>
+            <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
+              {(['linux', 'macos', 'windows'] as SelectedEnvironment[]).map((envId) => {
+                const meta = ENV_META[envId];
+                const active = selectedEnv === envId;
+                return (
+                  <button
+                    key={envId}
+                    onClick={() => setEnvironment(envId)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[100px] justify-center ${
+                      active
+                        ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
+                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] border border-transparent'
+                    }`}
+                    aria-pressed={active}
+                  >
+                    <Monitor size={14} aria-hidden="true" />
+                    {meta.label}
+                  </button>
+                );
+              })}
+              {/* WSL — future only */}
               <span
-                key={env.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#30363d] bg-[#161b22] text-[#8b949e] text-xs font-mono"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#484f58] cursor-not-allowed border border-transparent"
+                title="WSL — bientôt disponible"
+                aria-disabled="true"
               >
-                <Monitor size={12} aria-hidden="true" />
-                {env.label}
+                <Monitor size={14} aria-hidden="true" />
+                WSL
+                <span className="text-[10px] font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">bientôt</span>
               </span>
-            ))}
+            </div>
+
+            {/* ── 3 levels per environment ──────────────────────── */}
+            <motion.div
+              key={selectedEnv}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto"
+            >
+              {ENV_LEVELS[selectedEnv].map((lvl) => (
+                <div
+                  key={lvl.level}
+                  className={`${lvl.bg} border ${lvl.border} rounded-xl p-4`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${lvl.border} ${lvl.color} bg-black/20`}>
+                      Niveau {lvl.level}
+                    </span>
+                  </div>
+                  <div className={`text-sm font-semibold ${lvl.color} mb-1`}>{lvl.label}</div>
+                  <div className="text-[#8b949e] text-xs mb-3 leading-relaxed">{lvl.description}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {lvl.commands.map((cmd) => (
+                      <code
+                        key={cmd}
+                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/30 text-[#e6edf3] border border-[#30363d]"
+                      >
+                        {cmd}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
           </div>
 
           {/* Terminal preview — proof before CTA */}

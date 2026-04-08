@@ -1,5 +1,59 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { TerminalState, OutputLine, processCommand, getPrompt, getTabCompletions, createInitialState } from '../data/terminalEngine';
+import type { SelectedEnvironment } from '../context/EnvironmentContext';
+
+// ─── Security helpers ─────────────────────────────────────────────────────────
+
+const MAX_INPUT_LENGTH = 500;
+
+/**
+ * Sanitise raw terminal input.
+ * - Trims whitespace
+ * - Enforces max length (500 chars) to prevent memory issues
+ * - Strips ASCII control characters (except common ones like newline handled by form submit)
+ * This terminal is simulated — no real execution occurs.
+ */
+function sanitiseInput(raw: string): string {
+  return raw
+    .slice(0, MAX_INPUT_LENGTH)
+    // Strip ASCII control chars (0x00–0x1F) except tab (0x09) which is used for completion
+    .replace(/[\x00-\x08\x0A-\x1F\x7F]/g, '');
+}
+
+// ─── Prompt helpers ───────────────────────────────────────────────────────────
+
+/** Environment-specific prompt styles */
+const ENV_PROMPT_COLOR: Record<SelectedEnvironment, string> = {
+  linux: 'text-[#3fb950]',   // green — classic bash
+  macos: 'text-[#58a6ff]',   // blue — zsh default
+  windows: 'text-[#56b6c2]', // cyan — PowerShell blue
+};
+
+const ENV_TITLE_LABEL: Record<SelectedEnvironment, string> = {
+  linux: 'bash',
+  macos: 'zsh',
+  windows: 'PowerShell',
+};
+
+/**
+ * Build the visible prompt string for the current environment.
+ * Keeps terminalEngine's getPrompt() intact for Linux/macOS,
+ * overrides format for Windows.
+ */
+function getEnvPrompt(state: TerminalState, env: SelectedEnvironment): string {
+  const username = state.user || 'user';
+  switch (env) {
+    case 'macos':
+      return `${state.hostname} ~ %`;
+    case 'windows':
+      return `PS C:\\Users\\${username}>`;
+    case 'linux':
+    default:
+      return getPrompt(state);
+  }
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TerminalLine {
   id: number;
@@ -14,12 +68,14 @@ interface TerminalEmulatorProps {
   className?: string;
   /** Unix username to show in prompt. Defaults to 'user' when not authenticated. */
   username?: string;
+  /** Active environment — controls prompt style and display. Defaults to 'linux'. */
+  environment?: SelectedEnvironment;
 }
 
 let lineCounter = 0;
 const nextId = () => ++lineCounter;
 
-export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username }: TerminalEmulatorProps) {
+export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux' }: TerminalEmulatorProps) {
   const [termState, setTermState] = useState<TerminalState>(createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
     const welcome = welcomeMessage ?? [
@@ -49,8 +105,9 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const trimmed = input.trim();
-      const prompt = getPrompt(activeState);
+      // Sanitise before any processing — terminal is simulated, defence in depth
+      const trimmed = sanitiseInput(input.trim());
+      const prompt = getEnvPrompt(activeState, environment);
 
       if (!trimmed) {
         setLines((prev) => [...prev, { id: nextId(), type: 'prompt', text: '', prompt }]);
@@ -82,7 +139,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       setInput('');
       setHistoryIndex(-1);
     },
-    [input, activeState, onCommand]
+    [input, activeState, onCommand, environment]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -103,7 +160,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       if (completions.length === 1) {
         setInput(completions[0]);
       } else if (completions.length > 1) {
-        const prompt = getPrompt(activeState);
+        const prompt = getEnvPrompt(activeState, environment);
         setLines((prev) => [
           ...prev,
           { id: nextId(), type: 'prompt', text: input, prompt },
@@ -114,7 +171,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       e.preventDefault();
       setLines((prev) => [
         ...prev,
-        { id: nextId(), type: 'prompt', text: input + '^C', prompt: getPrompt(activeState) },
+        { id: nextId(), type: 'prompt', text: input + '^C', prompt: getEnvPrompt(activeState, environment) },
       ]);
       setInput('');
       setHistoryIndex(-1);
@@ -124,7 +181,8 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
     }
   };
 
-  const prompt = getPrompt(activeState);
+  const prompt = getEnvPrompt(activeState, environment);
+  const promptColor = ENV_PROMPT_COLOR[environment];
 
   return (
     <div
@@ -139,7 +197,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           <div className="w-3 h-3 rounded-full bg-[#28ca42]" />
         </div>
         <span className="ml-2 text-[#8b949e] text-xs font-mono">
-          {activeState.user}@{activeState.hostname}
+          {ENV_TITLE_LABEL[environment]} — {activeState.user}@{activeState.hostname}
         </span>
       </div>
 
@@ -149,7 +207,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           <div key={line.id} className="leading-5">
             {line.type === 'prompt' ? (
               <div className="flex items-start gap-1 flex-wrap">
-                <span className="text-[#3fb950] shrink-0">{line.prompt}</span>
+                <span className={`${promptColor} shrink-0`}>{line.prompt}</span>
                 <span className="text-[#e6edf3] break-all">{line.text}</span>
               </div>
             ) : line.type === 'error' ? (
@@ -166,13 +224,14 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
         {/* Input line */}
         <form onSubmit={handleSubmit} className="flex items-center gap-1 mt-1">
-          <span className="text-[#3fb950] shrink-0 font-mono text-sm">{prompt}</span>
+          <span className={`${promptColor} shrink-0 font-mono text-sm`}>{prompt}</span>
           <input
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => setInput(sanitiseInput(e.target.value))}
+            maxLength={MAX_INPUT_LENGTH}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-[#e6edf3] font-mono text-sm outline-none caret-[#3fb950] min-w-0"
+            className={`flex-1 bg-transparent text-[#e6edf3] font-mono text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
             autoFocus
             autoComplete="off"
             autoCorrect="off"
