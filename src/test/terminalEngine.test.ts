@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processCommand, getTabCompletions, createInitialState } from '../app/data/terminalEngine';
+import { processCommand, getTabCompletions, createInitialState, displayPathForEnv } from '../app/data/terminalEngine';
 import type { TerminalState } from '../app/data/terminalEngine';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -180,8 +180,12 @@ describe('getTabCompletions — path completion (with space)', () => {
 describe('PowerShell aliases — navigation', () => {
   it('Get-Location returns current directory', () => {
     const state = createInitialState();
+    // Without env param, uses linux default → displayPath returns '~'
     const result = processCommand(state, 'Get-Location');
-    expect(result.lines[0].text).toMatch(/home\/user/);
+    expect(result.lines[0].text).toBeTruthy();
+    // With windows env → Windows-style path
+    const resultWin = processCommand(state, 'Get-Location', 'windows');
+    expect(resultWin.lines[0].text).toContain('C:\\Users\\user');
   });
 
   it('gl is an alias for Get-Location', () => {
@@ -323,5 +327,229 @@ describe('Windows package manager', () => {
     const state = createInitialState();
     const result = processCommand(state, 'winget list');
     expect(result.lines.some((l) => l.text.includes('Git'))).toBe(true);
+  });
+});
+
+// ─── help — contextual (env-aware) ───────────────────────────────────────────
+
+describe('help — no args, env-specific command list', () => {
+  it('linux: contains bash commands', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('pwd');
+    expect(text).toContain('grep');
+    expect(text).toContain('chmod');
+    expect(text).toContain('uname');
+    expect(text).toContain('donate');
+  });
+
+  it('windows: contains PowerShell commands', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'windows').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('Get-Location');
+    expect(text).toContain('Get-ChildItem');
+    expect(text).toContain('winget');
+    expect(text).not.toContain('uname');
+  });
+
+  it('macos: contains macOS-specific commands', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'macos').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('brew');
+    expect(text).toContain('open');
+    expect(text).toContain('pbcopy');
+    expect(text).not.toContain('uname -a\n');
+  });
+});
+
+describe('help <cmd> — targeted contextual help', () => {
+  it('returns synopsis and description for a known command', () => {
+    const state = makeState();
+    const result = processCommand(state, 'help ls', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ls');
+    expect(text).toContain('-l');
+    expect(text).toContain('-a');
+  });
+
+  it('returns linux examples for linux env', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help ls', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ls -la');
+  });
+
+  it('returns windows examples for windows env', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help ls', 'windows').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('Get-ChildItem');
+  });
+
+  it('resolves PowerShell alias to correct help entry', () => {
+    const state = makeState();
+    const r1 = processCommand(state, 'help ls', 'windows');
+    const r2 = processCommand(state, 'help get-childitem', 'windows');
+    const r3 = processCommand(state, 'help dir', 'windows');
+    const t1 = r1.lines.map((l) => l.text).join('\n');
+    const t2 = r2.lines.map((l) => l.text).join('\n');
+    const t3 = r3.lines.map((l) => l.text).join('\n');
+    expect(t1).toContain('Get-ChildItem');
+    expect(t2).toContain('Get-ChildItem');
+    expect(t3).toContain('Get-ChildItem');
+  });
+
+  it('returns error for unknown command', () => {
+    const state = makeState();
+    const result = processCommand(state, 'help unknowncmd', 'linux');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('unknowncmd');
+  });
+
+  it('resolves rm aliases (del, erase, remove-item)', () => {
+    const state = makeState();
+    ['del', 'erase', 'remove-item', 'ri'].forEach((alias) => {
+      const text = processCommand(state, `help ${alias}`, 'windows').lines.map((l) => l.text).join('\n');
+      expect(text).toContain('Remove-Item');
+    });
+  });
+});
+
+describe('man — delegates to contextual help', () => {
+  it('man ls returns help for ls', () => {
+    const state = makeState();
+    const text = processCommand(state, 'man ls', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ls');
+    expect(text).toContain('-l');
+  });
+
+  it('man grep returns grep help', () => {
+    const state = makeState();
+    const text = processCommand(state, 'man grep', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('grep');
+    expect(text).toContain('-n');
+    expect(text).toContain('-i');
+  });
+
+  it('man without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'man');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('man on unknown command returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'man notacommand');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+// ─── uname — env-aware ───────────────────────────────────────────────────────
+
+// ─── displayPathForEnv — terminal profile ────────────────────────────────────
+
+describe('displayPathForEnv — path formatting per env', () => {
+  const home = ['home', 'user'];
+  const deep = ['home', 'user', 'documents'];
+  const root = ['tmp'];
+
+  it('linux home → ~', () => {
+    expect(displayPathForEnv(home, 'linux')).toBe('~');
+  });
+
+  it('linux subdir → ~/documents', () => {
+    expect(displayPathForEnv(deep, 'linux')).toBe('~/documents');
+  });
+
+  it('linux non-home → /tmp', () => {
+    expect(displayPathForEnv(root, 'linux')).toBe('/tmp');
+  });
+
+  it('macos home → ~ (same as linux)', () => {
+    expect(displayPathForEnv(home, 'macos')).toBe('~');
+  });
+
+  it('macos subdir → ~/documents', () => {
+    expect(displayPathForEnv(deep, 'macos')).toBe('~/documents');
+  });
+
+  it('windows home → C:\\Users\\user', () => {
+    expect(displayPathForEnv(home, 'windows')).toBe('C:\\Users\\user');
+  });
+
+  it('windows subdir → C:\\Users\\user\\documents', () => {
+    expect(displayPathForEnv(deep, 'windows')).toBe('C:\\Users\\user\\documents');
+  });
+
+  it('windows non-home → C:\\tmp', () => {
+    expect(displayPathForEnv(root, 'windows')).toBe('C:\\tmp');
+  });
+});
+
+describe('pwd — env-aware path output', () => {
+  it('linux → ~ for home directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'pwd', 'linux');
+    expect(result.lines[0].text).toBe('~');
+  });
+
+  it('macos → ~ for home directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'pwd', 'macos');
+    expect(result.lines[0].text).toBe('~');
+  });
+
+  it('windows → C:\\Users\\user for home directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'pwd', 'windows');
+    expect(result.lines[0].text).toBe('C:\\Users\\user');
+  });
+
+  it('windows after cd → shows Windows-style path', () => {
+    const state = createInitialState();
+    const after = processCommand(state, 'cd documents', 'windows');
+    const result = processCommand(after.newState, 'pwd', 'windows');
+    expect(result.lines[0].text).toBe('C:\\Users\\user\\documents');
+  });
+
+  it('Get-Location on windows → Windows-style path', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Get-Location', 'windows');
+    expect(result.lines[0].text).toBe('C:\\Users\\user');
+  });
+
+  it('gl alias on windows → Windows-style path', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'gl', 'windows');
+    expect(result.lines[0].text).toBe('C:\\Users\\user');
+  });
+});
+
+describe('uname — env-aware', () => {
+  it('linux: returns Linux', () => {
+    const state = makeState();
+    expect(processCommand(state, 'uname', 'linux').lines[0].text).toBe('Linux');
+  });
+
+  it('linux -a: returns full Linux info', () => {
+    const state = makeState();
+    const text = processCommand(state, 'uname -a', 'linux').lines[0].text;
+    expect(text).toContain('Linux');
+    expect(text).toContain('GNU/Linux');
+  });
+
+  it('macos: returns Darwin', () => {
+    const state = makeState();
+    expect(processCommand(state, 'uname', 'macos').lines[0].text).toBe('Darwin');
+  });
+
+  it('macos -a: returns Darwin kernel info', () => {
+    const state = makeState();
+    const text = processCommand(state, 'uname -a', 'macos').lines[0].text;
+    expect(text).toContain('Darwin');
+  });
+
+  it('windows: returns error (not available)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'uname', 'windows');
+    expect(result.lines[0].type).toBe('error');
   });
 });

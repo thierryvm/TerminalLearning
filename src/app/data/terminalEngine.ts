@@ -1,5 +1,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type TerminalEnv = 'linux' | 'macos' | 'windows';
+
 export interface FileNode {
   type: 'file';
   content: string;
@@ -153,7 +155,31 @@ function displayPath(cwd: string[]): string {
   return '/' + cwd.join('/');
 }
 
-export function getPrompt(state: TerminalState): string {
+/**
+ * Returns the current path formatted for the target environment.
+ * Windows: C:\Users\user\Documents style
+ * Linux/macOS: ~/documents style
+ */
+export function displayPathForEnv(cwd: string[], env: TerminalEnv = 'linux'): string {
+  if (env === 'windows') {
+    if (cwd.length >= 2 && cwd[0] === 'home' && cwd[1] === 'user') {
+      const rest = cwd.slice(2);
+      const base = 'C:\\Users\\user';
+      return rest.length === 0 ? base : base + '\\' + rest.join('\\');
+    }
+    return 'C:\\' + cwd.join('\\');
+  }
+  return displayPath(cwd);
+}
+
+export function getPrompt(state: TerminalState, env: TerminalEnv = 'linux'): string {
+  if (env === 'windows') {
+    return `PS ${displayPathForEnv(state.cwd, 'windows')}>`;
+  }
+  if (env === 'macos') {
+    const path = displayPath(state.cwd);
+    return `${state.user}@${state.hostname} ${path} %`;
+  }
   return `${state.user}@${state.hostname}:${displayPath(state.cwd)}$`;
 }
 
@@ -255,8 +281,8 @@ function formatLongEntry(name: string, node: FSNode): string {
 
 // ─── Command Handlers ─────────────────────────────────────────────────────────
 
-function cmdPwd(state: TerminalState): OutputLine[] {
-  return [{ text: '/' + state.cwd.join('/'), type: 'output' }];
+function cmdPwd(state: TerminalState, env: TerminalEnv = 'linux'): OutputLine[] {
+  return [{ text: displayPathForEnv(state.cwd, env), type: 'output' }];
 }
 
 function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
@@ -609,7 +635,7 @@ function cmdEchoRedirect(
 
 function cmdPipe(state: TerminalState, left: string, right: string): OutputLine[] {
   // Execute left side and feed output to right side's stdin
-  const leftResult = processCommand(state, left);
+  const leftResult = processCommand(state, left, 'linux');
   const inputText = leftResult.lines.filter((l) => l.type === 'output').map((l) => l.text).join('\n');
 
   // Simulate stdin for right command
@@ -659,45 +685,363 @@ function cmdPipe(state: TerminalState, left: string, right: string): OutputLine[
   return leftResult.lines;
 }
 
-const HELP_TEXT = `Commandes disponibles:
-  pwd          Afficher le répertoire courant
-  ls [options] Lister les fichiers (-l: détails, -a: cachés)
-  cd [chemin]  Changer de répertoire
-  mkdir [nom]  Créer un répertoire (-p: parents)
-  touch [nom]  Créer un fichier
-  cat [file]   Afficher le contenu d'un fichier
-  echo [texte] Afficher du texte
-  rm [file]    Supprimer un fichier (-r: répertoire)
-  cp src dst   Copier un fichier (-r: répertoire)
-  mv src dst   Déplacer / renommer
-  grep pat f   Chercher dans un fichier (-n: lignes, -i: casse)
-  head [file]  Afficher le début (-n N: N lignes)
-  tail [file]  Afficher la fin (-n N: N lignes)
-  wc [file]    Compter lignes/mots/octets (-l -w -c)
-  chmod m file Changer les permissions
-  whoami       Afficher l'utilisateur courant
-  date         Afficher la date et l'heure
-  uname [-a]   Informations système
-  ps [aux]     Lister les processus
-  history      Historique des commandes
-  clear        Effacer le terminal
-  help         Afficher cette aide
-  about        Informations sur le projet
-  donate       Soutenir le projet (GitHub Sponsors / Ko-fi)
-  support      Alias de donate
-  hall-of-fame Liste des contributeurs`;
+// ─── Help & Man (env-aware) ───────────────────────────────────────────────────
 
-const MAN_PAGES: Record<string, string> = {
-  pwd: 'PWD(1)\n\nNOM\n  pwd - afficher le répertoire de travail courant\n\nSYNOPSIS\n  pwd\n\nDESCRIPTION\n  Affiche le chemin absolu du répertoire courant.',
-  ls: 'LS(1)\n\nNOM\n  ls - lister le contenu d\'un répertoire\n\nSYNOPSIS\n  ls [-la] [FICHIER...]\n\nOPTIONS\n  -l  format long\n  -a  afficher les fichiers cachés',
-  cd: 'CD(1)\n\nNOM\n  cd - changer de répertoire\n\nSYNOPSIS\n  cd [RÉPERTOIRE]\n\nDESCRIPTION\n  Change le répertoire courant. Sans argument, va dans ~.',
-  grep: 'GREP(1)\n\nNOM\n  grep - rechercher des lignes correspondant à un motif\n\nSYNOPSIS\n  grep [-ni] MOTIF FICHIER\n\nOPTIONS\n  -n  afficher les numéros de lignes\n  -i  ignorer la casse',
-  chmod: 'CHMOD(1)\n\nNOM\n  chmod - changer les permissions d\'un fichier\n\nSYNOPSIS\n  chmod MODE FICHIER\n\nDESCRIPTION\n  MODE en octal (755) ou symbolique (+x, u+x, o-r)',
+type CmdHelp = {
+  synopsis: string;
+  description: string;
+  options?: string[];
+  examples?: Partial<Record<TerminalEnv, string[]>>;
 };
+
+const CMD_HELP: Record<string, CmdHelp> = {
+  pwd: {
+    synopsis: 'pwd',
+    description: 'Affiche le chemin absolu du répertoire courant.',
+    examples: {
+      linux: ['pwd  →  /home/user/documents'],
+      macos: ['pwd  →  /Users/user/documents'],
+      windows: ['Get-Location  →  C:\\Users\\user\\Documents', 'gl           (alias court)'],
+    },
+  },
+  ls: {
+    synopsis: 'ls [-la] [chemin]',
+    description: 'Liste le contenu d\'un répertoire.',
+    options: ['-l  format long (permissions, taille, date)', '-a  inclure les fichiers cachés'],
+    examples: {
+      linux: ['ls', 'ls -la', 'ls documents/'],
+      macos: ['ls', 'ls -la', 'ls -G  (couleurs)'],
+      windows: ['Get-ChildItem', 'dir', 'gci -Hidden  (fichiers cachés)'],
+    },
+  },
+  cd: {
+    synopsis: 'cd [répertoire]',
+    description: 'Change le répertoire courant. Sans argument, retourne dans ~.',
+    options: ['..   répertoire parent', '~    répertoire home', '/    racine'],
+    examples: {
+      linux: ['cd documents', 'cd ..', 'cd ~', 'cd /tmp'],
+      macos: ['cd documents', 'cd ..', 'cd ~', 'cd /private/tmp'],
+      windows: ['Set-Location documents', 'sl ..', 'cd ~'],
+    },
+  },
+  mkdir: {
+    synopsis: 'mkdir [-p] nom',
+    description: 'Crée un ou plusieurs répertoires.',
+    options: ['-p  crée les répertoires parents si nécessaire'],
+    examples: {
+      linux: ['mkdir projets', 'mkdir -p a/b/c'],
+      macos: ['mkdir projets', 'mkdir -p a/b/c'],
+      windows: ['New-Item -ItemType Directory -Name projets', 'md projets'],
+    },
+  },
+  touch: {
+    synopsis: 'touch fichier',
+    description: 'Crée un fichier vide ou met à jour sa date.',
+    examples: {
+      linux: ['touch notes.txt', 'touch a.txt b.txt'],
+      macos: ['touch notes.txt'],
+      windows: ['New-Item -ItemType File -Name notes.txt', 'ni notes.txt'],
+    },
+  },
+  cat: {
+    synopsis: 'cat fichier [fichier2...]',
+    description: 'Affiche le contenu d\'un ou plusieurs fichiers.',
+    examples: {
+      linux: ['cat notes.txt', 'cat a.txt b.txt'],
+      macos: ['cat notes.txt'],
+      windows: ['Get-Content notes.txt', 'gc notes.txt'],
+    },
+  },
+  echo: {
+    synopsis: 'echo texte',
+    description: 'Affiche du texte dans le terminal. Supporte la redirection.',
+    examples: {
+      linux: ['echo "Bonjour"', 'echo "texte" > fichier.txt'],
+      macos: ['echo "Bonjour"', 'echo "texte" > fichier.txt'],
+      windows: ['Write-Host "Bonjour"', 'Write-Output "texte"'],
+    },
+  },
+  rm: {
+    synopsis: 'rm [-r] fichier',
+    description: 'Supprime un fichier ou un répertoire.',
+    options: ['-r  suppression récursive d\'un répertoire'],
+    examples: {
+      linux: ['rm notes.txt', 'rm -r dossier/'],
+      macos: ['rm notes.txt', 'rm -r dossier/'],
+      windows: ['Remove-Item notes.txt', 'del notes.txt', 'Remove-Item -Recurse dossier'],
+    },
+  },
+  cp: {
+    synopsis: 'cp [-r] source destination',
+    description: 'Copie un fichier ou répertoire.',
+    options: ['-r  copie récursive d\'un répertoire'],
+    examples: {
+      linux: ['cp a.txt b.txt', 'cp -r src/ dst/'],
+      macos: ['cp a.txt b.txt', 'cp -r src/ dst/'],
+      windows: ['Copy-Item a.txt b.txt', 'copy a.txt b.txt'],
+    },
+  },
+  mv: {
+    synopsis: 'mv source destination',
+    description: 'Déplace ou renomme un fichier.',
+    examples: {
+      linux: ['mv a.txt b.txt', 'mv a.txt dossier/'],
+      macos: ['mv a.txt b.txt'],
+      windows: ['Move-Item a.txt b.txt', 'move a.txt b.txt'],
+    },
+  },
+  grep: {
+    synopsis: 'grep [-ni] motif fichier',
+    description: 'Recherche les lignes correspondant à un motif dans un fichier.',
+    options: ['-n  afficher les numéros de lignes', '-i  ignorer la casse'],
+    examples: {
+      linux: ['grep "erreur" log.txt', 'grep -ni "TODO" script.sh'],
+      macos: ['grep "erreur" log.txt', 'grep -in "TODO" script.sh'],
+      windows: ['Select-String "erreur" log.txt', 'sls -Pattern "TODO" -Path script.ps1'],
+    },
+  },
+  head: {
+    synopsis: 'head [-n N] fichier',
+    description: 'Affiche les premières lignes d\'un fichier (10 par défaut).',
+    options: ['-n N  afficher les N premières lignes'],
+    examples: {
+      linux: ['head notes.txt', 'head -n 5 notes.txt'],
+      macos: ['head notes.txt', 'head -n 5 notes.txt'],
+      windows: ['Get-Content notes.txt -TotalCount 10', 'gc notes.txt | Select-Object -First 5'],
+    },
+  },
+  tail: {
+    synopsis: 'tail [-n N] fichier',
+    description: 'Affiche les dernières lignes d\'un fichier (10 par défaut).',
+    options: ['-n N  afficher les N dernières lignes'],
+    examples: {
+      linux: ['tail notes.txt', 'tail -n 5 notes.txt'],
+      macos: ['tail notes.txt', 'tail -n 5 notes.txt'],
+      windows: ['Get-Content notes.txt -Tail 10', 'gc notes.txt | Select-Object -Last 5'],
+    },
+  },
+  wc: {
+    synopsis: 'wc [-lwc] fichier',
+    description: 'Compte les lignes, mots et octets d\'un fichier.',
+    options: ['-l  lignes seulement', '-w  mots seulement', '-c  octets seulement'],
+    examples: {
+      linux: ['wc notes.txt', 'wc -l notes.txt'],
+      macos: ['wc notes.txt', 'wc -l notes.txt'],
+      windows: ['(Get-Content notes.txt).Count  # lignes', 'gc notes.txt | Measure-Object -Word'],
+    },
+  },
+  chmod: {
+    synopsis: 'chmod mode fichier',
+    description: 'Change les permissions d\'un fichier ou répertoire.',
+    options: ['755  rwxr-xr-x (exécutable)', '644  rw-r--r-- (lecture)', '+x  ajouter l\'exécution'],
+    examples: {
+      linux: ['chmod 755 script.sh', 'chmod +x script.sh'],
+      macos: ['chmod 755 script.sh', 'chmod +x script.sh'],
+      windows: ['# Permissions gérées via ACL sous Windows', 'icacls fichier.txt /grant User:F'],
+    },
+  },
+  whoami: {
+    synopsis: 'whoami',
+    description: 'Affiche le nom de l\'utilisateur courant.',
+    examples: {
+      linux: ['whoami  →  user'],
+      macos: ['whoami  →  user'],
+      windows: ['whoami', '$env:USERNAME'],
+    },
+  },
+  ps: {
+    synopsis: 'ps [aux]',
+    description: 'Liste les processus en cours d\'exécution.',
+    options: ['aux  afficher tous les processus avec détails'],
+    examples: {
+      linux: ['ps', 'ps aux', 'ps aux | grep node'],
+      macos: ['ps', 'ps aux', 'ps aux | grep node'],
+      windows: ['Get-Process', 'gps', 'Get-Process node'],
+    },
+  },
+  kill: {
+    synopsis: 'kill PID',
+    description: 'Envoie un signal à un processus (par défaut SIGTERM).',
+    examples: {
+      linux: ['kill 1234', 'kill -9 1234  (SIGKILL)'],
+      macos: ['kill 1234', 'kill -9 1234'],
+      windows: ['Stop-Process -Id 1234', 'Stop-Process -Name node'],
+    },
+  },
+  history: {
+    synopsis: 'history',
+    description: 'Affiche l\'historique des commandes de la session.',
+    examples: {
+      linux: ['history', 'history | grep cd'],
+      macos: ['history', 'history | grep cd'],
+      windows: ['Get-History', 'history'],
+    },
+  },
+  clear: {
+    synopsis: 'clear',
+    description: 'Efface l\'écran du terminal.',
+    examples: {
+      linux: ['clear'],
+      macos: ['clear'],
+      windows: ['Clear-Host', 'cls', 'clear'],
+    },
+  },
+  man: {
+    synopsis: 'man commande',
+    description: 'Affiche l\'aide d\'une commande. Équivalent de "help <commande>".',
+    examples: {
+      linux: ['man ls', 'man grep'],
+      macos: ['man ls', 'man grep'],
+      windows: ['Get-Help Get-ChildItem', 'help ls'],
+    },
+  },
+  brew: {
+    synopsis: 'brew install|update|list [paquet]',
+    description: 'Gestionnaire de paquets Homebrew (macOS).',
+    examples: {
+      macos: ['brew install wget', 'brew update', 'brew list'],
+    },
+  },
+  winget: {
+    synopsis: 'winget install|list [paquet]',
+    description: 'Gestionnaire de paquets Windows (winget).',
+    examples: {
+      windows: ['winget install git', 'winget list'],
+    },
+  },
+  open: {
+    synopsis: 'open fichier|dossier|URL',
+    description: 'Ouvre un fichier, dossier ou URL avec l\'application par défaut (macOS).',
+    examples: {
+      macos: ['open notes.txt', 'open .', 'open https://example.com'],
+    },
+  },
+};
+
+// Alias map: maps PS cmdlet names / aliases back to CMD_HELP keys
+const CMD_HELP_ALIASES: Record<string, string> = {
+  'get-location': 'pwd', 'gl': 'pwd',
+  'set-location': 'cd', 'sl': 'cd',
+  'get-childitem': 'ls', 'gci': 'ls', 'dir': 'ls',
+  'get-content': 'cat', 'gc': 'cat',
+  'new-item': 'touch', 'ni': 'touch',
+  'copy-item': 'cp', 'cpi': 'cp', 'copy': 'cp',
+  'move-item': 'mv', 'mi': 'mv', 'move': 'mv',
+  'remove-item': 'rm', 'ri': 'rm', 'del': 'rm', 'erase': 'rm',
+  'write-host': 'echo', 'write-output': 'echo',
+  'get-process': 'ps', 'gps': 'ps',
+  'stop-process': 'kill', 'spps': 'kill', 'taskkill': 'kill',
+  'select-string': 'grep', 'sls': 'grep',
+  'clear-host': 'clear', 'cls': 'clear', 'md': 'mkdir',
+};
+
+function getHelpText(env: TerminalEnv = 'linux'): string {
+  if (env === 'windows') {
+    return `Commandes disponibles — PowerShell / Windows:
+  Get-Location (gl)         Afficher le répertoire courant
+  Set-Location (sl) [path]  Changer de répertoire
+  Get-ChildItem (dir)       Lister les fichiers et dossiers
+  Get-Content (gc) [file]   Afficher le contenu d'un fichier
+  New-Item (ni) [name]      Créer un fichier ou dossier
+  Copy-Item (copy) src dst  Copier un fichier
+  Move-Item (move) src dst  Déplacer / renommer
+  Remove-Item (del) [file]  Supprimer un fichier
+  Write-Host [texte]        Afficher du texte
+  Get-Process (gps)         Lister les processus
+  Stop-Process -Name [nom]  Arrêter un processus
+  Select-String pat file    Rechercher dans un fichier
+  Clear-Host (cls)          Effacer le terminal
+  history                   Historique des commandes
+  winget install|list       Gestionnaire de paquets
+  help [commande]           Aide sur une commande
+  about                     Informations sur le projet`;
+  }
+  if (env === 'macos') {
+    return `Commandes disponibles — macOS / zsh:
+  pwd              Afficher le répertoire courant
+  ls [-la] [path]  Lister les fichiers (-l: détails, -a: cachés)
+  cd [chemin]      Changer de répertoire
+  mkdir [-p] [nom] Créer un répertoire
+  touch [nom]      Créer un fichier
+  cat [file]       Afficher le contenu d'un fichier
+  echo [texte]     Afficher du texte
+  rm [-r] [file]   Supprimer un fichier
+  cp [-r] src dst  Copier
+  mv src dst       Déplacer / renommer
+  grep [-ni] p f   Rechercher dans un fichier
+  head / tail      Début / fin d'un fichier (-n N)
+  wc [-lwc] [file] Compter lignes/mots/octets
+  chmod m file     Changer les permissions
+  open [file|URL]  Ouvrir avec l'app par défaut
+  pbcopy/pbpaste   Presse-papiers
+  brew install|list Gestionnaire de paquets Homebrew
+  ps [aux]         Lister les processus
+  kill [PID]       Arrêter un processus
+  history          Historique des commandes
+  clear            Effacer le terminal
+  help [commande]  Aide sur une commande
+  about            Informations sur le projet`;
+  }
+  // linux (default)
+  return `Commandes disponibles — Linux / bash:
+  pwd              Afficher le répertoire courant
+  ls [-la] [path]  Lister les fichiers (-l: détails, -a: cachés)
+  cd [chemin]      Changer de répertoire
+  mkdir [-p] [nom] Créer un répertoire
+  touch [nom]      Créer un fichier
+  cat [file]       Afficher le contenu d'un fichier
+  echo [texte]     Afficher du texte
+  rm [-r] [file]   Supprimer un fichier (-r: répertoire)
+  cp [-r] src dst  Copier un fichier
+  mv src dst       Déplacer / renommer
+  grep [-ni] p f   Rechercher dans un fichier
+  head / tail      Début / fin d'un fichier (-n N)
+  wc [-lwc] [file] Compter lignes/mots/octets
+  chmod m file     Changer les permissions
+  whoami           Utilisateur courant
+  date             Date et heure
+  uname [-a]       Informations système
+  ps [aux]         Lister les processus
+  kill [PID]       Arrêter un processus
+  history          Historique des commandes
+  clear            Effacer le terminal
+  man [commande]   Manuel d'une commande
+  help [commande]  Aide sur une commande
+  about            Informations sur le projet
+  donate / support Soutenir le projet
+  hall-of-fame     Liste des contributeurs`;
+}
+
+function getCmdHelp(cmdName: string, env: TerminalEnv = 'linux'): OutputLine[] | null {
+  const key = CMD_HELP_ALIASES[cmdName] ?? cmdName;
+  const entry = CMD_HELP[key];
+  if (!entry) return null;
+
+  const lines: OutputLine[] = [
+    { text: `${key.toUpperCase()} — ${entry.synopsis}`, type: 'info' },
+    { text: '', type: 'output' },
+    { text: entry.description, type: 'output' },
+  ];
+
+  if (entry.options?.length) {
+    lines.push({ text: '', type: 'output' });
+    lines.push({ text: 'Options :', type: 'info' });
+    entry.options.forEach((o) => lines.push({ text: `  ${o}`, type: 'output' }));
+  }
+
+  const envExamples = entry.examples?.[env] ?? entry.examples?.linux;
+  if (envExamples?.length) {
+    lines.push({ text: '', type: 'output' });
+    lines.push({ text: 'Exemples :', type: 'info' });
+    envExamples.forEach((e) => lines.push({ text: `  ${e}`, type: 'output' }));
+  }
+
+  return lines;
+}
 
 // ─── Main Command Processor ───────────────────────────────────────────────────
 
-export function processCommand(state: TerminalState, input: string): CommandOutput {
+export function processCommand(state: TerminalState, input: string, env: TerminalEnv = 'linux'): CommandOutput {
   const trimmed = input.trim();
   const newHistory = trimmed ? [...state.commandHistory, trimmed] : state.commandHistory;
   let newState: TerminalState = { ...state, commandHistory: newHistory };
@@ -742,7 +1086,7 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
 
   switch (cmd) {
     case 'pwd':
-      return { lines: cmdPwd(newState), newState };
+      return { lines: cmdPwd(newState, env), newState };
 
     case 'ls':
       return { lines: cmdLs(newState, args), newState };
@@ -817,6 +1161,12 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
       return { lines: [{ text: new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' }), type: 'output' }], newState };
 
     case 'uname':
+      if (env === 'macos') {
+        return { lines: [{ text: args.includes('-a') ? `Darwin ${newState.hostname} 23.0.0 Darwin Kernel Version 23.0.0 arm64` : 'Darwin', type: 'output' }], newState };
+      }
+      if (env === 'windows') {
+        return { lines: [{ text: `uname: commande non disponible. Utilisez 'Get-ComputerInfo' sous PowerShell.`, type: 'error' }], newState };
+      }
       if (args.includes('-a')) {
         return { lines: [{ text: `Linux ${newState.hostname} 5.15.0 #1 SMP x86_64 GNU/Linux`, type: 'output' }], newState };
       }
@@ -864,17 +1214,25 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
     case 'clear':
       return { lines: [], clear: true, newState };
 
-    case 'help':
+    case 'help': {
+      if (args.length) {
+        const target = args[0].toLowerCase();
+        const helpLines = getCmdHelp(target, env);
+        if (helpLines) return { lines: helpLines, newState };
+        return { lines: [{ text: `help: pas d'aide disponible pour '${args[0]}'`, type: 'error' }], newState };
+      }
       return {
-        lines: HELP_TEXT.split('\n').map((t) => ({ text: t, type: 'output' as const })),
+        lines: getHelpText(env).split('\n').map((t) => ({ text: t, type: 'output' as const })),
         newState,
       };
+    }
 
     case 'man': {
       if (!args.length) return { lines: [{ text: 'man: quelle commande voulez-vous ?', type: 'error' }], newState };
-      const page = MAN_PAGES[args[0]];
-      if (!page) return { lines: [{ text: `man: pas de page de manuel pour '${args[0]}'`, type: 'error' }], newState };
-      return { lines: page.split('\n').map((t) => ({ text: t, type: 'output' as const })), newState };
+      const target = args[0].toLowerCase();
+      const manLines = getCmdHelp(target, env);
+      if (manLines) return { lines: manLines, newState };
+      return { lines: [{ text: `man: pas de page de manuel pour '${args[0]}'`, type: 'error' }], newState };
     }
 
     case 'exit':
@@ -941,7 +1299,7 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
     // pwd equivalents
     case 'get-location':
     case 'gl':
-      return { lines: cmdPwd(newState), newState };
+      return { lines: cmdPwd(newState, env), newState };
 
     // cd equivalents
     case 'set-location':

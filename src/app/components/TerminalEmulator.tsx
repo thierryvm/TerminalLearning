@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { TerminalState, OutputLine, processCommand, getPrompt, getTabCompletions, createInitialState } from '../data/terminalEngine';
+import { TerminalState, OutputLine, processCommand, displayPathForEnv, getTabCompletions, createInitialState } from '../data/terminalEngine';
 import type { SelectedEnvironment } from '../context/EnvironmentContext';
 
 // ─── Security helpers ─────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ function sanitiseInput(raw: string): string {
 /** Environment-specific prompt styles */
 const ENV_PROMPT_COLOR: Record<SelectedEnvironment, string> = {
   linux: 'text-[#3fb950]',   // green — classic bash
-  macos: 'text-[#58a6ff]',   // blue — zsh default
+  macos: 'text-[#a78bfa]',   // violet — zsh / Oh My Zsh
   windows: 'text-[#56b6c2]', // cyan — PowerShell blue
 };
 
@@ -35,21 +35,45 @@ const ENV_TITLE_LABEL: Record<SelectedEnvironment, string> = {
   windows: 'PowerShell',
 };
 
+/** MOTD shown when no welcomeMessage prop is provided */
+const ENV_MOTD: Record<SelectedEnvironment, string[]> = {
+  linux: [
+    'Ubuntu 22.04.4 LTS — GNU/Linux x86_64',
+    "Type 'help' for available commands.",
+    '',
+  ],
+  macos: [
+    'Last login: ' + new Date().toDateString() + ' on ttys000',
+    "Type 'help' for available commands.",
+    '',
+  ],
+  windows: [
+    'Windows PowerShell 7.4.1',
+    'Copyright (C) Microsoft Corporation. All rights reserved.',
+    "Type 'help' for available commands.",
+    '',
+  ],
+};
+
 /**
  * Build the visible prompt string for the current environment.
- * Keeps terminalEngine's getPrompt() intact for Linux/macOS,
- * overrides format for Windows.
+ * Linux  : user@hostname:~$
+ * macOS  : ➜ ~ (zsh / Oh My Zsh style)
+ * Windows: PS C:\Users\user>
  */
 function getEnvPrompt(state: TerminalState, env: SelectedEnvironment): string {
-  const username = state.user || 'user';
+  const path = displayPathForEnv(state.cwd, env);
   switch (env) {
-    case 'macos':
-      return `${state.hostname} ~ %`;
+    case 'macos': {
+      // Shorten path for zsh style: C shows just the last segment or ~
+      const short = path === '~' ? '~' : path.startsWith('~/') ? path : '~';
+      return `➜  ${short}`;
+    }
     case 'windows':
-      return `PS C:\\Users\\${username}>`;
+      return `PS ${path}>`;
     case 'linux':
     default:
-      return getPrompt(state);
+      return `${state.user}@${state.hostname}:${path}$`;
   }
 }
 
@@ -78,10 +102,7 @@ const nextId = () => ++lineCounter;
 export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux' }: TerminalEmulatorProps) {
   const [termState, setTermState] = useState<TerminalState>(createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
-    const welcome = welcomeMessage ?? [
-      "Bienvenue dans Terminal Lab ! Tapez 'help' pour la liste des commandes.",
-      '',
-    ];
+    const welcome = welcomeMessage ?? ENV_MOTD[environment];
     return welcome.map((text) => ({ id: nextId(), type: 'info' as const, text }));
   });
   const [input, setInput] = useState('');
@@ -114,7 +135,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         return;
       }
 
-      const result = processCommand(activeState, trimmed);
+      const result = processCommand(activeState, trimmed, environment);
 
       if (result.clear) {
         setLines([]);
@@ -196,8 +217,11 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
           <div className="w-3 h-3 rounded-full bg-[#28ca42]" />
         </div>
-        <span className="ml-2 text-[#8b949e] text-xs font-mono">
-          {ENV_TITLE_LABEL[environment]} — {activeState.user}@{activeState.hostname}
+        <span className={`ml-2 text-xs font-mono ${ENV_PROMPT_COLOR[environment]}`}>
+          {ENV_TITLE_LABEL[environment]}
+        </span>
+        <span className="text-[#8b949e] text-xs font-mono">
+          — {activeState.user}@{activeState.hostname}
         </span>
       </div>
 
