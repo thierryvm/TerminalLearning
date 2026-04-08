@@ -6,10 +6,17 @@ export interface ContentBlock {
   label?: string;
 }
 
+export type EnvId = 'linux' | 'macos' | 'windows';
+
 export interface Exercise {
   instruction: string;
+  /** Per-environment instruction override — falls back to `instruction` if absent. */
+  instructionByEnv?: Partial<Record<EnvId, string>>;
   hint: string;
-  validate: (command: string) => boolean;
+  /** Per-environment hint override. */
+  hintByEnv?: Partial<Record<EnvId, string>>;
+  /** env is passed by LessonPage from EnvironmentContext. */
+  validate: (command: string, env?: EnvId) => boolean;
   successMessage: string;
 }
 
@@ -79,8 +86,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Tapez la commande `pwd` pour afficher votre répertoire courant.',
+          instructionByEnv: {
+            windows: 'Tapez `Get-Location` (ou son alias `gl`) pour afficher votre répertoire courant.',
+          },
           hint: 'Entrez simplement "pwd" et appuyez sur Entrée',
-          validate: (cmd) => cmd.trim() === 'pwd',
+          hintByEnv: {
+            windows: 'Tapez "Get-Location" ou son alias "gl"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return ['get-location', 'gl', 'pwd'].includes(c);
+            return c === 'pwd';
+          },
           successMessage: 'Parfait ! Vous savez maintenant afficher votre répertoire courant.',
         },
       },
@@ -116,8 +133,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Listez les fichiers du répertoire courant avec `ls`.',
+          instructionByEnv: {
+            windows: 'Listez les fichiers avec `Get-ChildItem` (ou son alias `dir`).',
+          },
           hint: 'Tapez "ls" et appuyez sur Entrée',
-          validate: (cmd) => /^ls(\s.*)?$/.test(cmd.trim()),
+          hintByEnv: {
+            windows: 'Tapez "Get-ChildItem" ou son alias "dir"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-childitem|gci|dir|ls)(\s.*)?$/.test(c);
+            return /^ls(\s.*)?$/.test(c);
+          },
           successMessage: 'Excellent ! Vous voyez maintenant le contenu de votre répertoire.',
         },
       },
@@ -159,9 +186,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Utilisez `ls -la` pour voir tous les fichiers avec leurs détails.',
+          instructionByEnv: {
+            windows: 'Utilisez `Get-ChildItem -Force` pour afficher aussi les fichiers cachés.',
+          },
           hint: 'Tapez "ls -la" pour combiner les deux options',
-          validate: (cmd) => /^ls\s+(-la|-al|-a -l|-l -a)$/.test(cmd.trim()),
-          successMessage: 'Bravo ! Vous maîtrisez maintenant les options de ls.',
+          hintByEnv: {
+            windows: 'Tapez "Get-ChildItem -Force" ou son alias "dir -Force"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-childitem|gci|dir)\s+(-force|-hidden)/.test(c) || /^ls\s+(-la|-al)$/.test(c);
+            return /^ls\s+(-la|-al|-a -l|-l -a)$/.test(c);
+          },
+          successMessage: 'Bravo ! Vous maîtrisez maintenant les options de listage avancées.',
         },
       },
       {
@@ -202,8 +239,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Naviguez dans le répertoire `documents` avec `cd documents`.',
+          instructionByEnv: {
+            windows: 'Naviguez dans le répertoire `documents` avec `Set-Location documents` (ou `cd documents`).',
+          },
           hint: 'Tapez "cd documents" pour entrer dans ce répertoire',
-          validate: (cmd) => cmd.trim() === 'cd documents',
+          hintByEnv: {
+            windows: 'Tapez "Set-Location documents" ou simplement "cd documents"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return ['cd documents', 'set-location documents', 'sl documents'].includes(c);
+            return c === 'cd documents';
+          },
           successMessage: 'Parfait ! Vous savez maintenant vous déplacer dans le système de fichiers.',
         },
       },
@@ -252,8 +299,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Créez un nouveau répertoire appelé `test` avec `mkdir test`.',
+          instructionByEnv: {
+            windows: 'Créez un répertoire `test` avec `New-Item -ItemType Directory -Name test` ou simplement `mkdir test`.',
+          },
           hint: 'Tapez "mkdir test" et appuyez sur Entrée',
-          validate: (cmd) => /^mkdir\s+(-p\s+)?test$/.test(cmd.trim()),
+          hintByEnv: {
+            windows: 'Tapez "mkdir test" (fonctionne aussi en PowerShell) ou "New-Item -ItemType Directory -Name test"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(mkdir|md|new-item|ni)\s+.*test/.test(c);
+            return /^mkdir\s+(-p\s+)?test$/.test(c);
+          },
           successMessage: 'Super ! Vous avez créé votre premier répertoire.',
         },
       },
@@ -285,9 +342,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Créez un fichier nommé `memo.txt` avec `touch memo.txt`.',
+          instructionByEnv: {
+            windows: 'Créez un fichier `memo.txt` avec `New-Item -ItemType File -Name memo.txt`.',
+          },
           hint: 'Tapez "touch memo.txt" et appuyez sur Entrée',
-          validate: (cmd) => cmd.trim() === 'touch memo.txt',
-          successMessage: 'Parfait ! Vous savez créer des fichiers avec touch.',
+          hintByEnv: {
+            windows: 'Tapez "New-Item -ItemType File -Name memo.txt" ou son alias "ni memo.txt"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(new-item|ni)\s+.*memo\.txt/.test(c) || c === 'touch memo.txt';
+            return c === 'touch memo.txt';
+          },
+          successMessage: 'Parfait ! Vous savez créer des fichiers depuis le terminal.',
         },
       },
       {
@@ -323,9 +390,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Copiez le fichier `documents/notes.txt` vers `documents/notes-copy.txt`.',
+          instructionByEnv: {
+            windows: 'Copiez `documents/notes.txt` vers `documents/notes-copy.txt` avec `Copy-Item`.',
+          },
           hint: 'Utilisez "cp documents/notes.txt documents/notes-copy.txt"',
-          validate: (cmd) =>
-            cmd.trim() === 'cp documents/notes.txt documents/notes-copy.txt',
+          hintByEnv: {
+            windows: 'Tapez "Copy-Item documents/notes.txt documents/notes-copy.txt"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(copy-item|cpi|copy|cp)\s+documents\/notes\.txt\s+documents\/notes-copy\.txt/.test(c);
+            return c === 'cp documents/notes.txt documents/notes-copy.txt';
+          },
           successMessage: 'Excellent ! Vous maîtrisez la copie de fichiers.',
         },
       },
@@ -362,9 +438,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Renommez `documents/rapport.md` en `documents/rapport-final.md`.',
+          instructionByEnv: {
+            windows: 'Renommez le fichier avec `Move-Item documents/rapport.md documents/rapport-final.md`.',
+          },
           hint: 'Utilisez "mv documents/rapport.md documents/rapport-final.md"',
-          validate: (cmd) =>
-            cmd.trim() === 'mv documents/rapport.md documents/rapport-final.md',
+          hintByEnv: {
+            windows: 'Tapez "Move-Item documents/rapport.md documents/rapport-final.md"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(move-item|mi|move|mv)\s+documents\/rapport\.md\s+documents\/rapport-final\.md/.test(c);
+            return c === 'mv documents/rapport.md documents/rapport-final.md';
+          },
           successMessage: 'Bravo ! Vous savez maintenant déplacer et renommer des fichiers.',
         },
       },
@@ -401,8 +486,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Supprimez le fichier `documents/notes.txt` avec `rm`.',
+          instructionByEnv: {
+            windows: 'Supprimez `documents/notes.txt` avec `Remove-Item documents/notes.txt`.',
+          },
           hint: 'Tapez "rm documents/notes.txt"',
-          validate: (cmd) => cmd.trim() === 'rm documents/notes.txt',
+          hintByEnv: {
+            windows: 'Tapez "Remove-Item documents/notes.txt" ou son alias "del documents/notes.txt"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(remove-item|ri|del|erase|rm)\s+documents\/notes\.txt/.test(c);
+            return c === 'rm documents/notes.txt';
+          },
           successMessage: 'Parfait ! Vous savez supprimer des fichiers. Utilisez cette commande avec précaution !',
         },
       },
@@ -446,8 +541,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Affichez le contenu du fichier `documents/notes.txt` avec `cat`.',
+          instructionByEnv: {
+            windows: 'Affichez le contenu de `documents/notes.txt` avec `Get-Content documents/notes.txt`.',
+          },
           hint: 'Tapez "cat documents/notes.txt"',
-          validate: (cmd) => cmd.trim() === 'cat documents/notes.txt',
+          hintByEnv: {
+            windows: 'Tapez "Get-Content documents/notes.txt" ou son alias "gc documents/notes.txt"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-content|gc|cat|type)\s+documents\/notes\.txt/.test(c);
+            return c === 'cat documents/notes.txt';
+          },
           successMessage: 'Parfait ! Vous pouvez maintenant lire le contenu des fichiers.',
         },
       },
@@ -484,9 +589,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Affichez les 3 premières lignes de `documents/rapport.md` avec `head -n 3`.',
+          instructionByEnv: {
+            windows: 'Affichez les 3 premières lignes avec `Get-Content documents/rapport.md | Select-Object -First 3`.',
+          },
           hint: 'Tapez "head -n 3 documents/rapport.md"',
-          validate: (cmd) => cmd.trim() === 'head -n 3 documents/rapport.md',
-          successMessage: 'Excellent ! Vous maîtrisez head pour lire le début des fichiers.',
+          hintByEnv: {
+            windows: 'Tapez "Get-Content documents/rapport.md | Select-Object -First 3"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /get-content.+rapport\.md.*select-object.*-first\s+3/.test(c) || c === 'head -n 3 documents/rapport.md';
+            return c === 'head -n 3 documents/rapport.md';
+          },
+          successMessage: 'Excellent ! Vous maîtrisez la lecture partielle de fichiers.',
         },
       },
       {
@@ -522,10 +637,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Recherchez le mot "important" dans `documents/notes.txt` avec `grep`.',
+          instructionByEnv: {
+            windows: 'Recherchez "important" dans `documents/notes.txt` avec `Select-String "important" documents/notes.txt`.',
+          },
           hint: 'Tapez "grep important documents/notes.txt" (ou avec guillemets)',
-          validate: (cmd) =>
-            /^grep\s+(-\w+\s+)*["']?important["']?\s+documents\/notes\.txt$/.test(cmd.trim()),
-          successMessage: 'Bravo ! grep est l\'un des outils les plus puissants du terminal.',
+          hintByEnv: {
+            windows: 'Tapez "Select-String \\"important\\" documents/notes.txt"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(select-string|sls)\s+["']?important["']?\s+documents\/notes\.txt/.test(c) || /^grep\s+["']?important["']?\s+documents\/notes\.txt/.test(c);
+            return /^grep\s+(-\w+\s+)*["']?important["']?\s+documents\/notes\.txt$/.test(c);
+          },
+          successMessage: 'Bravo ! La recherche dans les fichiers est l\'un des outils les plus puissants du terminal.',
         },
       },
       {
@@ -556,8 +680,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Comptez le nombre de lignes dans `documents/rapport.md` avec `wc -l`.',
+          instructionByEnv: {
+            windows: 'Comptez les lignes avec `(Get-Content documents/rapport.md).Count`.',
+          },
           hint: 'Tapez "wc -l documents/rapport.md"',
-          validate: (cmd) => cmd.trim() === 'wc -l documents/rapport.md',
+          hintByEnv: {
+            windows: 'Tapez "(Get-Content documents/rapport.md).Count"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /\(get-content.+rapport\.md\)\.count/.test(c) || c === 'wc -l documents/rapport.md';
+            return c === 'wc -l documents/rapport.md';
+          },
           successMessage: 'Parfait ! Vous savez analyser la taille d\'un fichier.',
         },
       },
@@ -606,8 +740,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Utilisez `ls -l` pour voir les permissions de tous les fichiers.',
+          instructionByEnv: {
+            windows: 'Utilisez `Get-Acl documents/notes.txt` pour voir les permissions du fichier.',
+          },
           hint: 'Tapez "ls -l" pour voir les permissions',
-          validate: (cmd) => cmd.trim() === 'ls -l',
+          hintByEnv: {
+            windows: 'Tapez "Get-Acl documents/notes.txt" pour afficher les droits d\'accès',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-acl|ls -l|icacls)/.test(c);
+            return c === 'ls -l';
+          },
           successMessage: 'Vous voyez maintenant les permissions de chaque fichier !',
         },
       },
@@ -644,10 +788,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Rendez le script `projets/script.sh` exécutable avec `chmod +x`.',
+          instructionByEnv: {
+            windows: 'Sur Windows, définissez la politique d\'exécution avec `Set-ExecutionPolicy RemoteSigned`.',
+          },
           hint: 'Tapez "chmod +x projets/script.sh"',
-          validate: (cmd) =>
-            /^chmod\s+(\+x|755|u\+x)\s+projets\/script\.sh$/.test(cmd.trim()),
-          successMessage: 'Super ! Le script est maintenant exécutable.',
+          hintByEnv: {
+            windows: 'Tapez "Set-ExecutionPolicy RemoteSigned" (requis pour exécuter des scripts PS1)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^set-executionpolicy\s+(remotesigned|unrestricted|bypass)/.test(c) || /^chmod\s+(\+x|755)\s+projets\/script\.sh/.test(c);
+            return /^chmod\s+(\+x|755|u\+x)\s+projets\/script\.sh$/.test(c);
+          },
+          successMessage: 'Super ! Vous maîtrisez les permissions d\'exécution.',
         },
       },
     ],
@@ -690,8 +843,18 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Listez les processus en cours avec `ps`.',
+          instructionByEnv: {
+            windows: 'Listez les processus avec `Get-Process` (ou `tasklist` en CMD).',
+          },
           hint: 'Tapez simplement "ps"',
-          validate: (cmd) => /^ps(\s+.*)?$/.test(cmd.trim()),
+          hintByEnv: {
+            windows: 'Tapez "Get-Process" ou son alias "gps"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-process|gps|tasklist|ps)(\s.*)?$/.test(c);
+            return /^ps(\s+.*)?$/.test(c);
+          },
           successMessage: 'Parfait ! Vous voyez maintenant les processus en cours.',
         },
       },
@@ -727,10 +890,20 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Affichez la liste des processus avec `ps` pour trouver leurs PIDs.',
-          hint: 'Tapez "ps" pour voir les processus actuels',
-          validate: (cmd) => /^ps(\s+.*)?$/.test(cmd.trim()),
-          successMessage: 'Bien ! En situation réelle, vous utiliseriez le PID pour arrêter un processus.',
+          instruction: 'Affichez la liste des processus avec `ps aux` pour voir tous les processus.',
+          instructionByEnv: {
+            windows: 'Arrêtez un processus par son nom avec `Stop-Process -Name node`.',
+          },
+          hint: 'Tapez "ps aux" pour la liste complète',
+          hintByEnv: {
+            windows: 'Tapez "Stop-Process -Name node" (remplace "kill" en PowerShell)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(stop-process|spps|taskkill)(\s.*)?$/.test(c) || /^ps(\s.*)?$/.test(c);
+            return /^ps(\s+.*)?$/.test(c);
+          },
+          successMessage: 'Bien ! Vous savez maintenant surveiller et contrôler les processus.',
         },
       },
     ],
@@ -778,10 +951,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Créez un fichier `bonjour.txt` contenant "Bonjour le monde!" avec echo et `>`.',
+          instructionByEnv: {
+            windows: 'Créez `bonjour.txt` avec `Write-Output "Bonjour le monde!" > bonjour.txt` ou `echo "Bonjour le monde!" > bonjour.txt`.',
+          },
           hint: 'Tapez: echo "Bonjour le monde!" > bonjour.txt',
-          validate: (cmd) =>
-            /^echo\s+["']?Bonjour le monde!?["']?\s+>\s+bonjour\.txt$/.test(cmd.trim()),
-          successMessage: 'Excellent ! Vous savez maintenant créer des fichiers depuis le terminal.',
+          hintByEnv: {
+            windows: 'Tapez: echo "Bonjour le monde!" > bonjour.txt (fonctionne aussi en PowerShell)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim();
+            if (env === 'windows') return /^(write-output|write-host|echo)\s+["']?Bonjour le monde!?["']?\s*>\s*bonjour\.txt$/i.test(c);
+            return /^echo\s+["']?Bonjour le monde!?["']?\s+>\s+bonjour\.txt$/.test(c);
+          },
+          successMessage: 'Excellent ! Vous savez créer des fichiers par redirection.',
         },
       },
       {
@@ -822,9 +1004,19 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Utilisez un pipe pour compter les fichiers dans le répertoire courant : `ls | wc -l`.',
+          instructionByEnv: {
+            windows: 'Comptez les fichiers avec un pipe PowerShell : `Get-ChildItem | Measure-Object`.',
+          },
           hint: 'Tapez "ls | wc -l"',
-          validate: (cmd) => cmd.trim() === 'ls | wc -l',
-          successMessage: 'Bravo ! Vous maîtrisez maintenant les pipes — l\'essence de la philosophie Unix.',
+          hintByEnv: {
+            windows: 'Tapez "Get-ChildItem | Measure-Object" (équivalent PowerShell de ls | wc -l)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-childitem|dir|ls)\s*\|\s*(measure-object|measure)/.test(c) || c === 'ls | wc -l';
+            return c === 'ls | wc -l';
+          },
+          successMessage: 'Bravo ! Vous maîtrisez maintenant les pipes — l\'essence de la ligne de commande.',
         },
       },
     ],

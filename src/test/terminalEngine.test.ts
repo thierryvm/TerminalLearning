@@ -174,3 +174,154 @@ describe('getTabCompletions — path completion (with space)', () => {
     expect(getTabCompletions('cd /nonexistent/', state)).toHaveLength(0);
   });
 });
+
+// ─── Windows PowerShell aliases ───────────────────────────────────────────────
+
+describe('PowerShell aliases — navigation', () => {
+  it('Get-Location returns current directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Get-Location');
+    expect(result.lines[0].text).toMatch(/home\/user/);
+  });
+
+  it('gl is an alias for Get-Location', () => {
+    const state = createInitialState();
+    const r1 = processCommand(state, 'Get-Location');
+    const r2 = processCommand(state, 'gl');
+    expect(r1.lines[0].text).toBe(r2.lines[0].text);
+  });
+
+  it('Set-Location changes directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Set-Location documents');
+    expect(result.newState.cwd).toContain('documents');
+  });
+
+  it('Get-ChildItem lists files', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Get-ChildItem');
+    const text = result.lines.map((l) => l.text).join(' ');
+    expect(text).toContain('documents');
+  });
+
+  it('dir is an alias for Get-ChildItem', () => {
+    const state = createInitialState();
+    const r1 = processCommand(state, 'Get-ChildItem');
+    const r2 = processCommand(state, 'dir');
+    expect(r1.lines).toEqual(r2.lines);
+  });
+});
+
+describe('PowerShell aliases — file operations', () => {
+  it('Get-Content reads a file', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Get-Content documents/notes.txt');
+    expect(result.lines.some((l) => l.text.includes('Mes notes'))).toBe(true);
+  });
+
+  it('gc is an alias for Get-Content', () => {
+    const state = createInitialState();
+    const r1 = processCommand(state, 'Get-Content documents/notes.txt');
+    const r2 = processCommand(state, 'gc documents/notes.txt');
+    expect(r1.lines).toEqual(r2.lines);
+  });
+
+  it('New-Item creates a file', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'New-Item -ItemType File -Name test.txt');
+    expect(result.lines[0]?.type).not.toBe('error');
+    // File should now exist
+    const check = processCommand(result.newState, 'Get-Content test.txt');
+    expect(check.lines[0]?.type).not.toBe('error');
+  });
+
+  it('New-Item creates a directory', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'New-Item -ItemType Directory -Name newfolder');
+    expect(result.lines[0]?.type).not.toBe('error');
+    const check = processCommand(result.newState, 'Get-ChildItem');
+    expect(check.lines.map((l) => l.text).join(' ')).toContain('newfolder');
+  });
+
+  it('Copy-Item copies a file', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Copy-Item documents/notes.txt documents/notes-bak.txt');
+    expect(result.lines[0]?.type).not.toBe('error');
+  });
+
+  it('Remove-Item deletes a file', () => {
+    const state = createInitialState();
+    const after = processCommand(state, 'Remove-Item documents/notes.txt');
+    expect(after.lines[0]?.type).not.toBe('error');
+    const check = processCommand(after.newState, 'Get-Content documents/notes.txt');
+    expect(check.lines[0]?.type).toBe('error');
+  });
+
+  it('del is an alias for Remove-Item', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'del documents/notes.txt');
+    expect(result.lines[0]?.type).not.toBe('error');
+  });
+});
+
+describe('PowerShell aliases — processes & search', () => {
+  it('Get-Process returns process list', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Get-Process');
+    expect(result.lines.some((l) => l.text.includes('ProcessName') || l.text.includes('pwsh'))).toBe(true);
+  });
+
+  it('Stop-Process sends stop signal', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Stop-Process -Name node');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('Select-String searches in files', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'Select-String "notes" documents/notes.txt');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('cls clears the terminal', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'cls');
+    expect(result.clear).toBe(true);
+  });
+});
+
+describe('macOS-specific commands', () => {
+  it('open simulates opening a file', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'open documents/notes.txt');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('brew install simulates package install', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'brew install wget');
+    expect(result.lines.some((l) => l.text.includes('wget'))).toBe(true);
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('brew list shows installed packages', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'brew list');
+    expect(result.lines[0].text).toContain('git');
+  });
+});
+
+describe('Windows package manager', () => {
+  it('winget install simulates package install', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'winget install git');
+    expect(result.lines.some((l) => l.text.toLowerCase().includes('git'))).toBe(true);
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('winget list shows installed packages', () => {
+    const state = createInitialState();
+    const result = processCommand(state, 'winget list');
+    expect(result.lines.some((l) => l.text.includes('Git'))).toBe(true);
+  });
+});

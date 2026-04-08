@@ -936,9 +936,204 @@ export function processCommand(state: TerminalState, input: string): CommandOutp
         newState,
       };
 
+    // ── Windows PowerShell aliases ─────────────────────────────────────────────
+
+    // pwd equivalents
+    case 'get-location':
+    case 'gl':
+      return { lines: cmdPwd(newState), newState };
+
+    // cd equivalents
+    case 'set-location':
+    case 'sl': {
+      const { lines: slLines, newCwd: slCwd } = cmdCd(newState, args);
+      if (slCwd) newState = { ...newState, cwd: slCwd };
+      return { lines: slLines, newState };
+    }
+
+    // ls equivalents
+    case 'get-childitem':
+    case 'gci':
+    case 'dir':
+      return { lines: cmdLs(newState, args), newState };
+
+    // cat equivalents
+    case 'get-content':
+    case 'gc':
+      return { lines: cmdCat(newState, args), newState };
+
+    // New-Item: creates file or directory
+    // Usage: New-Item name | New-Item -ItemType Directory -Name name | New-Item -ItemType File -Name name
+    case 'new-item':
+    case 'ni': {
+      const isDir = args.some((a) => a.toLowerCase() === 'directory');
+      // -Name flag or first non-flag arg
+      const nameIdx = args.findIndex((a) => a.toLowerCase() === '-name');
+      const pathIdx = args.findIndex((a) => a.toLowerCase() === '-path');
+      const name =
+        nameIdx >= 0 ? args[nameIdx + 1] :
+        pathIdx >= 0 ? args[pathIdx + 1] :
+        args.find((a) => !a.startsWith('-'));
+      if (!name) return { lines: [{ text: 'New-Item: -Name ou chemin requis', type: 'error' }], newState };
+      if (isDir) {
+        const { lines: niLines, newRoot: niRoot } = cmdMkdir(newState, [name]);
+        if (niRoot) newState = { ...newState, root: niRoot };
+        return { lines: niLines, newState };
+      } else {
+        const { lines: niLines, newRoot: niRoot } = cmdTouch(newState, [name]);
+        if (niRoot) newState = { ...newState, root: niRoot };
+        return { lines: niLines, newState };
+      }
+    }
+
+    // cp equivalents
+    case 'copy-item':
+    case 'cpi':
+    case 'copy': {
+      const cpArgs = args.filter((a) => !a.startsWith('-'));
+      const { lines: cpLines, newRoot: cpRoot } = cmdCp(newState, cpArgs);
+      if (cpRoot) newState = { ...newState, root: cpRoot };
+      return { lines: cpLines, newState };
+    }
+
+    // mv equivalents
+    case 'move-item':
+    case 'mi':
+    case 'move': {
+      const mvArgs = args.filter((a) => !a.startsWith('-'));
+      const { lines: mvLines, newRoot: mvRoot } = cmdMv(newState, mvArgs);
+      if (mvRoot) newState = { ...newState, root: mvRoot };
+      return { lines: mvLines, newState };
+    }
+
+    // rm equivalents
+    case 'remove-item':
+    case 'ri':
+    case 'del':
+    case 'erase': {
+      const rmArgs = args.filter((a) => !a.startsWith('-'));
+      const { lines: rmLines, newRoot: rmRoot } = cmdRm(newState, rmArgs);
+      if (rmRoot) newState = { ...newState, root: rmRoot };
+      return { lines: rmLines, newState };
+    }
+
+    // echo equivalents
+    case 'write-host':
+    case 'write-output':
+      return { lines: cmdEcho(args.filter((a) => !a.startsWith('-'))), newState };
+
+    // ps equivalents
+    case 'get-process':
+    case 'gps': {
+      const psLines = [
+        { text: 'Handles  NPM(K)  PM(K)  WS(K) VM(M)   CPU(s)   Id ProcessName', type: 'output' as const },
+        { text: '-------  ------  -----  ----- -----   ------   -- -----------', type: 'output' as const },
+        { text: `    256      14   4560   8192   120    0.047 1234 WindowsTerminal`, type: 'output' as const },
+        { text: `     64       8   2048   4096    80    0.016 2048 node`, type: 'output' as const },
+        { text: `     32       4   1024   2048    40    0.003 5678 pwsh`, type: 'output' as const },
+      ];
+      return { lines: psLines, newState };
+    }
+
+    // kill equivalents
+    case 'stop-process':
+    case 'spps':
+    case 'taskkill': {
+      if (!args.length) return { lines: [{ text: 'Stop-Process: -Id ou -Name requis', type: 'error' }], newState };
+      const target = args[args.length - 1];
+      return { lines: [{ text: `Processus '${target}' arrêté.`, type: 'success' }], newState };
+    }
+
+    // grep equivalents
+    // Select-String -Pattern "pattern" -Path file  OR  Select-String "pattern" file
+    case 'select-string':
+    case 'sls': {
+      const patternIdx = args.findIndex((a) => a.toLowerCase() === '-pattern');
+      const pathIdx = args.findIndex((a) => a.toLowerCase() === '-path');
+      let pattern: string;
+      let filePath: string;
+      if (patternIdx >= 0) {
+        pattern = args[patternIdx + 1] ?? '';
+        filePath = pathIdx >= 0 ? args[pathIdx + 1] : (args.find((a, i) => !a.startsWith('-') && i !== patternIdx + 1) ?? '');
+      } else {
+        const nonFlags = args.filter((a) => !a.startsWith('-'));
+        pattern = nonFlags[0] ?? '';
+        filePath = nonFlags[1] ?? '';
+      }
+      return { lines: cmdGrep(newState, [pattern, filePath]), newState };
+    }
+
+    // clear equivalents
+    case 'clear-host':
+    case 'cls':
+      return { lines: [], clear: true, newState };
+
+    // mkdir alias (works on all OS)
+    case 'md':
+      return (() => {
+        const { lines: mdLines, newRoot: mdRoot } = cmdMkdir(newState, args);
+        if (mdRoot) newState = { ...newState, root: mdRoot };
+        return { lines: mdLines, newState };
+      })();
+
+    // ── macOS-specific ─────────────────────────────────────────────────────────
+
+    // open: simulates opening a file/app
+    case 'open': {
+      if (!args.length) return { lines: [{ text: 'open: missing argument', type: 'error' }], newState };
+      const target = args[args.length - 1];
+      return { lines: [{ text: `Ouverture de '${target}'…`, type: 'success' }], newState };
+    }
+
+    // pbcopy: copy stdin to clipboard (simulated)
+    case 'pbcopy':
+      return { lines: [{ text: '[contenu copié dans le presse-papiers]', type: 'success' }], newState };
+
+    // pbpaste: paste clipboard content (simulated)
+    case 'pbpaste':
+      return { lines: [{ text: '[contenu du presse-papiers]', type: 'output' }], newState };
+
+    // brew: Homebrew package manager (simulated)
+    case 'brew': {
+      const sub = args[0]?.toLowerCase();
+      if (sub === 'install' && args[1]) {
+        return { lines: [
+          { text: `==> Fetching ${args[1]}...`, type: 'info' },
+          { text: `==> Installing ${args[1]}...`, type: 'info' },
+          { text: `✓  ${args[1]} installed successfully`, type: 'success' },
+        ], newState };
+      }
+      if (sub === 'update') {
+        return { lines: [{ text: '==> Updated Homebrew. Nothing to upgrade.', type: 'success' }], newState };
+      }
+      if (sub === 'list') {
+        return { lines: [{ text: 'git  node  python  wget  curl', type: 'output' }], newState };
+      }
+      return { lines: [{ text: 'Homebrew — Usage: brew install|update|list', type: 'output' }], newState };
+    }
+
+    // winget: Windows package manager (simulated)
+    case 'winget': {
+      const sub = args[0]?.toLowerCase();
+      if (sub === 'install' && args[1]) {
+        return { lines: [
+          { text: `Found ${args[1]}`, type: 'info' },
+          { text: `Downloading ${args[1]}...`, type: 'info' },
+          { text: `Successfully installed ${args[1]}`, type: 'success' },
+        ], newState };
+      }
+      if (sub === 'list') {
+        return { lines: [{ text: 'Name          Id                  Version', type: 'output' },
+          { text: 'Git           Git.Git             2.44.0', type: 'output' },
+          { text: 'Node.js       OpenJS.NodeJS       20.11.0', type: 'output' },
+        ], newState };
+      }
+      return { lines: [{ text: 'winget — Usage: winget install|list', type: 'output' }], newState };
+    }
+
     default:
       return {
-        lines: [{ text: `bash: ${cmd}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }],
+        lines: [{ text: `${cmd}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }],
         newState,
       };
   }

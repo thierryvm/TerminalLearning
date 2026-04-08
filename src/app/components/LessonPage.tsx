@@ -120,13 +120,13 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const handleCommand = useCallback(
     (command: string, _state: TerminalState) => {
       if (!lesson.exercise || exerciseCompleted) return;
-      if (lesson.exercise.validate(command)) {
+      if (lesson.exercise.validate(command, selectedEnv)) {
         completeLesson(moduleId, lessonId);
         setExerciseMessage(lesson.exercise.successMessage);
         setJustCompleted(true);
       }
     },
-    [lesson, exerciseCompleted, completeLesson, moduleId, lessonId]
+    [lesson, exerciseCompleted, completeLesson, moduleId, lessonId, selectedEnv]
   );
 
   // Auto-navigate to next lesson after completion.
@@ -232,7 +232,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                 {exerciseMessage ? (
                   <p className="text-emerald-400 text-sm">{exerciseMessage}</p>
                 ) : (
-                  <p className="text-[#c9d1d9] text-sm">{lesson.exercise.instruction}</p>
+                  <p className="text-[#c9d1d9] text-sm">
+                    {lesson.exercise.instructionByEnv?.[selectedEnv] ?? lesson.exercise.instruction}
+                  </p>
                 )}
 
                 {justCompleted && (
@@ -252,7 +254,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                     </button>
                     {showHint && (
                       <p className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2">
-                        💡 {lesson.exercise.hint}
+                        💡 {lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint}
                       </p>
                     )}
                   </div>
