@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen, Compass, FolderOpen,
   FileText, Shield, Cpu, GitMerge, ChevronDown, ChevronRight,
-  CheckCircle2, Circle, X, Menu, Home, Lock, Monitor,
+  CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -219,7 +219,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     title={`${meta.label} — ${meta.shell}`}
                     aria-pressed={active}
                   >
-                    <Monitor size={10} aria-hidden="true" />
+                    {envId === 'linux' ? (
+                      <Terminal size={10} aria-hidden="true" />
+                    ) : envId === 'macos' ? (
+                      <span className="text-[10px] leading-none select-none" aria-hidden="true"></span>
+                    ) : (
+                      <span className="text-[9px] leading-none select-none" aria-hidden="true">⊞</span>
+                    )}
                     {meta.label}
                   </button>
                 );

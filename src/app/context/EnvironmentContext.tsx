@@ -113,9 +113,9 @@ export const ENV_META: Record<SelectedEnvironment, EnvMeta> = {
     shell: 'zsh',
     promptPreview: 'machine ~ %',
     icon: '',
-    color: 'text-blue-400',
-    borderColor: 'border-blue-500/40',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-violet-400',
+    borderColor: 'border-violet-500/40',
+    bgColor: 'bg-violet-500/10',
   },
   windows: {
     id: 'windows',

@@ -7,6 +7,14 @@ import {
   Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
   Monitor,
 } from 'lucide-react';
+
+// ── Environment icon helper ──────────────────────────────────────────────────
+
+function EnvIcon({ envId, size = 14 }: { envId: SelectedEnvironment; size?: number }) {
+  if (envId === 'linux') return <Terminal size={size} aria-hidden="true" />;
+  if (envId === 'macos') return <span className="text-[13px] leading-none select-none" aria-hidden="true"></span>;
+  return <span className="text-[11px] leading-none select-none" aria-hidden="true">⊞</span>;
+}
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
@@ -274,7 +282,7 @@ export function Landing() {
                     }`}
                     aria-pressed={active}
                   >
-                    <Monitor size={14} aria-hidden="true" />
+                    <EnvIcon envId={envId} size={14} />
                     {meta.label}
                   </button>
                 );
