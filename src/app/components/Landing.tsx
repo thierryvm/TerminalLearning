@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
-  Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
+  Compass, FolderOpen, FileText, Cpu, GitMerge,
   Monitor, LogIn,
 } from 'lucide-react';
 

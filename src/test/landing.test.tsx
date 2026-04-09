@@ -100,11 +100,13 @@ describe('Landing — trust badges', () => {
 // ── Module grid ───────────────────────────────────────────────────────────────
 
 describe('Landing — module grid', () => {
-  it('renders all 7 module cards', () => {
+  it('renders all 7 module cards with unique labels', () => {
     renderLanding();
     // Each card has an aria-label "Accéder au module X"
     const moduleCards = screen.getAllByRole('button', { name: /accéder au module/i });
     expect(moduleCards).toHaveLength(7);
+    const labels = moduleCards.map((card) => card.getAttribute('aria-label'));
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it('each module card shows lesson count', () => {
