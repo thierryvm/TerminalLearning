@@ -1,33 +1,46 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { useEnvironment, ENV_META } from '../../context/EnvironmentContext';
+import type { SelectedEnvironment } from '../../context/EnvironmentContext';
 
 interface TerminalLine {
   type: 'prompt' | 'output';
   text: string;
 }
 
-const SEQUENCE: Array<{ command: string; output: string[] }> = [
-  {
-    command: 'pwd',
-    output: ['/home/user'],
-  },
-  {
-    command: 'ls',
-    output: ['documents/  downloads/  projects/  notes.txt'],
-  },
-  {
-    command: 'cd projects',
-    output: [],
-  },
-  {
-    command: 'mkdir my-app',
-    output: [],
-  },
-  {
-    command: 'ls',
-    output: ['my-app/'],
-  },
-];
+// ─── Per-environment sequences ────────────────────────────────────────────────
+
+const SEQUENCES: Record<SelectedEnvironment, Array<{ command: string; output: string[] }>> = {
+  linux: [
+    { command: 'pwd', output: ['/home/user'] },
+    { command: 'ls', output: ['documents/  downloads/  projects/  notes.txt'] },
+    { command: 'cd projects', output: [] },
+    { command: 'mkdir my-app', output: [] },
+    { command: 'ls', output: ['my-app/'] },
+  ],
+  macos: [
+    { command: 'pwd', output: ['/Users/user'] },
+    { command: 'ls', output: ['Desktop  Documents  Downloads  projects  notes.txt'] },
+    { command: 'cd projects', output: [] },
+    { command: 'mkdir my-app', output: [] },
+    { command: 'ls', output: ['my-app/'] },
+  ],
+  windows: [
+    { command: 'Get-Location', output: ['Path', '----', 'C:\\Users\\user'] },
+    { command: 'Get-ChildItem', output: ['Documents  Downloads  projects  notes.txt'] },
+    { command: 'Set-Location projects', output: [] },
+    { command: 'New-Item -Type Directory my-app', output: ['    Directory: C:\\Users\\user\\projects', '', 'my-app'] },
+    { command: 'Get-ChildItem', output: ['my-app/'] },
+  ],
+};
+
+// ─── Per-environment title bar label ─────────────────────────────────────────
+
+const TITLE_LABELS: Record<SelectedEnvironment, string> = {
+  linux: 'terminal — bash',
+  macos: 'terminal — zsh',
+  windows: 'Windows PowerShell',
+};
 
 const TYPING_SPEED = 55; // ms per character
 const PAUSE_AFTER_OUTPUT = 700; // ms
@@ -50,19 +63,57 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
-/** Pre-built static state for reduced-motion users */
-const STATIC_LINES: TerminalLine[] = SEQUENCE.flatMap((step) => [
-  { type: 'prompt', text: step.command },
-  ...step.output.map<TerminalLine>((text) => ({ type: 'output', text })),
-]);
+function buildStaticLines(env: SelectedEnvironment): TerminalLine[] {
+  return SEQUENCES[env].flatMap((step) => [
+    { type: 'prompt' as const, text: step.command },
+    ...step.output.map<TerminalLine>((text) => ({ type: 'output', text })),
+  ]);
+}
+
+// ─── Env-aware prompt renderer ────────────────────────────────────────────────
+
+function PromptSpan({ env }: { env: SelectedEnvironment }) {
+  if (env === 'linux') {
+    return (
+      <>
+        <span className="text-emerald-400">user@terminal</span>
+        <span className="text-[#8b949e]">:</span>
+        <span className="text-blue-400">~</span>
+        <span className="text-[#8b949e]">$ </span>
+      </>
+    );
+  }
+  if (env === 'macos') {
+    return (
+      <>
+        <span className="text-violet-400">➜</span>
+        <span className="text-[#8b949e]"> ~ </span>
+        <span className="text-violet-300">% </span>
+      </>
+    );
+  }
+  // windows
+  return (
+    <>
+      <span className="text-sky-400">PS </span>
+      <span className="text-[#e6edf3]">C:\Users\user</span>
+      <span className="text-sky-400">&gt; </span>
+    </>
+  );
+}
 
 export function TerminalPreview() {
+  const { selectedEnv } = useEnvironment();
   const reducedMotion = useReducedMotion();
+
   const [animatedLines, setAnimatedLines] = useState<TerminalLine[]>([]);
   const [typingText, setTypingText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
+
+  const meta = ENV_META[selectedEnv];
 
   /* Cursor blink */
   useEffect(() => {
@@ -71,89 +122,73 @@ export function TerminalPreview() {
     return () => clearInterval(id);
   }, [reducedMotion]);
 
-  /* Derive visible lines — static for reduced-motion, animated otherwise */
-  const lines = reducedMotion ? STATIC_LINES : animatedLines;
-
   /* Scroll within the terminal container only — never scroll the page */
+  const staticLines = buildStaticLines(selectedEnv);
+  const lines = reducedMotion ? staticLines : animatedLines;
+
   useEffect(() => {
     const el = containerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [lines, typingText]);
 
-  /* Animation engine — only runs when reduced motion is off */
+  /* Re-run animation when env changes */
   useEffect(() => {
     if (reducedMotion) return;
 
-    let cancelled = false;
+    cancelledRef.current = true;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-    function clear() {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    }
+    // Small gap so the previous loop fully exits before the new one starts
+    const startTimeout = setTimeout(() => {
+      cancelledRef.current = false;
+      setAnimatedLines([]);
+      setTypingText('');
 
-    function delay(ms: number): Promise<void> {
-      return new Promise((resolve) => {
-        timeoutRef.current = setTimeout(resolve, ms);
-      });
-    }
-
-    async function runAnimation() {
-      while (!cancelled) {
-        setAnimatedLines([]);
-        setTypingText('');
-
-        for (const step of SEQUENCE) {
-          if (cancelled) return;
-
-          // Type the command character by character
-          for (let i = 0; i <= step.command.length; i++) {
-            if (cancelled) return;
-            setTypingText(step.command.slice(0, i));
-            await delay(TYPING_SPEED);
-          }
-
-          // Commit the typed line to the lines array
-          if (cancelled) return;
+      async function runAnimation() {
+        const sequence = SEQUENCES[selectedEnv];
+        while (!cancelledRef.current) {
+          setAnimatedLines([]);
           setTypingText('');
-          setAnimatedLines((prev) => [
-            ...prev,
-            { type: 'prompt', text: step.command },
-          ]);
 
-          await delay(120);
+          for (const step of sequence) {
+            if (cancelledRef.current) return;
 
-          // Show output lines
-          for (const out of step.output) {
-            if (cancelled) return;
-            setAnimatedLines((prev) => [...prev, { type: 'output', text: out }]);
-            await delay(PAUSE_AFTER_OUTPUT);
+            for (let i = 0; i <= step.command.length; i++) {
+              if (cancelledRef.current) return;
+              setTypingText(step.command.slice(0, i));
+              await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, TYPING_SPEED); });
+            }
+
+            if (cancelledRef.current) return;
+            setTypingText('');
+            setAnimatedLines((prev) => [...prev, { type: 'prompt', text: step.command }]);
+
+            await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, 120); });
+
+            for (const out of step.output) {
+              if (cancelledRef.current) return;
+              setAnimatedLines((prev) => [...prev, { type: 'output', text: out }]);
+              await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, PAUSE_AFTER_OUTPUT); });
+            }
+
+            if (step.output.length === 0) {
+              await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, PAUSE_AFTER_OUTPUT); });
+            }
           }
 
-          if (step.output.length === 0) {
-            await delay(PAUSE_AFTER_OUTPUT);
-          }
+          await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, PAUSE_BEFORE_RESTART); });
         }
-
-        // Pause before restarting the loop
-        await delay(PAUSE_BEFORE_RESTART);
       }
-    }
 
-    runAnimation();
+      runAnimation();
+    }, 80);
 
     return () => {
-      cancelled = true;
-      clear();
+      cancelledRef.current = true;
+      clearTimeout(startTimeout);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [reducedMotion]);
-
-  const prompt = (
-    <>
-      <span className="text-emerald-400">user@terminal</span>
-      <span className="text-[#8b949e]">:</span>
-      <span className="text-blue-400">~</span>
-      <span className="text-[#8b949e]">$ </span>
-    </>
-  );
+  }, [selectedEnv, reducedMotion]);
 
   return (
     <motion.div
@@ -168,16 +203,21 @@ export function TerminalPreview() {
         <div className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
         <div className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
         <div className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
-        <span className="ml-3 text-xs text-[#8b949e] font-mono">terminal — bash</span>
+        <span className={`ml-3 text-xs font-mono ${meta.color}`}>
+          {TITLE_LABELS[selectedEnv]}
+        </span>
       </div>
 
-      {/* Content — scrolls internally, never scrolls the page */}
-      <div ref={containerRef} className="p-5 font-mono text-sm h-[260px] overflow-y-auto overflow-x-hidden space-y-1">
+      {/* Content — left-aligned, scrolls internally, never scrolls the page */}
+      <div
+        ref={containerRef}
+        className="p-5 font-mono text-sm text-left h-[260px] overflow-y-auto overflow-x-hidden space-y-1"
+      >
         {lines.map((line, i) => (
           <div key={i} className="leading-relaxed">
             {line.type === 'prompt' ? (
               <div>
-                {prompt}
+                <PromptSpan env={selectedEnv} />
                 <span className="text-[#e6edf3]">{line.text}</span>
               </div>
             ) : (
@@ -188,7 +228,7 @@ export function TerminalPreview() {
 
         {/* Active typing line */}
         <div className="leading-relaxed">
-          {prompt}
+          <PromptSpan env={selectedEnv} />
           <span className="text-[#e6edf3]">{typingText}</span>
           <span
             className="inline-block w-[7px] h-[14px] bg-[#e6edf3] align-middle ml-px"
