@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 9 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : Module 7 ✅ PR #36, enrichissement modules 4–6 + CommandReference env-aware ✅ PR #37
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : Module 7 ✅ (PR #36), enrichissement modules 4–6 + CommandReference env-aware ✅ (PR #37), TerminalPreview env-aware ✅ (PR #38) — 32 leçons, 7 modules, 242 tests unitaires + 176 E2E
 
 ---
 
@@ -88,12 +88,13 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 ### 🔄 Phase 5 — Curriculum Expansion (EN COURS — démarré 9 avril 2026)
 
-#### ✅ Livré (PR #36 + PR #37)
+#### ✅ Livré (PR #36 + PR #37 + PR #38)
 - Module 7 — Variables & Scripts (6 leçons) : `export`, `$PATH`, `.env`, shell config, scripts bash, `cron`
-- Enrichissement modules 4–6 : +13 leçons (chown, sudo, top, bg/fg, tee, stderr, redirection)
+- Enrichissement modules 4–6 : permissions (chown, sudo, security), processus (top, bg/fg), redirection (stderr, tee)
 - CommandReference entièrement env-aware : filtres par env, syntaxe + exemples par env, badge environnement
 - LessonPage : rendu env-aware (`contentByEnv`, `labelByEnv`), prompt `PS>` en cyan
-- 238 tests unitaires (32 leçons au total)
+- TerminalPreview : `text-left` + env-aware (prompt, barre de titre, séquences de commandes)
+- 242 tests unitaires + 176 tests Playwright E2E — 32 leçons, 7 modules
 
 #### 🔜 Modules planifiés (THI-27 à THI-30)
 - **Module 8 — Réseau & SSH** (THI-27) : `ping`, `curl`, `wget`, `ssh`, `scp`, DNS
