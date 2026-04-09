@@ -652,9 +652,11 @@ export function Landing() {
           <div className="space-y-4">
             {/* Ko-fi — on hold pending Solidaris authorization */}
             <div
+              role="group"
+              aria-disabled="true"
+              aria-label="Ko-fi — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
               className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
-              title="En attente d'accord mutuelle Solidaris (RIZIV/INAMI)"
-              aria-label="Ko-fi — bientôt disponible"
+              title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
             >
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">
@@ -680,9 +682,11 @@ export function Landing() {
 
             {/* GitHub Sponsors — on hold pending Solidaris authorization */}
             <div
+              role="group"
+              aria-disabled="true"
+              aria-label="GitHub Sponsors — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
               className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
-              title="En attente d'accord mutuelle Solidaris (RIZIV/INAMI)"
-              aria-label="GitHub Sponsors — bientôt disponible"
+              title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
             >
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">

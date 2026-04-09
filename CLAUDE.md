@@ -7,8 +7,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **Live** : https://terminal-learning.vercel.app
 - **Repo** : https://github.com/thierryvm/TerminalLearning
 - **Vercel** : https://vercel.com/thierry-vanmeeterens-projects/terminal-learning
-- **Ko-fi** : https://ko-fi.com/thierryvm (dons suspendus dans l'UI — attente accord mutuelle Solidaris RIZIV/INAMI)
-- **GitHub Sponsors** : https://github.com/sponsors/thierryvm (compte activé le 9 avril 2026 — dons suspendus dans l'UI, même attente)
+- **Ko-fi** : https://ko-fi.com/thierryvm (dons suspendus dans l'UI — en attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI))
+- **GitHub Sponsors** : https://github.com/sponsors/thierryvm (compte activé le 9 avril 2026 — dons suspendus dans l'UI, en attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI))
 
 ## Règles Git — NON NÉGOCIABLES
 - **Jamais de commit direct sur `main`** — toujours `feature/xxx` ou `fix/xxx`
@@ -51,5 +51,5 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - `Dashboard.tsx` lignes 51 + 204 : `navigate('/learn/...')` → `navigate('/app/learn/...')` (redirect actif mais incohérent)
 
 ## Décisions en attente
-- **Ko-fi + GitHub Sponsors** — dons suspendus dans l'UI jusqu'à l'accord mutuelle Solidaris (RIZIV/INAMI). GitHub Sponsors est activé sur la plateforme (9 avril 2026) mais les boutons dans l'app restent désactivés. Quand l'accord arrive : réactiver les cartes dans `Landing.tsx`, le lien footer, et mettre à jour le `donate` dans `terminalEngine.ts`.
+- **Ko-fi + GitHub Sponsors** — dons suspendus dans l'UI jusqu'à l'accord de la mutuelle Solidaris (RIZIV/INAMI). GitHub Sponsors est activé sur la plateforme (9 avril 2026) mais les boutons dans l'app restent désactivés. Quand l'accord arrive : réactiver les cartes dans `Landing.tsx`, le lien footer, et mettre à jour le `donate` dans `terminalEngine.ts`.
 - **Playwright** — e2e/ ajouté (3 suites : accessibility, mobile, seo). Exclure de vitest (`exclude: ['node_modules/**', 'e2e/**']` dans vitest.config.ts — ne jamais retirer).
