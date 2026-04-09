@@ -68,8 +68,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <button
             onClick={onClose}
             className="lg:hidden text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1"
+            aria-label="Fermer le menu"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -137,7 +138,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => !locked && toggleModule(mod.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group ${
                     locked
-                      ? 'opacity-50 cursor-not-allowed text-[#8b949e]'
+                      ? 'cursor-not-allowed text-[#8b949e]'
                       : 'hover:bg-[#161b22] text-[#c9d1d9]'
                   }`}
                   title={locked ? `Prérequis : ${unlockStatus?.missingPrerequisiteLabels.join(', ')}` : undefined}
@@ -200,7 +201,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="shrink-0 border-t border-[#30363d] px-3 py-4 space-y-3">
           {/* Environment switcher */}
           <div className="px-1">
-            <p className="text-[9px] text-[#484f58] uppercase tracking-widest font-mono mb-1.5 px-1">
+            <p className="text-[9px] text-[#8b949e] uppercase tracking-widest font-mono mb-1.5 px-1">
               Environnement
             </p>
             <div className="flex gap-1">
@@ -214,7 +215,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-mono transition-all ${
                       active
                         ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}`
-                        : 'text-[#484f58] hover:text-[#8b949e] hover:bg-[#161b22] border border-transparent'
+                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent'
                     }`}
                     title={`${meta.label} — ${meta.shell}`}
                     aria-pressed={active}
@@ -231,7 +232,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-[#484f58] font-mono mt-1.5 px-1 truncate">
+            <p className="text-[9px] text-[#8b949e] font-mono mt-1.5 px-1 truncate">
               {ENV_META[selectedEnv].promptPreview}
             </p>
           </div>
@@ -259,8 +260,9 @@ export function MenuButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       className="lg:hidden fixed top-3.5 left-4 z-50 p-2 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+      aria-label="Ouvrir le menu de navigation"
     >
-      <Menu size={18} />
+      <Menu size={18} aria-hidden="true" />
     </button>
   );
 }
