@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 8 avril 2026
-> Statut global : **Phase 4 TERMINÉE** — Curriculum v2 + sélection d'environnement + terminal profiles en prod
+> Dernière mise à jour : 9 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : Module 7 ✅ PR #36, enrichissement modules 4–6 + CommandReference env-aware ✅ PR #37
 
 ---
 
@@ -15,7 +15,7 @@ Projet open source, 100% gratuit, IA-assisted dev.
 
 ## ⚠️ Alertes critiques (ne pas ignorer)
 
-### RIZIV/INAMI — GitHub Sponsors (RISQUE MOYEN)
+### INAMI — GitHub Sponsors (RISQUE MOYEN)
 Invalidité longue durée → les dons pourraient être interprétés comme revenus professionnels.
 **Action obligatoire** : contacter le conseiller médical de la mutuelle par écrit AVANT
 d'activer GitHub Sponsors. En attendant : boutons présents dans le code mais désactivés.
@@ -86,14 +86,28 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - 192 tests unitaires
 - Fix sync TOKEN_REFRESHED, OAuth loading states
 
-### 🔜 Phase 5 — Curriculum Expansion (prochain sprint)
+### 🔄 Phase 5 — Curriculum Expansion (EN COURS — démarré 9 avril 2026)
 
-5 nouveaux modules vers fullstack autonome :
-- Module 7 : Variables & Scripts bash
-- Module 8 : Réseau & SSH
-- Module 9 : Git Fondamentaux
-- Module 10 : GitHub & Collaboration (+ workflow Linear)
-- Module 11 : L'IA comme outil dev
+#### ✅ Livré (PR #36 + PR #37)
+- Module 7 — Variables & Scripts (6 leçons) : `export`, `$PATH`, `.env`, shell config, scripts bash, `cron`
+- Enrichissement modules 4–6 : +13 leçons (chown, sudo, top, bg/fg, tee, stderr, redirection)
+- CommandReference entièrement env-aware : filtres par env, syntaxe + exemples par env, badge environnement
+- LessonPage : rendu env-aware (`contentByEnv`, `labelByEnv`), prompt `PS>` en cyan
+- 238 tests unitaires (32 leçons au total)
+
+#### 🔜 Modules planifiés (THI-27 à THI-30)
+- **Module 8 — Réseau & SSH** (THI-27) : `ping`, `curl`, `wget`, `ssh`, `scp`, DNS
+- **Module 9 — Git Fondamentaux** (THI-28) : `init`, `add`, `commit`, `log`, branches, conflits
+- **Module 10 — GitHub & Collaboration** (THI-29) : remotes, PRs, Issues, GitHub Actions, workflow Linear
+- **Module 11 — L'IA comme outil dev** : Claude Code CLI, prompts contextuels, limites et risques
+
+#### 🔮 Couches additionnelles (backlog)
+- **Monitoring & Outils système** : module dédié `htop`, `ps`, `lsof`, `df`/`du`, `free`
+- **Éditeurs de texte** : nano (éditions rapides) + vim/neovim (cours complet interactif avec exercices)
+  - nano : bases, sauvegarder, quitter, rechercher
+  - vim : modes, navigation, édition, `.vimrc`
+  - neovim : intro, écosystème plugins (lazy.nvim), workflow développeur
+- **Cours complets dédiés** (vision long terme) : Git approfondi, Docker, shell scripting masterclass
 
 ### 🔮 Phase 6 — Terminal Multi-Session + Changelog
 

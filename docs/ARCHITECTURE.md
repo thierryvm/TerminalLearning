@@ -1,6 +1,6 @@
 # Architecture — Terminal Learning
 
-> Last updated: 2 April 2026
+> Last updated: 9 April 2026
 
 ## Stack
 
@@ -60,20 +60,26 @@ src/
 │   │   └── NotFound.tsx          # 404 page
 │   ├── context/
 │   │   ├── AuthContext.tsx       # Session, user, signOut
-│   │   └── ProgressContext.tsx   # Progress state (local + Supabase sync)
+│   │   ├── ProgressContext.tsx   # Progress state (local + Supabase sync)
+│   │   └── EnvironmentContext.tsx # Selected env (linux/macos/windows) + persistence
 │   ├── lib/
 │   │   └── progressSync.ts       # mergeProgress() + getDelta() utilities
 │   ├── types/
+│   │   ├── curriculum.ts         # ENVIRONMENTS, LEVELS, ROADMAP_PRIORITIES, EnvId
 │   │   └── database.ts           # Supabase DB types (Phases 3+)
 │   ├── data/
-│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons
-│   │   └── terminalEngine.ts     # Terminal command interpreter
+│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons (32 lessons, 7 modules)
+│   │   ├── terminalEngine.ts     # Terminal command interpreter (60+ commands, env-aware)
+│   │   └── commandCatalogue.ts   # Command catalogue with level + prerequisites metadata
 │   └── hooks/                    # Custom hooks (currently empty)
 ├── test/
 │   ├── setup.ts
 │   ├── progress.test.tsx         # ProgressContext tests
 │   ├── progressSync.test.ts      # mergeProgress + getDelta (10 tests)
-│   └── terminalEngine.test.ts    # Terminal command tests
+│   ├── terminalEngine.test.ts    # Terminal command tests (238 total)
+│   ├── curriculumTypes.test.ts   # Curriculum structure + catalogue consistency
+│   ├── unlocking.test.ts         # Module unlock / prerequisite logic
+│   └── landing.test.tsx          # Landing page module cards
 ├── styles/
 │   ├── index.css                 # Entry CSS
 │   ├── tailwind.css              # Tailwind directives
@@ -85,24 +91,26 @@ src/
 ## Data Flow
 
 ```
-curriculum.ts          terminalEngine.ts
-     │                       │
-     ▼                       ▼
-LessonPage.tsx      TerminalEmulator.tsx
-     │                       │
-     └──────────┬────────────┘
-                ▼
-         ProgressContext.tsx   ← AuthContext.tsx
-                │                     │
-                ├── localStorage       └── Supabase Auth session
-                │   (offline cache)
+curriculum.ts          terminalEngine.ts      commandCatalogue.ts
+     │                       │                       │
+     ▼                       ▼                       ▼
+LessonPage.tsx      TerminalEmulator.tsx    CommandReference.tsx
+     │                       │                       │
+     └──────────┬────────────┘               EnvironmentContext.tsx
+                ▼                                    │
+         ProgressContext.tsx   ← AuthContext.tsx      │
+                │                     │              │
+                ├── localStorage       └── Supabase  └── localStorage
+                │   (offline cache)       Auth           (selected env)
                 └── Supabase DB        ← progressSync.ts
                     (source of truth       (mergeProgress, getDelta)
                      when connected)
 ```
 
 **Merge strategy** (Phase 3): completed lessons are never downgraded — `local ∨ remote`.  
-**Sync status**: `'local' | 'syncing' | 'synced' | 'error'` exposed via `useProgress().syncStatus`.
+**Sync status**: `'local' | 'syncing' | 'synced' | 'error'` exposed via `useProgress().syncStatus`.  
+**Environment**: `'linux' | 'macos' | 'windows'` — persisted in localStorage, propagated via `useEnvironment()`.  
+Content blocks, command help, and reference entries all resolve env-specific variants at render time via `contentByEnv?.[env] ?? content` fallback pattern.
 
 ## Database Schema (Supabase — Phase 3)
 
@@ -158,5 +166,8 @@ RLS policies: users can only read/write their own rows. See `supabase/migrations
 | 0 | ✅ | Build, Vercel config, CI/CD |
 | 1 | ✅ | Landing, routing, GDPR, SEO, CI |
 | 2 | ✅ | Vercel Analytics + Sentry |
-| 3 | 🔜 | Supabase Auth + progress persistence |
-| 4 | 🔮 | Admin panel (RBAC, audit log, 2FA) |
+| 3 | ✅ | Supabase Auth + progress persistence |
+| 4 | ✅ | Curriculum v2 + multi-environment + terminal profiles (192 tests) |
+| 5 | 🔄 | Curriculum expansion — Module 7 ✅, Network/SSH, Git, GitHub, AI (238 tests) |
+| 6 | 🔮 | Terminal multi-session (tabs) + changelog |
+| 7 | 🔮 | Admin panel (RBAC, audit log, 2FA) |

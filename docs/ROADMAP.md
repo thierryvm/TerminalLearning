@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 8 April 2026
+> Last updated: 9 April 2026
 
 ---
 
@@ -51,22 +51,55 @@ professionals who leverage AI as a tool, not a replacement.
   - Windows: `PS C:\Users\user>` — PowerShell cyan
 - [x] 192 unit tests
 
-## Phase 5 — Curriculum Expansion 🔜
-Full-stack developer path — 11 modules total:
+## Phase 5 — Curriculum Expansion 🔄 In progress
+Full-stack developer path — 11 modules total (7 active, 4 planned):
 
-### Existing modules (6) — minor enrichment
-- [ ] Navigation: add `find`, `tree`
-- [ ] Files: add `ln` (symlinks)
-- [ ] Read & Search: add `sed`, `sort`, `uniq`
-- [ ] Permissions: add `chown`, user/group management
-- [ ] Processes: add `bg/fg`, `&`, `top`
+### Existing modules (6) — enriched ✅ PR #37
+- [x] Permissions: `chown`, `chgrp`, `sudo`, security / principle of least privilege
+- [x] Processes: `top`/`htop`, `bg`/`fg`/`jobs`, background job management
+- [x] Redirection: `stderr` (`2>`, `2>&1`), `/dev/null`, `tee`/`Tee-Object`
+- [x] CommandReference: fully env-aware (Linux/macOS/Windows filters, per-env syntax + examples)
+- [x] LessonPage: env-aware content blocks (`contentByEnv`, `labelByEnv`), `PS>` prompt rendering
+- [x] 32 lessons total (up from 19)
 
-### New modules (5)
-- [ ] **Module 7 — Variables & Scripts**: `export`, `$PATH`, `.env`, `.bashrc`, bash scripts, `cron`
-- [ ] **Module 8 — Network & SSH**: `ping`, `curl`, `wget`, SSH keys, `scp`, DNS basics
-- [ ] **Module 9 — Git Fundamentals**: `init`, `add`, `commit`, `log`, `diff`, `.gitignore`, branches
-- [ ] **Module 10 — GitHub & Collaboration**: remotes, PRs, Issues, forks, conflict resolution, GitHub Actions, Linear workflow
-- [ ] **Module 11 — AI as a Dev Tool**: contextual prompts, validating AI output, known limits, Claude Code CLI
+### Module 7 — Variables & Scripts ✅ PR #36
+- [x] Environment variables: `export`, `$PATH`, `$env:VAR`, variable interpolation
+- [x] PATH variable: read, extend, persist across sessions
+- [x] Shell config: `.bashrc`, `.zshrc`, `$PROFILE` (PowerShell)
+- [x] `.env` files: dotenv format, `source`/`.` command, security practices
+- [x] Bash scripts: shebang, `chmod +x`, executing scripts
+- [x] Cron & task scheduling: `crontab -e`, `crontab -l`, Windows Task Scheduler
+- [x] 238 unit tests total
+
+### Module 8 — Network & SSH 🔜 THI-27
+- [ ] `ping`, `traceroute`/`tracert`, `nslookup`, `dig`
+- [ ] `curl` (HTTP requests, headers, REST APIs), `wget`
+- [ ] SSH: key generation (`ssh-keygen`), `ssh`, `scp`, `rsync`
+- [ ] Firewall basics: `ufw`, `iptables`, Windows Defender Firewall
+- [ ] Per-environment: `ip`/`ifconfig`/`ipconfig`, `netstat`/`ss`
+
+### Module 9 — Git Fundamentals 🔜 THI-28
+- [ ] `init`, `add`, `commit`, `log`, `diff`, `status`
+- [ ] `.gitignore`, branches (`branch`, `checkout`, `merge`)
+- [ ] Conflict resolution, stash
+
+### Module 10 — GitHub & Collaboration 🔜 THI-29
+- [ ] Remotes, push/pull, PRs, Issues, forks
+- [ ] GitHub Actions CI basics
+- [ ] Linear workflow integration
+
+### Module 11 — AI as a Dev Tool 🔮
+- [ ] Contextual prompting, validating AI output
+- [ ] Claude Code CLI, known limits and risks
+- [ ] AI-assisted debugging and code review
+
+### Planned additions (next sprints)
+- [ ] **Monitoring & System Tools**: `htop` dedicated module, `ps`, `lsof`, `df`/`du`, `free`
+- [ ] **Text Editors**: nano (quick edits) + vim/neovim (full interactive course with exercises)
+  - nano: basics, save, exit, search
+  - vim: modes, navigation, edit, save, quit, config (`.vimrc`)
+  - neovim: intro, plugin ecosystem (lazy.nvim), developer workflow
+- [ ] **Full dedicated courses** (long-term vision): Git deep-dive, Docker, shell scripting masterclass
 
 ## Phase 6 — Terminal Multi-Session 🔮
 - [ ] Tab system: multiple independent terminal sessions
