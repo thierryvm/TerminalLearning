@@ -166,8 +166,8 @@ If it helped you or your students, the best way to support it is:
 - ⭐ **Star the repo** — helps visibility on GitHub
 - 🐛 **Report bugs** — [open an issue](https://github.com/thierryvm/TerminalLearning/issues)
 - 🤝 **Contribute** — code, curriculum, translations, feedback
-- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — coming soon *(pending authorization)*
-- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — coming soon *(pending authorization)*
+- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — activated, donations on hold *(pending Solidaris / RIZIV-INAMI authorization)*
+- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — on hold *(pending Solidaris / RIZIV-INAMI authorization)*
 
 ---
 
