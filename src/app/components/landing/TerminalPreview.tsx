@@ -188,7 +188,6 @@ export function TerminalPreview() {
       clearTimeout(startTimeout);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEnv, reducedMotion]);
 
   return (
