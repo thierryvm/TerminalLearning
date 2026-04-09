@@ -100,6 +100,11 @@ describe('curriculum types', () => {
       const total = curriculum.reduce((acc, mod) => acc + mod.lessons.length, 0);
       expect(total).toBe(32);
     });
+
+    it('module ids are unique (no duplicate modules)', () => {
+      const ids = curriculum.map((m) => m.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
   });
 
   describe('consistency guard: catalogue ↔ curriculum', () => {

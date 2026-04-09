@@ -69,10 +69,12 @@ describe('Landing — hero section', () => {
     expect(primaryCTA).toBeInTheDocument();
   });
 
-  it('has a "Soutenir le projet" Ko-fi link in the hero', () => {
+  it('Ko-fi card is visible but on hold (no active link)', () => {
     renderLanding();
-    const kofiLinks = screen.getAllByRole('link', { name: /soutenir terminal learning sur ko-fi/i });
-    expect(kofiLinks.length).toBeGreaterThanOrEqual(1);
+    // Ko-fi is on hold pending Solidaris/RIZIV authorization — rendered as disabled div, not a link
+    const kofiCard = screen.getByText(/don ponctuel/i);
+    expect(kofiCard).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /soutenir terminal learning sur ko-fi/i })).toBeNull();
   });
 
   it('hero section is centered (text-center class present)', () => {
@@ -98,11 +100,13 @@ describe('Landing — trust badges', () => {
 // ── Module grid ───────────────────────────────────────────────────────────────
 
 describe('Landing — module grid', () => {
-  it('renders all 7 module cards', () => {
+  it('renders all 7 module cards with unique labels', () => {
     renderLanding();
     // Each card has an aria-label "Accéder au module X"
     const moduleCards = screen.getAllByRole('button', { name: /accéder au module/i });
     expect(moduleCards).toHaveLength(7);
+    const labels = moduleCards.map((card) => card.getAttribute('aria-label'));
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it('each module card shows lesson count', () => {
@@ -112,39 +116,33 @@ describe('Landing — module grid', () => {
   });
 });
 
-// ── Ko-fi ─────────────────────────────────────────────────────────────────────
+// ── Support cards (Ko-fi + GitHub Sponsors — on hold) ────────────────────────
 
-describe('Landing — Ko-fi support', () => {
-  it('renders at least one Ko-fi support link', () => {
+describe('Landing — support cards on hold', () => {
+  // Ko-fi and GitHub Sponsors are both disabled pending Solidaris/RIZIV-INAMI authorization.
+  // When the authorization is obtained, re-enable the cards in Landing.tsx and update these tests.
+
+  it('Ko-fi card shows "Bientôt disponible"', () => {
     renderLanding();
-    const links = screen.getAllByRole('link', { name: /soutenir terminal learning sur ko-fi/i });
-    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/don ponctuel/i)).toBeInTheDocument();
+    // No active link — disabled div only
+    expect(screen.queryByRole('link', { name: /soutenir terminal learning sur ko-fi/i })).toBeNull();
   });
 
-  it('all Ko-fi links point to the correct URL', () => {
+  it('GitHub Sponsors card shows "Bientôt disponible"', () => {
     renderLanding();
-    const links = screen.getAllByRole('link', { name: /soutenir terminal learning sur ko-fi/i });
-    links.forEach((link) => {
-      expect(link).toHaveAttribute('href', 'https://ko-fi.com/thierryvm');
-    });
-  });
-
-  it('all Ko-fi links open in a new tab with noopener', () => {
-    renderLanding();
-    const links = screen.getAllByRole('link', { name: /soutenir terminal learning sur ko-fi/i });
-    links.forEach((link) => {
-      expect(link).toHaveAttribute('target', '_blank');
-      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    });
+    expect(screen.getByText('GitHub Sponsors')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /github sponsors/i })).toBeNull();
   });
 });
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 
 describe('Landing — footer', () => {
-  it('renders Ko-fi link in footer', () => {
+  it('renders Ko-fi text in footer (disabled, no link)', () => {
     renderLanding();
-    const footerLinks = screen.getAllByRole('link', { name: /ko-fi/i });
-    expect(footerLinks.length).toBeGreaterThanOrEqual(1);
+    // Ko-fi is on hold — footer shows text, not a link
+    expect(screen.getByText('Ko-fi')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ko-fi/i })).toBeNull();
   });
 });
