@@ -1021,6 +1021,305 @@ export const curriculum: Module[] = [
       },
     ],
   },
+  {
+    id: 'variables',
+    title: 'Variables & Scripts',
+    description: 'Maîtrisez les variables d\'environnement, les fichiers de config et l\'automatisation',
+    iconName: 'Code2',
+    color: '#f59e0b',
+    level: 3,
+    prerequisites: ['navigation', 'fichiers', 'lecture', 'permissions', 'redirection'],
+    unlocks: ['reseau', 'git'],
+    lessons: [
+      {
+        id: 'env-vars',
+        title: 'Variables d\'environnement',
+        description: 'Stockez et accédez à des valeurs globales dans votre shell',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Une variable d\'environnement est une paire clé/valeur stockée dans votre shell. Elle peut être lue par n\'importe quel programme. Par exemple, `PATH` contient la liste des répertoires où le shell cherche les commandes.',
+          },
+          {
+            type: 'code',
+            content: '$ export GREETING=Hello\n$ echo $GREETING\nHello',
+            label: 'Créer et lire une variable (Linux/macOS)',
+          },
+          {
+            type: 'code',
+            content: 'PS> $env:GREETING = "Hello"\nPS> echo $env:GREETING\nHello',
+            label: 'PowerShell',
+          },
+          {
+            type: 'info',
+            content:
+              'La commande `env` (Linux/macOS) ou `Get-ChildItem Env:` (Windows) liste toutes les variables d\'environnement actives.',
+          },
+          {
+            type: 'tip',
+            content:
+              'Convention : les noms de variables d\'environnement sont en MAJUSCULES. Les noms en minuscules sont réservés aux variables locales au script.',
+          },
+        ],
+        exercise: {
+          instruction: 'Créez une variable `GREETING` avec la valeur `Hello` en utilisant `export GREETING=Hello`.',
+          instructionByEnv: {
+            windows: 'Créez une variable avec `$env:GREETING = "Hello"` (PowerShell).',
+          },
+          hint: 'Tapez: export GREETING=Hello',
+          hintByEnv: {
+            windows: 'Tapez: $env:GREETING = "Hello"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim();
+            if (env === 'windows') return /^\$env:[A-Za-z_]\w*\s*=\s*.+/.test(c);
+            return /^export\s+[A-Za-z_]\w*=.+/.test(c);
+          },
+          successMessage: 'Parfait ! Vous avez créé votre première variable d\'environnement.',
+        },
+      },
+      {
+        id: 'path-variable',
+        title: '$PATH — Le chemin des commandes',
+        description: 'Comprenez comment le shell trouve vos commandes',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`$PATH` est la variable d\'environnement la plus importante. Elle contient une liste de répertoires séparés par `:` (Linux/macOS) ou `;` (Windows). Quand vous tapez une commande, le shell cherche dans chacun de ces répertoires.',
+          },
+          {
+            type: 'code',
+            content: '$ echo $PATH\n/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+            label: 'Afficher le PATH (Linux/macOS)',
+          },
+          {
+            type: 'code',
+            content: 'PS> echo $env:PATH\nC:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin',
+            label: 'Afficher le PATH (Windows)',
+          },
+          {
+            type: 'code',
+            content: '$ export PATH=$PATH:/opt/myapp/bin\n$ echo $PATH\n/usr/local/bin:/usr/bin:/bin:/opt/myapp/bin',
+            label: 'Ajouter un répertoire au PATH',
+          },
+          {
+            type: 'warning',
+            content:
+              'Modifier le PATH avec `export` dans le terminal est temporaire (jusqu\'à la fermeture). Pour le rendre permanent, ajoutez-le à votre fichier de config shell (`.bashrc`, `.zshrc`).',
+          },
+        ],
+        exercise: {
+          instruction: 'Affichez la valeur de votre $PATH avec `echo $PATH`.',
+          instructionByEnv: {
+            windows: 'Affichez votre PATH avec `echo $env:PATH`.',
+          },
+          hint: 'Tapez: echo $PATH',
+          hintByEnv: {
+            windows: 'Tapez: echo $env:PATH',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return c === 'echo $env:path' || c === '$env:path';
+            return c === 'echo $path';
+          },
+          successMessage: 'Excellent ! Vous voyez maintenant les répertoires où le shell cherche vos commandes.',
+        },
+      },
+      {
+        id: 'shell-config',
+        title: 'Fichiers de configuration shell',
+        description: 'Personnalisez votre shell au démarrage avec .bashrc et .zshrc',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Chaque shell charge automatiquement des fichiers de configuration au démarrage. C\'est là que vous définissez vos variables permanentes, alias et fonctions.',
+          },
+          {
+            type: 'info',
+            content:
+              'Fichiers importants :\n• Linux (bash) : `~/.bashrc` (shell interactif), `~/.profile` (connexion)\n• macOS (zsh) : `~/.zshrc`\n• Windows (PowerShell) : `$PROFILE`',
+          },
+          {
+            type: 'code',
+            content: '# Dans ~/.bashrc ou ~/.zshrc :\nexport EDITOR=nano\nexport NODE_ENV=development\nalias ll="ls -la"\nalias gs="git status"',
+            label: 'Contenu typique de .bashrc/.zshrc',
+          },
+          {
+            type: 'code',
+            content: '$ cat ~/.bashrc\n# Configuration Bash\nalias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin\nexport EDITOR=nano',
+            label: 'Afficher votre .bashrc',
+          },
+          {
+            type: 'tip',
+            content:
+              'Après avoir modifié votre fichier de config, rechargez-le sans relancer le terminal : `source ~/.bashrc` (ou `. ~/.zshrc` sur macOS).',
+          },
+        ],
+        exercise: {
+          instruction: 'Affichez le contenu de votre fichier `~/.bashrc` avec `cat ~/.bashrc`.',
+          instructionByEnv: {
+            macos: 'Affichez votre configuration zsh avec `cat ~/.zshrc`.',
+            windows: 'Affichez votre configuration PowerShell avec `cat $PROFILE` (ou notez que $PROFILE n\'existe peut-être pas encore).',
+          },
+          hint: 'Tapez: cat ~/.bashrc',
+          hintByEnv: {
+            macos: 'Tapez: cat ~/.zshrc',
+            windows: 'Tapez: cat $PROFILE',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'macos') return c === 'cat ~/.zshrc';
+            if (env === 'windows') return /^(cat|get-content|gc)\s+\$profile$/i.test(c);
+            return c === 'cat ~/.bashrc';
+          },
+          successMessage: 'Bien joué ! Voici votre configuration shell actuelle.',
+        },
+      },
+      {
+        id: 'dotenv',
+        title: 'Fichiers .env — Secrets et configuration',
+        description: 'Gérez les variables sensibles de vos projets sans les committer',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Dans les projets de développement, les secrets (clés API, mots de passe de base de données) ne doivent **jamais** être dans le code source. La convention est de les stocker dans un fichier `.env` à la racine du projet.',
+          },
+          {
+            type: 'code',
+            content: '# .env — NE PAS COMMITTER\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=myapp\nDB_USER=admin\nDB_PASSWORD=secret123\nAPI_KEY=sk-abc123xyz456\nNODE_ENV=development',
+            label: 'Exemple de fichier .env',
+          },
+          {
+            type: 'warning',
+            content:
+              'Ajoutez TOUJOURS `.env` à votre `.gitignore` ! Si vous commitez un fichier `.env` avec de vrais secrets, changez immédiatement tous les mots de passe et clés concernés.',
+          },
+          {
+            type: 'info',
+            content:
+              'En développement Node.js, `dotenv` charge automatiquement les variables du fichier `.env` dans `process.env`. En Python, utilisez `python-dotenv`. Votre framework fait souvent ça automatiquement (Next.js, Vite, etc.).',
+          },
+          {
+            type: 'tip',
+            content:
+              'Bonne pratique : fournissez un fichier `.env.example` avec des valeurs fictives dans le repo. Chaque développeur crée son `.env` local à partir de ce modèle.',
+          },
+        ],
+        exercise: {
+          instruction: 'Dans le répertoire `projets`, il y a un fichier `.env`. Naviguez-y avec `cd projets` puis affichez son contenu avec `cat .env`.',
+          instructionByEnv: {
+            windows: 'Dans le répertoire `projets`, affichez le fichier `.env` avec `Get-Content .env` (ou `cat .env`).',
+          },
+          hint: 'Faites d\'abord "cd projets", puis "cat .env"',
+          hintByEnv: {
+            windows: 'Faites "cd projets" puis "Get-Content .env"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^(get-content|gc|cat)\s+\.env$/.test(c);
+            return c === 'cat .env';
+          },
+          successMessage: 'Parfait ! Vous voyez les variables d\'environnement du projet. Ne commitez jamais ce fichier !',
+        },
+      },
+      {
+        id: 'scripts',
+        title: 'Scripts bash — Automatisez vos tâches',
+        description: 'Créez vos premiers scripts exécutables',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Un script bash est simplement un fichier texte contenant des commandes. Il commence par une ligne `#!/bin/bash` (le "shebang") qui indique au système quel interpréteur utiliser.',
+          },
+          {
+            type: 'code',
+            content: '#!/bin/bash\n# Mon premier script\necho "Bonjour $USER !"\ndate\necho "Répertoire courant : $(pwd)"',
+            label: 'Structure d\'un script bash',
+          },
+          {
+            type: 'code',
+            content: '# 1. Créer le script\n$ touch mon-script.sh\n\n# 2. Le rendre exécutable\n$ chmod +x mon-script.sh\n\n# 3. L\'exécuter\n$ ./mon-script.sh\nBonjour user !\nWed Apr  8 17:00:00 UTC 2026',
+            label: 'Créer et exécuter un script',
+          },
+          {
+            type: 'info',
+            content:
+              'Le `./` est obligatoire pour exécuter un script dans le répertoire courant — le shell ne cherche pas dans `.` par sécurité. Le script doit avoir le bit exécutable (`chmod +x`).',
+          },
+          {
+            type: 'tip',
+            content:
+              'Dans le répertoire `projets`, il y a déjà un `script.sh` exécutable. Essayez `./script.sh` pour le lancer !',
+          },
+        ],
+        exercise: {
+          instruction: 'Dans le répertoire `projets`, exécutez le script existant avec `./script.sh`.',
+          instructionByEnv: {
+            windows: 'Dans le répertoire `projets`, exécutez le script avec `.\\script.sh` ou `bash script.sh`.',
+          },
+          hint: 'Faites d\'abord "cd projets" si ce n\'est pas déjà fait, puis "./script.sh"',
+          hintByEnv: {
+            windows: 'Tapez ".\\script.sh" ou "bash script.sh"',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') return /^\.(\\|\/)script\.sh$/.test(c) || /^bash\s+script\.sh$/.test(c);
+            return c === './script.sh' || c === 'bash script.sh';
+          },
+          successMessage: 'Bravo ! Vous venez d\'exécuter votre premier script bash.',
+        },
+      },
+      {
+        id: 'cron',
+        title: 'cron — Planifier des tâches',
+        description: 'Automatisez l\'exécution de scripts à intervalles réguliers',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`cron` est le planificateur de tâches d\'Unix/Linux. Il permet d\'exécuter des scripts automatiquement selon un calendrier défini dans un fichier appelé "crontab".',
+          },
+          {
+            type: 'code',
+            content: '# Format d\'une ligne crontab :\n# minute   heure   jour   mois   jour_semaine   commande\n#   *         *      *      *          *          commande\n\n# Exemples :\n0 9 * * 1-5   /home/user/backup.sh      # Lundi-vendredi à 9h\n*/15 * * * *   /usr/bin/check-disk.sh    # Toutes les 15 minutes\n0 0 1 * *      /home/user/monthly.sh     # 1er du mois à minuit',
+            label: 'Syntaxe crontab',
+          },
+          {
+            type: 'code',
+            content: '$ crontab -l       # Lister les tâches planifiées\n$ crontab -e       # Éditer (ouvre vi/nano)\n$ crontab -r       # Supprimer toutes les tâches',
+            label: 'Commandes crontab',
+          },
+          {
+            type: 'info',
+            content:
+              'Sur Windows, l\'équivalent de cron est le "Planificateur de tâches" (Task Scheduler), accessible via `taskschd.msc` ou PowerShell avec `Register-ScheduledTask`.',
+          },
+          {
+            type: 'tip',
+            content:
+              'Utilisez https://crontab.guru pour vérifier la syntaxe de vos expressions cron avant de les utiliser en production.',
+          },
+        ],
+        exercise: {
+          instruction: 'Listez les tâches planifiées avec `crontab -l`.',
+          instructionByEnv: {
+            windows: 'Listez les tâches planifiées PowerShell avec `Get-ScheduledTask` (simulé — tapez `crontab -l` pour voir un exemple).',
+          },
+          hint: 'Tapez: crontab -l',
+          hintByEnv: {
+            windows: 'Tapez: crontab -l (pour voir un exemple de tâches planifiées)',
+          },
+          validate: (cmd) => cmd.trim().toLowerCase() === 'crontab -l',
+          successMessage: 'Parfait ! Vous savez maintenant lister vos tâches planifiées.',
+        },
+      },
+    ],
+  },
 ];
 
 export function getModuleById(id: string): Module | undefined {
