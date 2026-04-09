@@ -1,37 +1,201 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Terminal, Home } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Terminal, Home, Github, BookOpen, Zap, Shield } from 'lucide-react';
+import { curriculum } from '../data/curriculum';
+import { commandCatalogue } from '../data/commandCatalogue';
+import { ENVIRONMENTS } from '../types/curriculum';
 
-/** 404 page — shown for any unmatched route */
+const TOTAL_LESSONS = curriculum.reduce((sum, mod) => sum + mod.lessons.length, 0);
+const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
+const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active').length;
+
+const TERMINAL_LINES = [
+  { prompt: '$', command: ' cd /page-introuvable', delay: 0 },
+  { prompt: null, command: 'bash: /page-introuvable: No such file or directory', delay: 600, error: true },
+  { prompt: '$', command: ' ls ~/', delay: 1200 },
+  { prompt: null, command: 'terminal-learning/  commandes/  leçons/', delay: 1800, highlight: true },
+];
+
+const PILLS = [
+  { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
+  { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' },
+  { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
+  { icon: Shield, label: '100% gratuit', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
+];
+
+/** Animated terminal line — types character by character */
+function TerminalLine({ prompt, command, error, highlight, startTyping }: {
+  prompt: string | null;
+  command: string;
+  error?: boolean;
+  highlight?: boolean;
+  startTyping: boolean;
+}) {
+  const [displayed, setDisplayed] = useState('');
+
+  useEffect(() => {
+    if (!startTyping) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayed(command.slice(0, i));
+      if (i >= command.length) clearInterval(interval);
+    }, 28);
+    return () => clearInterval(interval);
+  }, [startTyping, command]);
+
+  if (!startTyping) return null;
+
+  return (
+    <div className="flex items-start gap-1 font-mono text-sm leading-relaxed">
+      {prompt && <span className="text-emerald-400 shrink-0">{prompt}</span>}
+      <span className={
+        error ? 'text-red-400' :
+        highlight ? 'text-blue-400' :
+        'text-[#e6edf3]'
+      }>
+        {displayed}
+        {displayed.length < command.length && (
+          <span className="inline-block w-[7px] h-[14px] bg-emerald-400 animate-pulse align-middle ml-0.5" />
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** 404 page — with animated terminal and app showcase */
 export function NotFound() {
   const navigate = useNavigate();
+  const [activeLine, setActiveLine] = useState(0);
+
+  useEffect(() => {
+    const timers = TERMINAL_LINES.map((line, i) =>
+      setTimeout(() => setActiveLine(i + 1), line.delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#e6edf3] flex items-center justify-center p-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <div className="text-center max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-            <Terminal size={28} className="text-emerald-400" />
+    <div
+      className="min-h-screen bg-[#0d1117] text-[#e6edf3] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      style={{ fontFamily: 'Inter, sans-serif' }}
+    >
+      {/* Background glow — top center */}
+      <div className="absolute inset-0 flex items-start justify-center pointer-events-none" aria-hidden="true">
+        <div className="w-[300px] h-[300px] sm:w-[500px] sm:h-[400px] bg-emerald-500/8 rounded-full blur-3xl mt-[-80px]" />
+      </div>
+      {/* Glow under terminal */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none" aria-hidden="true">
+        <div className="w-[280px] h-[60px] sm:w-[420px] sm:h-[80px] bg-emerald-500/15 rounded-full blur-2xl" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-lg">
+
+        {/* Terminal mock */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden mb-8 shadow-xl shadow-black/40"
+        >
+          {/* Window chrome */}
+          <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]/50">
+            <span className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
+            <span className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
+            <span className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
+            <span className="flex-1 text-center text-[10px] text-[#484f58] font-mono">terminal — zsh</span>
           </div>
-        </div>
-        <div className="font-mono text-emerald-400 text-sm mb-2">$ cd /page-introuvable</div>
-        <div className="font-mono text-[#8b949e] text-sm mb-8">
-          bash: /page-introuvable: No such file or directory
-        </div>
-        <h1 className="text-4xl font-bold text-[#e6edf3] mb-3">404</h1>
-        <p className="text-[#8b949e] mb-8">Cette page n'existe pas.</p>
-        <div className="flex gap-3 justify-center">
+
+          {/* Terminal content */}
+          <div className="p-4 space-y-1.5 min-h-[110px]">
+            {TERMINAL_LINES.map((line, i) => (
+              <TerminalLine
+                key={i}
+                prompt={line.prompt}
+                command={line.command}
+                error={line.error}
+                highlight={line.highlight}
+                startTyping={activeLine > i}
+              />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* 404 + message */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="text-center mb-8"
+        >
+          <div className="text-6xl font-bold text-[#e6edf3] mb-2 tracking-tight">
+            4<span className="text-emerald-400">0</span>4
+          </div>
+          <p className="text-[#8b949e] text-base">
+            Cette page n'existe pas — mais le terminal, lui, t'attend.
+          </p>
+        </motion.div>
+
+        {/* Stats pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="flex flex-wrap gap-2 justify-center mb-8"
+        >
+          {PILLS.map(({ icon: Icon, label, color, border, bg }) => (
+            <span
+              key={label}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${border} ${bg} ${color} text-xs font-medium`}
+            >
+              <Icon size={12} aria-hidden="true" />
+              {label}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+          className="flex flex-col sm:flex-row gap-3 justify-center"
+        >
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-medium transition-colors text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Home size={16} /> Accueil
+            <Home size={15} aria-hidden="true" />
+            Accueil
           </button>
           <button
             onClick={() => navigate('/app')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#30363d] hover:border-[#8b949e] text-[#8b949e] hover:text-[#e6edf3] transition-colors text-sm"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
           >
-            <Terminal size={16} /> Application
+            <Terminal size={15} aria-hidden="true" />
+            Commencer l'apprentissage
           </button>
-        </div>
+        </motion.div>
+
+        {/* Open source mention */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.7 }}
+          className="text-center mt-8"
+        >
+          <a
+            href="https://github.com/thierryvm/TerminalLearning"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[#484f58] hover:text-[#8b949e] text-xs font-mono transition-colors"
+          >
+            <Github size={12} aria-hidden="true" />
+            open source · 100% gratuit · pour débutants
+          </a>
+        </motion.div>
+
       </div>
     </div>
   );

@@ -96,9 +96,9 @@ describe('curriculum types', () => {
       }
     });
 
-    it('total lessons should be 32', () => {
+    it('total lessons should be 38', () => {
       const total = curriculum.reduce((acc, mod) => acc + mod.lessons.length, 0);
-      expect(total).toBe(32);
+      expect(total).toBe(38);
     });
   });
 
