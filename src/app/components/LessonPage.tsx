@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   getModuleById, getLessonById, getNextLesson, getPrevLesson, ContentBlock,
-  Module, Lesson,
+  Module, Lesson, EnvId,
 } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useAuth } from '../context/AuthContext';
@@ -15,7 +15,11 @@ import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 
-function BlockRenderer({ block }: { block: ContentBlock }) {
+function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: EnvId }) {
+  // Resolve env-specific content/label, falling back to defaults
+  const content = block.contentByEnv?.[env] ?? block.content;
+  const label = block.labelByEnv?.[env] ?? block.label;
+
   const renderText = (text: string) => {
     const parts = text.split(/(`[^`]+`)/g);
     return parts.map((part, i) =>
@@ -32,25 +36,26 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case 'text':
       return (
-        <p className="text-[#c9d1d9] leading-relaxed text-sm">{renderText(block.content)}</p>
+        <p className="text-[#c9d1d9] leading-relaxed text-sm">{renderText(content)}</p>
       );
 
     case 'code':
       return (
         <div className="rounded-lg overflow-hidden border border-[#30363d]">
-          {block.label && (
+          {label && (
             <div className="flex items-center gap-2 px-3 py-2 bg-[#161b22] border-b border-[#30363d]">
               <Code2 size={12} className="text-[#8b949e]" />
-              <span className="text-[#8b949e] text-xs">{block.label}</span>
+              <span className="text-[#8b949e] text-xs">{label}</span>
             </div>
           )}
           <pre className="bg-[#0d1117] p-4 overflow-x-auto text-sm font-mono leading-relaxed">
-            {block.content.split('\n').map((line, i) => {
-              if (line.startsWith('$')) {
+            {content.split('\n').map((line, i) => {
+              if (line.startsWith('$') || line.startsWith('PS>')) {
+                const promptEnd = line.startsWith('PS>') ? 3 : 1;
                 return (
                   <div key={i}>
-                    <span className="text-emerald-400">$</span>
-                    <span className="text-[#e6edf3]">{line.slice(1)}</span>
+                    <span className="text-emerald-400">{line.slice(0, promptEnd)}</span>
+                    <span className="text-[#e6edf3]">{line.slice(promptEnd)}</span>
                   </div>
                 );
               }
@@ -67,7 +72,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       return (
         <div className="flex gap-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3">
           <Lightbulb size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(block.content)}</p>
+          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -75,7 +80,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       return (
         <div className="flex gap-3 bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
           <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(block.content)}</p>
+          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -83,7 +88,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       return (
         <div className="flex gap-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
           <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(block.content)}</p>
+          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -151,13 +156,10 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
     navigate(`/app/learn/${target.moduleId}/${target.lessonId}`);
   };
 
+  const effectiveInstruction =
+    lesson.exercise?.instructionByEnv?.[selectedEnv] ?? lesson.exercise?.instruction ?? '';
   const welcomeMessage = lesson.exercise
-    ? [
-        `📚 ${lesson.title}`,
-        ``,
-        `Exercice : ${lesson.exercise.instruction}`,
-        ``,
-      ]
+    ? [`📚 ${lesson.title}`, ``, `Exercice : ${effectiveInstruction}`, ``]
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
 
   return (
@@ -211,7 +213,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             {/* Content blocks */}
             <div className="space-y-4">
               {lesson.blocks.map((block, i) => (
-                <BlockRenderer key={i} block={block} />
+                <BlockRenderer key={i} block={block} env={selectedEnv} />
               ))}
             </div>
 

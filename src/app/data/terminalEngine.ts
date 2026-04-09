@@ -208,6 +208,7 @@ const COMPLETION_COMMANDS = [
   'uname', 'history', 'ps', 'kill', 'clear', 'help', 'man', 'exit',
   'about', 'donate', 'support', 'hall-of-fame',
   'export', 'env', 'printenv', 'source', 'crontab',
+  'chown', 'chgrp', 'sudo', 'top', 'htop', 'jobs', 'fg', 'bg', 'tee',
 ];
 
 /**
@@ -693,6 +694,82 @@ function cmdSource(args: string[]): OutputLine[] {
   return [{ text: `${display}: loaded`, type: 'success' }];
 }
 
+// ─── New Module 5/6 Commands ──────────────────────────────────────────────────
+
+function cmdChown(args: string[]): OutputLine[] {
+  if (args.length < 2) {
+    return [{ text: 'chown: missing operand\nUsage: chown [user][:group] file...', type: 'error' }];
+  }
+  const [ownership, ...files] = args;
+  return files.map((f) => ({ text: `${f}: propriétaire changé en '${ownership}'`, type: 'success' as const }));
+}
+
+function cmdSudo(args: string[], state: TerminalState, env: TerminalEnv): CommandOutput {
+  if (args.length === 0) {
+    return { lines: [{ text: 'usage: sudo command [args...]', type: 'error' }], newState: state };
+  }
+  if (args[0] === '-i' || args[0] === '-s') {
+    return { lines: [{ text: `root@${state.hostname}:~# (session root simulée — tapez "exit" pour revenir)`, type: 'success' }], newState: state };
+  }
+  if (args[0] === '-l') {
+    return { lines: [
+      { text: 'Matching Defaults entries for user:', type: 'output' },
+      { text: '    env_reset, mail_badpass', type: 'output' },
+      { text: '', type: 'output' },
+      { text: 'User user may run the following commands on terminal-lab:', type: 'output' },
+      { text: '    (ALL : ALL) ALL', type: 'output' },
+    ], newState: state };
+  }
+  // Run the command as root — just delegate but mark it as sudo
+  const subCmd = args.join(' ');
+  const subResult = processCommand(state, subCmd, env);
+  return subResult;
+}
+
+function cmdTop(state: TerminalState): OutputLine[] {
+  return [
+    { text: `top - ${new Date().toLocaleTimeString()} up 2 days, 1 user, load average: 0.12, 0.08, 0.05`, type: 'output' },
+    { text: 'Tasks:  95 total,   1 running,  94 sleeping,   0 stopped,   0 zombie', type: 'output' },
+    { text: '%Cpu(s):  1.5 us,  0.5 sy,  0.0 ni, 97.8 id,  0.0 wa,  0.1 hi,  0.1 si', type: 'output' },
+    { text: 'MiB Mem :   7900.0 total,   4200.0 free,   2400.0 used,   1300.0 buff/cache', type: 'output' },
+    { text: '', type: 'output' },
+    { text: '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND', type: 'output' },
+    { text: ` 1234 ${state.user}      20   0  450000  25000  10000 S   2.3   0.3   0:05.23 node`, type: 'output' },
+    { text: '    1 root      20   0   22000   1500   1000 S   0.0   0.0   0:01.00 systemd', type: 'output' },
+    { text: '  100 root      20   0   15000   1000    800 S   0.0   0.0   0:00.50 sshd', type: 'output' },
+    { text: '', type: 'info' },
+    { text: '[Simulation] top interactif non disponible — utilisez q pour quitter en vrai.', type: 'info' },
+  ];
+}
+
+function cmdJobs(): OutputLine[] {
+  return [{ text: '(aucun job en arrière-plan dans ce terminal simulé)', type: 'info' }];
+}
+
+function cmdBgFg(cmd: string, args: string[]): OutputLine[] {
+  const job = args[0] ?? '%1';
+  if (cmd === 'fg') {
+    return [{ text: `${job}: aucun job correspondant (terminal simulé)`, type: 'error' }];
+  }
+  return [{ text: `${job}: aucun job correspondant (terminal simulé)`, type: 'error' }];
+}
+
+function cmdTee(args: string[]): OutputLine[] {
+  const files = args.filter((a) => !a.startsWith('-'));
+  if (files.length === 0) {
+    return [{ text: 'tee: missing file operand\nUsage: tee [-a] file...', type: 'error' }];
+  }
+  return [{ text: `(tee: la sortie serait copiée vers ${files.join(', ')} — simulation sans stdin)`, type: 'info' }];
+}
+
+function cmdGetJob(): OutputLine[] {
+  return [
+    { text: 'Id     Name            PSJobTypeName   State         HasMoreData', type: 'output' },
+    { text: '--     ----            -------------   -----         -----------', type: 'output' },
+    { text: '(aucun job actif dans ce terminal simulé)', type: 'info' },
+  ];
+}
+
 function cmdCrontab(args: string[]): OutputLine[] {
   if (args.includes('-l')) {
     return [
@@ -1015,6 +1092,54 @@ const CMD_HELP: Record<string, CmdHelp> = {
       macos: ['open notes.txt', 'open .', 'open https://example.com'],
     },
   },
+  chown: {
+    synopsis: 'chown [user][:group] fichier...',
+    description: 'Change le propriétaire et/ou le groupe d\'un fichier (requiert sudo).',
+    examples: {
+      linux: ['sudo chown alice notes.txt', 'sudo chown alice:devs notes.txt', 'sudo chown -R user:user projets/'],
+      macos: ['sudo chown alice notes.txt', 'sudo chown -R user:staff projets/'],
+    },
+  },
+  sudo: {
+    synopsis: 'sudo commande [args...]',
+    description: 'Exécute une commande avec les droits superutilisateur (root). Principe du moindre privilège.',
+    options: [
+      '-i  : ouvrir un shell root interactif',
+      '-l  : lister les commandes autorisées',
+      '-s  : shell root sans changer de répertoire',
+    ],
+    examples: {
+      linux: ['sudo apt update', 'sudo chmod 600 ~/.ssh/id_rsa', 'sudo -i'],
+      macos: ['sudo brew install htop', 'sudo dscacheutil -flushcache', 'sudo -i'],
+    },
+  },
+  top: {
+    synopsis: 'top',
+    description: 'Affiche les processus en temps réel avec leur consommation CPU/mémoire. q=quitter, k=kill, M=tri mémoire.',
+    examples: {
+      linux: ['top', 'htop'],
+      macos: ['top', 'top -o cpu'],
+      windows: ['Get-Process | Sort-Object CPU -Descending | Select-Object -First 10'],
+    },
+  },
+  tee: {
+    synopsis: 'tee [-a] fichier...',
+    description: 'Lit stdin et écrit simultanément vers stdout et vers un fichier. -a pour ajouter.',
+    examples: {
+      linux: ['ls -la | tee liste.txt', 'npm run build 2>&1 | tee build.log', 'cat fichier | tee -a log.txt'],
+      macos: ['ls -la | tee liste.txt', 'make install 2>&1 | tee install.log'],
+      windows: ['Get-ChildItem | Tee-Object -FilePath liste.txt', 'npm run build | Tee-Object -FilePath build.log'],
+    },
+  },
+  jobs: {
+    synopsis: 'jobs',
+    description: 'Liste les processus lancés en arrière-plan dans le shell courant.',
+    examples: {
+      linux: ['jobs', 'npm run dev &  # puis jobs pour voir'],
+      macos: ['jobs', 'python3 script.py & ; jobs'],
+      windows: ['Get-Job', 'Start-Job { npm run dev } ; Get-Job'],
+    },
+  },
   export: {
     synopsis: 'export [NOM[=VALEUR]]',
     description: 'Définit ou affiche les variables d\'environnement exportées.',
@@ -1073,6 +1198,7 @@ const CMD_HELP_ALIASES: Record<string, string> = {
   'stop-process': 'kill', 'spps': 'kill', 'taskkill': 'kill',
   'select-string': 'grep', 'sls': 'grep',
   'clear-host': 'clear', 'cls': 'clear', 'md': 'mkdir',
+  'tee-object': 'tee',
 };
 
 function getHelpText(env: TerminalEnv = 'linux'): string {
@@ -1088,7 +1214,10 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   Remove-Item (del) [file]    Supprimer un fichier
   Write-Host [texte]          Afficher du texte (supporte $env:VAR)
   $env:VAR = "val"            Définir une variable d'environnement
-  Get-ChildItem Env:           Lister toutes les variables d'env
+  Get-ChildItem Env:          Lister toutes les variables d'env
+  Start-Job { ... }           Lancer un job en arrière-plan
+  Get-Job / Stop-Job          Gérer les jobs PowerShell
+  Tee-Object -FilePath f      Afficher ET sauvegarder la sortie
   Get-Process (gps)           Lister les processus
   Stop-Process -Name [nom]    Arrêter un processus
   Select-String pat file      Rechercher dans un fichier
@@ -1118,6 +1247,11 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   env / printenv   Afficher les variables d'environnement
   source ~/.zshrc  Recharger la configuration shell
   crontab [-l|-e]  Gérer les tâches planifiées
+  chown u[:g] f    Changer le propriétaire d'un fichier
+  sudo commande    Exécuter avec les droits root
+  top / htop       Monitoring processus en temps réel
+  jobs / fg / bg   Gérer les processus en arrière-plan
+  tee [-a] fichier Afficher ET sauvegarder la sortie
   open [file|URL]  Ouvrir avec l'app par défaut
   pbcopy/pbpaste   Presse-papiers
   brew install|list Gestionnaire de paquets Homebrew
@@ -1148,6 +1282,11 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   env / printenv   Afficher les variables d'environnement
   source fichier   Recharger la configuration shell
   crontab [-l|-e]  Gérer les tâches planifiées
+  chown u[:g] f    Changer le propriétaire d'un fichier
+  sudo commande    Exécuter avec les droits root
+  top / htop       Monitoring processus en temps réel
+  jobs / fg / bg   Gérer les processus en arrière-plan
+  tee [-a] fichier Afficher ET sauvegarder la sortie
   whoami           Utilisateur courant
   date             Date et heure
   uname [-a]       Informations système
@@ -1307,6 +1446,61 @@ export function processCommand(state: TerminalState, input: string, env: Termina
 
     case 'crontab':
       return { lines: cmdCrontab(args), newState };
+
+    case 'chown': {
+      if (env === 'windows') return { lines: [{ text: 'chown n\'est pas disponible sur Windows. Utilisez icacls ou takeown.', type: 'info' }], newState };
+      return { lines: cmdChown(args), newState };
+    }
+
+    case 'chgrp': {
+      if (env === 'windows') return { lines: [{ text: 'chgrp n\'est pas disponible sur Windows. Utilisez icacls.', type: 'info' }], newState };
+      const [group, ...files] = args;
+      if (!group || !files.length) return { lines: [{ text: 'chgrp: missing operand', type: 'error' }], newState };
+      return { lines: files.map((f) => ({ text: `${f}: groupe changé en '${group}'`, type: 'success' as const })), newState };
+    }
+
+    case 'sudo': {
+      if (env === 'windows') return { lines: [{ text: 'sudo n\'est pas disponible sur Windows. Utilisez "Exécuter en tant qu\'administrateur" ou Start-Process -Verb RunAs.', type: 'info' }], newState };
+      return cmdSudo(args, newState, env);
+    }
+
+    case 'top':
+    case 'htop':
+      return { lines: cmdTop(newState), newState };
+
+    case 'jobs':
+      return { lines: cmdJobs(), newState };
+
+    case 'fg':
+    case 'bg':
+      return { lines: cmdBgFg(cmd, args), newState };
+
+    case 'tee':
+    case 'tee-object':
+      return { lines: cmdTee(args), newState };
+
+    case 'get-acl':
+    case 'icacls': {
+      if (args.length === 0) return { lines: [{ text: `Usage: ${cmd} fichier`, type: 'error' }], newState };
+      const target = args[0];
+      return { lines: [
+        { text: `${target}  NT AUTHORITY\\SYSTEM:(I)(F)`, type: 'output' },
+        { text: `      BUILTIN\\Administrators:(I)(F)`, type: 'output' },
+        { text: `      ${newState.user}:(I)(M)`, type: 'output' },
+        { text: `      BUILTIN\\Users:(I)(RX)`, type: 'output' },
+      ], newState };
+    }
+
+    case 'takeown': {
+      const fileArg = args.find((a) => !a.startsWith('/'));
+      return { lines: [{ text: `SUCCESS: The file (or folder): "${fileArg ?? '.'}" now owned by "${newState.user}".`, type: 'success' }], newState };
+    }
+
+    case 'get-job':
+    case 'receive-job':
+    case 'stop-job':
+    case 'start-job':
+      return { lines: cmdGetJob(), newState };
 
     case 'rm': {
       const { lines, newRoot } = cmdRm(newState, args);
