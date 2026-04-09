@@ -731,3 +731,165 @@ describe('Get-ChildItem Env: — PowerShell env listing', () => {
     expect(text).toContain('USER');
   });
 });
+
+// ─── Module 4: Permissions — new commands ─────────────────────────────────────
+
+describe('chown — change file ownership', () => {
+  it('chown user file returns success', () => {
+    const state = makeState();
+    const result = processCommand(state, 'chown alice documents/notes.txt', 'linux');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('alice');
+  });
+
+  it('chown user:group file returns success', () => {
+    const state = makeState();
+    const result = processCommand(state, 'chown alice:devs documents/notes.txt', 'linux');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('chown without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'chown', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('chown on windows returns info (not available)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'chown alice file.txt', 'windows');
+    expect(result.lines[0].type).toBe('info');
+  });
+});
+
+describe('sudo — privilege elevation', () => {
+  it('sudo whoami runs the command', () => {
+    const state = makeState();
+    const result = processCommand(state, 'sudo whoami', 'linux');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('sudo -l lists authorized commands', () => {
+    const state = makeState();
+    const result = processCommand(state, 'sudo -l', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('user');
+  });
+
+  it('sudo -i opens root shell', () => {
+    const state = makeState();
+    const result = processCommand(state, 'sudo -i', 'linux');
+    expect(result.lines[0].text).toContain('root');
+  });
+
+  it('sudo without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'sudo', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('sudo on windows returns info (not available)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'sudo apt update', 'windows');
+    expect(result.lines[0].type).toBe('info');
+  });
+});
+
+describe('get-acl / icacls — Windows ACL', () => {
+  it('Get-Acl returns permissions table', () => {
+    const state = makeState();
+    const result = processCommand(state, 'Get-Acl documents/notes.txt', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('SYSTEM');
+  });
+
+  it('icacls returns permissions table', () => {
+    const state = makeState();
+    const result = processCommand(state, 'icacls documents/notes.txt', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('icacls without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'icacls', 'windows');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+// ─── Module 5: Processus — new commands ──────────────────────────────────────
+
+describe('top / htop — process monitoring', () => {
+  it('top returns process table', () => {
+    const state = makeState();
+    const result = processCommand(state, 'top', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('PID');
+    expect(text).toContain('CPU');
+  });
+
+  it('htop is also handled', () => {
+    const state = makeState();
+    const result = processCommand(state, 'htop', 'linux');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('top works on macos', () => {
+    const state = makeState();
+    const result = processCommand(state, 'top', 'macos');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('jobs — background job listing', () => {
+  it('jobs returns info about no background jobs', () => {
+    const state = makeState();
+    const result = processCommand(state, 'jobs', 'linux');
+    expect(result.lines[0].type).toBe('info');
+  });
+});
+
+describe('bg / fg — foreground/background', () => {
+  it('fg returns error (no job)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'fg %1', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('bg returns error (no job)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'bg %1', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+describe('Get-Job — PowerShell background jobs', () => {
+  it('Get-Job returns job table', () => {
+    const state = makeState();
+    const result = processCommand(state, 'Get-Job', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+// ─── Module 6: Redirection — new commands ────────────────────────────────────
+
+describe('tee — split output to file', () => {
+  it('ls | tee file.txt returns info', () => {
+    const state = makeState();
+    // tee is invoked as standalone (pipe handling is separate)
+    const result = processCommand(state, 'tee liste.txt', 'linux');
+    expect(result.lines[0].type).toBe('info');
+    expect(result.lines[0].text).toContain('liste.txt');
+  });
+
+  it('tee without args returns error', () => {
+    const state = makeState();
+    const result = processCommand(state, 'tee', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('Tee-Object is also handled (PowerShell)', () => {
+    const state = makeState();
+    const result = processCommand(state, 'Tee-Object -FilePath liste.txt', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});

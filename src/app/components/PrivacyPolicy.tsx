@@ -125,7 +125,7 @@ export function PrivacyPolicy() {
               Pour toute question relative à la vie privée, contacte-nous via GitHub :
               <a href="https://github.com/thierryvm/TerminalLearning/issues"
                 target="_blank" rel="noopener noreferrer"
-                className="text-emerald-400 hover:text-emerald-300 ml-1">
+                className="text-emerald-400 hover:text-emerald-300 ml-1 underline">
                 github.com/thierryvm/TerminalLearning/issues
               </a>
             </p>
@@ -137,7 +137,7 @@ export function PrivacyPolicy() {
               En Belgique, l'autorité de protection des données est l'
               <strong className="text-[#e6edf3]">Autorité de Protection des Données (APD)</strong> —
               <a href="https://www.autoriteprotectiondonnees.be" target="_blank" rel="noopener noreferrer"
-                className="text-emerald-400 hover:text-emerald-300 ml-1">
+                className="text-emerald-400 hover:text-emerald-300 ml-1 underline">
                 autoriteprotectiondonnees.be
               </a>.
               Tu peux introduire une plainte auprès de cette autorité si tu estimes que

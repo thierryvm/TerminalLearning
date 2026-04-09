@@ -20,8 +20,8 @@
 - Terminal profiles: authentic prompt per env (`user@host:~$` / `➜ ~` / `PS C:\Users\user>`)
 - Contextual help: `help <cmd>` returns targeted usage + examples for your environment
 - Progress saved locally, optionally synced to the cloud with a free account
-- Real terminal emulator with a simulated filesystem — 50+ commands, 30+ PowerShell aliases
-- Progressive curriculum: 6 modules now → 11 planned (Git, GitHub, AI as a dev tool)
+- Real terminal emulator with a simulated filesystem — 60+ commands, 30+ PowerShell aliases
+- Progressive curriculum: 7 modules active → 11 planned (Network/SSH, Git, GitHub, AI as a dev tool)
 - 100% free, forever — designed for schools and universities
 
 🌐 **[Try it live →](https://terminal-learning.vercel.app)**
@@ -151,9 +151,12 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles (192 tests) |
-| **Phase 5** | 🔜 Next | Curriculum expansion: Variables, SSH, Git, GitHub, AI as a dev tool |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: Module 7 ✅, modules 4–6 enriched ✅, 238 unit tests + 176 E2E, 32 lessons |
 | **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
-| **Phase 7** | 🔮 Planned | Admin panel — RBAC, 2FA, audit log |
+| **Phase 7** | 🔮 Planned | Member space — profiles, stats, roles (student/teacher), badges |
+| **Phase 8** | 🔮 Planned | Ticket system — bug reports, suggestions, in-app feedback |
+| **Phase 9** | 🔮 Planned | Admin panel — real-time health, security center, analytics, RBAC, 2FA |
+| **Phase 10** | 🔮 Planned | Automated content — new commands unlocked every 2 weeks |
 
 Full details in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/plan.md](docs/plan.md).
 
