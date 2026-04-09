@@ -48,7 +48,7 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
               <span className="text-[#8b949e] text-xs">{label}</span>
             </div>
           )}
-          <pre className="bg-[#0d1117] p-4 overflow-x-auto text-sm font-mono leading-relaxed">
+          <pre className="bg-[#0d1117] p-4 overflow-x-auto text-sm font-mono leading-relaxed max-w-full">
             {content.split('\n').map((line, i) => {
               if (line.startsWith('$') || line.startsWith('PS>')) {
                 const promptEnd = line.startsWith('PS>') ? 3 : 1;

@@ -5,7 +5,7 @@ import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
   Compass, FolderOpen, FileText, Cpu, GitMerge, ExternalLink,
-  Monitor,
+  Monitor, LogIn,
 } from 'lucide-react';
 
 // ── Environment icon helper ──────────────────────────────────────────────────
@@ -222,19 +222,19 @@ export function Landing() {
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
-      <nav className="border-b border-[#30363d]/50 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-2.5">
+      <nav className="border-b border-[#30363d]/50 px-4 sm:px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             <Terminal size={18} className="text-emerald-400" aria-hidden="true" />
           </div>
-          <span className="font-mono text-[#e6edf3] text-sm">Terminal Learning</span>
+          <span className="font-mono text-[#e6edf3] text-sm hidden sm:block whitespace-nowrap">Terminal Learning</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="https://github.com/thierryvm/TerminalLearning"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors shrink-0"
             aria-label="Voir le projet sur GitHub"
           >
             <Github size={18} aria-hidden="true" />
@@ -244,14 +244,16 @@ export function Landing() {
           ) : (
             <button
               onClick={() => setLoginOpen(true)}
-              className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-mono transition-colors"
+              className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-mono transition-colors flex items-center gap-1.5"
+              aria-label="Se connecter"
             >
-              Se connecter
+              <LogIn size={18} className="sm:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">Se connecter</span>
             </button>
           )}
           <button
             onClick={() => navigate('/app')}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] text-sm font-medium transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0"
           >
             Commencer <ChevronRight size={14} aria-hidden="true" />
           </button>
@@ -262,7 +264,7 @@ export function Landing() {
       <section className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
         {/* Glow background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-          <div className="w-[700px] h-[500px] bg-emerald-500/8 rounded-full blur-3xl" />
+          <div className="w-[300px] h-[300px] sm:w-[500px] sm:h-[400px] md:w-[700px] md:h-[500px] bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
 
         {/* Hero content — no JS animation so the h1 (LCP element) is visible on first paint */}
@@ -287,7 +289,8 @@ export function Landing() {
             <p className="text-[#8b949e] text-xs font-mono mb-3 uppercase tracking-widest">
               Choisissez votre environnement
             </p>
-            <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
+            <div className="flex justify-center">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
               {(['linux', 'macos', 'windows'] as SelectedEnvironment[]).map((envId) => {
                 const meta = ENV_META[envId];
                 const active = selectedEnv === envId;
@@ -295,7 +298,7 @@ export function Landing() {
                   <button
                     key={envId}
                     onClick={() => setEnvironment(envId)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-w-[100px] justify-center ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center ${
                       active
                         ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
                         : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] border border-transparent'
@@ -309,14 +312,15 @@ export function Landing() {
               })}
               {/* WSL — future only */}
               <span
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#484f58] cursor-not-allowed border border-transparent"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-[#484f58] cursor-not-allowed border border-transparent"
                 title="WSL — bientôt disponible"
                 aria-disabled="true"
               >
                 <Monitor size={14} aria-hidden="true" />
                 WSL
-                <span className="text-[10px] font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">bientôt</span>
+                <span className="text-[10px] font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e] hidden sm:inline">bientôt</span>
               </span>
+            </div>
             </div>
 
             {/* ── 3 levels per environment ──────────────────────── */}

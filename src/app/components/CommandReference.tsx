@@ -776,7 +776,7 @@ export function CommandReference() {
                       </div>
                       <div>
                         <p className="text-xs text-[#8b949e] mb-1">Exemple</p>
-                        <pre className="bg-[#0d1117] rounded-lg p-3 overflow-x-auto text-sm">
+                        <pre className="bg-[#0d1117] rounded-lg p-3 overflow-x-auto text-sm max-w-full">
                           {displayExample.split('\n').map((line, i) => (
                             <div key={i}>
                               {line.startsWith('$') ? (
