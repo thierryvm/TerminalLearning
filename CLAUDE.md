@@ -7,8 +7,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **Live** : https://terminal-learning.vercel.app
 - **Repo** : https://github.com/thierryvm/TerminalLearning
 - **Vercel** : https://vercel.com/thierry-vanmeeterens-projects/terminal-learning
-- **Ko-fi** : https://ko-fi.com/thierryvm (dons désactivés — attente autorisation mutuelle RIZIV)
-- **GitHub Sponsors** : https://github.com/sponsors/thierryvm (idem)
+- **Ko-fi** : https://ko-fi.com/thierryvm (dons suspendus dans l'UI — attente accord mutuelle Solidaris RIZIV/INAMI)
+- **GitHub Sponsors** : https://github.com/sponsors/thierryvm (compte activé le 9 avril 2026 — dons suspendus dans l'UI, même attente)
 
 ## Règles Git — NON NÉGOCIABLES
 - **Jamais de commit direct sur `main`** — toujours `feature/xxx` ou `fix/xxx`
@@ -42,7 +42,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 2 ✅ Analytics (Vercel Analytics + Sentry)
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
-- Phase 4 🔮 Admin panel (attendre signal trafic)
+- Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
+- Phase 5 🔄 Curriculum expansion — 7 modules, 32 leçons, 242 tests unitaires + 176 E2E Playwright (en cours)
 
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
@@ -50,4 +51,5 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - `Dashboard.tsx` lignes 51 + 204 : `navigate('/learn/...')` → `navigate('/app/learn/...')` (redirect actif mais incohérent)
 
 ## Décisions en attente
-- GitHub Sponsors + Ko-fi — activation suspendue jusqu'à l'accord de la mutuelle RIZIV/INAMI
+- **Ko-fi + GitHub Sponsors** — dons suspendus dans l'UI jusqu'à l'accord mutuelle Solidaris (RIZIV/INAMI). GitHub Sponsors est activé sur la plateforme (9 avril 2026) mais les boutons dans l'app restent désactivés. Quand l'accord arrive : réactiver les cartes dans `Landing.tsx`, le lien footer, et mettre à jour le `donate` dans `terminalEngine.ts`.
+- **Playwright** — e2e/ ajouté (3 suites : accessibility, mobile, seo). Exclure de vitest (`exclude: ['node_modules/**', 'e2e/**']` dans vitest.config.ts — ne jamais retirer).

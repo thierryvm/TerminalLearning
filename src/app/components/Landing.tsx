@@ -650,36 +650,38 @@ export function Landing() {
 
           {/* Right — Support cards */}
           <div className="space-y-4">
-            {/* Ko-fi */}
-            <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/5">
+            {/* Ko-fi — on hold pending Solidaris authorization */}
+            <div
+              className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
+              title="En attente d'accord mutuelle Solidaris (RIZIV/INAMI)"
+              aria-label="Ko-fi — bientôt disponible"
+            >
               <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
-                  <Coffee size={16} className="text-amber-400" aria-hidden="true" />
+                <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">
+                  <Coffee size={16} className="text-[#8b949e]" aria-hidden="true" />
                 </div>
-                <div>
-                  <p className="text-[#e6edf3] text-sm font-semibold">Ko-fi — Don ponctuel</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[#e6edf3] text-sm font-semibold">Ko-fi — Don ponctuel</p>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[#30363d] text-[#8b949e] font-mono">
+                      bientôt
+                    </span>
+                  </div>
                   <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
-                    Offre un café. Chaque don, même petit, aide à couvrir l'hébergement.
+                    Offre un café. En attente d'accord mutuelle — bientôt disponible.
                   </p>
                 </div>
               </div>
-              <a
-                href="https://ko-fi.com/thierryvm"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/15 text-amber-400 hover:text-amber-300 text-sm font-medium transition-all"
-                aria-label="Soutenir Terminal Learning sur Ko-fi"
-              >
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#30363d] text-[#8b949e] text-sm font-medium select-none">
                 <Coffee size={14} aria-hidden="true" />
-                Offrir un café sur Ko-fi
-                <ExternalLink size={12} className="opacity-60" aria-hidden="true" />
-              </a>
+                Bientôt disponible
+              </span>
             </div>
 
-            {/* GitHub Sponsors — coming soon */}
+            {/* GitHub Sponsors — on hold pending Solidaris authorization */}
             <div
               className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
-              title="En attente d'accord RIZIV/INAMI — bientôt disponible"
+              title="En attente d'accord mutuelle Solidaris (RIZIV/INAMI)"
               aria-label="GitHub Sponsors — bientôt disponible"
             >
               <div className="flex items-start gap-3 mb-4">
@@ -694,7 +696,7 @@ export function Landing() {
                     </span>
                   </div>
                   <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
-                    Sponsoring mensuel récurrent — en cours d'activation.
+                    Sponsoring mensuel récurrent — en attente d'accord mutuelle.
                   </p>
                 </div>
               </div>
@@ -731,7 +733,7 @@ export function Landing() {
           <div className="flex items-center gap-6 text-sm text-[#8b949e]">
             <button onClick={() => navigate('/app')} className="hover:text-[#e6edf3] transition-colors">Application</button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
-            <a href="https://ko-fi.com/thierryvm" target="_blank" rel="noopener noreferrer" aria-label="Ko-fi" className="hover:text-[#e6edf3] transition-colors">Ko-fi</a>
+            <span className="opacity-40 cursor-not-allowed" title="Bientôt disponible">Ko-fi</span>
             <button onClick={() => navigate('/privacy')} className="hover:text-[#e6edf3] transition-colors">Confidentialité</button>
           </div>
           <p className="text-[#8b949e] text-xs flex items-center gap-1">
