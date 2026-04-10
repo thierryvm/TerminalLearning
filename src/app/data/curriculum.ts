@@ -951,6 +951,7 @@ export const curriculum: Module[] = [
           hint: 'Tapez d\'abord "whoami", puis "sudo whoami"',
           hintByEnv: {
             windows: 'Tapez simplement "whoami"',
+            macos: 'Tapez "whoami" puis "sudo whoami"',
           },
           validate: (cmd) => {
             const c = cmd.trim().toLowerCase();
