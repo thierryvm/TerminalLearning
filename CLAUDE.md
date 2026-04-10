@@ -56,7 +56,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`linear-sync`** — vérifie PRs GitHub vs statuts Linear, détecte incohérences
 - **`curriculum-validator`** — valide structure de `curriculum.ts` avant toute modification
 - **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
-- **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
+- **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne de prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés

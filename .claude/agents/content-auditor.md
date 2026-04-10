@@ -18,10 +18,13 @@ Analyse en profondeur l'ensemble du curriculum et produis un rapport structuré 
 
 ## Vérifications à effectuer
 
-### 1. Couverture environnement
+### 1. Couverture des environnements
 Pour chaque leçon, vérifier la présence de `instructionByEnv`, `hintByEnv` et `contentByEnv` couvrant `linux`, `macos`, `windows`.
 - CRITICAL si un env manque sans raison légitime
-- WARNING si une leçon est volontairement mono-OS (ex: commandes Windows-only comme `taskkill`, `Get-Help`)
+- WARNING si une leçon est volontairement mono-OS. Heuristique : classer en WARNING (pas CRITICAL) si la commande appartient à l'une des listes suivantes :
+  - Windows-only : `taskkill`, `Get-Help`, `Get-Command`, `Get-Member`, `Get-ChildItem`, `Invoke-WebRequest`, `iwr`, `Resolve-DnsName`, `wevtutil`, `Get-EventLog`
+  - Linux/macOS-only : `man`, `whatis`, `apropos`, `brew`, `apt`, `dpkg`
+  - Ou si la leçon contient explicitement un seul env dans son champ `id` ou `title` (ex: "PowerShell", "Windows")
 
 ### 2. Cohérence curriculum ↔ terminalEngine
 Pour chaque commande référencée dans une leçon (champ `command` des exercices), vérifier qu'un `case 'command':` existe dans `terminalEngine.ts`.
@@ -46,9 +49,12 @@ Pour chaque exercice, la fonction `validate()` doit être non-triviale :
 - Validate toujours `true` — CRITICAL
 - Validate vide ou absente — CRITICAL
 
-### 7. Liens externes (best-effort)
-Si des URLs apparaissent dans `contentByEnv` ou `hintByEnv`, tenter une requête WebFetch.
-- WARNING si une URL retourne une erreur HTTP ou est inaccessible
+### 7. Liens externes (best-effort, limité)
+Si des URLs apparaissent dans `contentByEnv` ou `hintByEnv`, tenter une requête WebFetch sur les **10 premières URLs distinctes** uniquement.
+- Ignorer les URLs déjà vérifiées dans la même session (déduplication)
+- Timeout implicite WebFetch : si pas de réponse, classer WARNING et continuer (ne pas bloquer l'audit)
+- WARNING si une URL retourne une erreur HTTP (4xx/5xx) ou est inaccessible
+- Ne pas agréger les échecs réseau transitoires comme des WARNING : signaler uniquement les erreurs répétables
 
 ### 8. ExerciseTypes (Phase 5b — futur)
 Si un champ `type` existe sur les exercices, vérifier qu'il utilise uniquement :
