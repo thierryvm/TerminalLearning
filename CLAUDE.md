@@ -50,6 +50,28 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
   → à terme : déplacer vers `src/types/database.ts`
 - `Dashboard.tsx` lignes 51 + 204 : `navigate('/learn/...')` → `navigate('/app/learn/...')` (redirect actif mais incohérent)
 
+## Protocole de session — OBLIGATOIRE
+
+### Début de chaque session
+1. `gh pr list --state open` → état réel des PRs
+2. Consulter Linear pour chaque PR ouverte → corriger les incohérences de statut immédiatement
+3. `git status` + `git log --oneline -5` → état de la branche courante
+4. Lire l'issue Linear active avant d'écrire la moindre ligne
+
+### Incohérences Linear à corriger dès détection
+- Issue Done + PR non mergée → **In Review**
+- Issue In Progress + PR ouverte → **In Review**
+- Issue In Review + PR mergée → **Done**
+
+### Règles merge
+- CI verte + Sourcery vérifié (`gh pr view N --comments`) avant de proposer un merge
+- **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
+- Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
+
+### Scope
+- Changement hors scope détecté → signaler, commit séparé, ne pas agir silencieusement
+- Chaque préoccupation = son propre commit (feature ≠ chore ≠ fix)
+
 ## Décisions en attente
 - **Ko-fi + GitHub Sponsors** — dons suspendus dans l'UI jusqu'à l'accord de la mutuelle Solidaris (RIZIV/INAMI). GitHub Sponsors est activé sur la plateforme (9 avril 2026) mais les boutons dans l'app restent désactivés. Quand l'accord arrive : réactiver les cartes dans `Landing.tsx`, le lien footer, et mettre à jour le `donate` dans `terminalEngine.ts`.
 - **Playwright** — e2e/ ajouté (3 suites : accessibility, mobile, seo). Exclure de vitest (`exclude: ['node_modules/**', 'e2e/**']` dans vitest.config.ts — ne jamais retirer).
