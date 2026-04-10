@@ -5,6 +5,19 @@
 
 ---
 
+## Correspondance Linear ↔ Phases ↔ Modules
+
+| Issue Linear | Phase | Contenu |
+|-------------|-------|---------|
+| THI-27 | 5 | Module 8 — Réseau & SSH (`ping`, `curl`, `wget`, `ssh`, `scp`, DNS) |
+| THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* |
+| THI-29 | 5 | Module 11 — L'IA comme outil dev |
+| THI-35 | docs | Architecture stratégique — Terminal Sentinel, RBAC, Admin Panel, PWA ✅ Done |
+| THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
+| THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
+
+---
+
 ## Objectif
 
 Devenir l'outil pédagogique de référence pour apprendre le terminal et le workflow développeur,
@@ -196,7 +209,7 @@ type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scen
 # .github/workflows/security-sentinel.yml
 # Cron : lundi 06:00 UTC + dispatch manuel
 checks:
-  - npm audit (vulnérabilités dépendances)
+  - npm audit (vulnérabilités des dépendances)
   - gitleaks (secrets accidentellement commités)
   - Headers HTTP : CSP, HSTS, X-Frame-Options, Referrer-Policy
   - Cookies : Secure + HttpOnly + SameSite sur tous les cookies auth
@@ -241,13 +254,14 @@ output:
 
 #### Modèle de rôles (validé — 10 avril 2026)
 
-| Rôle | Périmètre | Notes |
-|------|-----------|-------|
-| `super_admin` | Global | Thierry uniquement — accès total |
-| `institution_admin` | Son institution | Approuve ses enseignants, voit ses étudiants |
-| `teacher` | Ses classes | Statut vérifié via approval flow |
-| `student` | Sa progression | Self-register ou invitation enseignant |
-| `public` | Lecture curriculum | Anonyme — pas de compte requis |
+| Rôle / État | Type | Périmètre | Notes |
+|-------------|------|-----------|-------|
+| `super_admin` | Rôle permanent | Global | Thierry uniquement — accès total |
+| `institution_admin` | Rôle permanent | Son institution | Approuve ses enseignants, voit ses étudiants |
+| `teacher` | Rôle permanent | Ses classes | Statut vérifié via approval flow |
+| `pending_teacher` | État transitoire | Aucun (en attente) | Inscrit comme enseignant, en attente d'approbation admin — accès student uniquement |
+| `student` | Rôle permanent | Sa progression | Self-register ou invitation enseignant |
+| `public` | Non authentifié | Lecture curriculum | Anonyme — pas de compte requis |
 
 #### Flow de vérification enseignant
 ```
@@ -256,7 +270,7 @@ output:
 3. Notification → super_admin ou institution_admin dans l'Admin Panel
 4. Approbation manuelle → statut teacher actif
    ✗ Pas d'upload de document (RGPD, complexité, maintenance)
-   ✓ Optionnel v2 : whitelist domaines email par institution (@ulb.be, @vub.be…)
+   ✓ Optionnel v2 : liste blanche de domaines email par institution (@ulb.be, @vub.be…)
 ```
 
 #### DB — nouvelles tables/colonnes
@@ -337,7 +351,17 @@ CREATE TABLE audit_log (
 - `institutions` : lecture publique du nom, écriture → super_admin uniquement
 - `classes` : visible par teacher + ses enrolled students + institution_admin
 - `class_enrollments` : teacher peut enroller, student voit les siennes, admin voit tout
-- `audit_log` : insert-only pour tous, SELECT → super_admin uniquement
+- `audit_log` : **insert-only** — stratégie RLS explicite :
+  ```sql
+  -- Autoriser INSERT pour tous les rôles authentifiés
+  CREATE POLICY "audit_log_insert" ON audit_log FOR INSERT
+    TO authenticated WITH CHECK (true);
+  -- Autoriser SELECT pour super_admin uniquement
+  CREATE POLICY "audit_log_select" ON audit_log FOR SELECT
+    USING (auth.jwt() ->> 'role' = 'super_admin');
+  -- UPDATE et DELETE : aucune policy → interdits par défaut (RLS enforced)
+  ```
+  *Note : pas de trigger nécessaire — l'absence de policy UPDATE/DELETE suffit avec RLS activé.*
 
 #### Composants `/app/profile`
 - `ProfilePage.tsx` — stats globales, badges, préférences
@@ -595,13 +619,13 @@ Sentry est configuré et déployé via Vercel. Pour confirmer que les events rem
 
 **Valeur ajoutée pour le contexte scolaire :**
 - Installable sur tablette/mobile/PC sans App Store (icône écran d'accueil)
-- Offline partiel : leçons déjà visitées accessibles sans wifi (idéal salles informatique sans internet stable)
+- Offline partiel : leçons déjà visitées accessibles sans wifi (idéal pour les salles informatiques sans internet stable)
 - `display: standalone` : supprime la barre d'adresse → immersion terminal authentique
 - Push notifications : "nouveau module disponible", "streak en danger"
 
 **Stack :** `vite-plugin-pwa` + Workbox, stratégie `NetworkFirst`
 - Supabase Auth incompatible avec `CacheFirst` → NetworkFirst obligatoire
-- Service Worker scope limité : ne pas cacher les appels Supabase RLS
+- Service Worker scope limité : ne pas mettre en cache les appels Supabase RLS
 - Manifest : icônes 192px + 512px, `theme_color: #0d1117`, `background_color: #0d1117`
 
 **Effort estimé :** 2–3 jours. Ne pas commencer avant Phase 9 terminée.
