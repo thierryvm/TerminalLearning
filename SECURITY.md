@@ -40,6 +40,24 @@ You will receive an acknowledgement within 72 hours.
 - `npm audit` on every CI run
 - Dependabot alerts enabled on the repository
 
+## Planned Security Enhancements
+
+### Phase 5.5 — Terminal Sentinel (THI-36)
+Automated security audit tool running on two levels:
+- **GitHub Actions weekly**: npm audit, gitleaks (secret scanning), HTTP security headers, cookie flags
+- **Playwright local script** (pre-release): auth error message genericity, rate limiting, RBAC route guards, absence of stack traces in production
+
+### Phase 7 — RBAC + Audit Log (THI-37)
+- Role-based access control: `super_admin`, `institution_admin`, `teacher`, `student`, `public`
+- Teacher identity verified via admin approval flow (no document upload — GDPR)
+- Insert-only `audit_log` table: every privileged action recorded with actor, action, target, IP, timestamp
+- RLS extended to all new tables — principle of least privilege
+
+### Phase 9 — Admin Panel Security Center
+- Real-time anomaly detection: failed logins, rate-limit hits, terminal fuzzing patterns
+- Audit log viewer (super_admin only)
+- Weekly automated security report via Supabase Edge Function → email
+
 ## Out of Scope
 
 - Social engineering, physical attacks
