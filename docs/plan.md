@@ -350,15 +350,16 @@ CREATE TABLE audit_log (
 #### Sécurité — RLS obligatoire sur toutes les nouvelles tables
 - `institutions` : lecture publique du nom, écriture → super_admin uniquement
 - `classes` : visible par teacher + ses enrolled students + institution_admin
-- `class_enrollments` : teacher peut enroller, student voit les siennes, admin voit tout
-- `audit_log` : **insert-only** — stratégie RLS explicite :
+- `class_enrollments` : teacher peut inscrire des étudiants, student voit les siennes, admin voit tout
+- `audit_log` : **insert-only** — uniquement pour les utilisateurs authentifiés (les anonymes n'écrivent jamais dans l'audit) — stratégie RLS explicite :
   ```sql
-  -- Autoriser INSERT pour tous les rôles authentifiés
+  -- INSERT : réservé aux utilisateurs authentifiés uniquement (pas aux anonymes)
   CREATE POLICY "audit_log_insert" ON audit_log FOR INSERT
     TO authenticated WITH CHECK (true);
-  -- Autoriser SELECT pour super_admin uniquement
+  -- SELECT : super_admin uniquement — auth.role() préféré à auth.jwt() ->> 'role'
+  -- pour robustesse aux évolutions futures de Supabase Auth
   CREATE POLICY "audit_log_select" ON audit_log FOR SELECT
-    USING (auth.jwt() ->> 'role' = 'super_admin');
+    USING (auth.role() = 'super_admin');
   -- UPDATE et DELETE : aucune policy → interdits par défaut (RLS enforced)
   ```
   *Note : pas de trigger nécessaire — l'absence de policy UPDATE/DELETE suffit avec RLS activé.*
