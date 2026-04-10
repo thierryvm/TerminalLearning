@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 9 April 2026
+> Last updated: 10 April 2026
 
 ---
 
@@ -83,12 +83,12 @@ Full-stack developer path — 11 modules total (7 active, 4 planned) — 32 less
 - [ ] `.gitignore`, branches (`branch`, `checkout`, `merge`)
 - [ ] Conflict resolution, stash
 
-### Module 10 — GitHub & Collaboration 🔜 THI-29
+### Module 10 — GitHub & Collaboration 🔜 THI-28 *(combined with Module 9)*
 - [ ] Remotes, push/pull, PRs, Issues, forks
 - [ ] GitHub Actions CI basics
 - [ ] Linear workflow integration
 
-### Module 11 — AI as a Dev Tool 🔮
+### Module 11 — AI as a Dev Tool 🔜 THI-29
 - [ ] Contextual prompting, validating AI output
 - [ ] Claude Code CLI, known limits and risks
 - [ ] AI-assisted debugging and code review
@@ -124,21 +124,47 @@ Full module track for senior fullstack + network/server expert + security fundam
 | 16 | Server Administration | 5 |
 | 17 | AI as a Dev Tool | 3 |
 
+## Phase 5.5 — Terminal Sentinel 🔮 THI-36
+> Automated security audit tool — professional security showcase for schools and universities.
+
+- [ ] **Component A — GitHub Actions weekly** (`.github/workflows/security-sentinel.yml`)
+  - npm audit, gitleaks (secret scanning), HTTP headers (CSP/HSTS/X-Frame), cookie flags
+  - Output: JSON report → `security_reports` Supabase table + email summary
+- [ ] **Component B — Playwright local script** (`scripts/security-audit.cjs`)
+  - Generic auth error messages, rate limiting active, `/admin` routes return 401 without RBAC, no stack traces in prod
+  - Output: JSON report + readable terminal summary with health score
+- Scope: **audits defenses only** — no active attack simulation on production
+- Results feed into Admin Panel Security Center (Phase 9)
+
 ## Phase 6 — Terminal Multi-Session 🔮
 - [ ] Tab system: multiple independent terminal sessions
 - [ ] Each session has its own isolated TerminalState
 - [ ] Mobile: max 3 sessions, full-screen with compact tab switcher
 - [ ] Desktop: optional split-pane view
 
-## Phase 7 — Member Space 🔮
+## Phase 7 — Member Space + Full RBAC 🔮 THI-37
+> Role model validated 10 April 2026. Prerequisite for Admin Panel and school/university rollout.
+
+**Role model:**
+| Role | Scope | Notes |
+|------|-------|-------|
+| `super_admin` | Global | Thierry only — full control |
+| `institution_admin` | Own institution | Approves teachers, views students |
+| `teacher` | Own classes | Verified via approval flow |
+| `student` | Own progress | Self-register or teacher invitation |
+| `public` | Read-only curriculum | No account required |
+
+**Teacher verification flow:** self-declare → `pending_teacher` → admin approval → `teacher` active *(no document upload — GDPR + complexity; optional v2: email domain whitelist per institution)*
+
 - [ ] `/app/profile` — progress stats, badges, preferences, preferred env
-- [ ] Role system: `student` / `teacher` / `admin` + sector: school / university / self-taught
 - [ ] Progress heatmap (GitHub-style calendar)
-- [ ] Skill radar chart (per module)
-- [ ] Badge system (first-command, module-complete, streak, speed-runner, no-hints)
-- [ ] Classroom view for teachers: student list + progress
+- [ ] Skill radar chart (per module, Recharts)
+- [ ] Badge system (first-command, module-complete, streak, speed-runner, no-hints, explorer)
+- [ ] Classroom view for teachers: enrolled students + progress
 - [ ] Teacher notes per student (private)
-- [ ] DB: extend `profiles` (role, sector), `progress` (time_spent, attempts, hints_used), add `badges`, `teacher_notes`
+- [ ] Teacher approval panel (super_admin + institution_admin)
+- [ ] DB: `institutions`, `classes`, `class_enrollments`, extend `profiles` (role, institution_id, display_name), extend `progress` (time_spent, attempts, hints_used), add `badges`, `teacher_notes`, `audit_log` (insert-only)
+- [ ] RLS on all new tables — principle of least privilege
 
 ## Phase 8 — Ticket System 🔮
 - [ ] Floating feedback button (accessible from all `/app/*` pages)
@@ -149,16 +175,18 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] DB: `tickets` table with priority, assignment, context (jsonb)
 
 ## Phase 9 — Admin Panel 🔮
-> After meaningful traffic signal. Inspired by Grafana, Sentry, Linear.
+> After Phase 7 (RBAC) + meaningful traffic signal. Inspired by Grafana, Sentry, Linear.
+> Visual stack: Recharts + Supabase Realtime + dark theme `#0d1117`.
 
 - [ ] `/admin` route — 8-layer security (RBAC + 2FA TOTP + audit log + CSP nonce)
-- [ ] Real-time health dashboard (uptime, API latency, error rate, CI status)
-- [ ] Analytics: DAU/MAU, completion funnels, command heatmap, env distribution
-- [ ] Security Center: failed logins, rate-limit hits, terminal anomalies, audit log
-- [ ] Content Manager: module activation, lesson editor, command catalogue CRUD
-- [ ] User Manager: roles, suspension, teacher-student assignment
-- [ ] Ticket Board: Kanban (open → in_review → resolved)
-- [ ] Health Monitor: Supabase quotas, Vercel bandwidth, Sentry issues, npm audit
+- [ ] **Health Dashboard** — uptime, API latency p50/p95, error rate, CI last run, active alerts
+- [ ] **Security Center** *(fed by Terminal Sentinel)* — weekly audit reports, failed logins, rate-limit hits, terminal anomalies, `audit_log` viewer
+- [ ] **Analytics** — DAU/MAU, completion funnels, command heatmap, env distribution (Linux/macOS/Windows)
+- [ ] **User Manager** — teacher approval flow, roles, suspension, teacher-student assignment
+- [ ] **Content Manager** — module activation, lesson editor, command catalogue CRUD
+- [ ] **Ticket Board** — Kanban (open → in_review → resolved), priority, assignment
+- [ ] **Health Monitor** — Supabase quotas, Vercel bandwidth, Sentry issues, npm audit
+- [ ] **Classroom View** — per-institution stats, teacher notes, student progress
 - [ ] Weekly security report (Edge Function → email)
 
 ## Phase 10 — Automated Content Updates 🔮

@@ -58,6 +58,10 @@ Lessons live in `src/app/data/curriculum.ts`. Each lesson needs:
 Use `useAuth()` from `src/app/context/AuthContext.tsx` to access session/user.
 Use `useProgress()` from `src/app/context/ProgressContext.tsx` for synced progress.
 
+**Upcoming (Phase 7) — RBAC:** a `useRole()` hook will expose the user's role
+(`super_admin`, `institution_admin`, `teacher`, `student`). Do not implement role checks
+ad-hoc before this is in place — use `useAuth()` for now and leave a `// TODO(THI-37)` comment.
+
 ## Architecture
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for source structure, data flow, and DB schema.

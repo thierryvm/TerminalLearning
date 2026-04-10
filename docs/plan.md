@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 9 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : Module 7 ✅ (PR #36), enrichissement modules 4–6 + CommandReference env-aware ✅ (PR #37), TerminalPreview env-aware ✅ (PR #38) — 32 leçons, 7 modules, 242 tests unitaires + 176 E2E
+> Dernière mise à jour : 10 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 7 modules ✅, 32 leçons, 242 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -112,11 +112,10 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - Fallback `<PageLoader>` accessible dans `App.tsx`
 - Objectif : réduire le bundle initial de ~30-40%, améliorer LCP/TTI landing
 
-#### 🔜 Modules planifiés (THI-27 à THI-30)
+#### 🔜 Modules planifiés (THI-27 à THI-29)
 - **Module 8 — Réseau & SSH** (THI-27) : `ping`, `curl`, `wget`, `ssh`, `scp`, DNS
-- **Module 9 — Git Fondamentaux** (THI-28) : `init`, `add`, `commit`, `log`, branches, conflits
-- **Module 10 — GitHub & Collaboration** (THI-29) : remotes, PRs, Issues, GitHub Actions, workflow Linear
-- **Module 11 — L'IA comme outil dev** : Claude Code CLI, prompts contextuels, limites et risques
+- **Module 9 + 10 — Git Fondamentaux + GitHub & Collaboration** (THI-28) : `init`, `add`, `commit`, branches, remotes, PRs, Issues, GitHub Actions
+- **Module 11 — L'IA comme outil dev** (THI-29) : Claude Code CLI, prompts contextuels, limites et risques
 
 #### 🔮 Couches additionnelles (backlog)
 - **Monitoring & Outils système** : module dédié `htop`, `ps`, `lsof`, `df`/`du`, `free`
@@ -181,6 +180,52 @@ type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scen
 
 ---
 
+---
+
+### 🔮 Phase 5.5 — Terminal Sentinel (THI-36)
+
+> Outil d'audit de sécurité périodique — vitrine de sécurité professionnelle et signal de confiance pour les écoles/universités.
+
+#### Principe
+- **Audite les défenses** — ne simule pas d'attaque active sur la production (risque ban Vercel/Supabase)
+- Résultats visibles dans le Security Center (Phase 9)
+- Open source : démontre la maturité sécurité du projet
+
+#### Composant A — GitHub Actions hebdomadaire
+```yaml
+# .github/workflows/security-sentinel.yml
+# Cron : lundi 06:00 UTC + dispatch manuel
+checks:
+  - npm audit (vulnérabilités dépendances)
+  - gitleaks (secrets accidentellement commités)
+  - Headers HTTP : CSP, HSTS, X-Frame-Options, Referrer-Policy
+  - Cookies : Secure + HttpOnly + SameSite sur tous les cookies auth
+output:
+  - Rapport JSON → table `security_reports` Supabase
+  - Email résumé hebdo → Thierry
+```
+
+#### Composant B — Script Playwright local
+```bash
+# scripts/security-audit.cjs — avant chaque release majeure
+node scripts/security-audit.cjs [--url https://terminal-learning.vercel.app]
+checks:
+  - Messages d'erreur auth génériques (pas de leak "user not found" vs "wrong password")
+  - Rate limiting actif sur /auth et /api endpoints
+  - Routes /admin inaccessibles sans RBAC (retournent 401/403, pas 404)
+  - Absence de stack traces / console.error en prod
+  - Validation que les chunks lazy ne contiennent pas de secrets
+output:
+  - Rapport JSON : security-audit-report.json
+  - Résumé terminal lisible avec score de santé
+```
+
+#### Tests requis
+- Tests unitaires : fonctions de parsing et scoring des rapports
+- Dry-run CI : le workflow GitHub Actions est valide syntaxiquement
+
+---
+
 ### 🔮 Phase 6 — Terminal Multi-Session + Changelog
 
 - Onglets multiples dans le terminal (architecture `TerminalManager`)
@@ -190,26 +235,67 @@ type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scen
 
 ---
 
-### 🔮 Phase 7 — Espace Membre
+### 🔮 Phase 7 — Espace Membre + RBAC complet (THI-37)
 
-> Profil utilisateur riche + statistiques + rôles + notes professeur
+> Couche utilisateur complète — pré-requis à l'Admin Panel et à l'ouverture aux écoles/universités.
 
-#### Rôles & secteurs
-| Rôle | Permissions | Secteur |
-|------|-------------|---------|
-| `student` | progression, profil, tickets | école / université / autodidacte |
-| `teacher` | + voir stats élèves, ajouter notes | école / université |
-| `admin` | accès complet | — |
+#### Modèle de rôles (validé — 10 avril 2026)
+
+| Rôle | Périmètre | Notes |
+|------|-----------|-------|
+| `super_admin` | Global | Thierry uniquement — accès total |
+| `institution_admin` | Son institution | Approuve ses enseignants, voit ses étudiants |
+| `teacher` | Ses classes | Statut vérifié via approval flow |
+| `student` | Sa progression | Self-register ou invitation enseignant |
+| `public` | Lecture curriculum | Anonyme — pas de compte requis |
+
+#### Flow de vérification enseignant
+```
+1. Inscription → role_request = 'teacher' + nom institution
+2. Compte passe en statut pending_teacher
+3. Notification → super_admin ou institution_admin dans l'Admin Panel
+4. Approbation manuelle → statut teacher actif
+   ✗ Pas d'upload de document (RGPD, complexité, maintenance)
+   ✓ Optionnel v2 : whitelist domaines email par institution (@ulb.be, @vub.be…)
+```
 
 #### DB — nouvelles tables/colonnes
 ```sql
 -- profiles (extensions)
 ALTER TABLE profiles ADD COLUMN
-  role text DEFAULT 'student' CHECK (role IN ('student','teacher','admin')),
+  role text DEFAULT 'student'
+    CHECK (role IN ('super_admin','institution_admin','teacher','pending_teacher','student')),
   sector text CHECK (sector IN ('school','university','self-taught')),
+  institution_id uuid REFERENCES institutions(id),
   display_name text,
   bio text,
   preferred_env text DEFAULT 'linux';
+
+-- institutions
+CREATE TABLE institutions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  domain_whitelist text[],       -- ex. ['ulb.be', 'vub.be']
+  admin_id uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now()
+);
+
+-- classes
+CREATE TABLE classes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  teacher_id uuid REFERENCES profiles(id),
+  institution_id uuid REFERENCES institutions(id),
+  name text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- class_enrollments
+CREATE TABLE class_enrollments (
+  class_id uuid REFERENCES classes(id),
+  student_id uuid REFERENCES profiles(id),
+  enrolled_at timestamptz DEFAULT now(),
+  PRIMARY KEY (class_id, student_id)
+);
 
 -- progress (extensions)
 ALTER TABLE progress ADD COLUMN
@@ -234,7 +320,24 @@ CREATE TABLE teacher_notes (
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
+-- audit_log (insert-only — actions admin traçables)
+CREATE TABLE audit_log (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  actor_id uuid REFERENCES profiles(id),
+  action text NOT NULL,   -- ex. 'approve_teacher', 'suspend_user'
+  target_id uuid,
+  metadata jsonb,
+  ip_address inet,
+  created_at timestamptz DEFAULT now()
+);
 ```
+
+#### Sécurité — RLS obligatoire sur toutes les nouvelles tables
+- `institutions` : lecture publique du nom, écriture → super_admin uniquement
+- `classes` : visible par teacher + ses enrolled students + institution_admin
+- `class_enrollments` : teacher peut enroller, student voit les siennes, admin voit tout
+- `audit_log` : insert-only pour tous, SELECT → super_admin uniquement
 
 #### Composants `/app/profile`
 - `ProfilePage.tsx` — stats globales, badges, préférences
@@ -278,9 +381,11 @@ CREATE TABLE tickets (
 
 ---
 
-### 🔮 Phase 9 — Admin Panel (après signal trafic significatif)
+### 🔮 Phase 9 — Admin Panel (après Phase 7 + signal trafic significatif)
 
-> Inspiré de : Grafana, Sentry, Linear, Datadog — adapté à une app pédagogique open source
+> Inspiré de : Grafana, Sentry, Linear, Datadog — adapté à une app pédagogique open source.
+> Vitrine de sécurité et de maîtrise technique. 7 sections. Terminal Sentinel alimente le Security Center.
+> Stack visuelle : Recharts + Supabase Realtime + dark theme `#0d1117` cohérent avec l'app.
 
 #### Sécurité admin — 8 couches (normes 2026)
 | Couche | Mécanisme |
@@ -312,14 +417,15 @@ CREATE TABLE tickets (
 - Répartition Linux/macOS/Windows
 - Nouveaux comptes par jour
 
-**3. Security Center**
+**3. Security Center** *(alimenté par Terminal Sentinel — Phase 5.5)*
+- Rapports Terminal Sentinel : historique des audits hebdomadaires, score de santé, tendances
 - Tentatives de connexion échouées (carte géo IP si disponible)
 - Rate limit hits (par IP, par endpoint)
 - Comportements anormaux du terminal :
   - Commandes inattendues répétées (bruit de fuzzing)
   - Patterns XSS/injection dans les inputs
   - Fréquence anormalement élevée de requêtes
-- Audit log consultable (filtres : qui, quoi, quand)
+- Audit log consultable (filtres : qui, quoi, quand) — table `audit_log` insert-only
 - Rapport hebdomadaire auto (Edge Function → email)
 
 **4. Gestion contenu**
@@ -411,6 +517,7 @@ CREATE TABLE content_releases (
 
 > Pour chaque chantier > 3 fichiers ou touchant plusieurs domaines,
 > l'orchestrateur répartit le travail entre agents spécialisés.
+> Terminal Sentinel s'intègre comme outil du Security Agent.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -422,7 +529,7 @@ CREATE TABLE content_releases (
   ┌────▼───┐ ┌───▼─────┐ ┌───▼────┐ ┌─────▼──────┐
   │FRONTEND│ │BACKEND  │ │SECURITY│ │CURRICULUM  │
   │ Agent  │ │Supabase │ │ Agent  │ │  Agent     │
-  │        │ │ Agent   │ │        │ │            │
+  │        │ │ Agent   │ │ ↓TS    │ │            │
   └────────┘ └─────────┘ └────────┘ └────────────┘
        │           │          │            │
        └───────────┴──────────┴────────────┘
@@ -432,6 +539,8 @@ CREATE TABLE content_releases (
               │  Vitest unit + Playwright│
               │  Lighthouse CI           │
               └──────────────────────────┘
+
+TS = Terminal Sentinel (audit périodique → Security Center)
 ```
 
 **Rôles :**
@@ -440,14 +549,15 @@ CREATE TABLE content_releases (
 | Orchestrateur | Plan, coordination, review, merge | Tous |
 | Frontend | UI/UX, composants, charts, design tokens | Edit, Write, Bash |
 | Backend/Supabase | Schema SQL, RLS, Edge Functions, migrations | Supabase MCP, Edit |
-| Security | OWASP audit, CSP, pen test, dépendances | Grep, Bash, WebSearch |
+| Security | OWASP audit, CSP, RLS review, Terminal Sentinel | Grep, Bash, WebSearch |
 | Curriculum | Leçons, exercices, catalogue commandes | Edit, Context7 |
 | QA | Tests Vitest, Playwright, Lighthouse | Bash, Write |
 
 **Règles d'activation :**
-- Security obligatoire dès qu'un sujet touche auth, secrets, webhooks, inputs utilisateur
+- Security obligatoire dès qu'un sujet touche auth, secrets, webhooks, RBAC, inputs utilisateur
 - Backend obligatoire dès qu'une migration SQL est nécessaire
 - QA obligatoire après chaque feature (unit + E2E avant merge)
+- Terminal Sentinel lancé manuellement avant chaque release majeure
 - Jamais d'agent sans plan validé par Thierry d'abord
 
 ---
@@ -478,15 +588,20 @@ Sentry est configuré et déployé via Vercel. Pour confirmer que les events rem
 
 ---
 
-## 🔮 Phase finale — PWA (après tout le reste)
+## 🔮 Phase finale — PWA Avancée (après tout le reste)
 
-> À traiter uniquement quand toutes les phases précédentes sont terminées.
+> À traiter uniquement quand curriculum complet + Admin Panel + RBAC sont en prod.
+> Validé comme approche finale — 10 avril 2026.
 
 **Valeur ajoutée pour le contexte scolaire :**
-- Installable sur tablette/mobile sans App Store (icône écran d'accueil)
-- Offline partiel : leçons déjà visitées accessibles sans wifi
-- `display: standalone` : supprime la barre d'adresse → meilleure immersion
+- Installable sur tablette/mobile/PC sans App Store (icône écran d'accueil)
+- Offline partiel : leçons déjà visitées accessibles sans wifi (idéal salles informatique sans internet stable)
+- `display: standalone` : supprime la barre d'adresse → immersion terminal authentique
+- Push notifications : "nouveau module disponible", "streak en danger"
 
-**Stack :** `vite-plugin-pwa` + Workbox, stratégie `NetworkFirst` (Supabase Auth incompatible avec `CacheFirst`)
+**Stack :** `vite-plugin-pwa` + Workbox, stratégie `NetworkFirst`
+- Supabase Auth incompatible avec `CacheFirst` → NetworkFirst obligatoire
+- Service Worker scope limité : ne pas cacher les appels Supabase RLS
+- Manifest : icônes 192px + 512px, `theme_color: #0d1117`, `background_color: #0d1117`
 
-**Effort estimé :** 1–2 jours. Ne pas commencer avant que le curriculum complet, l'admin panel et les modules avancés soient en prod.
+**Effort estimé :** 2–3 jours. Ne pas commencer avant Phase 9 terminée.

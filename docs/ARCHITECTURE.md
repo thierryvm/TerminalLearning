@@ -1,6 +1,6 @@
 # Architecture — Terminal Learning
 
-> Last updated: 9 April 2026
+> Last updated: 10 April 2026
 
 ## Stack
 
@@ -51,12 +51,13 @@ src/
 │   │   ├── ui/                   # shadcn/ui primitives (generated)
 │   │   ├── figma/                # Figma Make–generated assets
 │   │   ├── Landing.tsx           # Public landing page
-│   │   ├── Layout.tsx            # /app shell + sidebar
+│   │   ├── Layout.tsx            # /app shell + sidebar (eager — not lazy)
 │   │   ├── Dashboard.tsx         # Progress overview
 │   │   ├── LessonPage.tsx        # Lesson content + exercises
 │   │   ├── TerminalEmulator.tsx  # Interactive terminal
 │   │   ├── CommandReference.tsx  # Command cheat sheet
 │   │   ├── PrivacyPolicy.tsx     # GDPR policy page
+│   │   ├── PageLoader.tsx        # Accessible spinner — Suspense fallback for lazy routes
 │   │   └── NotFound.tsx          # 404 page
 │   ├── context/
 │   │   ├── AuthContext.tsx       # Session, user, signOut
@@ -76,7 +77,7 @@ src/
 │   ├── setup.ts
 │   ├── progress.test.tsx         # ProgressContext tests
 │   ├── progressSync.test.ts      # mergeProgress + getDelta (10 tests)
-│   ├── terminalEngine.test.ts    # Terminal command tests (238 total)
+│   ├── terminalEngine.test.ts    # Terminal command tests (242 total)
 │   ├── curriculumTypes.test.ts   # Curriculum structure + catalogue consistency
 │   ├── unlocking.test.ts         # Module unlock / prerequisite logic
 │   └── landing.test.tsx          # Landing page module cards
@@ -143,20 +144,63 @@ RLS policies: users can only read/write their own rows. See `supabase/migrations
 ## Multi-Agent Development Model
 
 ```
-┌──────────────────────────────────────────┐
-│           ORCHESTRATOR AGENT             │
-│  Coordinates, validates, merges          │
-└──────┬──────────┬────────────┬───────────┘
-       │          │            │
-  ┌────▼───┐ ┌───▼────┐ ┌────▼───────┐
-  │FRONTEND│ │SECURITY│ │HACKER BLACK│
-  │ Agent  │ │ Agent  │ │   Agent    │
-  └────────┘ └────────┘ └────────────┘
-                              │
-              ┌───────────────▼──────────┐
+┌──────────────────────────────────────────────────┐
+│              ORCHESTRATOR AGENT                  │
+│  Thierry (decision) + Claude Code (coordination) │
+│  → map, plan, validate, merge, PR                │
+└──────┬──────────┬────────────┬────────────┬──────┘
+       │          │            │            │
+  ┌────▼───┐ ┌───▼─────┐ ┌───▼────┐ ┌─────▼──────┐
+  │FRONTEND│ │BACKEND  │ │SECURITY│ │CURRICULUM  │
+  │ Agent  │ │Supabase │ │ Agent  │ │  Agent     │
+  │        │ │ Agent   │ │ + TS ↓ │ │            │
+  └────────┘ └─────────┘ └────────┘ └────────────┘
+       │           │          │            │
+       └───────────┴──────────┴────────────┘
+                          │
+              ┌───────────▼──────────────┐
               │      QA / TEST Agent     │
               │  Vitest + Playwright     │
+              │  Lighthouse CI           │
               └──────────────────────────┘
+
+TS = Terminal Sentinel — periodic security audit feeding Security Center (Phase 9)
+```
+
+| Agent | Responsibility |
+|-------|---------------|
+| Orchestrator | Plan, coordination, review, merge |
+| Frontend | UI/UX, components, design tokens, charts |
+| Backend/Supabase | SQL schema, RLS, Edge Functions, migrations |
+| Security | OWASP audit, CSP, RLS review, Terminal Sentinel |
+| Curriculum | Lessons, exercises, command catalogue |
+| QA | Vitest unit tests, Playwright E2E, Lighthouse |
+
+## Database Schema
+
+**Phase 3 (live):**
+```sql
+profiles (id uuid PK, username text UNIQUE, created_at timestamptz)
+progress (user_id uuid FK, lesson_id text, completed bool,
+          completed_at timestamptz, score int 0-100) PK: (user_id, lesson_id)
+```
+
+**Phase 7 (planned — RBAC):**
+```sql
+institutions (id, name, domain_whitelist[], admin_id)
+classes (id, teacher_id, institution_id, name)
+class_enrollments (class_id, student_id)  -- PK composite
+-- profiles extensions: role, institution_id, display_name, preferred_env
+-- progress extensions: time_spent_seconds, attempts_count, hints_used
+badges (user_id, badge_id, earned_at)
+teacher_notes (id, teacher_id, student_id, note)
+audit_log (id, actor_id, action, target_id, metadata jsonb, ip_address, created_at)
+-- insert-only — RLS: SELECT for super_admin only
+```
+
+**Phase 9 (planned — Terminal Sentinel):**
+```sql
+security_reports (id, run_at, score int, findings jsonb, component text)
 ```
 
 ## Roadmap
@@ -168,6 +212,11 @@ RLS policies: users can only read/write their own rows. See `supabase/migrations
 | 2 | ✅ | Vercel Analytics + Sentry |
 | 3 | ✅ | Supabase Auth + progress persistence |
 | 4 | ✅ | Curriculum v2 + multi-environment + terminal profiles (192 tests) |
-| 5 | 🔄 | Curriculum expansion — Module 7 ✅, Network/SSH, Git, GitHub, AI (238 tests) |
+| 5 | 🔄 | Curriculum expansion — 7 modules, 32 lessons, 242 unit + 176 E2E tests |
+| 5.5 | 🔮 | Terminal Sentinel — automated security audit (THI-36) |
 | 6 | 🔮 | Terminal multi-session (tabs) + changelog |
-| 7 | 🔮 | Admin panel (RBAC, audit log, 2FA) |
+| 7 | 🔮 | Full RBAC — student/teacher/institution/admin + approval flow (THI-37) |
+| 8 | 🔮 | Ticket system — in-app bug reports + suggestions |
+| 9 | 🔮 | Admin Panel — 7 sections, Security Center fed by Terminal Sentinel |
+| 10 | 🔮 | Automated content scheduler (new commands every 2 weeks) |
+| Final | 🔮 | PWA advanced — installable, offline, push notifications |

@@ -1,6 +1,6 @@
 # Conventions de travail — Terminal Learning
 
-> Dernière mise à jour : 3 avril 2026  
+> Dernière mise à jour : 10 avril 2026  
 > Issue Linear : [THI-8](https://linear.app/thierryvm/issue/THI-8/set-project-workflow-conventions)
 
 ---
