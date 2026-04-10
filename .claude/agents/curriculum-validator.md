@@ -11,11 +11,11 @@ Analyse `src/app/data/curriculum.ts` et `src/test/terminalEngine.test.ts`, puis 
 
 ## Vérifications à effectuer
 
-1. **Couverture environnement** : chaque leçon couvre-t-elle `linux`, `macos`, `windows` dans ses exemples ou commandes ?
+1. **Couverture environnement** : chaque leçon couvre-t-elle `linux`, `macos`, `windows` dans ses exemples ou commandes ? Note : certaines leçons peuvent légitimement être mono-OS (ex: commandes Windows-only comme `taskkill`). Dans ce cas, signaler en WARNING et non CRITICAL.
 2. **IDs uniques** : aucun `lessonId` ou `moduleId` dupliqué
 3. **Tests présents** : chaque commande référencée dans curriculum.ts a-t-elle un test dans terminalEngine.test.ts ?
 4. **Completeness** : modules sans leçons, leçons sans exercices, exercices sans solution attendue
-5. **ExerciseTypes valides** : `objective-result`, `scenario-context`, `quiz-recall`, `quiz-mcq` uniquement
+5. **ExerciseTypes (Phase 5b — futur)** : si un champ `type` existe sur les exercices, vérifier qu'il utilise uniquement : `fill-flag`, `objective`, `error-fix`, `pipeline`, `scenario`, `quiz-mcq`, `quiz-recall`. Si le champ n'existe pas encore dans l'interface TypeScript, ignorer cette vérification.
 
 ## Format de rapport obligatoire
 

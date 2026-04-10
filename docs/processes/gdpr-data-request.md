@@ -21,7 +21,7 @@ WHERE p.id = '<user_uuid>';
 -- Format : JSON ou CSV selon la demande
 ```
 
-**NE PAS inclure :** audit_log (données internes), clé API (chiffrée, non récupérable), IP addresses
+**NE PAS inclure :** audit_log (données internes), clé API (chiffrée, non récupérable), adresses IP
 
 ## Article 17 — Droit à l'effacement
 
@@ -49,7 +49,7 @@ VALUES ('<admin_uuid>', 'gdpr_erasure', '<user_uuid>',
 
 ## Article 20 — Portabilité
 
-Même données qu'Article 15, format JSON machine-readable.
+Mêmes données qu'Article 15, format JSON machine-readable.
 
 ## Notification CNIL (incident de sécurité)
 

@@ -9,8 +9,10 @@ Tu es un analyseur de résultats de tests pour Terminal Learning.
 
 ## Étape 1 — Lancer les tests
 
+Depuis la racine du projet (détectée automatiquement via `git rev-parse --show-toplevel`) :
+
 ```bash
-cd "f:\PROJECTS\Apps\Terminal Learning" && npx vitest run 2>&1
+cd "$(git rev-parse --show-toplevel)" && npx vitest run 2>&1
 ```
 
 ## Étape 2 — Filtrer les résultats
