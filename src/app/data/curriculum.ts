@@ -1812,6 +1812,329 @@ export const curriculum: Module[] = [
       },
     ],
   },
+  {
+    id: 'reseau',
+    title: 'Réseau & SSH',
+    description: 'Testez la connectivité, effectuez des requêtes HTTP et connectez-vous à des serveurs distants',
+    iconName: 'Globe',
+    color: '#06b6d4',
+    level: 3,
+    prerequisites: ['variables'],
+    unlocks: [],
+    lessons: [
+      {
+        id: 'ping',
+        title: 'ping — Tester la connectivité',
+        description: 'Vérifiez si un hôte est accessible sur le réseau',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`ping` envoie des paquets ICMP à un hôte pour tester s\'il est accessible et mesurer le temps de réponse (latence). C\'est le premier réflexe pour diagnostiquer un problème réseau.',
+          },
+          {
+            type: 'code',
+            content: '$ ping google.com\nPING google.com: 56 data bytes\n64 bytes from google.com: icmp_seq=0 ttl=54 time=12.3 ms\n64 bytes from google.com: icmp_seq=1 ttl=54 time=11.8 ms\n\n--- google.com ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss',
+            label: 'Exemple (Linux/macOS)',
+            labelByEnv: {
+              windows: 'Exemple (Windows)',
+            },
+            contentByEnv: {
+              windows: 'PS> ping google.com\nPinging google.com [142.250.74.46] with 32 bytes of data:\nReply from 142.250.74.46: bytes=32 time=12ms TTL=54\nReply from 142.250.74.46: bytes=32 time=11ms TTL=54\n\nPing statistics for 142.250.74.46:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              'Sur Linux/macOS, `ping` envoie des paquets en continu (Ctrl+C pour arrêter). Utilisez `-c 4` pour limiter à 4 paquets. Sur Windows, `ping` s\'arrête automatiquement après 4 paquets.',
+            contentByEnv: {
+              windows: 'Sur Windows, `ping` envoie 4 paquets par défaut et s\'arrête automatiquement. Sur Linux/macOS, ajoutez `-c 4` pour le même comportement.',
+            },
+          },
+          {
+            type: 'code',
+            content: '# Limiter le nombre de paquets\n$ ping -c 4 google.com\n\n# Tester une adresse IP directement\n$ ping 8.8.8.8\n\n# Ping rapide (intervalle 0.2s)\n$ ping -i 0.2 google.com',
+            label: 'Options utiles (Linux/macOS)',
+            labelByEnv: {
+              windows: 'Options utiles (Windows)',
+            },
+            contentByEnv: {
+              windows: '# Limiter le nombre de paquets\nPS> ping -n 4 google.com\n\n# Tester une adresse IP directement\nPS> ping 8.8.8.8\n\n# Ping en continu (comme Unix)\nPS> ping -t google.com',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Si `ping` échoue, testez `ping 8.8.8.8` (DNS Google). Si ça marche mais que `ping google.com` échoue, c\'est un problème DNS, pas réseau.',
+          },
+        ],
+        exercise: {
+          instruction: 'Testez la connectivité vers `google.com` avec la commande `ping google.com`.',
+          hint: 'Tapez: ping google.com',
+          validate: (cmd) => /^ping\s+.+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Excellent ! Vous savez maintenant tester la connectivité réseau.',
+        },
+      },
+      {
+        id: 'curl',
+        title: 'curl — Requêtes HTTP',
+        description: 'Effectuez des requêtes HTTP/HTTPS directement depuis le terminal',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`curl` (Client URL) permet d\'envoyer des requêtes HTTP depuis le terminal. C\'est un outil indispensable pour tester des APIs, télécharger des fichiers et déboguer des endpoints web.',
+          },
+          {
+            type: 'code',
+            content: '# Requête GET simple\n$ curl https://api.github.com\n\n# Afficher les headers HTTP\n$ curl -I https://example.com\n\n# Envoyer du JSON (POST)\n$ curl -X POST https://api.example.com/data \\\n  -H "Content-Type: application/json" \\\n  -d \'{"key": "value"}\'',
+            label: 'Usages courants (Linux/macOS)',
+            labelByEnv: {
+              windows: 'Usages courants (Windows)',
+            },
+            contentByEnv: {
+              windows: '# curl est disponible nativement sur Windows 10+\nPS> curl https://api.github.com\n\n# Afficher les headers HTTP\nPS> curl -I https://example.com\n\n# Alternative PowerShell native\nPS> Invoke-WebRequest -Uri https://api.github.com',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              '`curl` est disponible nativement sur Linux, macOS et Windows 10+. Sur Windows, `curl` est un alias de `Invoke-WebRequest` en PowerShell — utilisez `curl.exe` pour forcer le vrai curl.',
+            contentByEnv: {
+              windows: 'En PowerShell, `curl` est un alias de `Invoke-WebRequest`. Pour utiliser le vrai curl, tapez `curl.exe`. Les deux fonctionnent pour des requêtes simples.',
+            },
+          },
+          {
+            type: 'code',
+            content: '# Sauvegarder la réponse dans un fichier\n$ curl -o fichier.json https://api.example.com\n\n# Suivre les redirections\n$ curl -L https://example.com\n\n# Authentification\n$ curl -u user:password https://api.example.com',
+            label: 'Options avancées',
+          },
+          {
+            type: 'tip',
+            content: 'Ajoutez `-s` (silent) pour supprimer la barre de progression, et `| jq .` pour formater le JSON : `curl -s https://api.github.com | jq .`',
+          },
+        ],
+        exercise: {
+          instruction: 'Effectuez une requête GET vers l\'API GitHub avec `curl https://api.github.com`.',
+          instructionByEnv: {
+            windows: 'Effectuez une requête GET vers l\'API GitHub avec `curl https://api.github.com` ou `Invoke-WebRequest -Uri https://api.github.com`.',
+          },
+          hint: 'Tapez: curl https://api.github.com',
+          hintByEnv: {
+            windows: 'Tapez: curl https://api.github.com (ou Invoke-WebRequest -Uri https://api.github.com)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') {
+              return /^curl(\.exe)?\s+https?:\/\/.+/.test(c) || /^invoke-webrequest\s+-uri\s+https?:\/\/.+/.test(c);
+            }
+            return /^curl\s+.+/.test(c);
+          },
+          successMessage: 'Parfait ! Vous savez maintenant interroger des APIs depuis le terminal.',
+        },
+      },
+      {
+        id: 'wget',
+        title: 'wget — Télécharger des fichiers',
+        description: 'Téléchargez des fichiers depuis le web en ligne de commande',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`wget` (Web Get) est un utilitaire de téléchargement non-interactif. Contrairement à `curl`, il est optimisé pour télécharger des fichiers et peut reprendre les téléchargements interrompus.',
+          },
+          {
+            type: 'code',
+            content: '# Télécharger un fichier\n$ wget https://example.com/fichier.zip\n\n# Nommer le fichier à la sortie\n$ wget -O mon-fichier.zip https://example.com/fichier.zip\n\n# Reprendre un téléchargement interrompu\n$ wget -c https://example.com/gros-fichier.iso',
+            label: 'Usages courants (Linux/macOS)',
+            labelByEnv: {
+              windows: 'Usages courants (Windows)',
+            },
+            contentByEnv: {
+              windows: '# wget via winget (si installé)\nPS> wget https://example.com/fichier.zip\n\n# Alternative native PowerShell\nPS> Invoke-WebRequest -Uri https://example.com/fichier.zip -OutFile fichier.zip\n\n# Alias court\nPS> iwr https://example.com/fichier.zip -OutFile fichier.zip',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              '`wget` est préinstallé sur la plupart des distributions Linux et disponible via Homebrew sur macOS. Sur Windows, il faut l\'installer ou utiliser `Invoke-WebRequest` de PowerShell.',
+            contentByEnv: {
+              windows: 'Sur Windows, l\'équivalent natif de `wget` est `Invoke-WebRequest` (alias `iwr`). La syntaxe est différente mais le résultat est identique : télécharger un fichier depuis une URL.',
+            },
+          },
+          {
+            type: 'code',
+            content: '# Télécharger en arrière-plan\n$ wget -b https://example.com/gros-fichier.iso\n\n# Télécharger plusieurs fichiers d\'une liste\n$ wget -i liste-urls.txt\n\n# Limiter la vitesse (utile pour ne pas saturer la connexion)\n$ wget --limit-rate=1m https://example.com/fichier.iso',
+            label: 'Options avancées (Linux/macOS)',
+          },
+          {
+            type: 'tip',
+            content: 'Pour télécharger un site entier en local (mirror) : `wget --mirror --convert-links https://example.com`. Utile pour archiver ou consulter hors-ligne.',
+          },
+        ],
+        exercise: {
+          instruction: 'Téléchargez un fichier avec `wget https://example.com/fichier.zip`.',
+          instructionByEnv: {
+            windows: 'Téléchargez un fichier avec `Invoke-WebRequest -Uri https://example.com/fichier.zip -OutFile fichier.zip` ou `wget https://example.com/fichier.zip`.',
+          },
+          hint: 'Tapez: wget https://example.com/fichier.zip',
+          hintByEnv: {
+            windows: 'Tapez: Invoke-WebRequest -Uri https://example.com/fichier.zip -OutFile fichier.zip',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') {
+              return /^wget\s+https?:\/\/.+/.test(c) ||
+                /^invoke-webrequest\s+(-uri\s+)?https?:\/\/.+/.test(c) ||
+                /^iwr\s+https?:\/\/.+/.test(c);
+            }
+            return /^wget\s+https?:\/\/.+/.test(c);
+          },
+          successMessage: 'Bien joué ! Vous savez maintenant télécharger des fichiers depuis le terminal.',
+        },
+      },
+      {
+        id: 'dns',
+        title: 'DNS — Résoudre les noms de domaine',
+        description: 'Comprenez le DNS et diagnostiquez les problèmes de résolution de noms',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Le DNS (Domain Name System) traduit les noms de domaine (`google.com`) en adresses IP (`142.250.74.46`). Quand une page web ne charge pas, le problème vient souvent du DNS.',
+          },
+          {
+            type: 'code',
+            content: '# Résolution simple\n$ nslookup google.com\nServer:  8.8.8.8\nAddress: 8.8.8.8#53\n\nNon-authoritative answer:\nName: google.com\nAddress: 142.250.74.46\n\n# Interroger un serveur DNS spécifique\n$ nslookup google.com 1.1.1.1',
+            label: 'nslookup (disponible partout)',
+          },
+          {
+            type: 'code',
+            content: '# dig — plus verbeux, idéal pour le diagnostic\n$ dig google.com\n\n; <<>> DiG 9.18.1 <<>> google.com\n;; ANSWER SECTION:\ngoogle.com. 299 IN A 142.250.74.46\n\n;; Query time: 12 msec\n;; SERVER: 8.8.8.8#53\n\n# Réponse courte\n$ dig +short google.com\n142.250.74.46',
+            label: 'dig (Linux/macOS)',
+            labelByEnv: {
+              windows: 'Alternatives Windows',
+            },
+            contentByEnv: {
+              windows: '# nslookup fonctionne sur tous les OS\nPS> nslookup google.com\n\n# Résolution via PowerShell\nPS> Resolve-DnsName google.com\n\nName                           Type TTL  Section IPAddress\n----                           ---- ---  ------- ---------\ngoogle.com                     A    299  Answer  142.250.74.46',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              '`nslookup` est disponible sur Linux, macOS et Windows. `dig` est disponible sur Linux et macOS (et via Chocolatey sur Windows). Pour Windows, `Resolve-DnsName` est l\'alternative PowerShell native.',
+            contentByEnv: {
+              windows: '`nslookup` est disponible nativement sur Windows. `Resolve-DnsName` est l\'outil PowerShell natif plus moderne. `dig` n\'est pas inclus par défaut mais peut être installé via Chocolatey.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Les serveurs DNS publics les plus rapides : `8.8.8.8` (Google), `1.1.1.1` (Cloudflare), `9.9.9.9` (Quad9 — axé privacy). Utilisez `dig @1.1.1.1 google.com` pour tester un DNS spécifique.',
+          },
+        ],
+        exercise: {
+          instruction: 'Résolvez le nom de domaine `google.com` avec `nslookup google.com`.',
+          instructionByEnv: {
+            windows: 'Résolvez le nom de domaine `google.com` avec `nslookup google.com` ou `Resolve-DnsName google.com`.',
+          },
+          hint: 'Tapez: nslookup google.com',
+          hintByEnv: {
+            windows: 'Tapez: nslookup google.com (ou Resolve-DnsName google.com)',
+          },
+          validate: (cmd, env) => {
+            const c = cmd.trim().toLowerCase();
+            if (env === 'windows') {
+              return /^nslookup\s+.+/.test(c) || /^resolve-dnsname\s+.+/.test(c) || /^dig\s+.+/.test(c);
+            }
+            return /^nslookup\s+.+/.test(c) || /^dig\s+.+/.test(c);
+          },
+          successMessage: 'Parfait ! Vous savez maintenant interroger le DNS depuis le terminal.',
+        },
+      },
+      {
+        id: 'ssh',
+        title: 'SSH — Connexion distante sécurisée',
+        description: 'Connectez-vous à des serveurs distants et gérez vos clés SSH',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'SSH (Secure Shell) est le protocole standard pour se connecter à des serveurs distants de manière chiffrée. C\'est une compétence fondamentale pour tout développeur qui déploie des applications.',
+          },
+          {
+            type: 'code',
+            content: '# Connexion de base\n$ ssh user@serveur.example.com\n\n# Connexion sur un port non-standard\n$ ssh -p 2222 user@serveur.example.com\n\n# Connexion avec une clé spécifique\n$ ssh -i ~/.ssh/ma-cle user@serveur.example.com',
+            label: 'Connexion SSH (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Générer une paire de clés ED25519 (recommandé)\n$ ssh-keygen -t ed25519 -C "mon@email.com"\n\nGenerating public/private ed25519 key pair.\nEnter file (.ssh/id_ed25519): [Entrée]\nEnter passphrase: [optionnel]\n\nYour public key has been saved in ~/.ssh/id_ed25519.pub\n\n# Copier la clé publique sur un serveur\n$ ssh-copy-id user@serveur.example.com',
+            label: 'Générer des clés SSH',
+          },
+          {
+            type: 'info',
+            content:
+              'SSH utilise une paire de clés : une **clé privée** (à ne jamais partager) et une **clé publique** (à déposer sur les serveurs). L\'authentification se fait sans mot de passe — bien plus sécurisé.',
+            contentByEnv: {
+              windows: 'OpenSSH est intégré à Windows 10+ (version 1803). Les commandes `ssh`, `ssh-keygen`, `ssh-copy-id` fonctionnent dans PowerShell et CMD. Les clés sont stockées dans `%USERPROFILE%\\.ssh\\`.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Préférez `ed25519` à `rsa` pour les nouvelles clés : plus court, plus rapide, plus sécurisé. Ajoutez toujours une passphrase à votre clé privée — c\'est votre dernière ligne de défense si la clé est volée.',
+          },
+        ],
+        exercise: {
+          instruction: 'Générez une paire de clés SSH ED25519 avec `ssh-keygen -t ed25519`.',
+          hint: 'Tapez: ssh-keygen -t ed25519',
+          validate: (cmd) => {
+            const c = cmd.trim().toLowerCase();
+            return /^ssh-keygen\s+.*-t\s+ed25519/.test(c) || /^ssh-keygen\s+-t\s+ed25519/.test(c);
+          },
+          successMessage: 'Bravo ! Vous venez de générer votre première paire de clés SSH.',
+        },
+      },
+      {
+        id: 'scp',
+        title: 'scp — Copier des fichiers via SSH',
+        description: 'Transférez des fichiers entre machines de manière sécurisée',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`scp` (Secure Copy Protocol) copie des fichiers entre machines en utilisant le protocole SSH. C\'est la méthode la plus simple pour transférer des fichiers vers un serveur distant sans interface graphique.',
+          },
+          {
+            type: 'code',
+            content: '# Copier un fichier local vers un serveur\n$ scp fichier.txt user@serveur:/home/user/\n\n# Copier depuis un serveur vers local\n$ scp user@serveur:/home/user/fichier.txt ./\n\n# Copier un répertoire entier (-r)\n$ scp -r mon-projet/ user@serveur:/var/www/',
+            label: 'Syntaxe scp (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Copier sur un port non-standard\n$ scp -P 2222 fichier.txt user@serveur:/home/user/\n\n# Copier avec compression (-C)\n$ scp -C gros-fichier.tar user@serveur:/backup/\n\n# Afficher la progression (-v verbose)\n$ scp -v fichier.txt user@serveur:/home/user/',
+            label: 'Options utiles',
+          },
+          {
+            type: 'info',
+            content:
+              'Note : `-p` en minuscule pour `ssh` (port), `-P` en majuscule pour `scp` (port). Cette asymétrie est historique.',
+            contentByEnv: {
+              windows: 'Sur Windows 10+, `scp` est disponible nativement. Pour des transferts récurrents ou complexes, `rsync` (via WSL ou Git Bash) offre plus d\'options : reprise sur interruption, synchronisation différentielle.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Pour des transferts récurrents ou de gros volumes, préférez `rsync` : `rsync -avz mon-projet/ user@serveur:/var/www/`. Il transfère uniquement les fichiers modifiés et supporte la reprise.',
+          },
+        ],
+        exercise: {
+          instruction: 'Copiez un fichier vers un serveur distant avec `scp fichier.txt user@serveur.example.com:/home/user/`.',
+          hint: 'Tapez: scp fichier.txt user@serveur.example.com:/home/user/',
+          validate: (cmd) => /^scp\s+.+\s+.+@.+:.+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Excellent ! Vous savez maintenant transférer des fichiers de manière sécurisée.',
+        },
+      },
+    ],
+  },
 ];
 
 export function getModuleById(id: string): Module | undefined {

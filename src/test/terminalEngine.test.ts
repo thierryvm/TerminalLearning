@@ -893,3 +893,223 @@ describe('tee — split output to file', () => {
     expect(result.lines.length).toBeGreaterThan(0);
   });
 });
+
+// ─── Module 8 — Réseau & SSH ──────────────────────────────────────────────────
+
+describe('ping', () => {
+  it('returns ping statistics for a hostname', () => {
+    const result = processCommand(makeState(), 'ping google.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('google.com');
+    expect(text).toContain('packet loss');
+  });
+
+  it('last line has success type', () => {
+    const result = processCommand(makeState(), 'ping google.com', 'linux');
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'ping 8.8.8.8', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('returns error when no host provided', () => {
+    const result = processCommand(makeState(), 'ping', 'linux');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('Usage');
+  });
+
+  it('ignores flags and uses hostname', () => {
+    const result = processCommand(makeState(), 'ping -c 4 google.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('google.com');
+  });
+});
+
+describe('curl', () => {
+  it('returns JSON output for a GET request', () => {
+    const result = processCommand(makeState(), 'curl https://api.github.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('api.github.com');
+  });
+
+  it('returns HTTP headers with -I flag', () => {
+    const result = processCommand(makeState(), 'curl -I https://example.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('HTTP/2 200');
+    expect(text).toContain('content-type');
+  });
+
+  it('returns error when no URL provided', () => {
+    const result = processCommand(makeState(), 'curl', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on macos env', () => {
+    const result = processCommand(makeState(), 'curl https://api.github.com', 'macos');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'curl https://api.github.com', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('wget', () => {
+  it('simulates file download with success', () => {
+    const result = processCommand(makeState(), 'wget https://example.com/fichier.zip', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('fichier.zip');
+    expect(text).toContain('saved');
+  });
+
+  it('last download line has success type', () => {
+    const result = processCommand(makeState(), 'wget https://example.com/file.tar.gz', 'linux');
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('returns error when no URL provided', () => {
+    const result = processCommand(makeState(), 'wget', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on macos env', () => {
+    const result = processCommand(makeState(), 'wget https://example.com/file.zip', 'macos');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'wget https://example.com/file.zip', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('nslookup', () => {
+  it('resolves a hostname and returns IP', () => {
+    const result = processCommand(makeState(), 'nslookup google.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('google.com');
+    expect(text).toContain('142.250.74.46');
+  });
+
+  it('shows DNS server used', () => {
+    const result = processCommand(makeState(), 'nslookup google.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('8.8.8.8');
+  });
+
+  it('returns error when no host provided', () => {
+    const result = processCommand(makeState(), 'nslookup', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'nslookup google.com', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('dig', () => {
+  it('returns DNS answer section', () => {
+    const result = processCommand(makeState(), 'dig google.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ANSWER SECTION');
+    expect(text).toContain('google.com');
+  });
+
+  it('returns error when no host provided', () => {
+    const result = processCommand(makeState(), 'dig', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on macos env', () => {
+    const result = processCommand(makeState(), 'dig example.com', 'macos');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('example.com');
+  });
+});
+
+describe('resolve-dnsname', () => {
+  it('returns tabular DNS result on windows', () => {
+    const result = processCommand(makeState(), 'Resolve-DnsName google.com', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('google.com');
+    expect(text).toContain('IPAddress');
+  });
+
+  it('returns error when no host provided', () => {
+    const result = processCommand(makeState(), 'Resolve-DnsName', 'windows');
+    expect(result.lines[0].type).toBe('error');
+  });
+});
+
+describe('ssh', () => {
+  it('simulates connection to a remote host', () => {
+    const result = processCommand(makeState(), 'ssh user@serveur.example.com', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('user@serveur.example.com');
+  });
+
+  it('returns error when no target provided', () => {
+    const result = processCommand(makeState(), 'ssh', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'ssh user@host.com', 'windows');
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('ssh-keygen', () => {
+  it('generates ed25519 key pair', () => {
+    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ed25519');
+    expect(text).toContain('.pub');
+  });
+
+  it('reports both private and public key paths', () => {
+    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'linux');
+    const successes = result.lines.filter((l) => l.type === 'success');
+    expect(successes.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('uses rsa as default key type when -t is omitted', () => {
+    const result = processCommand(makeState(), 'ssh-keygen', 'linux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('rsa');
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('ed25519');
+  });
+});
+
+describe('scp', () => {
+  it('simulates file transfer success', () => {
+    const result = processCommand(makeState(), 'scp fichier.txt user@serveur.example.com:/home/user/', 'linux');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('100%');
+  });
+
+  it('returns error when fewer than 2 args', () => {
+    const result = processCommand(makeState(), 'scp fichier.txt', 'linux');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('works on macos env', () => {
+    const result = processCommand(makeState(), 'scp file.txt user@host:/tmp/', 'macos');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('works on windows env', () => {
+    const result = processCommand(makeState(), 'scp file.txt user@host:/tmp/', 'windows');
+    expect(result.lines[0].type).toBe('success');
+  });
+});
