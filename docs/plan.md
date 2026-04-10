@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 10 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 7 modules ✅, 32 leçons, 242 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 8 modules ✅, 38 leçons, 388 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -9,12 +9,13 @@
 
 | Issue Linear | Phase | Contenu |
 |-------------|-------|---------|
-| THI-27 | 5 | Module 8 — Réseau & SSH (`ping`, `curl`, `wget`, `ssh`, `scp`, DNS) |
+| THI-27 | 5 | Module 8 — Réseau & SSH (`ping`, `curl`, `wget`, `ssh`, `scp`, DNS) ✅ Done |
 | THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* |
 | THI-29 | 5 | Module 11 — L'IA comme outil dev |
 | THI-35 | docs | Architecture stratégique — Terminal Sentinel, RBAC, Admin Panel, PWA ✅ Done |
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
 | THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
+| THI-45 | agents | Content Auditor V1 — audit pédagogique A→Z (`.claude/agents/content-auditor.md`) |
 
 ---
 
@@ -125,8 +126,12 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - Fallback `<PageLoader>` accessible dans `App.tsx`
 - Objectif : réduire le bundle initial de ~30-40%, améliorer LCP/TTI landing
 
-#### 🔜 Modules planifiés (THI-27 à THI-29)
-- **Module 8 — Réseau & SSH** (THI-27) : `ping`, `curl`, `wget`, `ssh`, `scp`, DNS
+#### ✅ Module 8 — Réseau & SSH (THI-27 — mergé 10 avril 2026)
+- `ping`, `curl`, `wget`, `nslookup`, `dig`, `Resolve-DnsName`, `ssh`, `ssh-keygen`, `scp` + PowerShell `iwr`
+- 6 leçons × 3 environnements, 39 tests unitaires
+- Invoke-WebRequest/iwr simulé (Windows), curl generic (urlHost dynamique), ssh-keygen banner dynamique
+
+#### 🔜 Modules planifiés
 - **Module 9 + 10 — Git Fondamentaux + GitHub & Collaboration** (THI-28) : `init`, `add`, `commit`, branches, remotes, PRs, Issues, GitHub Actions
 - **Module 11 — L'IA comme outil dev** (THI-29) : Claude Code CLI, prompts contextuels, limites et risques
 
@@ -287,6 +292,39 @@ output:
 #### Tests requis
 - Tests unitaires : fonctions de parsing et scoring des rapports
 - Dry-run CI : le workflow GitHub Actions est valide syntaxiquement
+
+---
+
+### 🔄 Phase 5 Agents — Agents Claude Code (THI-45)
+
+> Infrastructure d'agents pédagogiques pour la maintenance qualité du projet.
+
+#### Agents opérationnels (`.claude/agents/`)
+
+| Agent | Modèle | Déclencheur | Rôle |
+|-------|--------|-------------|------|
+| `linear-sync` | haiku | Début de session | Vérifie cohérence PRs GitHub ↔ statuts Linear |
+| `curriculum-validator` | haiku | Avant toute modif `curriculum.ts` | Valide structure, env coverage, IDs uniques |
+| `test-runner` | haiku | Après modif `curriculum.ts` ou `terminalEngine.ts` | Lance vitest, retourne failures uniquement |
+| `content-auditor` | haiku | Avant release majeure / à la demande | Audit pédagogique A→Z (voir ci-dessous) |
+
+#### Content Auditor V1 — analyse statique
+
+Vérifications effectuées :
+1. **Couverture env** : `instructionByEnv`, `hintByEnv`, `contentByEnv` pour linux/macos/windows
+2. **Cohérence curriculum ↔ terminalEngine** : chaque commande enseignée est simulée
+3. **Couverture tests** : chaque `case` du moteur a ≥ 1 test
+4. **Cohérence curriculum ↔ commandCatalogue** : niveaux + prérequis identiques
+5. **Chaîne pédagogique** : graphe acyclique, progression de niveaux logique
+6. **Qualité validate()** : pas de regex trop permissive, pas de validate toujours `true`
+7. **Liens externes** : URLs dans les leçons retournent HTTP 200
+
+#### Content Auditor V2 — intégration CMS Admin (Phase 9)
+
+- Rapport écrit dans table Supabase `audit_reports`
+- Dashboard admin : historique + tendances + alertes
+- Cron CI GitHub Actions hebdomadaire
+- Email alertes si CRITICAL détecté
 
 ---
 

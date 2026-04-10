@@ -43,7 +43,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
-- Phase 5 🔄 Curriculum expansion — 7 modules, 32 leçons, 242 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5 🔄 Curriculum expansion — 8 modules, 38 leçons, 388 tests unitaires + 176 E2E Playwright (en cours)
 
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
@@ -56,6 +56,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`linear-sync`** — vérifie PRs GitHub vs statuts Linear, détecte incohérences
 - **`curriculum-validator`** — valide structure de `curriculum.ts` avant toute modification
 - **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
+- **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne de prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
