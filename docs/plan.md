@@ -19,6 +19,7 @@
 | THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |
+| THI-49 | fix | Sign-out instant (fire-and-forget) + sync timeout 10s→5s + select partiel ✅ Done |
 
 ---
 
