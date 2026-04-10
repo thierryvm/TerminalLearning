@@ -1,41 +1,101 @@
 # Terminal Learning
 
-> Free, open-source, browser-based interactive platform to learn Linux/Unix terminal commands — no installation required; works on any device.
+> Free, open-source, browser-based interactive platform to learn terminal commands (Linux/macOS/Windows) — no installation required; works on any device.
 
-Terminal Learning is a beginner-friendly educational web app built with React and TypeScript. Users type real commands in a browser-based terminal emulator and receive immediate feedback. Progress is saved locally (localStorage) and optionally synced to the cloud via a free account (Supabase). The app is 100% free, open source, and requires no installation.
+Terminal Learning is a beginner-friendly educational web app built with React and TypeScript. Users type real commands in a simulated terminal emulator and receive immediate feedback. Progress is saved locally (localStorage) and optionally synced to the cloud via a free account (Supabase). The app is 100% free, open source, and requires no installation.
 
 - **Live app**: https://terminal-learning.vercel.app
 - **Source code**: https://github.com/thierryvm/TerminalLearning
 - **Author**: Thierry Vanmeeteren (Belgium)
-- **Language**: French (UI and lessons) — commands are universal Linux/Unix
-- **License**: Open source
-- **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS, Supabase, Vercel
+- **Language**: French (UI and lessons) — commands are universal Linux/macOS/Windows
+- **License**: Open source (MIT)
+- **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS v4, Supabase, Vercel
 
-## Curriculum (6 modules, 19 lessons)
+## Curriculum (8 modules, 38 lessons)
 
-- [Navigation](https://terminal-learning.vercel.app/app/learn/navigation/pwd): `pwd`, `ls`, `ls -la`, `cd` — moving through the file system
-- [Fichiers & Dossiers](https://terminal-learning.vercel.app/app/learn/fichiers/mkdir): `mkdir`, `touch`, `cp`, `mv`, `rm` — creating, copying, moving, deleting
-- [Lecture de fichiers](https://terminal-learning.vercel.app/app/learn/lecture/cat): `cat`, `head`, `tail`, `grep`, `wc` — viewing and searching file content
-- [Permissions](https://terminal-learning.vercel.app/app/learn/permissions/comprendre-permissions): Unix permission model, `chmod`
-- [Processus](https://terminal-learning.vercel.app/app/learn/processus/ps): `ps`, `kill` — managing running processes
-- [Redirection & Pipes](https://terminal-learning.vercel.app/app/learn/redirection/redirection-sortie): `>`, `>>`, `|` — chaining and redirecting command output
+### Module 1 — Navigation
+`pwd`, `ls`, `ls -la`, `cd` — moving through the file system
+- https://terminal-learning.vercel.app/app/learn/navigation/pwd
+- https://terminal-learning.vercel.app/app/learn/navigation/ls
+- https://terminal-learning.vercel.app/app/learn/navigation/ls-la
+- https://terminal-learning.vercel.app/app/learn/navigation/cd
+
+### Module 2 — Fichiers & Dossiers
+`mkdir`, `touch`, `cp`, `mv`, `rm` — creating, copying, moving, deleting
+- https://terminal-learning.vercel.app/app/learn/fichiers/mkdir
+- https://terminal-learning.vercel.app/app/learn/fichiers/touch
+- https://terminal-learning.vercel.app/app/learn/fichiers/cp
+- https://terminal-learning.vercel.app/app/learn/fichiers/mv
+- https://terminal-learning.vercel.app/app/learn/fichiers/rm
+
+### Module 3 — Lecture de fichiers
+`cat`, `head`, `tail`, `grep`, `wc` — viewing and searching file content
+- https://terminal-learning.vercel.app/app/learn/lecture/cat
+- https://terminal-learning.vercel.app/app/learn/lecture/head-tail
+- https://terminal-learning.vercel.app/app/learn/lecture/grep
+- https://terminal-learning.vercel.app/app/learn/lecture/wc
+
+### Module 4 — Permissions
+Unix permission model, `chmod`, `chown`, `sudo`, security best practices
+- https://terminal-learning.vercel.app/app/learn/permissions/comprendre-permissions
+- https://terminal-learning.vercel.app/app/learn/permissions/chmod
+- https://terminal-learning.vercel.app/app/learn/permissions/chown
+- https://terminal-learning.vercel.app/app/learn/permissions/sudo
+- https://terminal-learning.vercel.app/app/learn/permissions/security-permissions
+
+### Module 5 — Processus
+`ps`, `kill`, `top`, background jobs (`bg`, `fg`, `&`, `jobs`) — managing running processes
+- https://terminal-learning.vercel.app/app/learn/processus/ps
+- https://terminal-learning.vercel.app/app/learn/processus/kill
+- https://terminal-learning.vercel.app/app/learn/processus/top
+- https://terminal-learning.vercel.app/app/learn/processus/background
+
+### Module 6 — Redirection & Pipes
+`>`, `>>`, `|`, `2>`, `tee` — chaining and redirecting command output
+- https://terminal-learning.vercel.app/app/learn/redirection/redirection-sortie
+- https://terminal-learning.vercel.app/app/learn/redirection/pipes
+- https://terminal-learning.vercel.app/app/learn/redirection/stderr
+- https://terminal-learning.vercel.app/app/learn/redirection/tee
+
+### Module 7 — Variables & Scripts
+Environment variables, `$PATH`, `.env`, shell config, bash scripts, `cron`
+- https://terminal-learning.vercel.app/app/learn/variables/env-vars
+- https://terminal-learning.vercel.app/app/learn/variables/path-variable
+- https://terminal-learning.vercel.app/app/learn/variables/shell-config
+- https://terminal-learning.vercel.app/app/learn/variables/dotenv
+- https://terminal-learning.vercel.app/app/learn/variables/scripts
+- https://terminal-learning.vercel.app/app/learn/variables/cron
+
+### Module 8 — Réseau & SSH
+`ping`, `curl`, `wget`, DNS (`nslookup`, `dig`), `ssh`, `ssh-keygen`, `scp`
+- https://terminal-learning.vercel.app/app/learn/reseau/ping
+- https://terminal-learning.vercel.app/app/learn/reseau/curl
+- https://terminal-learning.vercel.app/app/learn/reseau/wget
+- https://terminal-learning.vercel.app/app/learn/reseau/dns
+- https://terminal-learning.vercel.app/app/learn/reseau/ssh
+- https://terminal-learning.vercel.app/app/learn/reseau/scp
+
+## Multi-environment support
+
+Every lesson covers **Linux**, **macOS**, and **Windows** (PowerShell) with environment-specific instructions, hints, and command examples. Users select their OS once; the entire curriculum adapts.
 
 ## Key Features
 
 - Interactive terminal emulator with real command validation in the browser
 - Progressive curriculum designed for absolute beginners
+- Multi-OS support: Linux, macOS, Windows (PowerShell)
 - No account required to start — progress saved in localStorage
 - Optional cloud sync via GitHub or Google OAuth (Supabase Auth)
-- GDPR/RGPD compliant, hosted on Vercel (EU region, Paris)
+- GDPR/RGPD compliant, hosted on Vercel (EU region)
 - Fully open source — contributions welcome
 
 ## Who is this for?
 
-Beginners who want to learn the terminal for the first time: developers switching to Linux or macOS, students in CS or DevOps programs, sysadmin newcomers, and anyone who finds the command line intimidating.
+Beginners who want to learn the terminal for the first time: developers switching to Linux or macOS, students in CS or DevOps programs, sysadmin newcomers, Windows users learning PowerShell, and anyone who finds the command line intimidating.
 
 ## Optional
 
 - [Full README](https://github.com/thierryvm/TerminalLearning/blob/main/README.md): complete project documentation, setup instructions, contributing guide
-- [Command reference](https://terminal-learning.vercel.app/app/reference): all commands covered, with syntax and examples
+- [Command reference](https://terminal-learning.vercel.app/app/reference): all commands covered, with syntax and examples per environment
 - [Privacy policy](https://terminal-learning.vercel.app/privacy): GDPR-compliant data usage details
 - [GitHub source](https://github.com/thierryvm/TerminalLearning): full source code, issues, pull requests
