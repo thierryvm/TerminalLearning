@@ -81,11 +81,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
       setSyncStatus('syncing');
+      // Abort if Supabase doesn't respond within 10 s — prevents indefinite yellow dot.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
       try {
         const { data: remote, error } = await client
           .from('progress')
           .select('*')
-          .eq('user_id', session.user.id);
+          .eq('user_id', session.user.id)
+          .abortSignal(controller.signal);
+        clearTimeout(timeout);
 
         if (error) throw error;
 
@@ -109,6 +114,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         setProgress(mergedState);
         setSyncStatus('synced');
       } catch {
+        clearTimeout(timeout);
         setSyncStatus('error');
       }
     });

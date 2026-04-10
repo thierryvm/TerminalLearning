@@ -240,7 +240,7 @@ export function Landing() {
             <Github size={18} aria-hidden="true" />
           </a>
           {user ? (
-            <UserMenu syncStatus={syncStatus} />
+            <UserMenu syncStatus={syncStatus} variant="compact" />
           ) : (
             <button
               onClick={() => setLoginOpen(true)}
