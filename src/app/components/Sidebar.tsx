@@ -240,7 +240,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Profile card + bouton home côte à côte */}
           <div className="flex items-center gap-1.5">
             <div className="flex-1 min-w-0">
-              <UserMenu syncStatus={syncStatus} placement="top" />
+              <UserMenu syncStatus={syncStatus} />
             </div>
             <NavLink
               to="/"
