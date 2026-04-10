@@ -16,7 +16,9 @@ pnpm-debug.log*
 !.env.example
 
 # Claude Code local settings (permissions, not for repo)
-.claude/
+.claude/settings.local.json
+# Sub-agents are shared and version-controlled
+!.claude/agents/
 
 # Supabase CLI temp files
 supabase/.temp/

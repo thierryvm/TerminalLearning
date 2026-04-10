@@ -157,12 +157,63 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 #### Nouveaux champs à ajouter à `Exercise`
 ```typescript
-type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scenario'
+type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scenario' | 'quiz-mcq' | 'quiz-recall'
 // Exercise.type?: ExerciseType
 // Exercise.hintAfterAttempts?: number  (défaut: 2)
 // Exercise.alternatives?: string[]     (commandes équivalentes acceptées)
 // Exercise.contextSetup?: string       (description du scénario)
+// Exercise.choices?: string[]          (options MCQ pour quiz-mcq)
+// Exercise.masteryWeight?: number      (poids dans le calcul de maîtrise 0-1)
 ```
+
+#### Gate de maîtrise par module (NOUVEAU — validé 10 avril 2026)
+
+Philosophie : **"apprendre à apprendre"** — pas de progression sans preuve de maîtrise.
+
+| Niveau CEFR | Gate | Comportement |
+|-------------|------|-------------|
+| A1–A2 | Optionnel | Bouton "Teste tes connaissances 🎯" + badge si ≥80% |
+| B1–B2 | Soft gate | 80% requis, tentatives illimitées, 0 délai |
+| C1–C2 | Hard gate | 80% en max 3 tentatives — niveau employabilité |
+
+**Quiz final par module** : 5–8 questions SANS terminal, SANS hints :
+- `quiz-mcq` : QCM — reconnaissance (A1-A2)
+- `quiz-recall` : saisie libre — production de mémoire (B1+)
+- Questions scénario : *"Tu arrives sur un serveur inconnu, quelles sont tes 3 premières commandes ?"*
+
+**Nouvelle table Supabase** :
+```sql
+CREATE TABLE quiz_results (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES profiles(id),
+  module_id text NOT NULL,
+  score numeric NOT NULL,          -- 0.0 à 1.0
+  attempts_count int DEFAULT 1,
+  passed boolean DEFAULT false,
+  answers jsonb,                   -- pour analytics pédagogiques
+  completed_at timestamptz DEFAULT now()
+);
+-- RLS : utilisateur voit uniquement ses propres résultats
+```
+
+**Ticket Linear** : THI-40
+
+---
+
+### 🔮 Phase 5c — Commande `help` native + Leçon 0 transversale (THI-39)
+
+Première manifestation de la philosophie **"apprendre à apprendre"** dans le terminal simulé.
+
+Chaque environnement enseigne son propre système d'aide natif :
+
+| Environnement | Commandes à enseigner |
+|---|---|
+| Bash/Zsh | `help`, `man <cmd>`, `<cmd> --help`, `whatis`, `apropos` |
+| PowerShell | `Get-Help <cmd>`, `<cmd> -?`, `Get-Command`, `Get-Member` |
+| CMD | `help`, `<cmd> /?` |
+
+Leçon 0 transversale dans chaque profil : *"Comment se repérer quand on ne sait pas quoi faire"*.
+Implémentation : `help` + `help <cmd>` dans `terminalEngine.ts`, contextualisé par `terminalProfile`.
 
 ---
 
@@ -374,6 +425,186 @@ CREATE TABLE audit_log (
 
 #### Badges à implémenter (exemples)
 `first-command`, `module-complete`, `week-streak`, `speed-runner`, `no-hints`, `explorer` (tous les envs)
+
+---
+
+### 🔮 Phase 7b — Agent IA Tuteur Adaptatif (THI-41)
+
+> Coût Terminal Learning : **$0** — architecture BYOK pur.
+> Pré-requis : Phase 7 (RBAC) terminée. Lié au Module 11 (THI-29).
+
+#### Philosophie
+L'utilisateur active l'agent avec **sa propre clé API**. Terminal Learning ne paie rien.
+Le Module 11 "L'IA comme outil dev" EST le onboarding : obtenir une clé, comprendre les coûts, activer l'agent.
+
+#### Architecture BYOK — sécurité maximale
+
+```
+Utilisateur → fournit clé API (1×) → Supabase Vault (chiffré, jamais renvoyé au client)
+Utilisateur → envoie message → Edge Function → déchiffre clé → proxy LLM → réponse
+                                                └── clé effacée de la mémoire immédiatement
+```
+
+**Providers supportés** :
+- Anthropic Claude (claude-haiku-4-5 = économique, claude-sonnet-4-6 = qualité)
+- OpenAI GPT-4o-mini / GPT-4o
+- Google Gemini (via clé Google Cloud personnelle — RGPD-safe si utilisateur gère)
+
+**Providers exclus par défaut** :
+- Google Gemini API standard (free tier) → **non conforme RGPD EU** sans contrat enterprise
+- Tout service sans Data Processing Agreement (DPA) documenté
+
+#### Comportement adaptatif (V1 — algorithmique, sans LLM supplémentaire)
+
+| Signal détecté | Réaction de l'agent |
+|---|---|
+| >3 tentatives échouées sur même exercice | Reformule l'explication différemment |
+| Score quiz <60% sur un module | Propose révision des leçons faibles |
+| Session >45 min sans pause | Suggère une pause (pédagogie cognitiviste) |
+| Commande correcte mais non optimale | Montre l'alternative plus élégante |
+| Progression rapide (mastery >95%) | Propose le niveau supérieur en avance |
+
+#### Adaptation selon l'apprenant
+
+L'agent détecte et s'adapte à :
+- **Niveau CEFR courant** → complexité du langage des explications
+- **Track actif** (Full-Stack / Sysadmin / Automation) → exemples contextualisés
+- **Environnement préféré** (Linux / macOS / Windows) → syntaxe des exemples
+- **Historique d'erreurs** → insiste sur les points de blocage personnels
+- **Rythme d'apprentissage** → ajuste la densité des hints
+
+#### RGPD — obligations (validé 10 avril 2026)
+
+- ✅ Consentement explicite avant 1ère interaction IA (modal dédié)
+- ✅ Page `/privacy` : section "Traitement IA" — provider géré par l'utilisateur
+- ✅ Aucun historique stocké par défaut (opt-in explicite si l'utilisateur veut garder)
+- ✅ Bouton "Supprimer ma clé API" dans `/app/settings`
+- ✅ La clé API = données personnelles → droit à la suppression garanti
+- ✅ Aucun entraînement de modèle avec les données utilisateurs
+
+#### Évolution post-accord RIZIV
+
+```
+Budget X approuvé →
+  Option A : Anthropic avec DPA officiel → Claude Haiku par défaut (gratuitement pour étudiants)
+  Option B : AWS Bedrock EU region → data residency Belgique/EU garanti
+  Option C : Modèle SaaS → institutions paient (tarif enseignant), étudiants restent gratuits
+  Option D : Modèle freemium → 20 interactions IA/jour gratuit, illimité avec clé perso
+```
+
+#### Nouvelles tables Supabase
+
+```sql
+-- Clé API utilisateur (chiffrée via Supabase Vault)
+CREATE TABLE user_ai_keys (
+  user_id uuid REFERENCES profiles(id) PRIMARY KEY,
+  provider text NOT NULL CHECK (provider IN ('anthropic','openai','google')),
+  encrypted_key text NOT NULL,    -- chiffré via Supabase Vault, jamais exposé client
+  model_preference text,          -- ex. 'claude-haiku-4-5'
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+-- RLS : utilisateur voit/modifie uniquement sa propre ligne
+
+-- Consentement IA (audit RGPD)
+CREATE TABLE ai_consent (
+  user_id uuid REFERENCES profiles(id) PRIMARY KEY,
+  consented_at timestamptz DEFAULT now(),
+  provider text NOT NULL,
+  ip_address inet,
+  consent_version text NOT NULL    -- version du texte de consentement accepté
+);
+```
+
+#### Composants à créer
+
+```
+src/app/components/ai/
+├── AiTutorPanel.tsx        # Interface principale de l'agent
+├── AiKeySetup.tsx          # Onboarding clé API (lié à Module 11)
+├── AiConsentModal.tsx      # Consentement RGPD obligatoire
+├── AiHintBubble.tsx        # Hint contextuel dans les exercices
+└── AiSettings.tsx          # Gérer/supprimer la clé dans /app/settings
+
+supabase/functions/
+└── ai-proxy/index.ts       # Edge Function proxy sécurisé (déchiffre clé, jamais retour client)
+```
+
+#### Accessibilité & UX
+
+- Agent accessible via clavier (pas de drag-only)
+- Taille de police adaptable dans le panel IA
+- Réponses courtes par défaut — "En savoir plus" pour développer
+- Mode "silencieux" : hints uniquement si demandé (pour ne pas infantiliser les B2+)
+- Mobile : panel IA en slide-up sheet, pas en sidebar
+
+---
+
+### 🔮 Phase 7c — Help Center + Documentation par rôle (THI-43)
+
+> Documentation enterprise-grade intégrée dans l'app. Chaque rôle voit uniquement ce qui le concerne.
+> Les docs statiques (`docs/guides/`) peuvent être rédigées dès maintenant, indépendamment du RBAC.
+
+#### Deux composantes
+
+**1. Docs statiques dans le repo** (pour contributeurs et admin interne) :
+```
+docs/
+├── guides/
+│   ├── student-guide.md
+│   ├── teacher-guide.md
+│   ├── institution-guide.md
+│   └── admin-runbook.md          ← jamais exposé en prod, super admin uniquement
+├── processes/
+│   ├── teacher-approval.md       ← flow approbation enseignant step-by-step
+│   ├── incident-response.md      ← que faire en cas d'incident
+│   ├── content-moderation.md     ← signalement contenu inapproprié
+│   └── gdpr-data-request.md      ← procédure demande données RGPD
+└── troubleshooting/
+    ├── auth-issues.md
+    ├── progress-sync.md
+    └── class-management.md
+```
+
+**2. Help Center in-app** (`/help/*`) gated par rôle :
+- `/help` — public (FAQ générale, premiers pas)
+- `/help/teacher` — enseignant+ (gestion classe, suivi progression, exports)
+- `/help/institution` — institution admin+ (onboarding, approbation enseignants, rapports EQF)
+- `/help/admin` — super admin uniquement (runbooks, incidents, contacts urgence)
+
+Contenu Markdown → React Markdown. Recherche Fuse.js client-side. Lien "Je n'ai pas trouvé → ouvrir un ticket" (Phase 8).
+
+#### SEO / LLM-friendly
+- Articles Markdown indexables (Context7, RAG, assistants IA)
+- Structured data FAQ schema sur articles publics
+- `robots.txt` exclut `/help/admin`
+
+---
+
+### 🔮 Phase 7d — Profile Hub + UserMenu GitHub-style (THI-42)
+
+> Remplacer le bouton de connexion actuel par un menu dropdown role-aware.
+> `UserMenu.tsx` existe déjà (Phase 3) — c'est une évolution, pas une réécriture.
+
+#### Menu dropdown
+- Avatar + display_name + email + badge CEFR
+- Liens role-aware (étudiant / enseignant / admin)
+- Switcher d'environnement rapide (Linux / macOS / Windows)
+- Lien Admin Panel conditionnel (super admin uniquement)
+
+#### Profil par rôle
+| Rôle | Champs spécifiques |
+|------|-------------------|
+| Étudiant | Avatar, pseudo, bio, langue, CEFR, track, env préféré, notifications, clé IA |
+| Enseignant | + titre pro, institution, bio publique, lien tableau de bord classe |
+| Institution Admin | + logo institution, couleurs marque, contact officiel |
+| Super Admin | Pas de profil public — settings système dans l'Admin Panel |
+
+#### Supabase Storage
+- Bucket `avatars` — RLS : lecture publique, écriture propriétaire uniquement
+- Bucket `institution-logos` — RLS : lecture publique, écriture institution_admin
+- Fallback : initiales générées côté client si pas d'avatar
+- RGPD : suppression cascade quand compte supprimé
 
 ---
 
