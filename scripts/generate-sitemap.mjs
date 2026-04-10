@@ -52,14 +52,37 @@ const SITEMAP_URLS = [
   // Module: Permissions
   { path: '/app/learn/permissions/comprendre-permissions', changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/permissions/chmod',                  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/permissions/chown',                  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/permissions/sudo',                   changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/permissions/security-permissions',   changefreq: 'monthly', priority: '0.8' },
 
   // Module: Processus
-  { path: '/app/learn/processus/ps',   changefreq: 'monthly', priority: '0.8' },
-  { path: '/app/learn/processus/kill', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/processus/ps',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/processus/kill',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/processus/top',        changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/processus/background', changefreq: 'monthly', priority: '0.8' },
 
   // Module: Redirection & Pipes
   { path: '/app/learn/redirection/redirection-sortie', changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/redirection/pipes',               changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/redirection/stderr',              changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/redirection/tee',                 changefreq: 'monthly', priority: '0.8' },
+
+  // Module: Variables & Scripts
+  { path: '/app/learn/variables/env-vars',      changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/variables/path-variable', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/variables/shell-config',  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/variables/dotenv',        changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/variables/scripts',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/variables/cron',          changefreq: 'monthly', priority: '0.8' },
+
+  // Module: Réseau & SSH
+  { path: '/app/learn/reseau/ping', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/reseau/curl', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/reseau/wget', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/reseau/dns',  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/reseau/ssh',  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/reseau/scp',  changefreq: 'monthly', priority: '0.8' },
 ];
 
 function renderUrl({ path, changefreq, priority, isLanding }) {
