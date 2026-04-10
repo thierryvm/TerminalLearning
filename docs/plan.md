@@ -1,6 +1,6 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 10 avril 2026
+> Dernière mise à jour : 11 avril 2026
 > Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 8 modules ✅, 38 leçons, 388 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
@@ -16,6 +16,9 @@
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
 | THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
 | THI-45 | agents | Content Auditor V1 — audit pédagogique A→Z (`.claude/agents/content-auditor.md`) |
+| THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
+| THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
+| THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |
 
 ---
 
@@ -125,6 +128,13 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - `React.lazy()` + `Suspense` sur tous les composants de route dans `src/app/routes.ts`
 - Fallback `<PageLoader>` accessible dans `App.tsx`
 - Objectif : réduire le bundle initial de ~30-40%, améliorer LCP/TTI landing
+
+#### ✅ Fixes UI & Auth (THI-47 + THI-48 — mergés 10-11 avril 2026)
+- `UserMenu` refonte complète : variant `card` (sidebar) + variant `compact` (landing header)
+- Guest card : "Mode invité" + "Se connecter" → redirige vers `/` (plus de modal dans l'app)
+- Auth `signOut` : `scope:'local'` → `scope:'global'` — corrige la reconnexion OAuth automatique
+- Sync : `AbortController` timeout 10s — plus de dot jaune bloqué indéfiniment
+- 15 tests auth mis à jour (card + compact variants)
 
 #### ✅ Module 8 — Réseau & SSH (THI-27 — mergé 10 avril 2026)
 - `ping`, `curl`, `wget`, `nslookup`, `dig`, `Resolve-DnsName`, `ssh`, `ssh-keygen`, `scp` + PowerShell `iwr`
