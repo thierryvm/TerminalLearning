@@ -96,6 +96,19 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - TerminalPreview : `text-left` + env-aware (prompt, barre de titre, séquences de commandes)
 - 242 tests unitaires + 176 tests Playwright E2E — 32 leçons, 7 modules
 
+#### ✅ README rewrite (THI-32 — branche `docs/readme-rewrite`)
+- Réécriture README orientée débutants + contributeurs + sponsors futurs
+- Tagline courte, hook émotionnel, section dédiée environment switching
+- Section Multi-Agent Architecture retirée → docs/ARCHITECTURE.md
+- Stack corrigée (Vite 6 + React 18, non Next.js)
+
+#### 🔄 Lazy loading routes (THI-33 — branche `perf/lazy-routes`)
+> ⚠️ PRIS EN CHARGE par session Claude Code #1 (session README/docs) à la demande de Thierry.
+> L'autre session Claude Code active NE DOIT PAS travailler sur ce ticket.
+- `React.lazy()` + `Suspense` sur tous les composants de route dans `src/app/routes.ts`
+- Fallback `<PageLoader>` accessible dans `App.tsx`
+- Objectif : réduire le bundle initial de ~30-40%, améliorer LCP/TTI landing
+
 #### 🔜 Modules planifiés (THI-27 à THI-30)
 - **Module 8 — Réseau & SSH** (THI-27) : `ping`, `curl`, `wget`, `ssh`, `scp`, DNS
 - **Module 9 — Git Fondamentaux** (THI-28) : `init`, `add`, `commit`, `log`, branches, conflits

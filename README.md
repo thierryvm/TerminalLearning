@@ -1,6 +1,6 @@
 # Terminal Learning
 
-> An open-source, free pedagogical platform for learning the terminal and the full developer workflow — from absolute beginners to autonomous full-stack developers who leverage AI as a tool.
+> **Learn the terminal by doing — not just reading.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminal-learning.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
@@ -10,139 +10,90 @@
 
 ---
 
-## What is Terminal Learning?
+![Terminal Learning — environment switcher & curriculum overview](public/demo.gif)
 
-**Terminal Learning** is a free, open-source web application that teaches beginners how to use the terminal through interactive practice. Instead of reading documentation, users type real commands in a sandboxed terminal emulator and learn by doing.
+![Terminal Learning — terminal emulator in action](public/demo-terminal.gif)
 
-**Key differentiators:**
-- No account required — start learning immediately
-- Multi-environment: choose Linux, macOS, or Windows — commands, exercises and prompts adapt
-- Terminal profiles: authentic prompt per env (`user@host:~$` / `➜ ~` / `PS C:\Users\user>`)
-- Contextual help: `help <cmd>` returns targeted usage + examples for your environment
-- Progress saved locally, optionally synced to the cloud with a free account
-- Real terminal emulator with a simulated filesystem — 60+ commands, 30+ PowerShell aliases
-- Progressive curriculum: 7 modules active → 11 planned (Network/SSH, Git, GitHub, AI as a dev tool) — 32 lessons
-- 100% free, forever — designed for schools and universities
+## The Problem
+
+The terminal is powerful — but also frustrating to learn. Commands look different on Linux, macOS, and Windows. Most tutorials just show you code to copy-paste, with no feedback when something goes wrong. And switching between operating systems? That means starting over.
+
+**Terminal Learning fixes this.** It's a free, open-source web platform where you practice real terminal commands in an interactive environment — with exercises, validation, and contextual help adapted to *your* operating system.
+
+No account required. No setup. Just open it and start learning.
 
 🌐 **[Try it live →](https://terminal-learning.vercel.app)**
 
 ---
 
-## Tech Stack
+## ✨ Key Features
+
+- 🖥️ **Interactive terminal** — type real commands, get real feedback (not just theory)
+- 🌍 **Multi-environment** — learn on Linux, macOS, or Windows — the interface adapts
+- 🔒 **Progressive curriculum** — lessons unlock as you master earlier ones
+- 💾 **Progress saved automatically** — locally, or synced to the cloud with a free account
+- 📖 **Contextual help** — `help <command>` returns usage and examples for your environment
+- 🎓 **Designed for everyone** — schools, universities, self-taught developers
+- 💸 **100% free, forever** — no paywall, no ads, no catch
+
+---
+
+## 🌍 Environment Switching
+
+Most terminal tutorials assume you're on Linux. Terminal Learning doesn't.
+
+Select your environment and everything adapts — the prompt style, the commands, the exercises, and the hints:
+
+| | Linux | macOS | Windows |
+|---|---|---|---|
+| **Prompt** | `user@host:~$` | `➜ ~` | `PS C:\Users\user>` |
+| **Shell** | bash | zsh (Oh My Zsh style) | PowerShell |
+| **Example** | `ls`, `chmod`, `apt` | `ls`, `chmod`, `brew` | `dir`, `Set-ExecutionPolicy`, `winget` |
+
+This makes learning more realistic and less confusing — you practice the exact commands you'll actually use.
+
+> WSL (Windows Subsystem for Linux) support is planned.
+
+---
+
+## 🛠 Tech Stack
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| **Bundler** | Vite | 6.x |
-| **UI Framework** | React | 18.x |
-| **Routing** | React Router | 7.x |
-| **Styling** | Tailwind CSS | 4.x |
-| **Components** | shadcn/ui (Radix UI) | latest |
-| **Animations** | Motion (Framer Motion) | 12.x |
-| **Auth & Database** | Supabase (PostgreSQL + RLS) | 2.x |
-| **Error Tracking** | Sentry (free tier) | 8.x |
-| **Icons** | Lucide React | 0.487 |
-| **Tests** | Vitest + Testing Library | — |
-| **Design Origin** | Figma Make + Claude Code | — |
-| **Deployment** | Vercel (free tier) | — |
+| Bundler | Vite | 6.x |
+| UI Framework | React | 18.x |
+| Routing | React Router | 7.x |
+| Styling | Tailwind CSS | 4.x |
+| Components | shadcn/ui (Radix UI) | latest |
+| Animations | Motion (Framer Motion) | 12.x |
+| Auth & Database | Supabase (PostgreSQL + RLS) | 2.x |
+| Error Tracking | Sentry (free tier) | 8.x |
+| Tests | Vitest + Playwright | — |
+| Deployment | Vercel (free tier) | — |
 
 ---
 
-## Architecture
+## 📁 Architecture
 
-```
-src/
-├── lib/
-│   ├── supabase.ts               # Typed Supabase client (null-safe, fallback to localStorage)
-│   └── sentry.ts                 # Sentry init + error boundary
-├── app/
-│   ├── App.tsx                   # Root: ErrorBoundary > AuthProvider > ProgressProvider
-│   ├── components/
-│   │   ├── auth/
-│   │   │   ├── LoginModal.tsx    # Email/password + OAuth modal (Zod validation)
-│   │   │   ├── UserMenu.tsx      # Avatar + sync status badge + logout
-│   │   │   └── AuthCallback.tsx  # /auth/callback PKCE handler
-│   │   ├── Landing.tsx           # Public landing page (/)
-│   │   ├── Layout.tsx            # App shell with sidebar (/app)
-│   │   ├── Sidebar.tsx           # Navigation sidebar
-│   │   ├── Dashboard.tsx         # Progress dashboard
-│   │   ├── LessonPage.tsx        # Individual lesson view
-│   │   ├── TerminalEmulator.tsx  # Interactive terminal
-│   │   ├── CommandReference.tsx  # Command reference sheet
-│   │   ├── PrivacyPolicy.tsx     # GDPR compliance (/privacy)
-│   │   ├── NotFound.tsx          # 404 page
-│   │   └── ui/                   # shadcn/ui component library
-│   ├── context/
-│   │   ├── AuthContext.tsx       # Session, user, signOut
-│   │   └── ProgressContext.tsx   # Progress state (local + Supabase sync)
-│   ├── lib/
-│   │   └── progressSync.ts       # mergeProgress() + getDelta() utilities
-│   ├── types/
-│   │   └── database.ts           # Supabase DB types
-│   ├── data/
-│   │   ├── curriculum.ts         # All lessons and modules content
-│   │   └── terminalEngine.ts     # Terminal command interpreter
-│   └── routes.ts                 # React Router configuration
-├── styles/
-│   ├── theme.css                 # Design tokens (colors, radius)
-│   ├── fonts.css                 # JetBrains Mono + Inter
-│   └── tailwind.css              # Tailwind configuration
-public/
-├── logo.svg                      # App logo (>_ terminal mark)
-├── favicon.svg                   # Favicon
-├── og-image.png                  # OpenGraph image (1200x630)
-└── robots.txt                    # SEO crawl rules
-vercel.json                       # SPA routing + security headers (CSP)
-```
-
-Full architecture details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Full architecture, data flow diagrams, and database schema are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-## Multi-Agent Development Architecture
+## 🔒 Security
 
-This project is developed using a **multi-agent AI workflow** with Claude Code as the primary assistant:
+Security is built in from day one:
 
-```
-┌─────────────────────────────────────────────┐
-│         ORCHESTRATOR AGENT                  │
-│   Coordinates, validates, integrates        │
-└──────┬──────────┬─────────────┬─────────────┘
-       │          │             │
-  ┌────▼───┐ ┌───▼────┐ ┌─────▼──────┐
-  │FRONTEND│ │SECURITY│ │HACKER BLACK│
-  │ Agent  │ │ Agent  │ │   Agent    │
-  └────────┘ └────────┘ └────────────┘
-                  └──────────┬──────────┘
-              ┌──────────────▼──────────┐
-              │     QA / TEST Agent     │
-              │  Vitest + Playwright    │
-              └─────────────────────────┘
-```
+- **Strict CSP** — no `unsafe-eval`, enforced via `vercel.json`
+- **Auth** — Supabase Auth with PKCE flow, JWT rotation, built-in rate limiting
+- **Database** — Row Level Security on all tables, anon key only client-side
+- **GDPR** — cookieless analytics, privacy page at `/privacy`, no PII in logs
+- **CI** — `npm audit` + GitHub Dependabot on every push
 
-- **FRONTEND** — UI components, animations, design system
-- **SECURITY** — OWASP headers, CSP, rate limiting, dependency audit
-- **HACKER BLACK** — Offensive security testing (XSS, CSRF, rate limit bypass)
-- **QA** — Unit tests (Vitest), E2E tests (Playwright)
+Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 
 ---
 
-## Security
-
-Security is built into every layer from day one:
-
-- **HTTP Headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` via `vercel.json`
-- **Content Security Policy** — strict CSP, no `unsafe-eval`
-- **Auth** — Supabase Auth with PKCE flow, JWT rotation, rate limiting
-- **Database** — Row Level Security (RLS) on all tables, anon key only client-side
-- **No secrets client-side** — environment variables only
-- **GDPR compliant** — cookieless analytics, privacy page at `/privacy`
-- **Dependency auditing** — `npm audit` in CI + GitHub Dependabot
-
-See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability reporting process.
-
----
-
-## Roadmap
+## 🗺 Roadmap
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -150,19 +101,19 @@ See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability re
 | **Phase 1** | ✅ Done | Landing page, routing, SEO/OpenGraph, GDPR |
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
-| **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles (192 tests) |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: Module 7 ✅, modules 4–6 enriched ✅, TerminalPreview env-aware ✅, 242 unit tests + 176 E2E, 32 lessons |
+| **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 7 modules, 32 lessons, 242 unit tests + 176 E2E |
 | **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
 | **Phase 7** | 🔮 Planned | Member space — profiles, stats, roles (student/teacher), badges |
 | **Phase 8** | 🔮 Planned | Ticket system — bug reports, suggestions, in-app feedback |
-| **Phase 9** | 🔮 Planned | Admin panel — real-time health, security center, analytics, RBAC, 2FA |
+| **Phase 9** | 🔮 Planned | Admin panel — real-time health, security center, analytics, RBAC |
 | **Phase 10** | 🔮 Planned | Automated content — new commands unlocked every 2 weeks |
 
-Full details in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/plan.md](docs/plan.md).
+Full details in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
-## Getting Started
+## ⚙️ Getting Started
 
 ### Prerequisites
 
@@ -175,44 +126,54 @@ Full details in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/plan.md](docs/plan.
 git clone https://github.com/thierryvm/TerminalLearning.git
 cd TerminalLearning
 npm install
-cp .env.example .env.local   # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+cp .env.example .env.local   # add your VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
 npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+> The app works without Supabase credentials — progress is saved locally. Auth and sync require a Supabase project.
+
 ### Build
 
 ```bash
 npm run build        # Production build → dist/
+npm run test         # Unit tests (Vitest)
+npm run test:e2e     # E2E tests (Playwright)
 ```
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/CONVENTIONS.md](docs/CONVENTIONS.md) before opening a pull request.
 
-Development workflow and repository rules are documented in [docs/CONVENTIONS.md](./docs/CONVENTIONS.md).
+```bash
+git checkout -b feature/my-feature
+# ... make your changes
+git commit -m "feat(scope): description"
+gh pr create
+```
 
-- Fork the repository
-- Create a feature branch: `git checkout -b feature/my-feature`
-- Commit with conventional commits: `feat(scope): description`
-- Push and open a pull request
-
----
-
-## Support the Project
-
-Terminal Learning is free and will always remain free. If it helped you, consider supporting development:
-
-- ⭐ **Star the repo** — helps visibility
-- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — recurring support *(activation pending)*
-- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — one-time coffee *(activation pending)*
+All PRs must pass CI (type-check → lint → tests → build) before merge.
 
 ---
 
-## License
+## 💜 Support the Project
+
+Terminal Learning is a volunteer project — free now, free forever.
+
+If it helped you or your students, the best way to support it is:
+
+- ⭐ **Star the repo** — helps visibility on GitHub
+- 🐛 **Report bugs** — [open an issue](https://github.com/thierryvm/TerminalLearning/issues)
+- 🤝 **Contribute** — code, curriculum, translations, feedback
+- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — activated, donations on hold *(pending Solidaris / RIZIV-INAMI authorization)*
+- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — on hold *(pending Solidaris / RIZIV-INAMI authorization)*
+
+---
+
+## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
