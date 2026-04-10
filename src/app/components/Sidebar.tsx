@@ -237,18 +237,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </p>
           </div>
 
+          {/* Retour landing — lien discret avant la profile card */}
+          <NavLink
+            to="/"
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono"
+          >
+            <Home size={12} aria-hidden="true" />
+            Retour à l'accueil
+          </NavLink>
+
           {/* Divider */}
           <div className="border-t border-[#21262d]" />
 
           <UserMenu syncStatus={syncStatus} placement="top" />
-          <NavLink
-            to="/"
-            onClick={onClose}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono border border-transparent hover:border-[#30363d]"
-          >
-            <Home size={14} aria-hidden="true" />
-            Accueil
-          </NavLink>
         </div>
       </aside>
     </>
