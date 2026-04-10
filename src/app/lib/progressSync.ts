@@ -2,13 +2,16 @@ import type { Database } from '../types/database';
 
 export type RemoteLesson = Database['public']['Tables']['progress']['Row'];
 
+/** Minimal shape used by merge/delta — only the two columns we actually fetch. */
+export type RemoteLessonPartial = Pick<RemoteLesson, 'lesson_id' | 'completed'>;
+
 /**
  * Merge local (localStorage) progress with remote (Supabase) records.
  * Rule: a completed lesson is never downgraded — once true, stays true.
  */
 export function mergeProgress(
   local: Record<string, boolean>,
-  remote: RemoteLesson[]
+  remote: RemoteLessonPartial[]
 ): Record<string, boolean> {
   const merged = { ...local };
   for (const row of remote) {
@@ -24,7 +27,7 @@ export function mergeProgress(
  */
 export function getDelta(
   local: Record<string, boolean>,
-  remote: RemoteLesson[]
+  remote: RemoteLessonPartial[]
 ): string[] {
   const remoteCompleted = new Set(
     remote.filter((r) => r.completed).map((r) => r.lesson_id)
