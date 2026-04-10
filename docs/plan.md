@@ -88,13 +88,16 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 ### 🔄 Phase 5 — Curriculum Expansion (EN COURS — démarré 9 avril 2026)
 
-#### ✅ Livré (PR #36 + PR #37 + PR #38)
+#### ✅ Livré (PR #36 + PR #37 + PR #38 + PR #40 + PR #43)
 - Module 7 — Variables & Scripts (6 leçons) : `export`, `$PATH`, `.env`, shell config, scripts bash, `cron`
 - Enrichissement modules 4–6 : permissions (chown, sudo, security), processus (top, bg/fg), redirection (stderr, tee)
 - CommandReference entièrement env-aware : filtres par env, syntaxe + exemples par env, badge environnement
 - LessonPage : rendu env-aware (`contentByEnv`, `labelByEnv`), prompt `PS>` en cyan
 - TerminalPreview : `text-left` + env-aware (prompt, barre de titre, séquences de commandes)
 - 242 tests unitaires + 176 tests Playwright E2E — 32 leçons, 7 modules
+- README entièrement réécrit pour 3 audiences (débutants, devs, sponsors) — PR #40 (THI-32)
+- Route-level code splitting : `React.lazy()` + `Suspense` + `PageLoader` — chaque route = chunk dédié — PR #43 (THI-33)
+- Script `generate-demo-gif.cjs` : capture GIF de l'animation env-switching via Playwright — `npm run generate-demo`
 
 #### ✅ README rewrite (THI-32 — branche `docs/readme-rewrite`)
 - Réécriture README orientée débutants + contributeurs + sponsors futurs

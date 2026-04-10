@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { RouterProvider } from 'react-router';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -6,6 +7,7 @@ import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
 import { EnvironmentProvider } from './context/EnvironmentContext';
+import { PageLoader } from './components/PageLoader';
 
 function FallbackUI() {
   return (
@@ -29,7 +31,9 @@ export default function App() {
       <AuthProvider>
         <EnvironmentProvider>
           <ProgressProvider>
-            <RouterProvider router={router} />
+            <Suspense fallback={<PageLoader />}>
+              <RouterProvider router={router} />
+            </Suspense>
             <Analytics />
             <SpeedInsights />
           </ProgressProvider>
