@@ -8,12 +8,34 @@ interface UserMenuProps {
   placement?: 'bottom' | 'top';
 }
 
+// Libellés centralisés — tout en français
 const SYNC_CONFIG: Record<UserMenuProps['syncStatus'], { label: string; dot: string }> = {
-  local:   { label: 'Local',    dot: 'bg-[#8b949e]' },
-  syncing: { label: 'Sync…',    dot: 'bg-yellow-400 animate-pulse' },
-  synced:  { label: 'Synced',   dot: 'bg-emerald-400' },
-  error:   { label: 'Erreur',   dot: 'bg-[#f85149]' },
+  local:   { label: 'Local',          dot: 'bg-[#8b949e]' },
+  syncing: { label: 'Sync…',          dot: 'bg-yellow-400 animate-pulse' },
+  synced:  { label: 'Synchronisé',    dot: 'bg-emerald-400' },
+  error:   { label: 'Erreur de sync', dot: 'bg-[#f85149]' },
 };
+
+// Sous-composant partagé : évite la duplication avatar entre bouton et en-tête
+interface UserAvatarProps {
+  avatarUrl: string | undefined;
+  initials: string;
+  size: 'sm' | 'md';
+}
+
+function UserAvatar({ avatarUrl, initials, size }: UserAvatarProps) {
+  const cls = size === 'sm'
+    ? 'w-8 h-8 text-sm'
+    : 'w-10 h-10 text-base';
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt="" aria-hidden="true" className={`${cls} rounded-full shrink-0`} />;
+  }
+  return (
+    <span className={`${cls} rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-mono shrink-0 select-none`}>
+      {initials}
+    </span>
+  );
+}
 
 export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
   const { user, signOut } = useAuth();
@@ -22,7 +44,7 @@ export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape
+  // Fermeture sur Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
@@ -30,7 +52,7 @@ export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  // Close on outside click
+  // Fermeture sur clic extérieur
   useEffect(() => {
     if (!open) return;
     const onPointer = (e: PointerEvent) => {
@@ -67,57 +89,39 @@ export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
 
   return (
     <div ref={menuRef} className="relative">
-      {/* ── Trigger button — avatar only + sync dot ── */}
+      {/* Bouton déclencheur — avatar + dot de statut */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={`Menu utilisateur — ${displayName}`}
+        aria-label={`Compte de ${displayName} — ${sync.label}`}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="true"
         className="relative flex items-center justify-center rounded-full ring-2 ring-transparent hover:ring-emerald-500/50 focus-visible:ring-emerald-500 transition-all outline-none"
       >
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={displayName}
-            className="w-8 h-8 rounded-full"
-          />
-        ) : (
-          <span className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm font-mono select-none">
-            {initials}
-          </span>
-        )}
-        {/* Sync status dot */}
+        <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
         <span
           aria-hidden="true"
           className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0d1117] ${sync.dot}`}
         />
       </button>
 
-      {/* ── Dropdown ── */}
+      {/* Popover — sémantique native <button>, pas de role="menu" pour éviter
+          d'imposer la navigation au clavier fléché sans l'implémenter */}
       {open && (
         <div
-          role="menu"
-          aria-label="Menu utilisateur"
           className={`absolute right-0 z-50 w-64 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl overflow-hidden ${
             placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
           }`}
         >
-          {/* Header */}
+          {/* En-tête */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-[#30363d]">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" aria-hidden="true" className="w-10 h-10 rounded-full shrink-0" />
-            ) : (
-              <span className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-base font-mono shrink-0 select-none">
-                {initials}
-              </span>
-            )}
+            <UserAvatar avatarUrl={avatarUrl} initials={initials} size="md" />
             <div className="min-w-0">
               <p className="text-sm text-[#e6edf3] font-medium truncate">{displayName}</p>
               <p className="text-xs text-[#8b949e] truncate">{user.email}</p>
               <span className={`inline-flex items-center gap-1 mt-0.5 text-[10px] font-mono ${
-                syncStatus === 'synced' ? 'text-emerald-400' :
-                syncStatus === 'syncing' ? 'text-yellow-400' :
-                syncStatus === 'error' ? 'text-[#f85149]' : 'text-[#8b949e]'
+                syncStatus === 'synced'  ? 'text-emerald-400' :
+                syncStatus === 'syncing' ? 'text-yellow-400'  :
+                syncStatus === 'error'   ? 'text-[#f85149]'   : 'text-[#8b949e]'
               }`}>
                 <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${sync.dot}`} />
                 {sync.label}
@@ -128,7 +132,6 @@ export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
           {/* Actions */}
           <div className="py-1">
             <button
-              role="menuitem"
               onClick={handleSignOut}
               disabled={signingOut}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#f85149] hover:bg-[#f85149]/10 font-mono transition-colors disabled:opacity-50 outline-none focus-visible:bg-[#f85149]/10"
