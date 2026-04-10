@@ -24,12 +24,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const URL    = process.env.DEMO_URL   || 'https://terminal-learning.vercel.app';
-const WIDTH  = parseInt(process.env.DEMO_WIDTH || '1280', 10);
-const FPS    = parseInt(process.env.DEMO_FPS   || '5',    10);
+const URL    = process.env.DEMO_URL    || 'https://terminal-learning.vercel.app';
+const WIDTH  = parseInt(process.env.DEMO_WIDTH  || '960',  10);
+const FPS    = parseInt(process.env.DEMO_FPS    || '10',   10);
 const DELAY  = Math.round(1000 / FPS); // ms per frame
-const HEIGHT = Math.round(WIDTH * (9 / 16)); // 16:9
-const OUTPUT = path.join(__dirname, '..', 'public', 'demo.gif');
+const HEIGHT = parseInt(process.env.DEMO_HEIGHT || String(Math.round(WIDTH * (3 / 4))), 10); // 4:3 — shows env switcher + module cards
+const SCROLL = parseInt(process.env.DEMO_SCROLL || '80',   10); // px to scroll after load (reveals terminal cards)
+const OUTPUT = path.join(__dirname, '..', 'public', process.env.DEMO_OUTPUT || 'demo.gif');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -64,6 +65,7 @@ async function main() {
   console.log('⏳ Loading page...');
   await page.goto(URL, { waitUntil: 'networkidle', timeout: 30_000 });
   await sleep(1200); // let Motion animations settle
+  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), SCROLL);
 
   const allFrames = [];
 

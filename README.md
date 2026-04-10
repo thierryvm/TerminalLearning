@@ -10,7 +10,9 @@
 
 ---
 
-<!-- screenshot -->
+![Terminal Learning — environment switcher & curriculum overview](public/demo.gif)
+
+![Terminal Learning — terminal emulator in action](public/demo-terminal.gif)
 
 ## The Problem
 
