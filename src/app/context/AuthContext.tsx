@@ -39,13 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
-    // scope:'local' clears the session from storage without a server round-trip,
-    // avoiding race conditions with concurrent getSession / onAuthStateChange calls.
-    // The refresh token is NOT revoked server-side — acceptable here because this app
-    // has no cross-device logout requirement and sessions expire naturally via Supabase's
-    // default token rotation policy.
+    // scope:'global' revokes the refresh token server-side, which is required with
+    // OAuth providers (GitHub, Google): scope:'local' only cleared localStorage but
+    // left the server-side session active, causing Supabase to immediately re-sign
+    // the user in via onAuthStateChange — making sign-out appear broken.
     // See: https://supabase.com/docs/reference/javascript/auth-signout
-    await supabase.auth.signOut({ scope: 'local' });
+    await supabase.auth.signOut({ scope: 'global' });
     setSession(null); // immediate UI reset — don't wait for onAuthStateChange
   }, []);
 
