@@ -52,11 +52,21 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 
 ## Protocole de session — OBLIGATOIRE
 
+### Agents disponibles (`.claude/agents/`)
+- **`linear-sync`** — vérifie PRs GitHub vs statuts Linear, détecte incohérences
+- **`curriculum-validator`** — valide structure de `curriculum.ts` avant toute modification
+- **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
+
 ### Début de chaque session
-1. `gh pr list --state open` → état réel des PRs
-2. Consulter Linear pour chaque PR ouverte → corriger les incohérences de statut immédiatement
-3. `git status` + `git log --oneline -5` → état de la branche courante
-4. Lire l'issue Linear active avant d'écrire la moindre ligne
+1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
+2. `git status` + `git log --oneline -5` → état de la branche courante
+3. Lire l'issue Linear active avant d'écrire la moindre ligne
+
+### Avant toute modification de `curriculum.ts`
+- Invoquer l'agent **`curriculum-validator`** → analyser le rapport, corriger les CRITICAL avant de continuer
+
+### Après chaque modification de `curriculum.ts` ou `terminalEngine.ts`
+- Invoquer l'agent **`test-runner`** → si VERDICT = ❌ Fix required, corriger avant de proposer un commit
 
 ### Incohérences Linear à corriger dès détection
 - Issue Done + PR non mergée → **In Review**
