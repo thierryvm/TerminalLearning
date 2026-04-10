@@ -81,13 +81,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
       setSyncStatus('syncing');
-      // Abort if Supabase doesn't respond within 10 s — prevents indefinite yellow dot.
+      // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
+      // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
+      const timeout = setTimeout(() => controller.abort(), 5_000);
       try {
         const { data: remote, error } = await client
           .from('progress')
-          .select('*')
+          .select('lesson_id, completed')   // only the two columns we actually use
           .eq('user_id', session.user.id)
           .abortSignal(controller.signal);
         clearTimeout(timeout);

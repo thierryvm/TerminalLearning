@@ -39,13 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
-    // scope:'global' revokes the refresh token server-side, which is required with
-    // OAuth providers (GitHub, Google): scope:'local' only cleared localStorage but
-    // left the server-side session active, causing Supabase to immediately re-sign
-    // the user in via onAuthStateChange — making sign-out appear broken.
+    // Clear local session immediately — the UI reacts instantly.
+    // Then revoke the server-side refresh token in the background (fire-and-forget).
+    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the
+    // server-side session active, causing Supabase to re-sign the user immediately
+    // via onAuthStateChange — making sign-out appear broken.
+    // We don't await the API call: the local session is already gone, and token
+    // revocation completing a few seconds later is an acceptable trade-off.
     // See: https://supabase.com/docs/reference/javascript/auth-signout
-    await supabase.auth.signOut({ scope: 'global' });
-    setSession(null); // immediate UI reset — don't wait for onAuthStateChange
+    setSession(null);
+    void supabase.auth.signOut({ scope: 'global' });
   }, []);
 
   return (
