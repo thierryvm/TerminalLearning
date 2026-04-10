@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, LogIn, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface UserMenuProps {
@@ -73,7 +73,28 @@ export function UserMenu({ syncStatus, placement = 'bottom' }: UserMenuProps) {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="px-3 py-2.5 rounded-lg bg-[#161b22] border border-[#30363d]">
+        <div className="flex items-center gap-2.5 mb-2.5">
+          <span className="w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center shrink-0">
+            <User size={14} className="text-[#8b949e]" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-[#e6edf3] font-medium">Mode invité</p>
+            <p className="text-[10px] text-[#8b949e] font-mono">Progression locale uniquement</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          className="w-full flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+        >
+          <LogIn size={12} aria-hidden="true" />
+          Se connecter
+        </button>
+      </div>
+    );
+  }
 
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ??

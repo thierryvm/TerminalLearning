@@ -237,20 +237,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </p>
           </div>
 
-          {/* Retour landing — lien discret avant la profile card */}
-          <NavLink
-            to="/"
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] transition-colors font-mono"
-          >
-            <Home size={12} aria-hidden="true" />
-            Retour à l'accueil
-          </NavLink>
-
-          {/* Divider */}
-          <div className="border-t border-[#21262d]" />
-
-          <UserMenu syncStatus={syncStatus} placement="top" />
+          {/* Profile card + bouton home côte à côte */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 min-w-0">
+              <UserMenu syncStatus={syncStatus} placement="top" />
+            </div>
+            <NavLink
+              to="/"
+              onClick={onClose}
+              className="shrink-0 p-2 rounded-lg text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent hover:border-[#30363d] transition-all"
+              aria-label="Retour à l'accueil"
+              title="Retour à l'accueil"
+            >
+              <Home size={14} aria-hidden="true" />
+            </NavLink>
+          </div>
         </div>
       </aside>
     </>
