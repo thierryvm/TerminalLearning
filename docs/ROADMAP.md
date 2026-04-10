@@ -109,7 +109,7 @@ Full-stack developer path — 11 modules total (7 active, 4 planned) — 32 less
 - [ ] Alternatives validation: accept equivalent commands (`rm` / `Remove-Item` / `del`)
 - [ ] **Bloom's level** per exercise (Remember / Understand / Apply / Analyze / Evaluate / Create)
 - [ ] **Mastery threshold** per exercise: 80% global, 95% for security modules (permissions, chmod, sudo)
-- [ ] Write `score` + `attempts_count` + `hints_used` to Supabase `progress` table (fields already exist)
+- [ ] Write `score` + `attempts_count` + `hints_used` to Supabase `progress` table *(fields introduced in canonical DB schema — see Phase 7)*
 - [ ] Track-aware lesson content: examples and exercises adapt to the student's active track
   - Full-Stack track → Node.js/web context; Sysadmin track → systemd/server context
 
@@ -140,6 +140,7 @@ Full module track for senior fullstack + network/server expert + security fundam
   - Output: JSON report + readable terminal summary with health score
 - Scope: **audits defenses only** — no active attack simulation on production
 - Results feed into Admin Panel Security Center (Phase 9)
+- DB: `security_reports` table — see canonical schema in Phase 7
 
 ## Phase 6 — Terminal Multi-Session 🔮
 - [ ] Tab system: multiple independent terminal sessions
@@ -151,11 +152,13 @@ Full module track for senior fullstack + network/server expert + security fundam
 > Required for Full-Stack Developer and Automation tracks. Biggest UX challenge of the project.
 
 ### Embedded IDE (sandboxed code editor)
-- [ ] **CodeMirror 6** integration — syntax highlighting for Bash, Python, JS/TS, HTML/CSS, JSON, YAML
+- [ ] Code editor with syntax highlighting — Bash, Python, JS/TS, HTML/CSS, JSON, YAML
+  *(current preference: CodeMirror 6 — mobile-native, tree-sitter, lightweight; to be validated at implementation time)*
 - [ ] **Sandboxed execution** — 100% client-side, never server-side execution of student code
-  - Python: Pyodide (WASM) — no server needed
-  - JavaScript: QuickJS (WASM sandbox) — isolated, no DOM access
+  - Python: WASM interpreter *(current preference: Pyodide)*
+  - JavaScript: WASM sandbox with no DOM access *(current preference: QuickJS)*
   - Bash: existing terminal emulator (already sandboxed)
+  - *Final library choices confirmed during IDE Agent analysis in Phase 6b*
 - [ ] Output panel: stdout, stderr, exit code, execution time
 - [ ] Student file persistence: Supabase Storage per user (project portfolio)
 - [ ] IDE exercises: new exercise type `code-project` linked to Bloom "Create" level
@@ -166,8 +169,8 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] **Adaptive layout**: mobile = terminal fullscreen + slide-up lesson panel
 - [ ] **Swipe navigation**: lesson ↔ terminal ↔ exercise on mobile
 - [ ] **Touch-only interactions**: no hover states, minimum tap target 44px
-- [ ] **IDE mobile**: CodeMirror 6 is mobile-native — simplified toolbar replaces keyboard shortcuts
-- [ ] Breakpoints: mobile <640px, tablet 640–1024px, desktop >1024px
+- [ ] IDE on mobile: simplified toolbar replaces keyboard shortcuts
+- [ ] Responsive breakpoints *(current preference: mobile <640px, tablet 640–1024px, desktop >1024px — confirmed at implementation time)*
 - [ ] Playwright mobile suite (existing e2e/mobile.spec.ts) extended to cover all new components
 - [ ] Dedicated **Mobile UX Agent** validates every PR touching layout components
 
@@ -229,17 +232,28 @@ Full module track for senior fullstack + network/server expert + security fundam
 
 ### Badge System
 - [ ] Badge types: first-command, module-complete, streak, speed-runner, no-hints, explorer, track-complete, cefr-level-up
-- [ ] Internal badges (visual) first — schema natively Open Badges 3.0 compatible
+- [ ] Internal badges (visual) first — schema is natively compatible with Open Badges 3.0
 - [ ] Open Badges 3.0 export: Phase 11 (no data migration needed — schema-ready from day 1)
 - [ ] Shareable URL per badge (public verification page)
 
-### DB Extensions
-- [ ] `institutions`, `classes`, `class_enrollments`
-- [ ] Extend `profiles`: role, institution_id, display_name, preferred_env, active_track_id
-- [ ] Extend `progress`: time_spent_seconds, attempts_count, hints_used (+ write score field)
-- [ ] `badges` (OB3-compatible schema), `teacher_notes`, `audit_log` (insert-only)
-- [ ] `tracks` table (id, title, module_ids[], cefr_target, description)
+### DB Schema — Canonical Reference (Phase 7)
+> Single source of truth for all new tables and column extensions introduced in Phase 7+.
+> Later phases (5b, 11b) reference this section rather than redefining fields.
+
+- [ ] **New tables:**
+  - `institutions (id, name, domain_whitelist[], admin_id)`
+  - `classes (id, teacher_id, institution_id, name)`
+  - `class_enrollments (class_id, student_id)` — composite PK
+  - `tracks (id, title, module_ids[], cefr_target, description)`
+  - `badges (id, user_id, badge_type, earned_at, evidence_url, ob3_metadata jsonb)` — OB3-compatible
+  - `teacher_notes (id, teacher_id, student_id, note, created_at)`
+  - `audit_log (id, actor_id, action, target_id, metadata jsonb, ip_address, created_at)` — insert-only
+- [ ] **Extended tables:**
+  - `profiles` + `role`, `institution_id`, `display_name`, `preferred_env`, `active_track_id`
+  - `progress` + `time_spent_seconds`, `attempts_count`, `hints_used` *(score column already exists)*
 - [ ] RLS on all new tables — principle of least privilege
+- [ ] `tickets (id, user_id, type, status, priority, context jsonb)` — Phase 8
+- [ ] `security_reports (id, run_at, score, findings jsonb, component)` — Phase 5.5/9
 
 ## Phase 8 — Ticket System 🔮
 - [ ] Floating feedback button (accessible from all `/app/*` pages)
@@ -247,7 +261,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Auto-captured context: selected env, current module/lesson, last command
 - [ ] Status workflow: open → in_review → resolved / closed / wont_fix
 - [ ] Users can track their own tickets at `/app/my-tickets`
-- [ ] DB: `tickets` table with priority, assignment, context (jsonb)
+- [ ] DB: `tickets` table — see canonical schema in Phase 7
 
 ## Phase 9 — Admin Panel 🔮
 > After Phase 7 (RBAC) + meaningful traffic signal. Inspired by Grafana, Sentry, Linear.
