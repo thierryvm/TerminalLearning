@@ -932,7 +932,7 @@ describe('curl', () => {
   it('returns JSON output for a GET request', () => {
     const result = processCommand(makeState(), 'curl https://api.github.com', 'linux');
     const text = result.lines.map((l) => l.text).join('\n');
-    expect(text).toContain('api.github.com');
+    expect(text).toContain('status');
   });
 
   it('returns HTTP headers with -I flag', () => {
@@ -984,6 +984,32 @@ describe('wget', () => {
   it('works on windows env', () => {
     const result = processCommand(makeState(), 'wget https://example.com/file.zip', 'windows');
     expect(result.lines.length).toBeGreaterThan(0);
+  });
+});
+
+describe('invoke-webrequest / iwr', () => {
+  it('returns StatusCode 200 for a basic request', () => {
+    const result = processCommand(makeState(), 'Invoke-WebRequest -Uri https://example.com', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('200');
+  });
+
+  it('saves to file when -OutFile is specified', () => {
+    const result = processCommand(makeState(), 'Invoke-WebRequest -Uri https://example.com/file.zip -OutFile file.zip', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('file.zip');
+    expect(result.lines[result.lines.length - 1].type).toBe('success');
+  });
+
+  it('iwr alias works identically', () => {
+    const result = processCommand(makeState(), 'iwr https://example.com', 'windows');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('200');
+  });
+
+  it('returns error when no URL provided', () => {
+    const result = processCommand(makeState(), 'Invoke-WebRequest', 'windows');
+    expect(result.lines[0].type).toBe('error');
   });
 });
 

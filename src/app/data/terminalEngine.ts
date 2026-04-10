@@ -1906,20 +1906,21 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     case 'curl': {
       const url = args.find((a) => !a.startsWith('-')) ?? '';
       if (!url) return { lines: [{ text: 'Usage: curl [options] <url>', type: 'error' }], newState };
+      const urlHost = url.replace(/^https?:\/\//, '').split('/')[0] ?? 'server';
       if (args[0] === '-I' || args[0] === '--head') {
         return {
           lines: [
             { text: 'HTTP/2 200', type: 'success' },
             { text: 'content-type: application/json; charset=utf-8', type: 'output' },
-            { text: 'server: github.com', type: 'output' },
-            { text: 'x-ratelimit-limit: 60', type: 'output' },
+            { text: `server: ${urlHost}`, type: 'output' },
+            { text: 'x-content-type-options: nosniff', type: 'output' },
           ],
           newState,
         };
       }
       return {
         lines: [
-          { text: '{"current_user_url":"https://api.github.com/user","rate_limit_url":"https://api.github.com/rate_limit"}', type: 'output' },
+          { text: `{"url":"${url}","status":"ok"}`, type: 'output' },
         ],
         newState,
       };
@@ -1928,13 +1929,37 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     case 'wget': {
       const url = args.find((a) => !a.startsWith('-')) ?? '';
       if (!url) return { lines: [{ text: 'Usage: wget <url>', type: 'error' }], newState };
-      const filename = url.split('/').pop() ?? 'index.html';
+      const filename = url.split('/').pop() || 'index.html';
       return {
         lines: [
           { text: `Connecting to ${url.split('/')[2] ?? 'host'}... connected.`, type: 'output' },
           { text: 'HTTP request sent, awaiting response... 200 OK', type: 'success' },
           { text: `Saving to: '${filename}'`, type: 'output' },
           { text: `'${filename}' saved [1024]`, type: 'success' },
+        ],
+        newState,
+      };
+    }
+
+    case 'invoke-webrequest':
+    case 'iwr': {
+      const url = args.find((a) => !a.startsWith('-')) ?? '';
+      if (!url) return { lines: [{ text: 'Usage: Invoke-WebRequest -Uri <url>', type: 'error' }], newState };
+      const outFile = (() => { const i = args.indexOf('-OutFile'); return i >= 0 ? args[i + 1] : null; })();
+      if (outFile) {
+        return {
+          lines: [
+            { text: `Downloading ${url}...`, type: 'output' },
+            { text: `Content saved to '${outFile}'`, type: 'success' },
+          ],
+          newState,
+        };
+      }
+      return {
+        lines: [
+          { text: 'StatusCode        : 200', type: 'output' },
+          { text: 'StatusDescription : OK', type: 'output' },
+          { text: `Content           : {"url":"${url}","status":"ok"}`, type: 'output' },
         ],
         newState,
       };
@@ -1989,7 +2014,7 @@ export function processCommand(state: TerminalState, input: string, env: Termina
       return {
         lines: [
           { text: `ssh: connexion simulée vers ${target}`, type: 'info' },
-          { text: '(Dans un vrai terminal, vous sériez connecté à l\'hôte distant)', type: 'info' },
+          { text: '(Dans un vrai terminal, vous seriez connecté à l\'hôte distant)', type: 'info' },
         ],
         newState,
       };
@@ -2004,7 +2029,7 @@ export function processCommand(state: TerminalState, input: string, env: Termina
           { text: `Enter file in which to save the key (/home/user/.ssh/id_${keyType}): (simulé)`, type: 'output' },
           { text: `Your identification has been saved in /home/user/.ssh/id_${keyType}`, type: 'success' },
           { text: `Your public key has been saved in /home/user/.ssh/id_${keyType}.pub`, type: 'success' },
-          { text: '+--[ED25519 256]--+', type: 'output' },
+          { text: `+--[${keyType.toUpperCase()}]--+`, type: 'output' },
           { text: '|     .o+.        |', type: 'output' },
           { text: '+----[SHA256]-----+', type: 'output' },
         ],
