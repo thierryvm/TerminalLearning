@@ -64,7 +64,11 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Issue In Review + PR mergée → **Done**
 
 ### Règles merge
-- CI verte + Sourcery vérifié (`gh pr view N --comments`) avant de proposer un merge
+- CI verte **ET** Sourcery vérifié avant de proposer un merge — **dans cet ordre, sans exception**
+  ```bash
+  gh pr view N --comments 2>&1 | grep -A 15 -i "sourcery\|issue\|suggestion\|bug"
+  ```
+  Si Sourcery a commenté → corriger dans un commit fixup → repousser → ALORS proposer le merge
 - **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
 - Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
 
