@@ -20,7 +20,7 @@
 ## Callback OAuth échoue (/auth/callback)
 
 - Vérifier que l'URL de redirection est dans la liste Supabase Auth → URL Configuration
-- URLs autorisées : `https://terminal-learning.vercel.app/auth/callback` + `http://localhost:5173/auth/callback`
+- URLs autorisées : `https://terminallearning.dev/auth/callback` + `http://localhost:5173/auth/callback`
 - En cas de nouvelle URL Vercel (preview deployments) : ajouter le domaine Vercel preview
 
 ## Reset de mot de passe ne fonctionne pas

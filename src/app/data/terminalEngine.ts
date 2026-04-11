@@ -1638,7 +1638,7 @@ export function processCommand(state: TerminalState, input: string, env: Termina
           { text: '║  Licence   : MIT                                 ║', type: 'info' },
           { text: '║  Auteur    : Thierry Vanmeeteren                 ║', type: 'info' },
           { text: '║  GitHub    : github.com/thierryvm/TerminalLearning ║', type: 'info' },
-          { text: '║  Live      : terminal-learning.vercel.app        ║', type: 'info' },
+          { text: '║  Live      : terminallearning.dev        ║', type: 'info' },
           { text: '║                                                  ║', type: 'info' },
           { text: '║  Stack     : React 18 · Vite 6 · Tailwind 4     ║', type: 'info' },
           { text: '╚══════════════════════════════════════════════════╝', type: 'info' },
