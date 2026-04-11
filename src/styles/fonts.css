@@ -1,1 +1,6 @@
-/* Fonts are loaded via <link> in index.html to avoid render-blocking @import */
+/* Self-hosted fonts via fontsource — no external CDN dependency */
+@import '@fontsource-variable/inter';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/400-italic.css';
