@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 10 April 2026 — v2 pedagogical vision added
+> Last updated: 11 April 2026 — Phase 5 modules 8/9/10 done, 10 modules / 52 lessons / 579 tests
 
 ---
 
@@ -52,43 +52,31 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] 192 unit tests
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
-Full-stack developer path — 11 modules total (7 active, 4 planned) — 32 lessons:
+Full-stack developer path — 10 modules ✅ (52 lessons, 579 unit tests) + Module 11 in progress
 
-### Existing modules (6) — enriched ✅ (PR #37) + Module 7 ✅ (PR #36)
-- [x] Permissions: `chown`, `chgrp`, `sudo`, security / principle of least privilege
-- [x] Processes: `top`/`htop`, `bg`/`fg`/`jobs`, background job management
-- [x] Redirection: `stderr` (`2>`, `2>&1`), `/dev/null`, `tee`/`Tee-Object`
-- [x] CommandReference: fully env-aware (Linux/macOS/Windows filters, per-env syntax + examples)
-- [x] LessonPage: env-aware content blocks (`contentByEnv`, `labelByEnv`), `PS>` prompt rendering
-- [x] 32 lessons total across 7 modules (up from 19)
+### Modules 1–7 ✅ (Phases 1–4)
+- [x] Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes (Modules 1–6)
+- [x] Variables & Scripts (Module 7) — `export`, `$PATH`, `.env`, bash scripts, cron — PR #36
+- [x] Multi-environment: Linux / macOS / Windows — env-aware exercises + terminal profiles
+- [x] 579 unit tests (12 test files) + 176 E2E tests (Playwright — 3 suites)
 
-### Module 7 — Variables & Scripts ✅ (PR #36 — merged into modules above)
-- [x] Environment variables: `export`, `$PATH`, `$env:VAR`, variable interpolation
-- [x] PATH variable: read, extend, persist across sessions
-- [x] Shell config: `.bashrc`, `.zshrc`, `$PROFILE` (PowerShell)
-- [x] `.env` files: dotenv format, `source`/`.` command, security practices
-- [x] Bash scripts: shebang, `chmod +x`, executing scripts
-- [x] Cron & task scheduling: `crontab -e`, `crontab -l`, Windows Task Scheduler
-- [x] 242 unit tests + 176 E2E tests (Playwright)
+### Module 8 — Réseau & SSH ✅ THI-27 (PR #XX)
+- [x] `ping`, `traceroute`/`tracert`, `nslookup`, `dig`
+- [x] `curl` (HTTP requests, headers, REST APIs), `wget`
+- [x] SSH: key generation (`ssh-keygen`), `ssh`, `scp`, `rsync`
+- [x] Per-environment: `ip`/`ifconfig`/`ipconfig`, `netstat`/`ss`
 
-### Module 8 — Network & SSH 🔜 THI-27
-- [ ] `ping`, `traceroute`/`tracert`, `nslookup`, `dig`
-- [ ] `curl` (HTTP requests, headers, REST APIs), `wget`
-- [ ] SSH: key generation (`ssh-keygen`), `ssh`, `scp`, `rsync`
-- [ ] Firewall basics: `ufw`, `iptables`, Windows Defender Firewall
-- [ ] Per-environment: `ip`/`ifconfig`/`ipconfig`, `netstat`/`ss`
+### Module 9 — Git Fondamentaux ✅ THI-28 (PR #72)
+- [x] `init`, `add`, `commit`, `log`, `diff`, `status`
+- [x] `.gitignore`, branches (`branch`, `checkout`, `merge`)
+- [x] Conflict resolution, stash, tags
 
-### Module 9 — Git Fundamentals 🔜 THI-28
-- [ ] `init`, `add`, `commit`, `log`, `diff`, `status`
-- [ ] `.gitignore`, branches (`branch`, `checkout`, `merge`)
-- [ ] Conflict resolution, stash
+### Module 10 — GitHub & Collaboration ✅ THI-28 (PR #72, combined with Module 9)
+- [x] Remotes, push/pull, PRs, Issues, forks
+- [x] GitHub Actions CI basics
+- [x] Linear workflow integration
 
-### Module 10 — GitHub & Collaboration 🔜 THI-28 *(combined with Module 9)*
-- [ ] Remotes, push/pull, PRs, Issues, forks
-- [ ] GitHub Actions CI basics
-- [ ] Linear workflow integration
-
-### Module 11 — AI as a Dev Tool 🔜 THI-29
+### Module 11 — L'IA comme outil dev 🔄 THI-29 (next)
 - [ ] Contextual prompting, validating AI output
 - [ ] Claude Code CLI, known limits and risks
 - [ ] AI-assisted debugging and code review

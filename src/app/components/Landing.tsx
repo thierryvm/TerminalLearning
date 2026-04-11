@@ -67,19 +67,21 @@ const FEATURES = [
 ];
 
 const ROADMAP_AVAILABLE = [
-  '6 modules progressifs (navigation → redirection)',
+  '10 modules progressifs (navigation → GitHub)',
   'Terminal interactif avec validation',
   'Dashboard de progression',
   'Sauvegarde locale + cloud (optionnel)',
   `Référence enrichie (${TOTAL_COMMANDS}+ commandes)`,
   'Parcours guidé par niveaux',
+  'Sélection d\'environnement Linux / macOS / Windows',
+  'Adaptation des commandes par OS',
 ];
 
 const ROADMAP_IN_PROGRESS = [
   "Plus d'exercices pratiques",
-  'Sélection d\'environnement Linux / macOS / Windows ⚡',
-  'Adaptation des commandes par OS',
   'Quiz par section',
+  'Agent IA tuteur (BYOK)',
+  'Terminal Sentinel — audit sécurité automatisé',
 ];
 
 const ROADMAP_PLANNED = [
@@ -87,7 +89,7 @@ const ROADMAP_PLANNED = [
   'Multilingue (EN / NL)',
   'Badges et défis',
   'Révisions intelligentes',
-  'Parcours avancés (Git, Docker, SSH)',
+  'Parcours avancés (Docker, scripting, IA)',
 ];
 
 const SUPPORTERS: string[] = [
@@ -512,7 +514,7 @@ export function Landing() {
           </div>
 
           <p className="mt-8 text-center text-[#8b949e] text-sm">
-            6 modules inclus — aucun compte requis.
+            10 modules inclus — aucun compte requis.
           </p>
         </motion.div>
       </section>
