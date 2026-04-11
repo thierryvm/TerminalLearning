@@ -27,6 +27,58 @@ function makeState(overrides: Partial<TerminalState> = {}): TerminalState {
   };
 }
 
+// Pre-populated filesystem for filesystem-command tests
+function makeStateWithFS(): TerminalState {
+  return makeState({
+    cwd: ['home', 'user'],
+    root: {
+      type: 'directory',
+      children: {
+        home: {
+          type: 'directory',
+          children: {
+            user: {
+              type: 'directory',
+              children: {
+                'test.txt': {
+                  type: 'file',
+                  content: 'ligne1\nligne2\nligne3\nligne4\nligne5',
+                  permissions: '-rw-r--r--',
+                  owner: 'user',
+                  group: 'user',
+                } as never,
+                '.hidden': {
+                  type: 'file',
+                  content: 'secret',
+                  permissions: '-rw-------',
+                  owner: 'user',
+                  group: 'user',
+                } as never,
+                docs: {
+                  type: 'directory',
+                  children: {},
+                  permissions: 'drwxr-xr-x',
+                  owner: 'user',
+                  group: 'user',
+                },
+              },
+              permissions: 'drwxr-xr-x',
+              owner: 'user',
+              group: 'user',
+            },
+          },
+          permissions: 'drwxr-xr-x',
+          owner: 'user',
+          group: 'user',
+        },
+      },
+      permissions: 'drwxr-xr-x',
+      owner: 'user',
+      group: 'user',
+    },
+  });
+}
+
 // ─── about ────────────────────────────────────────────────────────────────────
 
 describe('about', () => {
@@ -1137,5 +1189,453 @@ describe('scp', () => {
   it('works on windows env', () => {
     const result = processCommand(makeState(), 'scp file.txt user@host:/tmp/', 'windows');
     expect(result.lines[0].type).toBe('success');
+  });
+});
+
+// ─── ls ───────────────────────────────────────────────────────────────────────
+
+describe('ls', () => {
+  it('returns single empty line on empty directory', () => {
+    const result = processCommand(makeState(), 'ls');
+    expect(result.lines).toHaveLength(1);
+    expect(result.lines[0].text).toBe('');
+  });
+
+  it('lists files and directories', () => {
+    const result = processCommand(makeStateWithFS(), 'ls');
+    const text = result.lines[0].text;
+    expect(text).toContain('docs/');
+    expect(text).toContain('test.txt');
+  });
+
+  it('-a flag shows hidden files', () => {
+    const result = processCommand(makeStateWithFS(), 'ls -a');
+    const text = result.lines[0].text;
+    expect(text).toContain('.hidden');
+    expect(text).toContain('.');
+  });
+
+  it('-l flag shows long format with total line', () => {
+    const result = processCommand(makeStateWithFS(), 'ls -l');
+    expect(result.lines.length).toBeGreaterThan(1);
+    expect(result.lines[0].text).toMatch(/^total/);
+  });
+
+  it('returns error for non-existent path', () => {
+    const result = processCommand(makeState(), 'ls /nonexistent');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── cd ───────────────────────────────────────────────────────────────────────
+
+describe('cd', () => {
+  it('changes cwd to existing directory', () => {
+    const result = processCommand(makeStateWithFS(), 'cd docs');
+    expect(result.newState.cwd).toEqual(['home', 'user', 'docs']);
+    expect(result.lines).toHaveLength(0);
+  });
+
+  it('cd with no args goes to home', () => {
+    const result = processCommand(makeStateWithFS(), 'cd');
+    expect(result.newState.cwd).toEqual(['home', 'user']);
+  });
+
+  it('cd ~ goes to home', () => {
+    const result = processCommand(makeStateWithFS(), 'cd ~');
+    expect(result.newState.cwd).toEqual(['home', 'user']);
+  });
+
+  it('returns error for non-existent directory', () => {
+    const result = processCommand(makeStateWithFS(), 'cd /nonexistent');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+
+  it('returns error when target is a file', () => {
+    const result = processCommand(makeStateWithFS(), 'cd test.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('Not a directory');
+  });
+});
+
+// ─── mkdir ────────────────────────────────────────────────────────────────────
+
+describe('mkdir', () => {
+  it('creates a new directory', () => {
+    const result = processCommand(makeStateWithFS(), 'mkdir newdir');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'mkdir');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing operand');
+  });
+
+  it('returns error when directory already exists', () => {
+    const result = processCommand(makeStateWithFS(), 'mkdir docs');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('File exists');
+  });
+
+  it('-p creates parent directories', () => {
+    const result = processCommand(makeStateWithFS(), 'mkdir -p a/b/c');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+});
+
+// ─── touch ────────────────────────────────────────────────────────────────────
+
+describe('touch', () => {
+  it('creates a new file', () => {
+    const result = processCommand(makeStateWithFS(), 'touch newfile.txt');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'touch');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing file operand');
+  });
+
+  it('is idempotent on existing file (no error)', () => {
+    const result = processCommand(makeStateWithFS(), 'touch test.txt');
+    expect(result.lines).toHaveLength(0);
+  });
+
+  it('returns error for non-existent parent directory', () => {
+    const result = processCommand(makeStateWithFS(), 'touch /nodir/file.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── cat ──────────────────────────────────────────────────────────────────────
+
+describe('cat', () => {
+  it('displays file content', () => {
+    const result = processCommand(makeStateWithFS(), 'cat test.txt');
+    const texts = result.lines.map((l) => l.text);
+    expect(texts).toContain('ligne1');
+    expect(texts).toContain('ligne5');
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'cat');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing file operand');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'cat nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+
+  it('returns error when target is a directory', () => {
+    const result = processCommand(makeStateWithFS(), 'cat docs');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('Is a directory');
+  });
+});
+
+// ─── rm ───────────────────────────────────────────────────────────────────────
+
+describe('rm', () => {
+  it('removes a file', () => {
+    const result = processCommand(makeStateWithFS(), 'rm test.txt');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'rm');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing operand');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'rm nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+
+  it('returns error for directory without -r', () => {
+    const result = processCommand(makeStateWithFS(), 'rm docs');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('Is a directory');
+  });
+
+  it('-r removes a directory', () => {
+    const result = processCommand(makeStateWithFS(), 'rm -r docs');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+});
+
+// ─── cp ───────────────────────────────────────────────────────────────────────
+
+describe('cp', () => {
+  it('copies a file to a new destination', () => {
+    const result = processCommand(makeStateWithFS(), 'cp test.txt copy.txt');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+
+  it('returns error when destination is missing', () => {
+    const result = processCommand(makeStateWithFS(), 'cp test.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing destination');
+  });
+
+  it('returns error for non-existent source', () => {
+    const result = processCommand(makeStateWithFS(), 'cp nope.txt dst.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+
+  it('returns error for directory source without -r', () => {
+    const result = processCommand(makeStateWithFS(), 'cp docs docs2');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('-r not specified');
+  });
+
+  it('-r copies a directory', () => {
+    const result = processCommand(makeStateWithFS(), 'cp -r docs docs2');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+});
+
+// ─── mv ───────────────────────────────────────────────────────────────────────
+
+describe('mv', () => {
+  it('moves (renames) a file', () => {
+    const result = processCommand(makeStateWithFS(), 'mv test.txt renamed.txt');
+    expect(result.lines).toHaveLength(0);
+    expect(result.newState.root).toBeDefined();
+  });
+
+  it('returns error when destination is missing', () => {
+    const result = processCommand(makeStateWithFS(), 'mv test.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing destination');
+  });
+
+  it('returns error for non-existent source', () => {
+    const result = processCommand(makeStateWithFS(), 'mv nope.txt dst.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── grep ─────────────────────────────────────────────────────────────────────
+
+describe('grep', () => {
+  it('returns matching lines', () => {
+    const result = processCommand(makeStateWithFS(), 'grep ligne1 test.txt');
+    expect(result.lines).toHaveLength(1);
+    expect(result.lines[0].text).toContain('ligne1');
+  });
+
+  it('returns empty when no match', () => {
+    const result = processCommand(makeStateWithFS(), 'grep zzz test.txt');
+    expect(result.lines).toHaveLength(0);
+  });
+
+  it('-n flag shows line numbers', () => {
+    const result = processCommand(makeStateWithFS(), 'grep -n ligne test.txt');
+    expect(result.lines[0].text).toMatch(/^\d+:/);
+  });
+
+  it('-i flag is case-insensitive', () => {
+    const result = processCommand(makeStateWithFS(), 'grep -i LIGNE1 test.txt');
+    expect(result.lines).toHaveLength(1);
+    expect(result.lines[0].text).toContain('ligne1');
+  });
+
+  it('returns error when pattern or file is missing', () => {
+    const result = processCommand(makeStateWithFS(), 'grep pattern');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'grep foo nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+
+  it('returns error when target is a directory', () => {
+    const result = processCommand(makeStateWithFS(), 'grep foo docs');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('Is a directory');
+  });
+});
+
+// ─── head ─────────────────────────────────────────────────────────────────────
+
+describe('head', () => {
+  it('returns first 10 lines by default', () => {
+    const result = processCommand(makeStateWithFS(), 'head test.txt');
+    // test.txt has 5 lines — all returned
+    expect(result.lines).toHaveLength(5);
+    expect(result.lines[0].text).toBe('ligne1');
+  });
+
+  it('-n limits the number of lines', () => {
+    const result = processCommand(makeStateWithFS(), 'head -n 2 test.txt');
+    expect(result.lines).toHaveLength(2);
+    expect(result.lines[1].text).toBe('ligne2');
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'head');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing file operand');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'head nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── tail ─────────────────────────────────────────────────────────────────────
+
+describe('tail', () => {
+  it('returns last 10 lines by default', () => {
+    const result = processCommand(makeStateWithFS(), 'tail test.txt');
+    expect(result.lines).toHaveLength(5);
+    expect(result.lines[4].text).toBe('ligne5');
+  });
+
+  it('-n limits the number of lines from the end', () => {
+    const result = processCommand(makeStateWithFS(), 'tail -n 2 test.txt');
+    expect(result.lines).toHaveLength(2);
+    expect(result.lines[0].text).toBe('ligne4');
+    expect(result.lines[1].text).toBe('ligne5');
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'tail');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing file operand');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'tail nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── wc ───────────────────────────────────────────────────────────────────────
+
+describe('wc', () => {
+  it('shows lines, words and chars by default', () => {
+    const result = processCommand(makeStateWithFS(), 'wc test.txt');
+    expect(result.lines[0].text).toContain('test.txt');
+    // Should have at least 3 numbers
+    expect(result.lines[0].text).toMatch(/\d+.*\d+.*\d+/);
+  });
+
+  it('-l shows only line count', () => {
+    const result = processCommand(makeStateWithFS(), 'wc -l test.txt');
+    expect(result.lines[0].text).toContain('5');
+    expect(result.lines[0].text).toContain('test.txt');
+  });
+
+  it('-w shows only word count', () => {
+    const result = processCommand(makeStateWithFS(), 'wc -w test.txt');
+    expect(result.lines[0].text).toContain('test.txt');
+  });
+
+  it('-c shows only char count', () => {
+    const result = processCommand(makeStateWithFS(), 'wc -c test.txt');
+    expect(result.lines[0].text).toContain('test.txt');
+  });
+
+  it('returns error when no operand given', () => {
+    const result = processCommand(makeState(), 'wc');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing file operand');
+  });
+});
+
+// ─── chmod ────────────────────────────────────────────────────────────────────
+
+describe('chmod', () => {
+  it('chmod 755 changes permissions', () => {
+    const result = processCommand(makeStateWithFS(), 'chmod 755 test.txt');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('test.txt');
+  });
+
+  it('chmod +x adds execute bit', () => {
+    const result = processCommand(makeStateWithFS(), 'chmod +x test.txt');
+    expect(result.lines[0].type).toBe('success');
+  });
+
+  it('returns error when fewer than 2 operands', () => {
+    const result = processCommand(makeState(), 'chmod 755');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('missing operand');
+  });
+
+  it('returns error for non-existent file', () => {
+    const result = processCommand(makeStateWithFS(), 'chmod 644 nope.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('No such file or directory');
+  });
+});
+
+// ─── ps ───────────────────────────────────────────────────────────────────────
+
+describe('ps', () => {
+  it('shows process list with PID header', () => {
+    const result = processCommand(makeState(), 'ps');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('PID');
+    expect(text).toContain('bash');
+  });
+
+  it('ps aux shows extended format with USER column', () => {
+    const result = processCommand(makeState(), 'ps aux');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(text).toContain('USER');
+    expect(text).toContain('root');
+  });
+
+  it('all lines have output type', () => {
+    const result = processCommand(makeState(), 'ps');
+    expect(result.lines.every((l) => l.type === 'output')).toBe(true);
+  });
+});
+
+// ─── kill ─────────────────────────────────────────────────────────────────────
+
+describe('kill', () => {
+  it('sends signal to process by PID', () => {
+    const result = processCommand(makeState(), 'kill 1234');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('1234');
+  });
+
+  it('returns error when no PID given', () => {
+    const result = processCommand(makeState(), 'kill');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('usage');
+  });
+
+  it('kill -9 PID sends signal to process', () => {
+    const result = processCommand(makeState(), 'kill -9 5678');
+    expect(result.lines[0].type).toBe('success');
+    expect(result.lines[0].text).toContain('5678');
   });
 });
