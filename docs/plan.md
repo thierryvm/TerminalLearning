@@ -16,6 +16,7 @@
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
 | THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
 | THI-45 | agents | Content Auditor V1 — audit pédagogique A→Z (`.claude/agents/content-auditor.md`) |
+| THI-53 | security | Security Auditor Agent — audit black hat OWASP/CSP/RLS/2026 (`.claude/agents/security-auditor.md`) 🔄 In Progress |
 | THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |

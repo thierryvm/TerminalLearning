@@ -57,6 +57,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`curriculum-validator`** — valide structure de `curriculum.ts` avant toute modification
 - **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
 - **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne de prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
+- **`security-auditor`** — audit cybersécurité black hat : OWASP Top 10 (2021), OWASP API Sec (2023), CSP L3, rate limiting, RLS, auth flow, supply chain, RGPD, vecteurs 2026. Lancer avant chaque release majeure, après mise à jour de dépendances, ou à la demande. (THI-53)
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
