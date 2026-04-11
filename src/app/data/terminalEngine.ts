@@ -257,8 +257,39 @@ export function getTabCompletions(input: string, state: TerminalState): string[]
   });
 }
 
+/** Maximum number of filesystem nodes allowed in a single clone operation. */
+const MAX_FS_NODES = 10_000;
+
+/**
+ * Recursively clones a filesystem node (file or directory).
+ * Throws if the node count exceeds MAX_FS_NODES, guarding against CPU spikes
+ * from pathologically large simulated filesystems.
+ */
+function cloneFSNode(node: FSNode, counter: { n: number }): FSNode {
+  if (++counter.n > MAX_FS_NODES) {
+    throw new Error('Filesystem too large to clone safely');
+  }
+  if (node.type === 'file') {
+    return { ...node };
+  }
+  return {
+    type: 'directory',
+    permissions: node.permissions,
+    owner: node.owner,
+    group: node.group,
+    children: Object.fromEntries(
+      Object.entries(node.children).map(([k, v]) => [k, cloneFSNode(v, counter)])
+    ),
+  };
+}
+
+/**
+ * Deep-clones the virtual filesystem root.
+ * Includes a node-count guard to prevent CPU spikes from pathologically large
+ * simulated filesystems (defensive measure — the curriculum FS is always small).
+ */
 function deepCloneRoot(root: DirectoryNode): DirectoryNode {
-  return JSON.parse(JSON.stringify(root));
+  return cloneFSNode(root, { n: 0 }) as DirectoryNode;
 }
 
 // ─── Argument Parser ──────────────────────────────────────────────────────────
@@ -503,7 +534,7 @@ function cmdCp(state: TerminalState, args: string[]): { lines: OutputLine[]; new
     return { lines: [{ text: `cp: cannot create file '${dst}': No such file or directory`, type: 'error' }] };
   }
 
-  dstParent.children[dstName] = JSON.parse(JSON.stringify(srcNode));
+  dstParent.children[dstName] = cloneFSNode(srcNode, { n: 0 });
   return { lines: [], newRoot };
 }
 

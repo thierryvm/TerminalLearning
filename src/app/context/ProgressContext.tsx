@@ -33,6 +33,9 @@ interface ProgressContextValue {
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
+// localStorage stores only lesson IDs (strings) and completion flags (0/1).
+// No credentials, scores, or PII — intentionally unencrypted for simplicity
+// and offline performance. See /privacy for user-facing disclosure.
 const STORAGE_KEY = 'terminal-master-progress';
 
 function loadProgress(): ProgressState {
