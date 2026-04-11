@@ -2493,7 +2493,7 @@ export const curriculum: Module[] = [
     id: 'github-collaboration',
     title: 'GitHub & Collaboration',
     description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise',
-    iconName: 'Github',
+    iconName: 'GitFork',
     color: '#8b5cf6',
     level: 4,
     prerequisites: ['git', 'reseau'],

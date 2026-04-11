@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen, Compass, FolderOpen,
-  FileText, Shield, Cpu, GitMerge, ChevronDown, ChevronRight,
-  CheckCircle2, Circle, X, Menu, Home, Lock,
+  FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -11,7 +11,7 @@ import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
+  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
 };
 
 interface SidebarProps {
