@@ -59,6 +59,65 @@ export const curriculum: Module[] = [
     unlocks: ['fichiers', 'lecture', 'search'],
     lessons: [
       {
+        id: 'orientation',
+        title: "Comment demander de l'aide",
+        description: "Apprenez à vous repérer dans n'importe quel terminal inconnu",
+        blocks: [
+          {
+            type: 'text',
+            content:
+              "La première compétence du terminal n'est pas de mémoriser des commandes — c'est de savoir **comment trouver de l'aide** quand on est bloqué. Cette leçon te donne les outils pour te débrouiller seul dans n'importe quel environnement.",
+          },
+          {
+            type: 'tip',
+            content:
+              'Dans ce simulateur, tape `help` à tout moment pour voir la liste des commandes disponibles. Tape `help <commande>` pour obtenir les détails d\'une commande spécifique.',
+          },
+          {
+            type: 'code',
+            content: '$ help\nCommandes disponibles — Linux / bash:\n  pwd   ls   cd   mkdir ...\n\n$ help ls\nLS — ls [-la] [chemin]\nListe le contenu d\'un répertoire.',
+            label: 'Dans ce simulateur',
+            labelByEnv: {
+              windows: 'Dans ce simulateur (PowerShell)',
+              macos: 'Dans ce simulateur (zsh)',
+            },
+            contentByEnv: {
+              windows:
+                'PS> help\nCommandes disponibles — PowerShell / Windows:\n  Get-Location   Set-Location   Get-ChildItem ...\n\nPS> help Get-ChildItem\nLS — ls [-la] [chemin]\nListe le contenu d\'un répertoire.',
+              macos:
+                '% help\nCommandes disponibles — macOS / zsh:\n  pwd   ls   cd   mkdir ...\n\n% help ls\nLS — ls [-la] [chemin]\nListe le contenu d\'un répertoire.',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              'Dans un **vrai terminal Linux/macOS**, les outils d\'aide natifs sont :\n- `man <commande>` — manuel complet (q pour quitter)\n- `<commande> --help` — aide rapide\n- `whatis <commande>` — description en une ligne\n- `apropos <mot-clé>` — trouver une commande par description',
+            contentByEnv: {
+              windows:
+                'Dans un **vrai PowerShell**, les outils d\'aide natifs sont :\n- `Get-Help <commande>` — aide complète\n- `<commande> -?` — aide rapide\n- `Get-Command` — lister toutes les commandes disponibles\n- `Get-Member` — explorer les propriétés d\'un objet',
+            },
+          },
+          {
+            type: 'warning',
+            content:
+              "Mémoriser toutes les commandes n'est **pas** l'objectif. Les pros du terminal utilisent `man` et `--help` en permanence. L'important est de savoir où chercher.",
+          },
+        ],
+        exercise: {
+          instruction: 'Tape `help` pour afficher la liste des commandes disponibles dans ce simulateur.',
+          instructionByEnv: {
+            windows: 'Tape `help` pour afficher la liste des commandes disponibles en PowerShell.',
+          },
+          hint: 'Tape simplement "help" et appuie sur Entrée',
+          hintByEnv: {
+            windows: 'Tape simplement "help" et appuie sur Entrée',
+          },
+          validate: (cmd) => cmd.trim().toLowerCase() === 'help',
+          successMessage:
+            "Parfait ! Tu sais maintenant comment explorer un terminal inconnu. Cette commande sera ton meilleur allié tout au long de la formation.",
+        },
+      },
+      {
         id: 'pwd',
         title: 'pwd — Où suis-je ?',
         description: 'Affichez votre position exacte dans le système de fichiers',

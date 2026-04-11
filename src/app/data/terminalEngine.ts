@@ -1225,7 +1225,14 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   history                     Historique des commandes
   winget install|list         Gestionnaire de paquets
   help [commande]             Aide sur une commande
-  about                       Informations sur le projet`;
+  about                       Informations sur le projet
+
+─────────────────────────────────────────────────────────────
+💡 Dans un vrai PowerShell, cherche de l'aide avec :
+  Get-Help <commande>   # aide complète (ex: Get-Help Get-ChildItem)
+  <commande> -?         # aide rapide
+  Get-Command           # lister toutes les commandes disponibles
+  Get-Member            # explorer les propriétés et méthodes d'un objet`;
   }
   if (env === 'macos') {
     return `Commandes disponibles — macOS / zsh:
@@ -1260,7 +1267,14 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   history          Historique des commandes
   clear            Effacer le terminal
   help [commande]  Aide sur une commande
-  about            Informations sur le projet`;
+  about            Informations sur le projet
+
+─────────────────────────────────────────────────────────────
+💡 Dans un vrai terminal macOS, cherche de l'aide avec :
+  man <commande>       # manuel complet (q pour quitter)
+  <commande> --help    # aide rapide
+  whatis <commande>    # description en une ligne
+  apropos <mot-clé>    # trouver une commande par description`;
   }
   // linux (default)
   return `Commandes disponibles — Linux / bash:
@@ -1298,7 +1312,14 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
   help [commande]  Aide sur une commande
   about            Informations sur le projet
   donate / support Soutenir le projet
-  hall-of-fame     Liste des contributeurs`;
+  hall-of-fame     Liste des contributeurs
+
+─────────────────────────────────────────────────────────────
+💡 Dans un vrai terminal Linux, cherche de l'aide avec :
+  man <commande>       # manuel complet (q pour quitter)
+  <commande> --help    # aide rapide
+  whatis <commande>    # description en une ligne
+  apropos <mot-clé>    # trouver une commande par description`;
 }
 
 function getCmdHelp(cmdName: string, env: TerminalEnv = 'linux'): OutputLine[] | null {
