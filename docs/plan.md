@@ -16,7 +16,10 @@
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
 | THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
 | THI-45 | agents | Content Auditor V1 — audit pédagogique A→Z (`.claude/agents/content-auditor.md`) |
-| THI-53 | security | Security Auditor Agent — audit black hat OWASP/CSP/RLS/2026 (`.claude/agents/security-auditor.md`) 🔄 In Progress |
+| THI-53 | security | Security Auditor Agent — audit black hat OWASP/CSP/RLS/2026 (`.claude/agents/security-auditor.md`) ✅ Done |
+| THI-54 | security | vercel.json — CORP header `Cross-Origin-Resource-Policy: same-origin` + CSP Supabase exact FQDN (PR #66) 🔄 In Review |
+| THI-55 | security | Vite bump 6.4.2 — fix CVEs GHSA-4w7w + GHSA-p9ff, remove pnpm.overrides pin (PR #67) 🔄 In Review |
+| THI-56 | security | ReDoS fix — `buildGrepRegex()` avec length check + try/catch dans `terminalEngine.ts` (PR #68) 🔄 In Review |
 | THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |
