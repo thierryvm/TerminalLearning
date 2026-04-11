@@ -110,7 +110,7 @@
     "pngjs": "^7.0.0",
     "tailwindcss": "4.1.12",
     "typescript": "^6.0.2",
-    "vite": "^6.4.1",
+    "vite": "^6.4.2",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {
@@ -123,11 +123,6 @@
     },
     "react-dom": {
       "optional": true
-    }
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "6.3.5"
     }
   }
 }
