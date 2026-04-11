@@ -420,6 +420,68 @@ describe('help — no args, env-specific command list', () => {
   });
 });
 
+// ─── help — Tip section (THI-39: "apprendre à apprendre") ────────────────────
+
+describe('help — Tip section per environment', () => {
+  it('linux: tip mentions man and --help', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('man <commande>');
+    expect(text).toContain('--help');
+  });
+
+  it('linux: tip mentions whatis and apropos', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'linux').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('whatis');
+    expect(text).toContain('apropos');
+  });
+
+  it('macos: tip mentions man and --help', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'macos').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('man <commande>');
+    expect(text).toContain('--help');
+  });
+
+  it('macos: tip mentions whatis and apropos', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'macos').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('whatis');
+    expect(text).toContain('apropos');
+  });
+
+  it('windows: tip mentions Get-Help and -?', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'windows').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('Get-Help');
+    expect(text).toContain('-?');
+  });
+
+  it('windows: tip mentions Get-Command and Get-Member', () => {
+    const state = makeState();
+    const text = processCommand(state, 'help', 'windows').lines.map((l) => l.text).join('\n');
+    expect(text).toContain('Get-Command');
+    expect(text).toContain('Get-Member');
+  });
+
+  it('linux and windows tips are different', () => {
+    const state = makeState();
+    const linuxText = processCommand(state, 'help', 'linux').lines.map((l) => l.text).join('\n');
+    const windowsText = processCommand(state, 'help', 'windows').lines.map((l) => l.text).join('\n');
+    expect(linuxText).not.toContain('Get-Help');
+    expect(windowsText).not.toContain('apropos');
+  });
+
+  it('tip section separator is present in all envs', () => {
+    const state = makeState();
+    for (const env of ['linux', 'macos', 'windows'] as const) {
+      const text = processCommand(state, 'help', env).lines.map((l) => l.text).join('\n');
+      expect(text).toContain('💡');
+    }
+  });
+});
+
 describe('help <cmd> — targeted contextual help', () => {
   it('returns synopsis and description for a known command', () => {
     const state = makeState();
