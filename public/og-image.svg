@@ -19,7 +19,7 @@
 
   <!-- Feature pills -->
   <rect x="100" y="420" width="180" height="40" rx="8" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
-  <text x="190" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">6 modules</text>
+  <text x="190" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">8 modules</text>
 
   <rect x="296" y="420" width="220" height="40" rx="8" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
   <text x="406" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">terminal réel</text>
@@ -28,7 +28,7 @@
   <text x="652" y="446" font-family="JetBrains Mono, monospace" font-size="16" fill="#10b981" text-anchor="middle">100% gratuit</text>
 
   <!-- URL bottom right -->
-  <text x="1100" y="530" font-family="JetBrains Mono, monospace" font-size="20" fill="#30363d" text-anchor="end">terminal-learning.vercel.app</text>
+  <text x="1100" y="530" font-family="JetBrains Mono, monospace" font-size="20" fill="#30363d" text-anchor="end">terminallearning.dev</text>
 
   <!-- Grid dots decoration -->
   <g fill="#30363d" opacity="0.4">
