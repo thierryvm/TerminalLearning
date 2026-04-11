@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { curriculum, getTotalLessons } from '../data/curriculum';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { Module } from '../data/curriculum';
 import { supabase } from '../../lib/supabase';
 import { mergeProgress, getDelta } from '../lib/progressSync';
-import { isModuleUnlocked as checkModuleUnlocked, getModuleUnlockTree, type ModuleUnlockStatus } from '../lib/unlocking';
+import type { ModuleUnlockStatus } from '../lib/unlocking';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,9 +63,41 @@ const ProgressContext = createContext<ProgressContextValue | null>(null);
  * - Online: merges with Supabase on auth, upserts on each lesson completion
  * - Merge rule: Math.max — completed is never downgraded
  */
+// Lazily-loaded curriculum bundle — excluded from the main JS chunk to reduce TBT/INP.
+// Both curriculum and unlocking are loaded together since unlocking statically imports curriculum.
+type CurriculumBundle = {
+  curriculum: Module[];
+  getTotalLessons: () => number;
+  isModuleUnlocked: (id: string, completed: Set<string>) => boolean;
+  getModuleUnlockTree: (completed: Set<string>) => ModuleUnlockStatus[];
+};
+
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<ProgressState>(loadProgress);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
+  const [currBundle, setCurrBundle] = useState<CurriculumBundle | null>(null);
+  // Keep a stable ref so callbacks can read the latest bundle without stale closures
+  const currBundleRef = useRef<CurriculumBundle | null>(null);
+  currBundleRef.current = currBundle;
+
+  // ── Lazy-load curriculum + unlocking (excluded from main bundle) ──────────
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      import('../data/curriculum'),
+      import('../lib/unlocking'),
+    ]).then(([currMod, unlockMod]) => {
+      if (!cancelled) {
+        setCurrBundle({
+          curriculum: currMod.curriculum,
+          getTotalLessons: currMod.getTotalLessons,
+          isModuleUnlocked: unlockMod.isModuleUnlocked,
+          getModuleUnlockTree: unlockMod.getModuleUnlockTree,
+        });
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Sync on auth change ────────────────────────────────────────────────────
   useEffect(() => {
@@ -167,7 +199,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const isModuleCompleted = useCallback(
     (moduleId: string) => {
-      const mod = curriculum.find((m) => m.id === moduleId);
+      const mod = currBundleRef.current?.curriculum.find((m) => m.id === moduleId);
       if (!mod) return false;
       return mod.lessons.every((l) => progress.completedLessons[`${moduleId}/${l.id}`]);
     },
@@ -176,7 +208,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const getModuleProgress = useCallback(
     (moduleId: string) => {
-      const mod = curriculum.find((m) => m.id === moduleId);
+      const mod = currBundleRef.current?.curriculum.find((m) => m.id === moduleId);
       if (!mod) return { completed: 0, total: 0 };
       const completed = mod.lessons.filter(
         (l) => progress.completedLessons[`${moduleId}/${l.id}`]
@@ -193,28 +225,29 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const totalCompleted = Object.values(progress.completedLessons).filter(Boolean).length;
-  const totalLessons = getTotalLessons();
+  const totalLessons = currBundle?.getTotalLessons() ?? 0;
   const overallProgress = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
 
   // Derive completed module IDs from lesson-level progress
   const completedModuleIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const mod of curriculum) {
+    for (const mod of currBundle?.curriculum ?? []) {
       if (mod.lessons.every((l) => progress.completedLessons[`${mod.id}/${l.id}`])) {
         ids.add(mod.id);
       }
     }
     return ids;
-  }, [progress]);
+  }, [progress, currBundle]);
 
   const isModUnlocked = useCallback(
-    (moduleId: string) => checkModuleUnlocked(moduleId, completedModuleIds),
-    [completedModuleIds],
+    (moduleId: string) =>
+      currBundle?.isModuleUnlocked(moduleId, completedModuleIds) ?? true,
+    [completedModuleIds, currBundle],
   );
 
   const unlockTree = useMemo(
-    () => getModuleUnlockTree(completedModuleIds),
-    [completedModuleIds],
+    () => currBundle?.getModuleUnlockTree(completedModuleIds) ?? [],
+    [completedModuleIds, currBundle],
   );
 
   return (
