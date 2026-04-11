@@ -248,14 +248,14 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
         {/* Input line */}
         <form onSubmit={handleSubmit} className="flex items-center gap-1 mt-1">
-          <span className={`${promptColor} shrink-0 font-mono text-sm`}>{prompt}</span>
+          <span className={`${promptColor} shrink-0 font-mono text-base md:text-sm`}>{prompt}</span>
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(sanitiseInput(e.target.value))}
             maxLength={MAX_INPUT_LENGTH}
             onKeyDown={handleKeyDown}
-            className={`flex-1 bg-transparent text-[#e6edf3] font-mono text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
+            className={`flex-1 bg-transparent text-[#e6edf3] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
             autoFocus
             autoComplete="off"
             autoCorrect="off"

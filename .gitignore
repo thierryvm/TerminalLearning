@@ -24,3 +24,8 @@ pnpm-debug.log*
 supabase/.temp/
 
 # scripts/fonts/ — TTF files committed intentionally (SIL OFL), do NOT gitignore
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+.playwright-mcp/
