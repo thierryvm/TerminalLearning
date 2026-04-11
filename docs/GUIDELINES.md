@@ -31,7 +31,7 @@
 | `--primary` (accent) | `emerald-500` / `#10b981` | CTAs, progress, highlights |
 | `--destructive` | `#d4183d` | Erreurs, suppressions |
 
-Couleurs modules (liées au curriculum — ne pas changer sans mettre à jour Dashboard, Sidebar, Landing) :
+Couleurs modules (définies dans `Dashboard.tsx` → `MODULE_GRADIENTS`/`MODULE_BORDER`, `Sidebar.tsx` → `iconMap`, `Landing.tsx` → `MODULE_ICONS` — toute modification doit être synchronisée dans ces 3 fichiers) :
 
 | Module | ID | Couleur |
 |--------|----|---------|
@@ -135,7 +135,9 @@ Règle : toute nouvelle route doit être documentée ici avant implémentation.
 
 ## 5. Sécurité — règles non négociables
 
-- **Zéro injection HTML brute** dans les composants React — utiliser du texte pur ou JSX
+- **Zéro injection HTML brute** dans les composants React — utiliser du texte pur ou JSX.
+  Si un cas légitime nécessite du HTML dynamique (ex : contenu CMS sanitisé), le pattern autorisé est :
+  `DOMPurify.sanitize(html)` passé à `dangerouslySetInnerHTML` — jamais sans sanitisation préalable.
 - **Pas de secrets côté client** — uniquement via variables d'environnement (`import.meta.env`)
 - **CSP** configurée dans `vercel.json` — ne pas assouplir sans justification
 - Tout nouvel endpoint API : rate limiting obligatoire
@@ -146,7 +148,7 @@ Règle : toute nouvelle route doit être documentée ici avant implémentation.
 
 ## 6. Tests
 
-Outil actif : **Vitest** (579 tests, 12 fichiers de test — avril 2026)
+Outil actif : **Vitest** (579 tests, 12 fichiers de test — avril 2026 ; source de vérité : `npm test`)
 E2E : **Playwright** (3 suites dans `e2e/` : accessibility, mobile, seo — exclues de vitest)
 
 | Type | Scope | Outil |
@@ -171,7 +173,7 @@ main        → production (protégée, déploiement Vercel auto)
 feature/xxx → nouvelles features
 fix/xxx     → corrections
 hotfix/xxx  → corrections urgentes production
-release/vX.Y.Z → préparation release
+release/vX.Y.Z → préparation de la release
 ```
 
 ### Format des commits
