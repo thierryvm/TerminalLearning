@@ -20,6 +20,8 @@
 | THI-54 | security | vercel.json — CORP header `Cross-Origin-Resource-Policy: same-origin` + CSP Supabase exact FQDN (PR #66) ✅ Done |
 | THI-55 | security | Vite bump 6.4.2 — fix CVEs GHSA-4w7w + GHSA-p9ff, remove pnpm.overrides pin (PR #67) ✅ Done |
 | THI-56 | security | ReDoS fix — `buildGrepRegex()` avec length check + try/catch dans `terminalEngine.ts` (PR #68) ✅ Done |
+| THI-57 | security | Sentry tunnel rate limiting — sliding window 50 req/min/IP, 429 + Retry-After (PR #69) ✅ Done |
+| THI-58 | security | `cloneFSNode()` guard MAX_FS_NODES=10k + localStorage JSDoc ProgressContext (PR #70) ✅ Done |
 | THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |
