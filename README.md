@@ -99,10 +99,11 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 |-------|--------|-------------|
 | **Phase 0** | ✅ Done | Initial deployment on Vercel |
 | **Phase 1** | ✅ Done | Landing page, routing, SEO/OpenGraph, GDPR |
-| **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
+| **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
 | **Phase 5** | 🔄 In progress | Curriculum expansion: 8 modules, 39 lessons, 530 unit tests + 176 E2E |
+| **Maintenance** | 🔄 Ongoing | Security audits (OWASP/CSP/RLS), Sentry monitoring, dependency updates |
 | **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
 | **Phase 7** | 🔮 Planned | Member space — profiles, stats, roles (student/teacher), badges |
 | **Phase 8** | 🔮 Planned | Ticket system — bug reports, suggestions, in-app feedback |
