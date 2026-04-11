@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 11 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 8 modules ✅, 38 leçons, 388 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 8 modules ✅, 39 leçons, 530 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -216,7 +216,7 @@ CREATE TABLE quiz_results (
 
 ---
 
-### 🔮 Phase 5c — Commande `help` native + Leçon 0 transversale (THI-39)
+### ✅ Phase 5c — Commande `help` native + Leçon 0 transversale (THI-39)
 
 Première manifestation de la philosophie **"apprendre à apprendre"** dans le terminal simulé.
 

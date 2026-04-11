@@ -102,7 +102,7 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 7 modules, 32 lessons, 242 unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 8 modules, 39 lessons, 530 unit tests + 176 E2E |
 | **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
 | **Phase 7** | 🔮 Planned | Member space — profiles, stats, roles (student/teacher), badges |
 | **Phase 8** | 🔮 Planned | Ticket system — bug reports, suggestions, in-app feedback |
