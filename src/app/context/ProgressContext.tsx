@@ -102,9 +102,58 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   // ── Sync on auth change ────────────────────────────────────────────────────
   useEffect(() => {
     if (!supabase) return;
-    const client = supabase; // narrow to non-null for TypeScript in async callbacks
+    const client = supabase;
+    let cancelled = false;
 
-    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
+    const syncWithRemote = async (userId: string) => {
+      setSyncStatus('syncing');
+      // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
+      // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
+      const controller = new AbortController();
+      const abortTimer = setTimeout(() => controller.abort(), 5_000);
+      try {
+        const { data: remote, error } = await client
+          .from('progress')
+          .select('lesson_id, completed')
+          .eq('user_id', userId)
+          .abortSignal(controller.signal);
+        clearTimeout(abortTimer);
+
+        if (cancelled) return;
+        if (error) throw error;
+
+        const local = loadProgress();
+        const merged = mergeProgress(local.completedLessons, remote ?? []);
+        const mergedState: ProgressState = { completedLessons: merged };
+
+        const delta = getDelta(local.completedLessons, remote ?? []);
+        if (delta.length > 0) {
+          const upserts = delta.map((lesson_id) => ({
+            user_id: userId,
+            lesson_id,
+            completed: true as const,
+            completed_at: new Date().toISOString(),
+          }));
+          await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
+        }
+
+        if (cancelled) return;
+        saveProgress(mergedState);
+        setProgress(mergedState);
+        setSyncStatus('synced');
+      } catch {
+        clearTimeout(abortTimer);
+        if (!cancelled) setSyncStatus('error');
+      }
+    };
+
+    // The callback must NOT be async: gotrue-js holds an internal lock while it
+    // runs, and any awaited Supabase call inside deadlocks until a 5 s timeout
+    // — visible as "Lock not released within 5000ms" in the console and a
+    // multi-second delay on first profile sync. Defer async work with
+    // setTimeout so it runs outside the lock scope.
+    // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       if (!session?.user) {
         setSyncStatus('local');
         return;
@@ -115,47 +164,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       // that would cause "sync..." to flash every ~50 min while the user is active.
       if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
-      setSyncStatus('syncing');
-      // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
-      // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5_000);
-      try {
-        const { data: remote, error } = await client
-          .from('progress')
-          .select('lesson_id, completed')   // only the two columns we actually use
-          .eq('user_id', session.user.id)
-          .abortSignal(controller.signal);
-        clearTimeout(timeout);
-
-        if (error) throw error;
-
-        const local = loadProgress();
-        const merged = mergeProgress(local.completedLessons, remote ?? []);
-        const mergedState: ProgressState = { completedLessons: merged };
-
-        // Push local-only lessons to Supabase
-        const delta = getDelta(local.completedLessons, remote ?? []);
-        if (delta.length > 0) {
-          const upserts = delta.map((lesson_id) => ({
-            user_id: session.user.id,
-            lesson_id,
-            completed: true as const,
-            completed_at: new Date().toISOString(),
-          }));
-          await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
-        }
-
-        saveProgress(mergedState);
-        setProgress(mergedState);
-        setSyncStatus('synced');
-      } catch {
-        clearTimeout(timeout);
-        setSyncStatus('error');
-      }
+      const userId = session.user.id;
+      setTimeout(() => {
+        if (!cancelled) void syncWithRemote(userId);
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // ── Complete a lesson + upsert to Supabase ─────────────────────────────────
