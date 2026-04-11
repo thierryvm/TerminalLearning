@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * SEO, GEO, LLM-friendly, Security, Mobile static analysis tests - 2026 standards.
  * Covers: SEO/OG/Twitter/JSON-LD, GEO, LLM signals, viewport/PWA, CSP, HTTP headers.
@@ -210,7 +211,7 @@ describe('Security -- source code static analysis', () => {
     for (const file of collectSrc(SRC_DIR)) {
       if (file.includes('.test.')) continue;
       const lines = readFileSync(file, 'utf-8').split('\n');
-      lines.forEach((line, i) => {
+      lines.forEach((line: string, i: number) => {
         const t = line.trimStart();
         if (t.startsWith('//') || t.startsWith('*')) return;
         if (/:s*any/.test(line) || /ass+any/.test(line)) violations.push(file + ':' + (i + 1));
@@ -229,7 +230,7 @@ describe('Security -- source code static analysis', () => {
     for (const file of collectSrc(SRC_DIR)) {
       if (file.includes('.test.') || file.includes('main.tsx')) continue;
       const lines = readFileSync(file, 'utf-8').split('\n');
-      lines.forEach((line, i) => {
+      lines.forEach((line: string, i: number) => {
         if (line.trimStart().startsWith('//')) return;
         if (/console\.log\(/.test(line)) violations.push(file + ':' + (i + 1));
       });
