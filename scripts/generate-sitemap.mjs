@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const today = new Date().toISOString().slice(0, 10);
-const BASE = 'https://terminal-learning.vercel.app';
+const BASE = 'https://terminallearning.dev';
 
 /**
  * URL config — single source of truth for sitemap entries.

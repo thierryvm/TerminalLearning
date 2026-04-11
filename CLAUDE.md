@@ -4,7 +4,7 @@
 
 ## Contexte projet
 App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratuit.
-- **Live** : https://terminal-learning.vercel.app
+- **Live** : https://terminallearning.dev
 - **Repo** : https://github.com/thierryvm/TerminalLearning
 - **Vercel** : https://vercel.com/thierry-vanmeeterens-projects/terminal-learning
 - **Ko-fi** : https://ko-fi.com/thierryvm (dons suspendus dans l'UI — en attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI))

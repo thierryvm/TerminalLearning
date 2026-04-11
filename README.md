@@ -2,7 +2,7 @@
 
 > **Learn the terminal by doing — not just reading.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminal-learning.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminallearning.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
 [![Built with Vite](https://img.shields.io/badge/Built%20with-Vite%206-646cff?style=flat-square&logo=vite)](https://vitejs.dev)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
@@ -22,7 +22,7 @@ The terminal is powerful — but also frustrating to learn. Commands look differ
 
 No account required. No setup. Just open it and start learning.
 
-🌐 **[Try it live →](https://terminal-learning.vercel.app)**
+🌐 **[Try it live →](https://terminallearning.dev)**
 
 ---
 
@@ -190,6 +190,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <p align="center">
   Made with ♥ in Belgium &nbsp;·&nbsp;
-  <a href="https://terminal-learning.vercel.app">Live Demo</a> &nbsp;·&nbsp;
+  <a href="https://terminallearning.dev">Live Demo</a> &nbsp;·&nbsp;
   <a href="https://github.com/thierryvm/TerminalLearning/issues">Report a Bug</a>
 </p>

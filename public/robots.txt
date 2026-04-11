@@ -29,7 +29,7 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://terminal-learning.vercel.app/sitemap.xml
+Sitemap: https://terminallearning.dev/sitemap.xml
 
 # LLM context file
-# https://terminal-learning.vercel.app/llms.txt
+# https://terminallearning.dev/llms.txt

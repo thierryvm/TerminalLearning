@@ -51,7 +51,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 
 ### ✅ Phase 0 — Déploiement (TERMINÉ)
 - [x] Build validé, vercel.json, .gitignore
-- [x] Déployé sur Vercel — https://terminal-learning.vercel.app
+- [x] Déployé sur Vercel — https://terminallearning.dev
 - [x] Headers sécurisés (CSP, X-Frame-Options, etc.)
 
 ### ✅ Phase 1 — Landing + Routing + CI (TERMINÉ)
@@ -288,7 +288,7 @@ output:
 #### Composant B — Script Playwright local
 ```bash
 # scripts/security-audit.cjs — avant chaque release majeure
-node scripts/security-audit.cjs [--url https://terminal-learning.vercel.app]
+node scripts/security-audit.cjs [--url https://terminallearning.dev]
 checks:
   - Messages d'erreur auth génériques (pas de leak "user not found" vs "wrong password")
   - Rate limiting actif sur /auth et /api endpoints

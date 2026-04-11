@@ -28,7 +28,7 @@ test.describe('SEO — primary meta tags', () => {
 
   test('canonical URL is set', async ({ page }) => {
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toContain('terminal-learning.vercel.app');
+    expect(canonical).toContain('terminallearning.dev');
   });
 
   test('robots meta allows indexing', async ({ page }) => {
