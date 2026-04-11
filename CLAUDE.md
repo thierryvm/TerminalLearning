@@ -43,7 +43,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
-- Phase 5 🔄 Curriculum expansion — 8 modules, 38 leçons, 388 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5 🔄 Curriculum expansion — 8 modules, 39 leçons, 530 tests unitaires + 176 E2E Playwright (en cours)
 
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
