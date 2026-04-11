@@ -1,8 +1,7 @@
 # Terminal Learning — Guidelines
 
-> Ce projet a été initié via **Figma Make** (IA de Figma) + **Claude Code** (Anthropic),
-> exporté en React + Vite + Tailwind + shadcn/ui.
 > Ces guidelines s'appliquent à toute contribution humaine ou par agent IA.
+> Dernière mise à jour : 11 avril 2026
 
 ---
 
@@ -10,20 +9,17 @@
 
 | Outil | Rôle |
 |-------|------|
-| **Figma** | Design source (maquettes, design tokens, composants) |
-| **Figma Make** | Génération du code initial (React + Tailwind + shadcn/ui) |
-| **Claude Code** | Développement assisté IA (refactoring, features, sécurité, tests) |
-| **Vite** | Bundler + dev server |
+| **Claude Code** | Développement assisté IA (architecture, features, sécurité, tests) |
+| **Vite 6** | Bundler + dev server |
 | **React Router v7** | Routing SPA |
-
-Toute modification du design doit partir de Figma en premier (source de vérité visuelle),
-puis être traduite en code selon ces guidelines.
+| **Supabase** | Auth + PostgreSQL + RLS |
+| **Vercel** | Déploiement continu |
 
 ---
 
 ## 2. Design System
 
-### Couleurs (ne pas modifier sans mise à jour Figma)
+### Couleurs (tokens projet — ne pas modifier sans décision explicite)
 
 | Token | Valeur | Usage |
 |-------|--------|-------|
@@ -35,13 +31,20 @@ puis être traduite en code selon ces guidelines.
 | `--primary` (accent) | `emerald-500` / `#10b981` | CTAs, progress, highlights |
 | `--destructive` | `#d4183d` | Erreurs, suppressions |
 
-Couleurs modules (ne pas changer, liées au curriculum) :
-- Navigation → `emerald-500`
-- Fichiers → `blue-500`
-- Lecture → `purple-500`
-- Permissions → `amber-500`
-- Processus → `red-500`
-- Redirection → `cyan-500`
+Couleurs modules (liées au curriculum — ne pas changer sans mettre à jour Dashboard, Sidebar, Landing) :
+
+| Module | ID | Couleur |
+|--------|----|---------|
+| Navigation | `navigation` | `emerald-500` |
+| Fichiers & Dossiers | `fichiers` | `blue-500` |
+| Lecture de fichiers | `lecture` | `purple-500` |
+| Permissions | `permissions` | `amber-500` |
+| Processus | `processus` | `red-500` |
+| Redirection & Pipes | `redirection` | `cyan-500` |
+| Variables & Scripts | `variables` | `yellow-500` |
+| Réseau & SSH | `reseau` | `cyan-400` |
+| Git Fondamentaux | `git` | `orange-500` |
+| GitHub & Collaboration | `github-collaboration` | `violet-500` |
 
 ### Typographie
 
@@ -51,6 +54,7 @@ Couleurs modules (ne pas changer, liées au curriculum) :
 | **Inter** | UI générale, descriptions, labels | 300, 400, 500, 600, 700 |
 
 Règle : toute valeur de type "code" ou "commande" utilise JetBrains Mono + classe `font-mono`.
+Les deux fonts sont auto-hébergées via `@fontsource` (pas de CDN externe).
 
 ### Espacements et rayons
 
@@ -73,7 +77,7 @@ Règle : toute valeur de type "code" ou "commande" utilise JetBrains Mono + clas
 
 ### TypeScript
 
-- `strict: true` obligatoire (même si pas de `tsconfig.json` — Vite transpile via esbuild)
+- `strict: true` obligatoire
 - Zéro `any` — typer explicitement ou utiliser `unknown`
 - Props des composants : interface nommée `ComponentNameProps`
 - Exports : named exports uniquement (`export function Foo`, pas `export default`)
@@ -81,15 +85,7 @@ Règle : toute valeur de type "code" ou "commande" utilise JetBrains Mono + clas
 ### Structure des composants
 
 ```tsx
-/**
- * @component NomComposant
- * @description Ce que fait le composant en une ligne.
- * @example
- * <NomComposant prop="valeur" />
- */
-
 interface NomComposantProps {
-  /** Description de la prop */
   prop: string;
 }
 
@@ -128,10 +124,9 @@ Règles :
 ```
 /           → Landing page (public, SEO-optimisée)
 /app        → Application principale (Dashboard)
-/app/learn/:moduleId/:lessonId → Leçon
+/app/learn/:moduleId/:lessonId → Leçon interactive
 /app/reference → Référence des commandes
 /privacy    → Politique de confidentialité (RGPD)
-/admin      → Panel admin (Phase 4, protégé RBAC)
 ```
 
 Règle : toute nouvelle route doit être documentée ici avant implémentation.
@@ -140,28 +135,31 @@ Règle : toute nouvelle route doit être documentée ici avant implémentation.
 
 ## 5. Sécurité — règles non négociables
 
-- **Pas de `dangerouslySetInnerHTML`** sauf cas exceptionnel validé + sanitisation DOMPurify
+- **Zéro injection HTML brute** dans les composants React — utiliser du texte pur ou JSX
 - **Pas de secrets côté client** — uniquement via variables d'environnement (`import.meta.env`)
-- **Validation Zod** sur tous les inputs utilisateur dès Phase 1
 - **CSP** configurée dans `vercel.json` — ne pas assouplir sans justification
-- Tout nouveau endpoint API (Phase 3+) : rate limiting obligatoire
+- Tout nouvel endpoint API : rate limiting obligatoire
 - Dépendances : `npm audit` avant chaque PR, Dependabot activé sur GitHub
+- Voir `SECURITY.md` pour la politique de sécurité complète
 
 ---
 
-## 6. Tests — obligatoires par feature
+## 6. Tests
 
-Outil : **Vitest** (à installer en Phase 1)
+Outil actif : **Vitest** (579 tests, 12 fichiers de test — avril 2026)
+E2E : **Playwright** (3 suites dans `e2e/` : accessibility, mobile, seo — exclues de vitest)
 
 | Type | Scope | Outil |
 |------|-------|-------|
-| Unitaires | Logique pure, hooks, utils | Vitest |
+| Unitaires | Logique pure, terminal engine, unlocking | Vitest |
 | Composants | Render, interactions | Vitest + Testing Library |
-| E2E | Parcours utilisateur complets | Playwright |
+| E2E | Parcours utilisateur complets | Playwright (pre-release) |
 
-Règle : **chaque nouvelle feature = au moins 1 test unitaire**. Pas de merge sans tests.
-
-Coverage minimum cible : **80%** sur les parties critiques (terminal engine, auth, routing).
+Règles :
+- **Chaque nouvelle commande dans `terminalEngine.ts` = test obligatoire** dans `src/test/terminalEngine.test.ts`
+- **Chaque modification de `curriculum.ts`** : invoquer l'agent `curriculum-validator` avant
+- Coverage minimum cible : **80%** sur les parties critiques (terminal engine, auth, routing)
+- Ne jamais retirer `exclude: ['node_modules/**', 'e2e/**']` de `vitest.config.ts`
 
 ---
 
@@ -170,9 +168,10 @@ Coverage minimum cible : **80%** sur les parties critiques (terminal engine, aut
 ### Branches
 ```
 main        → production (protégée, déploiement Vercel auto)
-develop     → intégration
 feature/xxx → nouvelles features
-hotfix/xxx  → corrections urgentes
+fix/xxx     → corrections
+hotfix/xxx  → corrections urgentes production
+release/vX.Y.Z → préparation release
 ```
 
 ### Format des commits
@@ -181,15 +180,15 @@ type(scope): description courte
 
 Types : feat | fix | refactor | test | docs | chore | security | style
 Exemples :
-  feat(landing): add hero section with animated terminal prompt
+  feat(curriculum): add Git module with 7 lessons
   security(headers): strengthen CSP policy in vercel.json
   fix(routing): correct base path for /app routes
 ```
 
-### Avant chaque push
-1. `npm run build` → doit passer sans erreur
-2. `npm test` → doit passer sans erreur (quand Vitest installé)
-3. Headers sécurisés non modifiés sauf intention explicite
+### Avant chaque merge
+1. CI verte (type-check + lint + test + build)
+2. Sourcery review vérifié : `gh pr view N --comments 2>&1 | grep -A 15 -i "sourcery"`
+3. Validation visuelle Vercel Preview (Thierry — Chrome + mobile)
 
 ---
 
@@ -197,23 +196,23 @@ Exemples :
 
 Ce projet utilise **Claude Code** comme partenaire de développement principal.
 
-### Agents disponibles
+### Agents disponibles (`.claude/agents/`)
 
-| Agent | Rôle |
-|-------|------|
-| **Orchestrator** | Coordination générale, découpe des tâches |
-| **Frontend** | UI, composants, design system, animations |
-| **Security** | OWASP, CSP, rate limiting, audit dépendances |
-| **HACKER BLACK** | Tests offensifs (XSS, CSRF, rate limit bypass, RLS bypass) |
-| **QA** | Tests Vitest + Playwright, coverage |
+| Agent | Rôle | Quand l'invoquer |
+|-------|------|-----------------|
+| **`linear-sync`** | Vérifie cohérence PRs GitHub ↔ statuts Linear | Début de chaque session |
+| **`curriculum-validator`** | Valide structure de `curriculum.ts` | Avant toute modification de `curriculum.ts` |
+| **`test-runner`** | Lance vitest, retourne uniquement failures + gaps | Après modification de `curriculum.ts` ou `terminalEngine.ts` |
+| **`content-auditor`** | Audit pédagogique complet (env coverage, liens, prérequis, validate()) | Avant chaque release majeure |
+| **`security-auditor`** | Audit cybersécurité OWASP Top 10, CSP, RLS, auth, supply chain | Avant chaque release majeure ou après mise à jour dépendances |
 
 ### Règles pour les agents IA
 
-- Lire ce fichier + `plan.md` avant toute modification
+- Lire `CLAUDE.md` + `plan.md` avant toute modification
 - Ne jamais assouplir les règles de sécurité
-- Documenter chaque composant créé (JSDoc)
 - Respecter les conventions de nommage et la structure de fichiers
 - Toute nouvelle dépendance = justification explicite dans le commit
+- Mettre à jour ce fichier et `plan.md` dès qu'une info devient obsolète — sans attendre la demande
 
 ### Sessions de travail
 
@@ -235,11 +234,14 @@ Langue de la documentation technique : **anglais**
 
 | Fichier | Rôle |
 |---------|------|
-| `plan.md` | Roadmap, phases, statut des tâches |
-| `guidelines/Guidelines.md` | Ce fichier — conventions et contrat de dev |
-| `ATTRIBUTIONS.md` | Crédits des librairies et assets |
+| `docs/plan.md` | Roadmap, phases, statut des tâches, tech debt |
+| `docs/GUIDELINES.md` | Ce fichier — conventions et contrat de dev |
+| `docs/ARCHITECTURE.md` | Diagramme technique complet |
+| `docs/CONVENTIONS.md` | Règles de travail (git, PR, workflow, validation) |
+| `docs/ROADMAP.md` | Vision long terme, phases futures |
+| `docs/ATTRIBUTIONS.md` | Crédits des librairies et assets |
+| `SECURITY.md` | Politique de sécurité, contacts, sprints hardening |
+| `CONTRIBUTING.md` | Guide de contribution |
+| `README.md` | Présentation publique (stack, démo, setup) |
+| `CLAUDE.md` | Instructions projet pour Claude Code |
 | `LICENSE` | MIT License |
-| `ARCHITECTURE.md` | *(à créer Phase 1)* Diagramme technique complet |
-| `SECURITY.md` | *(à créer Phase 1)* Politique de sécurité |
-| `CONTRIBUTING.md` | *(à créer Phase 1)* Guide de contribution |
-| `README.md` | *(à refactorer Phase 1)* Présentation publique |
