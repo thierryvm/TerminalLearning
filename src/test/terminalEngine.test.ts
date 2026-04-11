@@ -1715,3 +1715,361 @@ describe('kill', () => {
     expect(result.lines[0].text).toContain('5678');
   });
 });
+
+// ─── git (Modules 9 & 10) ─────────────────────────────────────────────────────
+
+describe('git', () => {
+  // ── git --version ────────────────────────────────────────────────────────────
+  it('git --version returns version string', () => {
+    const r = processCommand(makeState(), 'git --version');
+    expect(r.lines[0].text).toContain('git version');
+  });
+
+  // ── git init ─────────────────────────────────────────────────────────────────
+  it('git init initialises a new repository', () => {
+    const r = processCommand(makeState(), 'git init');
+    expect(r.lines[0].type).toBe('success');
+    expect(r.lines[0].text).toContain('Initialized empty Git repository');
+    expect(r.newState.git?.initialized).toBe(true);
+    expect(r.newState.git?.branch).toBe('main');
+  });
+
+  it('git init on an already-initialised repo says Reinitialized', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git init');
+    expect(r.lines[0].text).toContain('Reinitialized');
+  });
+
+  // ── git status ───────────────────────────────────────────────────────────────
+  it('git status without init returns fatal error', () => {
+    const r = processCommand(makeState(), 'git status');
+    expect(r.lines[0].type).toBe('error');
+    expect(r.lines[0].text).toContain('not a git repository');
+  });
+
+  it('git status on empty repo shows No commits yet', () => {
+    const after = processCommand(makeState(), 'git init');
+    const r = processCommand(after.newState, 'git status');
+    expect(r.lines.some((l) => l.text.includes('No commits yet'))).toBe(true);
+  });
+
+  it('git status shows staged files', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add fichier.txt').newState;
+    const r = processCommand(s, 'git status');
+    expect(r.lines.some((l) => l.text.includes('fichier.txt'))).toBe(true);
+  });
+
+  // ── git add ───────────────────────────────────────────────────────────────────
+  it('git add without repo returns fatal error', () => {
+    const r = processCommand(makeState(), 'git add .');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git add . stages files in current directory', () => {
+    const s = makeState({
+      root: {
+        type: 'directory',
+        children: { 'index.html': { type: 'file', content: '', permissions: '-rw-r--r--', owner: 'user', group: 'user', size: 0 } },
+        permissions: 'drwxr-xr-x', owner: 'user', group: 'user',
+      },
+      git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} },
+    });
+    const r = processCommand(s, 'git add .');
+    expect(r.newState.git?.stagedFiles).toContain('index.html');
+  });
+
+  it('git add <file> stages a specific file', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git add README.md');
+    expect(r.newState.git?.stagedFiles).toContain('README.md');
+  });
+
+  it('git add without args returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git add');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  // ── git commit ────────────────────────────────────────────────────────────────
+  it('git commit without repo returns fatal error', () => {
+    const r = processCommand(makeState(), 'git commit -m "test"');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git commit -m creates a commit and clears staging', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add mon-fichier.txt').newState;
+    const r = processCommand(s, 'git commit -m "feat: initial commit"');
+    expect(r.lines[0].type).toBe('success');
+    expect(r.lines[0].text).toContain('feat: initial commit');
+    expect(r.newState.git?.commits).toHaveLength(1);
+    expect(r.newState.git?.stagedFiles).toHaveLength(0);
+  });
+
+  it('git commit without -m returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git commit');
+    expect(r.lines[0].type).toBe('error');
+    expect(r.lines[0].text).toContain('empty commit message');
+  });
+
+  it('git commit with no staged files returns info', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git commit -m "empty"');
+    expect(r.lines[0].text).toContain('nothing to commit');
+  });
+
+  // ── git log ───────────────────────────────────────────────────────────────────
+  it('git log without commits returns fatal error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git log');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git log shows commit history', () => {
+    const s = makeState({
+      git: {
+        initialized: true, branch: 'main', branches: ['main'], stagedFiles: [],
+        commits: [{ hash: 'abc1234', message: 'feat: add feature', author: 'user', date: '2026-04-11' }],
+        remotes: {},
+      },
+    });
+    const r = processCommand(s, 'git log');
+    expect(r.lines.some((l) => l.text.includes('feat: add feature'))).toBe(true);
+  });
+
+  it('git log --oneline shows compact format', () => {
+    const s = makeState({
+      git: {
+        initialized: true, branch: 'main', branches: ['main'], stagedFiles: [],
+        commits: [{ hash: 'abc1234', message: 'feat: add feature', author: 'user', date: '2026-04-11' }],
+        remotes: {},
+      },
+    });
+    const r = processCommand(s, 'git log --oneline');
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0].text).toContain('abc1234');
+  });
+
+  // ── git branch ────────────────────────────────────────────────────────────────
+  it('git branch lists branches with asterisk on current', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/x'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git branch');
+    expect(r.lines.some((l) => l.text.startsWith('* main'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('feature/x'))).toBe(true);
+  });
+
+  it('git branch <name> creates a new branch', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git branch feature/login');
+    expect(r.newState.git?.branches).toContain('feature/login');
+    expect(r.newState.git?.branch).toBe('main'); // does not switch
+  });
+
+  it('git branch -d removes a branch', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/login'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git branch -d feature/login');
+    expect(r.newState.git?.branches).not.toContain('feature/login');
+  });
+
+  it('git branch -d current branch returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git branch -d main');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  // ── git checkout ──────────────────────────────────────────────────────────────
+  it('git checkout -b creates and switches to new branch', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git checkout -b feature/cart');
+    expect(r.newState.git?.branch).toBe('feature/cart');
+    expect(r.newState.git?.branches).toContain('feature/cart');
+    expect(r.lines[0].type).toBe('success');
+  });
+
+  it('git checkout switches to existing branch', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'develop'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git checkout develop');
+    expect(r.newState.git?.branch).toBe('develop');
+  });
+
+  it('git checkout non-existent branch returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git checkout non-existent');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git checkout -b on existing branch returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git checkout -b main');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  // ── git switch (modern) ───────────────────────────────────────────────────────
+  it('git switch -c creates and switches to new branch', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git switch -c feature/payments');
+    expect(r.newState.git?.branch).toBe('feature/payments');
+    expect(r.lines[0].type).toBe('success');
+  });
+
+  // ── git merge ─────────────────────────────────────────────────────────────────
+  it('git merge creates a merge commit', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/login'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git merge feature/login');
+    expect(r.lines[0].type).toBe('success');
+    expect(r.newState.git?.commits).toHaveLength(1);
+    expect(r.newState.git?.commits[0].message).toContain('feature/login');
+  });
+
+  it('git merge same branch returns already up to date', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git merge main');
+    expect(r.lines[0].text).toContain('Already up to date');
+  });
+
+  it('git merge non-existent branch returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git merge ghost-branch');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  // ── git remote ────────────────────────────────────────────────────────────────
+  it('git remote -v shows configured remotes', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/user/repo.git' } } });
+    const r = processCommand(s, 'git remote -v');
+    expect(r.lines.some((l) => l.text.includes('origin'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('github.com'))).toBe(true);
+  });
+
+  it('git remote add adds a new remote', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git remote add origin https://github.com/user/repo.git');
+    expect(r.newState.git?.remotes['origin']).toBe('https://github.com/user/repo.git');
+  });
+
+  it('git remote add duplicate remote returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://x.com/r.git' } } });
+    const r = processCommand(s, 'git remote add origin https://github.com/y.git');
+    expect(r.lines[0].type).toBe('error');
+    expect(r.lines[0].text).toContain('already exists');
+  });
+
+  it('git remote remove deletes a remote', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
+    const r = processCommand(s, 'git remote remove origin');
+    expect(r.newState.git?.remotes['origin']).toBeUndefined();
+  });
+
+  // ── git push ──────────────────────────────────────────────────────────────────
+  it('git push without remote returns fatal error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [{ hash: 'abc', message: 'test', author: 'user', date: '2026-04-11' }], remotes: {} } });
+    const r = processCommand(s, 'git push');
+    expect(r.lines[0].type).toBe('error');
+    expect(r.lines[0].text).toContain('fatal');
+  });
+
+  it('git push with remote succeeds', () => {
+    const s = makeState({
+      git: {
+        initialized: true, branch: 'main', branches: ['main'],
+        stagedFiles: [],
+        commits: [{ hash: 'abc1234', message: 'feat: x', author: 'user', date: '2026-04-11' }],
+        remotes: { origin: 'https://github.com/user/repo.git' },
+      },
+    });
+    const r = processCommand(s, 'git push -u origin main');
+    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+  });
+
+  // ── git pull ──────────────────────────────────────────────────────────────────
+  it('git pull without remote returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git pull');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git pull with remote returns success', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
+    const r = processCommand(s, 'git pull');
+    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+  });
+
+  // ── git fetch ─────────────────────────────────────────────────────────────────
+  it('git fetch without configured remote returns error', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git fetch origin');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  it('git fetch with configured remote returns success', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
+    const r = processCommand(s, 'git fetch origin');
+    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+  });
+
+  // ── git clone ─────────────────────────────────────────────────────────────────
+  it('git clone initialises a repo with remote and initial commit', () => {
+    const r = processCommand(makeState(), 'git clone https://github.com/user/projet.git');
+    expect(r.lines.some((l) => l.text.includes('Cloning into'))).toBe(true);
+    expect(r.newState.git?.initialized).toBe(true);
+    expect(r.newState.git?.remotes['origin']).toBe('https://github.com/user/projet.git');
+    expect(r.newState.git?.commits).toHaveLength(1);
+  });
+
+  it('git clone without URL returns error', () => {
+    const r = processCommand(makeState(), 'git clone');
+    expect(r.lines[0].type).toBe('error');
+  });
+
+  // ── git diff ──────────────────────────────────────────────────────────────────
+  it('git diff shows simulated diff output', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['fichier.txt'], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git diff');
+    expect(r.lines.some((l) => l.text.includes('diff --git'))).toBe(true);
+  });
+
+  // ── git stash ─────────────────────────────────────────────────────────────────
+  it('git stash clears staged files', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git stash');
+    expect(r.newState.git?.stagedFiles).toHaveLength(0);
+    expect(r.lines[0].type).toBe('success');
+  });
+
+  // ── git config ───────────────────────────────────────────────────────────────
+  it('git config --list shows configuration', () => {
+    const r = processCommand(makeState(), 'git config --list');
+    expect(r.lines.some((l) => l.text.includes('user.name'))).toBe(true);
+  });
+
+  // ── git help ─────────────────────────────────────────────────────────────────
+  it('git help lists available commands', () => {
+    const r = processCommand(makeState(), 'git help');
+    expect(r.lines.some((l) => l.text.includes('init'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('commit'))).toBe(true);
+  });
+
+  // ── unknown git subcommand ────────────────────────────────────────────────────
+  it('unknown git subcommand returns error', () => {
+    const r = processCommand(makeState(), 'git foobar');
+    expect(r.lines[0].type).toBe('error');
+    expect(r.lines[0].text).toContain('foobar');
+  });
+
+  // ── full workflow integration ─────────────────────────────────────────────────
+  it('full git workflow: init → add → commit → branch → push', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add README.md').newState;
+    s = processCommand(s, 'git commit -m "chore: initial commit"').newState;
+    s = processCommand(s, 'git checkout -b feature/auth').newState;
+    s = processCommand(s, 'git add auth.ts').newState;
+    s = processCommand(s, 'git commit -m "feat: add auth"').newState;
+    s = processCommand(s, 'git remote add origin https://github.com/user/repo.git').newState;
+    const push = processCommand(s, 'git push -u origin feature/auth');
+    expect(push.lines.some((l) => l.type === 'success')).toBe(true);
+    expect(s.git?.commits).toHaveLength(2);
+    expect(s.git?.branch).toBe('feature/auth');
+  });
+});

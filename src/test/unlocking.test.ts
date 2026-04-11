@@ -79,6 +79,7 @@ describe('unlocking logic', () => {
     });
 
     it('with all modules completed, should return null', () => {
+      // All 10 modules must be included (Modules 1–8 + Git + GitHub Collaboration)
       const allModuleIds = new Set([
         'navigation',
         'fichiers',
@@ -88,6 +89,8 @@ describe('unlocking logic', () => {
         'redirection',
         'variables',
         'reseau',
+        'git',
+        'github-collaboration',
       ]);
       const next = getNextRecommendedModule(allModuleIds);
       expect(next).toBeNull();

@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router';
 import {
-  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
+  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
   CheckCircle2, ChevronRight, Terminal, Award, BookOpen, Zap, Lock,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
-  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge,
+  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
 };
 
 const MODULE_GRADIENTS: Record<string, string> = {
@@ -17,6 +17,10 @@ const MODULE_GRADIENTS: Record<string, string> = {
   permissions: 'from-amber-500/20 to-amber-500/5',
   processus: 'from-red-500/20 to-red-500/5',
   redirection: 'from-cyan-500/20 to-cyan-500/5',
+  variables: 'from-yellow-500/20 to-yellow-500/5',
+  reseau: 'from-cyan-400/20 to-cyan-400/5',
+  git: 'from-orange-500/20 to-orange-500/5',
+  'github-collaboration': 'from-violet-500/20 to-violet-500/5',
 };
 
 const MODULE_BORDER: Record<string, string> = {
@@ -26,6 +30,10 @@ const MODULE_BORDER: Record<string, string> = {
   permissions: 'border-amber-500/30 hover:border-amber-500/60',
   processus: 'border-red-500/30 hover:border-red-500/60',
   redirection: 'border-cyan-500/30 hover:border-cyan-500/60',
+  variables: 'border-yellow-500/30 hover:border-yellow-500/60',
+  reseau: 'border-cyan-400/30 hover:border-cyan-400/60',
+  git: 'border-orange-500/30 hover:border-orange-500/60',
+  'github-collaboration': 'border-violet-500/30 hover:border-violet-500/60',
 };
 
 export function Dashboard() {

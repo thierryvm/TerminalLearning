@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
-  Compass, FolderOpen, FileText, Cpu, GitMerge,
+  Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
   Monitor, LogIn,
 } from 'lucide-react';
 
@@ -112,6 +112,9 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ size?: number; classNam
   Shield,
   Cpu,
   GitMerge,
+  GitBranch,
+  GitFork,
+  Globe,
 };
 
 const LEVEL_BADGE: Record<number, { label: string; text: string; border: string; bg: string }> = {
