@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 11 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 8 modules ✅, 39 leçons, 530 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 579 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -10,7 +10,7 @@
 | Issue Linear | Phase | Contenu |
 |-------------|-------|---------|
 | THI-27 | 5 | Module 8 — Réseau & SSH (`ping`, `curl`, `wget`, `ssh`, `scp`, DNS) ✅ Done |
-| THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* |
+| THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* — 52 leçons, 579 tests (PR #72) ✅ Done |
 | THI-29 | 5 | Module 11 — L'IA comme outil dev |
 | THI-35 | docs | Architecture stratégique — Terminal Sentinel, RBAC, Admin Panel, PWA ✅ Done |
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
