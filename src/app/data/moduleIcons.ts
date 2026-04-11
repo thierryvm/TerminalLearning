@@ -1,5 +1,5 @@
-import { Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe } from 'lucide-react';
+import { type LucideIcon, Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe } from 'lucide-react';
 
-export const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>> = {
+export const iconMap: Record<string, LucideIcon> = {
   Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
 };

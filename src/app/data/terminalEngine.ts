@@ -651,15 +651,17 @@ function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
 function cmdHeadTail(state: TerminalState, args: string[], cmd: 'head' | 'tail'): OutputLine[] {
   let n = 10;
   let filePath = '';
+  const parseN = (raw: string) => { const p = parseInt(raw, 10); if (!Number.isNaN(p)) n = p; };
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '-n' && args[i + 1]) { n = parseInt(args[i + 1]) || 10; i++; }
-    else if (args[i].startsWith('-n')) { n = parseInt(args[i].slice(2)) || 10; }
+    if (args[i] === '-n' && args[i + 1]) { parseN(args[i + 1]); i++; }
+    else if (args[i].startsWith('-n')) { parseN(args[i].slice(2)); }
     else filePath = args[i];
   }
-  if (!filePath) return [{ text: `${cmd}: missing file operand`, type: 'error' }];
+  const pfx = `${cmd}:`;
+  if (!filePath) return [{ text: `${pfx} missing file operand`, type: 'error' }];
   const node = getNode(state.root, resolvePath(state, filePath));
-  if (!node) return [{ text: `${cmd}: cannot open '${filePath}': No such file or directory`, type: 'error' }];
-  if (node.type === 'directory') return [{ text: `${cmd}: ${filePath}: Is a directory`, type: 'error' }];
+  if (!node) return [{ text: `${pfx} cannot open '${filePath}': No such file or directory`, type: 'error' }];
+  if (node.type === 'directory') return [{ text: `${pfx} ${filePath}: Is a directory`, type: 'error' }];
   const lines = node.content.split('\n');
   return (cmd === 'head' ? lines.slice(0, n) : lines.slice(-n)).map((line) => ({ text: line, type: 'output' as const }));
 }
