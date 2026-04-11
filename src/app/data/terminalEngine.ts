@@ -536,6 +536,22 @@ function cmdMv(state: TerminalState, args: string[]): { lines: OutputLine[]; new
   return { lines: [], newRoot };
 }
 
+const GREP_PATTERN_MAX_LEN = 200;
+
+function buildGrepRegex(
+  pattern: string,
+  flagStr: string
+): { ok: true; regex: RegExp } | { ok: false; error: OutputLine } {
+  if (pattern.length > GREP_PATTERN_MAX_LEN) {
+    return { ok: false, error: { text: 'grep: pattern too long (max 200 characters)', type: 'error' } };
+  }
+  try {
+    return { ok: true, regex: new RegExp(pattern, flagStr) };
+  } catch {
+    return { ok: false, error: { text: `grep: invalid regular expression: ${pattern}`, type: 'error' } };
+  }
+}
+
 function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
   const flags = args.filter((a) => a.startsWith('-'));
   const rest = args.filter((a) => !a.startsWith('-'));
@@ -551,7 +567,9 @@ function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
   if (node.type === 'directory') return [{ text: `grep: ${filePath}: Is a directory`, type: 'error' }];
 
   const lines = node.content.split('\n');
-  const regex = new RegExp(pattern, ignoreCase ? 'i' : '');
+  const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
+  if (!regexResult.ok) return [regexResult.error];
+  const regex = regexResult.regex;
   const matches = lines
     .map((line, i) => ({ line, i }))
     .filter(({ line }) => regex.test(line));
@@ -835,9 +853,10 @@ function cmdPipe(state: TerminalState, left: string, right: string): OutputLine[
     const pattern = rightArgs.find((a) => !a.startsWith('-')) || '';
     const ignoreCase = flags.some((f) => f.includes('i'));
     const showLineNumbers = flags.some((f) => f.includes('n'));
-    const regex = new RegExp(pattern, ignoreCase ? 'i' : '');
+    const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
+    if (!regexResult.ok) return [regexResult.error];
     const lines = inputText.split('\n');
-    const matches = lines.map((line, i) => ({ line, i })).filter(({ line }) => regex.test(line));
+    const matches = lines.map((line, i) => ({ line, i })).filter(({ line }) => regexResult.regex.test(line));
     return matches.map(({ line, i }) => ({
       text: showLineNumbers ? `${i + 1}:${line}` : line,
       type: 'output' as const,

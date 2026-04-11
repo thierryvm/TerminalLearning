@@ -1537,6 +1537,20 @@ describe('grep', () => {
     expect(result.lines[0].type).toBe('error');
     expect(result.lines[0].text).toContain('Is a directory');
   });
+
+  it('returns error for invalid regular expression', () => {
+    // [unclosed is an invalid regex (unclosed character class)
+    const result = processCommand(makeStateWithFS(), 'grep [unclosed test.txt');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('invalid regular expression');
+  });
+
+  it('returns error for pattern exceeding 200 characters', () => {
+    const longPattern = 'a'.repeat(201);
+    const result = processCommand(makeStateWithFS(), `grep ${longPattern} test.txt`);
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('pattern too long');
+  });
 });
 
 // ─── head ─────────────────────────────────────────────────────────────────────
