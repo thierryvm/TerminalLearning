@@ -2,8 +2,11 @@ import { lazy } from 'react';
 import { createBrowserRouter, redirect } from 'react-router';
 
 // Route-level code splitting — each route loads its own JS chunk on demand.
-// Layout stays eager: it's the /app shell and renders before any child route.
-import { Layout } from './components/Layout';
+// Layout is lazy so that Sidebar → curriculum.ts is excluded from the main bundle,
+// improving TBT/INP for Landing-page visitors who never enter /app.
+const Layout = lazy(() =>
+  import('./components/Layout').then(({ Layout }) => ({ default: Layout }))
+);
 
 const Landing = lazy(() =>
   import('./components/Landing').then(({ Landing }) => ({ default: Landing }))
