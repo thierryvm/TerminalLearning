@@ -154,8 +154,12 @@ describe('Mobile-first -- viewport, PWA and rendering', () => {
     const h = readHtml(); expect(h).toContain('name="color-scheme"'); expect(h).toContain('dark');
   });
 
-  it('PWA manifest', () => {
-    const h = readHtml(); expect(h).toContain('rel="manifest"'); expect(h).toContain('.webmanifest');
+  it('PWA manifest injected in main.tsx (skipped on Vercel preview domains)', () => {
+    // manifest link is injected dynamically in main.tsx to avoid 401 on Vercel preview deployments
+    const main = readFileSync(join(ROOT, 'src/main.tsx'), 'utf8');
+    expect(main).toContain('manifest');
+    expect(main).toContain('.webmanifest');
+    expect(main).toContain('.vercel.app');
   });
   it('apple-touch-icon', () => { expect(readHtml()).toContain('rel="apple-touch-icon"'); });
   it('favicon', () => { expect(readHtml()).toContain('rel="icon"'); });

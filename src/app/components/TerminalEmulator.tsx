@@ -257,6 +257,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
             onKeyDown={handleKeyDown}
             className={`flex-1 bg-transparent text-[#e6edf3] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
             autoFocus
+            aria-label="Commande terminal"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
