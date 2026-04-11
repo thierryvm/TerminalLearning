@@ -104,22 +104,34 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     const client = supabase;
     let cancelled = false;
+    let activeController: AbortController | null = null;
+    let activeUserId: string | null = null;
 
     const syncWithRemote = async (userId: string) => {
+      // Supersede any previous in-flight sync (rapid account switches).
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+      activeUserId = userId;
+
       setSyncStatus('syncing');
+
       // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
       // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
-      const controller = new AbortController();
       const abortTimer = setTimeout(() => controller.abort(), 5_000);
+
+      // Bail out silently if the sync was cancelled by unmount, sign-out, or
+      // a newer sync — those paths already set the correct syncStatus.
+      const superseded = () => cancelled || activeUserId !== userId;
+
       try {
         const { data: remote, error } = await client
           .from('progress')
           .select('lesson_id, completed')
           .eq('user_id', userId)
           .abortSignal(controller.signal);
-        clearTimeout(abortTimer);
 
-        if (cancelled) return;
+        if (superseded()) return;
         if (error) throw error;
 
         const local = loadProgress();
@@ -137,13 +149,15 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
         }
 
-        if (cancelled) return;
+        if (superseded()) return;
         saveProgress(mergedState);
         setProgress(mergedState);
         setSyncStatus('synced');
       } catch {
+        if (superseded()) return;
+        setSyncStatus('error');
+      } finally {
         clearTimeout(abortTimer);
-        if (!cancelled) setSyncStatus('error');
       }
     };
 
@@ -155,6 +169,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
     const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       if (!session?.user) {
+        // Sign-out or no session: abort any in-flight sync so it can't
+        // write stale state after the user has logged out.
+        activeController?.abort();
+        activeController = null;
+        activeUserId = null;
         setSyncStatus('local');
         return;
       }
@@ -172,6 +191,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      activeController?.abort();
       subscription.unsubscribe();
     };
   }, []);
