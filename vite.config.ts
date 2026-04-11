@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig({
   plugins: [
@@ -9,6 +10,9 @@ export default defineConfig({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    // Upload source maps and create releases on Vercel builds only
+    // Uses SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT from env
+    ...(process.env.SENTRY_AUTH_TOKEN ? [sentryVitePlugin({ telemetry: false })] : []),
   ],
   resolve: {
     alias: {
