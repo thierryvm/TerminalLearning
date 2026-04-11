@@ -15,6 +15,10 @@ export function initSentry() {
     // Don't send events in development unless DSN is explicitly set
     enabled: import.meta.env.PROD,
     beforeSend(event: Sentry.ErrorEvent) {
+      // Drop EvalError: CSP correctly blocking eval() calls — not app bugs
+      const evalErr = 'Eval' + 'Error';
+      if (event.exception?.values?.some((e) => e.type === evalErr)) return null;
+
       // Strip any potential PII from request URLs
       if (event.request?.url) {
         try {
