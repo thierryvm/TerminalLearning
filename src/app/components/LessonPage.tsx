@@ -11,6 +11,7 @@ import {
 import { useProgress } from '../context/ProgressContext';
 import { useAuth } from '../context/AuthContext';
 import { useEnvironment } from '../context/EnvironmentContext';
+import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
@@ -110,42 +111,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const { user } = useAuth();
   const { selectedEnv } = useEnvironment();
 
-  // ── Dynamic SEO per lesson ──────────────────────────────────────────────────
-  useEffect(() => {
-    const pageTitle = `${lesson.title} — ${mod.title} | Terminal Learning`;
-    const pageDesc = lesson.description
-      || `Apprends ${lesson.title} dans le module ${mod.title}. Exercice interactif avec émulateur terminal. Gratuit, open source.`;
-    const canonicalUrl = `https://terminallearning.dev/app/learn/${moduleId}/${lessonId}`;
-
-    document.title = pageTitle;
-
-    const setMeta = (sel: string, attr: string, val: string) => {
-      const el = document.querySelector(sel);
-      if (el) el.setAttribute(attr, val);
-    };
-
-    setMeta('meta[name="description"]', 'content', pageDesc);
-    setMeta('link[rel="canonical"]', 'href', canonicalUrl);
-    setMeta('meta[property="og:title"]', 'content', pageTitle);
-    setMeta('meta[property="og:description"]', 'content', pageDesc);
-    setMeta('meta[property="og:url"]', 'content', canonicalUrl);
-    setMeta('meta[name="twitter:title"]', 'content', pageTitle);
-    setMeta('meta[name="twitter:description"]', 'content', pageDesc);
-
-    return () => {
-      document.title = 'Terminal Learning — Apprends le terminal pas à pas';
-      setMeta('meta[name="description"]', 'content',
-        'Apprends les commandes du terminal gratuitement. 8 modules progressifs (Linux, macOS, Windows), émulateur interactif, progression sauvegardée. Pour débutants, open source.');
-      setMeta('link[rel="canonical"]', 'href', 'https://terminallearning.dev/');
-      setMeta('meta[property="og:title"]', 'content', 'Terminal Learning — Apprends le terminal pas à pas');
-      setMeta('meta[property="og:description"]', 'content',
-        'Application interactive gratuite pour apprendre les commandes du terminal. 8 modules progressifs (Linux, macOS, Windows), émulateur réel. Pour débutants, 100% open source.');
-      setMeta('meta[property="og:url"]', 'content', 'https://terminallearning.dev/');
-      setMeta('meta[name="twitter:title"]', 'content', 'Terminal Learning — Apprends le terminal pas à pas');
-      setMeta('meta[name="twitter:description"]', 'content',
-        'Application interactive gratuite pour apprendre les commandes du terminal. 8 modules (Linux, macOS, Windows), émulateur réel, 100% open source.');
-    };
-  }, [mod, lesson, moduleId, lessonId]);
+  useLessonSEO(mod, lesson, moduleId, lessonId);
   const terminalUsername = toUnixUsername(user);
   // Derived from context on every render — no local state needed
   const exerciseCompleted = isLessonCompleted(moduleId, lessonId);

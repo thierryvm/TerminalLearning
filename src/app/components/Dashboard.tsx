@@ -1,14 +1,10 @@
 import { useNavigate } from 'react-router';
 import {
-  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
   CheckCircle2, ChevronRight, Terminal, Award, BookOpen, Zap, Lock,
 } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
-
-const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
-  Compass, FolderOpen, FileText, Shield, Cpu, GitMerge, GitBranch, GitFork, Globe,
-};
+import { iconMap } from '../data/moduleIcons';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
