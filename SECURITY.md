@@ -19,11 +19,22 @@ You will receive an acknowledgement within 72 hours.
 ## Security Measures in Place
 
 ### Frontend
-- **Content Security Policy** via `vercel.json` (strict — no unsafe-eval)
-- **No `dangerouslySetInnerHTML`** anywhere in the codebase
+- **Content Security Policy** via `vercel.json` (strict — no unsafe-eval, exact FQDNs only, no wildcards)
+- **Cross-Origin-Opener-Policy: same-origin** — isolates the browsing context, mitigates Spectre-class side-channel attacks
+- **Cross-Origin-Resource-Policy: same-origin** — prevents other origins from embedding our assets
+- **No raw HTML injection** anywhere in the codebase (React safe rendering only)
 - **No secrets client-side** — Supabase anon key only (safe by design + RLS)
 - **Input validation** — Zod on all user inputs (auth forms + terminal)
-- **X-Frame-Options: DENY**, **X-Content-Type-Options: nosniff**, HSTS-ready
+- **X-Frame-Options: DENY**, **X-Content-Type-Options: nosniff**, **HSTS** (2-year max-age, includeSubDomains, preload)
+
+### Terminal Engine
+- **ReDoS protection** — `grep` regex patterns are length-capped and validated before compilation; malformed patterns return a user-visible error instead of hanging the tab
+- **Filesystem clone guard** — recursive `cp` operations are capped at a hard node limit to prevent memory exhaustion via deeply nested structures
+
+### API & Edge Functions
+- **Rate limiting** on all public API endpoints — sliding-window per IP, with automatic stale-entry eviction
+- **Payload size guard** on the error-reporting tunnel — oversized requests are rejected before body buffering
+- **Envelope validation** on the error-reporting tunnel — only envelopes targeting our own project are forwarded; open-proxy abuse is structurally impossible
 
 ### Authentication (Phase 3)
 - **PKCE flow** for all OAuth providers — no implicit flow
@@ -39,6 +50,7 @@ You will receive an acknowledgement within 72 hours.
 ### Dependencies
 - `npm audit` on every CI run
 - Dependabot alerts enabled on the repository
+- Proactive CVE patching — critical vulnerabilities in build tooling are patched as soon as a fix is available
 
 ## Planned Security Enhancements
 
