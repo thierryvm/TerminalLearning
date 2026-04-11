@@ -1879,7 +1879,7 @@ export const curriculum: Module[] = [
     color: '#06b6d4',
     level: 3,
     prerequisites: ['variables'],
-    unlocks: [],
+    unlocks: ['github-collaboration'],
     lessons: [
       {
         id: 'ping',
@@ -2190,6 +2190,563 @@ export const curriculum: Module[] = [
           hint: 'Tapez: scp fichier.txt user@serveur.example.com:/home/user/',
           validate: (cmd) => /^scp\s+.+\s+.+@.+:.+/.test(cmd.trim().toLowerCase()),
           successMessage: 'Excellent ! Vous savez maintenant transférer des fichiers de manière sécurisée.',
+        },
+      },
+    ],
+  },
+
+  // ── Module 9 — Git Fondamentaux ─────────────────────────────────────────────
+  {
+    id: 'git',
+    title: 'Git Fondamentaux',
+    description: 'Maîtrisez le contrôle de version avec Git — l\'outil indispensable de tout développeur professionnel',
+    iconName: 'GitBranch',
+    color: '#f97316',
+    level: 4,
+    prerequisites: ['variables'],
+    unlocks: ['github-collaboration'],
+    lessons: [
+      {
+        id: 'git-init',
+        title: 'git init — Initialiser un dépôt',
+        description: 'Créez votre premier dépôt Git et comprenez la structure interne',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Git est un système de contrôle de version distribué. Chaque développeur possède une copie complète de l\'historique du projet. C\'est l\'outil #1 dans tous les environnements professionnels — maîtriser Git est non-négociable.',
+          },
+          {
+            type: 'code',
+            content: '# Créer un nouveau dépôt dans le répertoire courant\n$ git init\nInitialized empty Git repository in /home/user/mon-projet/.git/\n\n# Créer un dépôt avec un nom de répertoire\n$ git init mon-projet\nInitialized empty Git repository in /home/user/mon-projet/.git/',
+            label: 'git init (Linux/macOS)',
+          },
+          {
+            type: 'code',
+            content: '# PowerShell — même commande, multiplateforme\nPS> git init\nInitialized empty Git repository in C:\\Users\\user\\mon-projet\\.git\\\n\nPS> git init mon-projet',
+            label: 'git init (Windows PowerShell)',
+          },
+          {
+            type: 'info',
+            content:
+              'Le dossier `.git/` contient tout l\'historique du projet : commits, branches, configuration. **Ne jamais supprimer ce dossier** — c\'est la mémoire complète du dépôt.',
+            contentByEnv: {
+              windows: 'Sur Windows, `.git/` est un dossier caché. Dans l\'Explorateur, activez "Éléments masqués" pour le voir. En PowerShell : `ls -Force` ou `Get-ChildItem -Force`.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Convention pro : toujours initialiser un dépôt git dès le début d\'un projet, même seul. L\'historique est inestimable pour comprendre pourquoi une décision a été prise — même des mois plus tard.',
+          },
+        ],
+        exercise: {
+          instruction: 'Initialisez un nouveau dépôt Git avec `git init`.',
+          hint: 'Tapez: git init',
+          validate: (cmd) => /^git\s+init(\s+.*)?$/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Parfait ! Votre premier dépôt Git est initialisé. Le dossier .git/ a été créé.',
+        },
+      },
+      {
+        id: 'git-config',
+        title: 'git config — Configurer votre identité',
+        description: 'Configurez votre nom et email avant votre premier commit',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Avant de commencer à committer, Git a besoin de savoir qui vous êtes. Cette identité est attachée à chaque commit — elle est visible dans l\'historique et sur GitHub.',
+          },
+          {
+            type: 'code',
+            content: '# Configuration globale (pour tous vos projets)\n$ git config --global user.name "Votre Nom"\n$ git config --global user.email "vous@example.com"\n\n# Vérifier la configuration\n$ git config --list\nuser.name=Votre Nom\nuser.email=vous@example.com\ncore.editor=nano\ninit.defaultBranch=main',
+            label: 'Configuration git (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Définir l\'éditeur par défaut\n$ git config --global core.editor "code --wait"   # VS Code\n$ git config --global core.editor "nano"          # Nano\n$ git config --global core.editor "vim"           # Vim\n\n# Définir la branche par défaut\n$ git config --global init.defaultBranch main',
+            label: 'Configuration avancée',
+          },
+          {
+            type: 'info',
+            content:
+              '`--global` configure Git pour tous vos projets (fichier `~/.gitconfig`). Sans ce flag, la configuration ne s\'applique qu\'au dépôt courant (fichier `.git/config`). Utilisez `--local` pour surcharger par projet.',
+            contentByEnv: {
+              windows: 'Sur Windows, le fichier de configuration global est dans `C:\\Users\\VotreNom\\.gitconfig`. Vous pouvez aussi utiliser `git config --list --show-origin` pour voir d\'où vient chaque paramètre.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'En entreprise, vous utiliserez souvent une configuration globale pour votre compte personnel et une configuration locale par projet (email pro vs perso). `git config --list --show-origin` vous montre exactement quelle config est active.',
+          },
+        ],
+        exercise: {
+          instruction: 'Vérifiez votre configuration Git avec `git config --list`.',
+          hint: 'Tapez: git config --list',
+          validate: (cmd) => /^git\s+config\s+(--list|--global\s+user\.)/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Votre configuration Git est visible. Nom et email sont les deux réglages essentiels avant le premier commit.',
+        },
+      },
+      {
+        id: 'git-add-commit',
+        title: 'git add & commit — Enregistrer vos modifications',
+        description: 'Comprenez la zone de staging et créez vos premiers commits',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Git utilise un système en trois zones : le **répertoire de travail** (vos fichiers), la **zone de staging** (les modifications prêtes à être commitées) et le **dépôt** (l\'historique permanent). Cette architecture donne un contrôle précis sur ce qu\'on enregistre.',
+          },
+          {
+            type: 'code',
+            content: '# Voir l\'état actuel\n$ git status\nOn branch main\nUntracked files:\n  (use "git add <file>" to include)\n\tfichier.txt\n\n# Ajouter un fichier spécifique\n$ git add fichier.txt\n\n# Ajouter tous les fichiers du répertoire courant\n$ git add .\n\n# Ajouter interactivement (sélection fine)\n$ git add -p',
+            label: 'Staging (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Créer un commit avec message en ligne\n$ git commit -m "feat: ajouter la page d\'accueil"\n[main a3f8c12] feat: ajouter la page d\'accueil\n 1 file changed, 25 insertions(+)\n\n# Commit avec titre + description\n$ git commit -m "feat: authentification utilisateur" -m "Ajoute login/logout avec JWT et refresh token automatique"',
+            label: 'Créer un commit',
+          },
+          {
+            type: 'info',
+            content:
+              'Convention de message de commit (Conventional Commits) : `type(scope): description`. Types courants : `feat` (nouvelle feature), `fix` (bug), `refactor`, `test`, `docs`, `chore`. Cette convention est standard en entreprise — lisez les commits de projets open source pour vous en imprégner.',
+          },
+          {
+            type: 'warning',
+            content: '`git add .` ajoute TOUT — y compris les fichiers `.env`, les clés API, les mots de passe. Configurez toujours un `.gitignore` AVANT de faire `git add .` pour ne pas exposer de secrets.',
+          },
+          {
+            type: 'tip',
+            content: '`git add -p` ("patch mode") permet de sélectionner des hunks individuels à l\'intérieur d\'un même fichier. Indispensable pour faire des commits propres et atomiques — chaque commit = un sujet précis.',
+          },
+        ],
+        exercise: {
+          instruction: 'Ajoutez tous les fichiers du répertoire courant à la zone de staging avec `git add .`.',
+          hint: 'Tapez: git add .',
+          validate: (cmd) => /^git\s+add\s+(\.|--all|-A|-p)/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Fichiers stagés ! Maintenant vous pouvez les committer avec git commit -m "message".',
+        },
+      },
+      {
+        id: 'git-status-log',
+        title: 'git status & log — Surveiller votre dépôt',
+        description: 'Inspectez l\'état courant et consultez l\'historique des commits',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`git status` et `git log` sont vos yeux dans Git. Status vous dit où vous en êtes maintenant ; log vous raconte l\'histoire du projet. Vous les utiliserez des dizaines de fois par jour en entreprise.',
+          },
+          {
+            type: 'code',
+            content: '# État du répertoire de travail\n$ git status\nOn branch main\nChanges to be committed:\n  (use "git restore --staged" to unstage)\n\tnew file:   index.html\n\nChanges not staged for commit:\n  modified:   style.css\n\nUntracked files:\n  script.js',
+            label: 'git status',
+          },
+          {
+            type: 'code',
+            content: '# Historique complet\n$ git log\ncommit a3f8c12 (HEAD -> main)\nAuthor: Vous <vous@example.com>\nDate:   Mon Apr 11 2026\n\n    feat: ajouter la page d\'accueil\n\n# Format court (très utilisé en pratique)\n$ git log --oneline\na3f8c12 feat: ajouter la page d\'accueil\nb2e9d01 chore: initialisation du projet\n\n# Avec le graphe de branches\n$ git log --oneline --graph --all',
+            label: 'git log',
+          },
+          {
+            type: 'code',
+            content: '# Voir un commit spécifique en détail\n$ git show a3f8c12\n\n# Voir les commits d\'un auteur\n$ git log --author="Votre Nom"\n\n# Chercher dans les messages de commit\n$ git log --grep="feat"\n\n# Voir les fichiers modifiés par commit\n$ git log --stat',
+            label: 'git log avancé',
+          },
+          {
+            type: 'tip',
+            content: '`git log --oneline --graph --all --decorate` est la commande de référence pour visualiser l\'état complet d\'un dépôt avec toutes ses branches. Créez un alias : `git config --global alias.lg "log --oneline --graph --all --decorate"`',
+          },
+        ],
+        exercise: {
+          instruction: 'Affichez le statut de votre dépôt avec `git status`.',
+          hint: 'Tapez: git status',
+          validate: (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Vous savez lire l\'état de votre dépôt. git status sera votre commande la plus utilisée au quotidien.',
+        },
+      },
+      {
+        id: 'git-diff-gitignore',
+        title: 'git diff & .gitignore — Comparer et filtrer',
+        description: 'Visualisez les différences et excluez les fichiers non pertinents',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`git diff` montre exactement ce qui a changé dans vos fichiers. `.gitignore` dit à Git quels fichiers ignorer — variables d\'environnement, dépendances, fichiers de build. Ces deux outils sont essentiels pour des commits propres.',
+          },
+          {
+            type: 'code',
+            content: '# Voir les modifications non-stagées\n$ git diff\ndiff --git a/style.css b/style.css\n--- a/style.css\n+++ b/style.css\n@@ -1,3 +1,4 @@\n body {\n+  font-family: sans-serif;\n   margin: 0;\n }\n\n# Voir les modifications stagées (avant commit)\n$ git diff --staged\n\n# Comparer deux branches\n$ git diff main feature/login',
+            label: 'git diff',
+          },
+          {
+            type: 'code',
+            content: '# Exemple de .gitignore pour un projet Node.js\nnode_modules/\ndist/\nbuild/\n\n# Fichiers sensibles — JAMAIS committer\n.env\n.env.local\n.env.*.local\n*.key\n*.pem\n\n# OS & IDE\n.DS_Store\nThumbs.db\n.vscode/settings.json\n.idea/\n\n# Logs\n*.log\nnpm-debug.log*',
+            label: '.gitignore — fichier de référence',
+          },
+          {
+            type: 'code',
+            content: '# Vérifier si un fichier est ignoré\n$ git check-ignore -v .env\n.gitignore:4:.env\t.env\n\n# Forcer l\'ajout d\'un fichier ignoré (rarement conseillé)\n$ git add --force fichier.log\n\n# Utiliser github.com/github/gitignore pour des templates\n# Ex. gitignore pour Node, Python, Rust, etc.',
+            label: 'Vérification et debug',
+          },
+          {
+            type: 'warning',
+            content: 'Un `.gitignore` ajouté après que des fichiers ont déjà été commités ne les supprime PAS de l\'historique. Pour supprimer des secrets déjà commités, utilisez `git filter-repo` ou contactez GitHub Support — et considérez les secrets compromis.',
+          },
+          {
+            type: 'tip',
+            content: 'Créez toujours votre `.gitignore` AVANT le premier `git add`. GitHub propose des templates ready-to-use pour chaque langage sur `github.com/github/gitignore`.',
+          },
+        ],
+        exercise: {
+          instruction: 'Visualisez les différences actuelles dans votre dépôt avec `git diff`.',
+          hint: 'Tapez: git diff',
+          validate: (cmd) => /^git\s+diff(\s+.*)?$/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Vous savez lire un diff Git. Les lignes en vert (+) sont les ajouts, en rouge (-) les suppressions.',
+        },
+      },
+      {
+        id: 'git-branch',
+        title: 'git branch — Travailler avec les branches',
+        description: 'Créez, listez et gérez les branches pour isoler vos développements',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Les branches sont l\'une des forces majeures de Git. Elles permettent de travailler sur une feature ou un bug fix en isolation totale, sans perturber la branche principale. En entreprise, vous ne travaillez pratiquement jamais directement sur `main`.',
+          },
+          {
+            type: 'code',
+            content: '# Lister les branches locales (* = branche active)\n$ git branch\n* main\n  feature/login\n  fix/typo-header\n\n# Créer une nouvelle branche\n$ git branch feature/panier\n\n# Créer et basculer immédiatement (méthode classique)\n$ git checkout -b feature/panier\n\n# Méthode moderne (Git 2.23+)\n$ git switch -c feature/panier\nSwitched to a new branch \'feature/panier\'',
+            label: 'Créer et lister des branches (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Renommer une branche\n$ git branch -m ancien-nom nouveau-nom\n\n# Supprimer une branche mergée\n$ git branch -d feature/login\n\n# Supprimer une branche non-mergée (force)\n$ git branch -D feature/experimental\n\n# Lister toutes les branches (locales + distantes)\n$ git branch -a\n* main\n  feature/login\n  remotes/origin/main\n  remotes/origin/develop',
+            label: 'Gérer les branches',
+          },
+          {
+            type: 'info',
+            content:
+              'Convention de nommage en entreprise : `feature/THI-28-git-modules` (prefixe + ID issue + description), `fix/login-redirect`, `hotfix/cve-2026`, `release/v2.0.0`. Chaque équipe a ses conventions — vérifiez le CONTRIBUTING.md du projet.',
+            contentByEnv: {
+              windows: 'Toutes les commandes git branch fonctionnent identiquement sur Windows, macOS et Linux. Git est conçu pour être cross-platform depuis le départ.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'La règle d\'or : **une branche = un sujet**. Ne mélangez pas une feature et un bugfix sur la même branche. Les Pull Requests seront plus faciles à relire et à revenir en arrière si nécessaire.',
+          },
+        ],
+        exercise: {
+          instruction: 'Créez une nouvelle branche `feature/ma-feature` et basculez dessus avec `git checkout -b feature/ma-feature`.',
+          hint: 'Tapez: git checkout -b feature/ma-feature',
+          validate: (cmd) => {
+            const c = cmd.trim().toLowerCase();
+            return /^git\s+checkout\s+-b\s+\S+/.test(c) || /^git\s+switch\s+-c\s+\S+/.test(c);
+          },
+          successMessage: 'Branche créée et activée ! Vous développez maintenant en isolation totale de main.',
+        },
+      },
+      {
+        id: 'git-merge',
+        title: 'git merge — Fusionner des branches',
+        description: 'Intégrez le travail d\'une branche dans une autre et gérez les conflits',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Une fois votre feature terminée, vous devez l\'intégrer dans la branche principale. `git merge` fusionne l\'historique de deux branches. C\'est la dernière étape du workflow feature branch — avant la Pull Request sur GitHub.',
+          },
+          {
+            type: 'code',
+            content: '# Retourner sur la branche cible\n$ git checkout main\n\n# Fusionner la branche feature\n$ git merge feature/panier\nUpdating a3f8c12..b7e2d45\nFast-forward\n panier.html | 42 ++++++++++++\n 1 file changed, 42 insertions(+)',
+            label: 'Merge fast-forward (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# En cas de conflit :\n$ git merge feature/login\nAuto-merging index.html\nCONFLICT (content): Merge conflict in index.html\nAutomatic merge failed; fix conflicts and then commit the result.\n\n# Ouvrez le fichier conflictueux :\n<<<<<<< HEAD\n<title>Mon App</title>\n=======\n<title>Login — Mon App</title>\n>>>>>>> feature/login\n\n# Après résolution manuelle :\n$ git add index.html\n$ git commit -m "merge: resolve conflict in index.html"',
+            label: 'Résoudre un conflit de merge',
+          },
+          {
+            type: 'info',
+            content:
+              'Deux stratégies de merge : **fast-forward** (si la branche cible n\'a pas avancé — historique linéaire) et **merge commit** (si les deux branches ont divergé — conserve la trace de la fusion). `git merge --no-ff` force un merge commit même si fast-forward est possible.',
+          },
+          {
+            type: 'tip',
+            content: 'En pratique en entreprise, le merge est souvent fait via une Pull Request sur GitHub — pas directement en ligne de commande. La PR permet la code review avant le merge. Comprendre `git merge` reste indispensable pour gérer les conflits.',
+          },
+        ],
+        exercise: {
+          instruction: 'Fusionnez la branche `feature/ma-feature` dans la branche courante avec `git merge feature/ma-feature`.',
+          hint: 'Tapez: git merge feature/ma-feature',
+          validate: (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Fusion réussie ! Le travail de la branche est maintenant intégré. C\'est le coeur du workflow Git en entreprise.',
+        },
+      },
+    ],
+  },
+
+  // ── Module 10 — GitHub & Collaboration ──────────────────────────────────────
+  {
+    id: 'github-collaboration',
+    title: 'GitHub & Collaboration',
+    description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise',
+    iconName: 'Github',
+    color: '#8b5cf6',
+    level: 4,
+    prerequisites: ['git', 'reseau'],
+    unlocks: [],
+    lessons: [
+      {
+        id: 'git-remote',
+        title: 'git remote — Connecter au dépôt distant',
+        description: 'Liez votre dépôt local à GitHub et gérez vos remotes',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Un "remote" est un lien entre votre dépôt local et un dépôt hébergé (GitHub, GitLab, Bitbucket…). C\'est le pont entre votre machine et le monde. En équipe, le remote `origin` est la référence partagée par tous.',
+          },
+          {
+            type: 'code',
+            content: '# Ajouter un remote (étape après git init)\n$ git remote add origin https://github.com/user/mon-projet.git\n\n# Lister les remotes configurés\n$ git remote -v\norigin\thttps://github.com/user/mon-projet.git (fetch)\norigin\thttps://github.com/user/mon-projet.git (push)\n\n# Supprimer un remote\n$ git remote remove origin\n\n# Renommer un remote\n$ git remote rename origin upstream',
+            label: 'Gérer les remotes (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# HTTPS vs SSH — deux méthodes d\'authentification\n\n# HTTPS (simple, authentification par token)\nhttps://github.com/user/repo.git\n\n# SSH (recommandé, clé cryptographique)\ngit@github.com:user/repo.git\n\n# Changer l\'URL d\'un remote existant\n$ git remote set-url origin git@github.com:user/repo.git',
+            label: 'HTTPS vs SSH',
+          },
+          {
+            type: 'info',
+            content:
+              'GitHub a supprimé l\'authentification par mot de passe en 2021. Pour HTTPS, vous avez besoin d\'un **Personal Access Token (PAT)** ou d\'utiliser GitHub CLI (`gh auth login`). Pour SSH, configurez vos clés SSH dans les paramètres GitHub → SSH and GPG keys.',
+            contentByEnv: {
+              windows: 'Sur Windows, **Git Credential Manager** (inclus avec Git for Windows) stocke automatiquement vos tokens HTTPS. Pour SSH, les clés générées avec `ssh-keygen` dans PowerShell ou Git Bash fonctionnent identiquement.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Convention : le remote principal s\'appelle toujours `origin`. Quand vous forkez un projet pour contribuer, le dépôt original s\'appelle `upstream` — vous pouvez synchroniser avec `git pull upstream main`.',
+          },
+        ],
+        exercise: {
+          instruction: 'Ajoutez un remote `origin` pointant vers `https://github.com/user/mon-projet.git` avec `git remote add origin https://github.com/user/mon-projet.git`.',
+          hint: 'Tapez: git remote add origin https://github.com/user/mon-projet.git',
+          validate: (cmd) => /^git\s+remote\s+add\s+\S+\s+https?:\/\/\S+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Remote ajouté ! Votre dépôt local est maintenant connecté à GitHub.',
+        },
+      },
+      {
+        id: 'git-push-pull',
+        title: 'git push & pull — Synchroniser avec GitHub',
+        description: 'Envoyez vos commits vers GitHub et récupérez les modifications de votre équipe',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`git push` envoie vos commits locaux vers le dépôt distant. `git pull` récupère les commits distants et les intègre à votre branche. Ces deux commandes sont le rythme quotidien du travail en équipe.',
+          },
+          {
+            type: 'code',
+            content: '# Premier push — définir la branche de tracking\n$ git push -u origin main\nEnumerating objects: 3, done.\nCounting objects: 100% (3/3), done.\nTo https://github.com/user/repo.git\n * [new branch]      main -> main\nBranch \'main\' set up to track \'origin/main\'.\n\n# Push suivants (tracking déjà configuré)\n$ git push\n\n# Push d\'une nouvelle branche feature\n$ git push -u origin feature/panier',
+            label: 'git push (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Récupérer ET intégrer les commits distants\n$ git pull\nremote: Enumerating objects: 5, done.\nUpdating a3f8c12..c9f1e34\nFast-forward\n README.md | 3 +++\n 1 file changed, 3 insertions(+)\n\n# Pull avec rebase (historique linéaire)\n$ git pull --rebase\n\n# Voir ce qui arrive avant d\'intégrer\n$ git fetch && git log HEAD..origin/main --oneline',
+            label: 'git pull',
+          },
+          {
+            type: 'info',
+            content:
+              'La différence entre `pull` et `fetch` : `fetch` télécharge les changements sans les intégrer (safe), `pull` = `fetch` + `merge` (intègre automatiquement). En équipe active, `fetch` d\'abord, puis analyser, puis `merge` ou `rebase`.',
+            contentByEnv: {
+              windows: 'Toutes ces commandes fonctionnent identiquement sur Windows. Si vous utilisez GitHub Desktop ou Fork (GUI), ces apps exécutent les mêmes commandes git en arrière-plan.',
+            },
+          },
+          {
+            type: 'warning',
+            content: '`git push --force` ou `git push -f` réécrit l\'historique distant. **Ne jamais faire sur une branche partagée** (`main`, `develop`) — vous écrasez le travail de vos collègues. Utilisez `--force-with-lease` si vous devez forcer sur votre propre branche feature.',
+          },
+          {
+            type: 'tip',
+            content: 'Workflow quotidien en équipe : 1) `git pull` au démarrage, 2) travailler sur votre branche, 3) `git push` en fin de journée ou après chaque feature terminée. Ne laissez jamais des commits locaux non-poussés plus d\'une journée.',
+          },
+        ],
+        exercise: {
+          instruction: 'Envoyez vos commits vers GitHub avec `git push -u origin main`.',
+          hint: 'Tapez: git push -u origin main',
+          validate: (cmd) => /^git\s+push(\s+-u\s+\S+\s+\S+|\s+\S+\s+\S+|\s*)$/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Push réussi ! Vos commits sont maintenant sur GitHub, visibles par toute votre équipe.',
+        },
+      },
+      {
+        id: 'git-fetch-clone',
+        title: 'git fetch & clone — Récupérer et cloner',
+        description: 'Clonez un dépôt existant et récupérez les mises à jour sans intégration automatique',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              '`git clone` est votre point d\'entrée sur un projet existant. `git fetch` est l\'outil de synchronisation safe — il télécharge sans toucher à votre travail. Ces deux commandes sont indispensables dès le premier jour dans une entreprise.',
+          },
+          {
+            type: 'code',
+            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\nremote: Enumerating objects: 1247, done.\nReceiving objects: 100% (1247/1247), done.\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique\n$ git clone -b develop https://github.com/org/projet.git\n\n# Cloner en SSH (recommandé)\n$ git clone git@github.com:org/projet.git',
+            label: 'git clone (Linux/macOS/Windows)',
+          },
+          {
+            type: 'code',
+            content: '# Fetch : télécharger sans intégrer\n$ git fetch origin\nFrom https://github.com/org/projet\n * branch            main       -> FETCH_HEAD\n\n# Voir ce qui a changé sur le remote\n$ git fetch && git log HEAD..origin/main --oneline\n\n# Voir toutes les branches distantes\n$ git fetch --all\n\n# Comparer local vs remote après fetch\n$ git diff main origin/main',
+            label: 'git fetch',
+          },
+          {
+            type: 'code',
+            content: '# Workflow de contribution typique en open source\n# 1. Forker sur GitHub (via l\'interface web)\n\n# 2. Cloner votre fork\n$ git clone git@github.com:VOTRE-USER/projet.git\n\n# 3. Ajouter l\'upstream (projet original)\n$ git remote add upstream git@github.com:org/projet.git\n\n# 4. Synchroniser régulièrement\n$ git fetch upstream\n$ git merge upstream/main',
+            label: 'Workflow fork & contribution',
+          },
+          {
+            type: 'tip',
+            content: '`git fetch` est la commande la plus "safe" pour la synchronisation — elle ne modifie jamais votre travail local. Utilisez-la pour voir les changements avant de les intégrer avec `merge` ou `rebase`.',
+          },
+        ],
+        exercise: {
+          instruction: 'Clonez un dépôt distant avec `git clone https://github.com/user/projet.git`.',
+          hint: 'Tapez: git clone https://github.com/user/projet.git',
+          validate: (cmd) => /^git\s+clone\s+\S+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Dépôt cloné ! Vous pouvez maintenant travailler sur un projet existant avec tout son historique.',
+        },
+      },
+      {
+        id: 'pull-requests',
+        title: 'Pull Requests — Code Review & Collaboration',
+        description: 'Maîtrisez le workflow Pull Request, pilier de la collaboration professionnelle',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'La Pull Request (PR) — ou Merge Request sur GitLab — est le mécanisme central de la collaboration en équipe. Elle permet de proposer des changements, de les faire relire avant le merge, et de documenter les décisions techniques.',
+          },
+          {
+            type: 'code',
+            content: '# Workflow complet pour ouvrir une PR\n\n# 1. Créer une branche feature\n$ git checkout -b feature/THI-28-git-modules\n\n# 2. Développer et committer\n$ git add .\n$ git commit -m "feat(curriculum): add git module"\n\n# 3. Pousser la branche\n$ git push -u origin feature/THI-28-git-modules\n\n# 4. Ouvrir la PR sur GitHub (interface web ou CLI)\n$ gh pr create --title "feat(curriculum): add git module" --body "..."',
+            label: 'Workflow PR complet',
+          },
+          {
+            type: 'code',
+            content: '# GitHub CLI (gh) — travailler avec les PRs depuis le terminal\n\n# Lister les PRs ouvertes\n$ gh pr list\n\n# Voir une PR spécifique\n$ gh pr view 42\n\n# Checkout d\'une PR pour review locale\n$ gh pr checkout 42\n\n# Approuver une PR\n$ gh pr review 42 --approve\n\n# Merger une PR\n$ gh pr merge 42 --squash',
+            label: 'GitHub CLI — PR management',
+          },
+          {
+            type: 'info',
+            content:
+              'Anatomie d\'une bonne PR : **titre clair** (même format que le commit message), **description** avec le contexte + screenshots si UI, **checklist** de ce qui a été fait et testé, **lien vers l\'issue** Linear/Jira. Une PR < 400 lignes de diff est plus facile à relire.',
+            contentByEnv: {
+              windows: 'GitHub CLI (`gh`) est disponible sur Windows via `winget install GitHub.cli` ou `scoop install gh`. Il s\'intègre avec Git Credential Manager pour l\'authentification.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'En code review : soyez constructif, non subjectif. "Cette fonction fait 200 lignes, pourrions-nous la découper ?" est mieux que "c\'est trop long". Approuvez ce qui est bon, suggérez ce qui peut s\'améliorer, bloquez ce qui est une erreur réelle.',
+          },
+        ],
+        exercise: {
+          instruction: 'Simulez le début d\'un workflow PR : créez une branche `feature/nouvelle-feature` avec `git checkout -b feature/nouvelle-feature`.',
+          hint: 'Tapez: git checkout -b feature/nouvelle-feature',
+          validate: (cmd) => {
+            const c = cmd.trim().toLowerCase();
+            return /^git\s+checkout\s+-b\s+feature\/\S+/.test(c) || /^git\s+switch\s+-c\s+feature\/\S+/.test(c);
+          },
+          successMessage: 'Branche feature créée ! Dans un vrai projet, vous développeriez ici puis ouvreriez une PR vers main.',
+        },
+      },
+      {
+        id: 'conflicts',
+        title: 'Conflits de merge — Les résoudre comme un pro',
+        description: 'Comprenez pourquoi les conflits apparaissent et apprenez à les résoudre avec méthode',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Les conflits de merge sont inévitables en équipe. Ils surviennent quand deux développeurs modifient la même ligne dans la même période. Ce n\'est pas un bug Git — c\'est Git qui refuse de deviner lequel des deux changements est correct.',
+          },
+          {
+            type: 'code',
+            content: '# Scénario typique de conflit\n$ git merge feature/login\nAuto-merging index.html\nCONFLICT (content): Merge conflict in index.html\nAutomatic merge failed; fix conflicts and then commit the result.\n\n# Voir quels fichiers sont en conflit\n$ git status\nboth modified:   index.html\n\n# Contenu d\'un fichier en conflit\n<<<<<<< HEAD (votre version)\n<title>Mon App v2</title>\n=======\n<title>Login — Mon App</title>\n>>>>>>> feature/login (version entrante)',
+            label: 'Comprendre un conflit',
+          },
+          {
+            type: 'code',
+            content: '# Résolution en 4 étapes\n\n# 1. Ouvrir le fichier conflictueux dans votre éditeur\n$ code index.html  # VS Code avec extension GitLens\n\n# 2. Choisir ou combiner les deux versions\n<title>Login — Mon App v2</title>  # version fusionnée\n\n# 3. Supprimer les marqueurs de conflit\n# (<<<, ===, >>> n\'ont plus lieu d\'être)\n\n# 4. Stager et committer\n$ git add index.html\n$ git commit -m "merge: resolve title conflict between main and feature/login"',
+            label: 'Résolution étape par étape',
+          },
+          {
+            type: 'code',
+            content: '# Outils graphiques pour les conflits\n\n# VS Code intégré (recommandé débutants)\n$ git mergetool\n\n# Voir les 3 versions (base, local, remote)\n$ git diff --conflict=diff3\n\n# Abandonner le merge\n$ git merge --abort\n\n# Prévenir les conflits : merge fréquemment\n$ git pull --rebase origin main  # au lieu de merge\n\n# Stratégie rebase pour historique linéaire\n$ git rebase main',
+            label: 'Outils et stratégies avancées',
+          },
+          {
+            type: 'warning',
+            content: 'Ne jamais committer un fichier avec des marqueurs de conflit (`<<<<<<<`, `=======`, `>>>>>>>`) encore présents. Certains outils de CI détectent automatiquement ces marqueurs et bloquent le build.',
+          },
+          {
+            type: 'tip',
+            content: 'La meilleure façon d\'éviter les conflits : merger/rebaser souvent depuis main. Un branche qui diverge pendant 2 semaines aura beaucoup plus de conflits qu\'une branche quotidiennement synchronisée.',
+          },
+        ],
+        exercise: {
+          instruction: 'Fusionnez la branche `feature/nouvelle-feature` dans la branche courante avec `git merge feature/nouvelle-feature`.',
+          hint: 'Tapez: git merge feature/nouvelle-feature',
+          validate: (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Fusion effectuée ! En cas de conflit réel, vous savez maintenant comment les identifier et les résoudre.',
+        },
+      },
+      {
+        id: 'github-actions',
+        title: 'GitHub Actions — CI/CD automatisé',
+        description: 'Automatisez vos tests, builds et déploiements avec GitHub Actions',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'GitHub Actions est la plateforme CI/CD intégrée à GitHub. Elle permet d\'automatiser tout ce qui doit se passer à chaque push, PR ou merge : tests, linting, build, déploiement. En entreprise, c\'est le garde-fou qualité de l\'équipe.',
+          },
+          {
+            type: 'code',
+            content: '# Structure d\'un workflow GitHub Actions\n# Fichier : .github/workflows/ci.yml\n\nname: CI\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \'20\'\n      - run: npm install\n      - run: npm run lint\n      - run: npm test\n      - run: npm run build',
+            label: 'Workflow CI/CD minimal',
+          },
+          {
+            type: 'code',
+            content: '# Workflow multi-jobs avec matrix\njobs:\n  test:\n    runs-on: ${{ matrix.os }}\n    strategy:\n      matrix:\n        os: [ubuntu-latest, windows-latest, macos-latest]\n        node: [18, 20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n      - run: npm test\n\n  deploy:\n    needs: test  # attend que tous les tests passent\n    if: github.ref == \'refs/heads/main\'\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Déploiement en production"',
+            label: 'Matrix + déploiement conditionnel',
+          },
+          {
+            type: 'code',
+            content: '# Commandes utiles avec GitHub CLI\n\n# Lister les workflows\n$ gh workflow list\n\n# Voir les runs récents\n$ gh run list\n\n# Voir les détails d\'un run\n$ gh run view 12345\n\n# Déclencher manuellement un workflow\n$ gh workflow run ci.yml\n\n# Télécharger les artifacts d\'un run\n$ gh run download 12345',
+            label: 'Gestion via GitHub CLI',
+          },
+          {
+            type: 'info',
+            content:
+              'Le fichier de workflow doit être dans `.github/workflows/`. GitHub détecte automatiquement tous les fichiers `.yml` dans ce dossier. Les triggers les plus courants : `push`, `pull_request`, `schedule` (cron), `workflow_dispatch` (manuel).',
+            contentByEnv: {
+              windows: 'Les runners GitHub Actions disponibles incluent `windows-latest` (Windows Server). Vous pouvez tester sur plusieurs OS en parallèle avec la matrix strategy — utile pour les outils cross-platform.',
+            },
+          },
+          {
+            type: 'tip',
+            content: 'Règle pratique : si vous le faites à la main à chaque PR, automatisez-le avec GitHub Actions. Tests, linting, type-check, build, déploiement preview, mise à jour de la documentation — tout peut être automatisé.',
+          },
+        ],
+        exercise: {
+          instruction: 'Vérifiez l\'état de votre dépôt git avant un push avec `git status`.',
+          hint: 'Tapez: git status',
+          validate: (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase()),
+          successMessage: 'Parfait ! Avant chaque push, vérifiez toujours l\'état de votre dépôt. GitHub Actions fera ensuite tourner automatiquement vos tests et votre build.',
         },
       },
     ],
