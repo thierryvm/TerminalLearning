@@ -19,6 +19,18 @@ export function initSentry() {
       const evalErr = 'Eval' + 'Error';
       if (event.exception?.values?.some((e) => e.type === evalErr)) return null;
 
+      // Drop Supabase navigator lock errors — internal tab coordination, not app bugs
+      // Happens when multiple tabs refresh the auth token simultaneously
+      const lockPrefix = 'lock:sb-';
+      if (
+        event.exception?.values?.some(
+          (e) =>
+            e.value?.includes(lockPrefix) ||
+            (e.type === 'AbortError' && e.value?.includes('steal'))
+        )
+      )
+        return null;
+
       // Strip any potential PII from request URLs
       if (event.request?.url) {
         try {
