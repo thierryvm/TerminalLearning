@@ -3,10 +3,24 @@
 -- Idempotent: ON CONFLICT DO NOTHING on all inserts.
 --
 -- ⚠️  PASSWORD NOTE: pgcrypto bcrypt hashes are NOT accepted by GoTrue's
---     password verification. After applying this migration, reset each user's
---     password via Supabase Dashboard → Authentication → Users → "Send password
---     recovery email" (or use the Admin API). The intended password is:
---     TerminalLearning2026!
+--     password verification (Go bcrypt ≠ pgcrypto bcrypt at runtime).
+--     After applying this migration, reset passwords via the Admin API:
+--
+--       SERVICE_KEY=$(supabase projects api-keys --project-ref <ref> --output json \
+--         | jq -r '.[] | select(.name=="service_role") | .api_key')
+--       for UUID in ...101 ...102 ...103 ...104 ...105; do
+--         curl -s -X PUT "https://<ref>.supabase.co/auth/v1/admin/users/$UUID" \
+--           -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+--           -H "Content-Type: application/json" \
+--           -d '{"password":"TerminalLearning2026!"}'
+--       done
+--
+-- ⚠️  GOTRUE COMPAT: direct auth.users inserts require these fields set to '' (not NULL):
+--     instance_id = '00000000-0000-0000-0000-000000000000'
+--     email_change, email_change_token_new, email_change_token_current, phone_change = ''
+--     (GoTrue Go scanner rejects NULL for string columns — see step 1b below)
+--
+-- Password: TerminalLearning2026!
 --
 -- Emails:
 --   test.superadmin@terminallearning.dev       → super_admin
@@ -33,37 +47,54 @@ begin
 
   -- ── 1. Auth users ────────────────────────────────────────────────────────────
   -- handle_new_user() trigger auto-creates profiles with role='student'
+  -- instance_id + empty-string fields required for GoTrue Go scanner compatibility
   insert into auth.users (
-    id, aud, role, email, encrypted_password,
+    id, instance_id, aud, role, email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
+    email_change, email_change_token_new, email_change_token_current, phone_change,
     raw_app_meta_data, raw_user_meta_data, is_super_admin
   ) values
-    (u1, 'authenticated', 'authenticated',
+    (u1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
      'test.superadmin@terminallearning.dev', v_pwd, v_now, v_now, v_now,
+     '', '', '', '',
      '{"provider":"email","providers":["email"]}',
      '{"display_name":"Test Super Admin"}', false),
 
-    (u2, 'authenticated', 'authenticated',
+    (u2, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
      'test.institutionadmin@terminallearning.dev', v_pwd, v_now, v_now, v_now,
+     '', '', '', '',
      '{"provider":"email","providers":["email"]}',
      '{"display_name":"Test Institution Admin"}', false),
 
-    (u3, 'authenticated', 'authenticated',
+    (u3, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
      'test.teacher@terminallearning.dev', v_pwd, v_now, v_now, v_now,
+     '', '', '', '',
      '{"provider":"email","providers":["email"]}',
      '{"display_name":"Test Teacher"}', false),
 
-    (u4, 'authenticated', 'authenticated',
+    (u4, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
      'test.pendingt@terminallearning.dev', v_pwd, v_now, v_now, v_now,
+     '', '', '', '',
      '{"provider":"email","providers":["email"]}',
      '{"display_name":"Test Pending Teacher"}', false),
 
-    (u5, 'authenticated', 'authenticated',
+    (u5, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
      'test.student@terminallearning.dev', v_pwd, v_now, v_now, v_now,
+     '', '', '', '',
      '{"provider":"email","providers":["email"]}',
      '{"display_name":"Test Student"}', false)
 
   on conflict (id) do nothing;
+
+  -- ── 1b. GoTrue compat fix — NULL→string crash on UPDATE ──────────────────────
+  -- Ensure no NULL in string columns even if user already existed (idempotent)
+  update auth.users set
+    instance_id                = coalesce(instance_id, '00000000-0000-0000-0000-000000000000'),
+    email_change               = coalesce(email_change, ''),
+    email_change_token_new     = coalesce(email_change_token_new, ''),
+    email_change_token_current = coalesce(email_change_token_current, ''),
+    phone_change               = coalesce(phone_change, '')
+  where id in (u1, u2, u3, u4, u5);
 
   -- ── 2. Profiles safety net (in case trigger did not fire) ────────────────────
   insert into public.profiles (id, role)
