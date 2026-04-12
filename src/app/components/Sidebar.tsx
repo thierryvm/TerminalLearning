@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, Download,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import { iconMap } from '../data/moduleIcons';
+import { PWAInstallModal } from './PWAInstallModal';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,6 +21,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const { selectedEnv, setEnvironment } = useEnvironment();
+  const { isInstalled } = usePWAInstall();
+  const [showPWAModal, setShowPWAModal] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -237,11 +241,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </p>
           </div>
 
-          {/* Profile card + bouton home côte à côte */}
+          {/* Profile card + bouton home + install côte à côte */}
           <div className="flex items-center gap-1.5">
             <div className="flex-1 min-w-0">
               <UserMenu syncStatus={syncStatus} />
             </div>
+            {!isInstalled && (
+              <button
+                onClick={() => setShowPWAModal(true)}
+                className="shrink-0 p-2 rounded-lg text-[#8b949e] hover:text-emerald-400 hover:bg-[#161b22] border border-transparent hover:border-[#30363d] transition-all"
+                aria-label="Installer l'application"
+                title="Installer l'application"
+              >
+                <Download size={14} aria-hidden="true" />
+              </button>
+            )}
             <NavLink
               to="/"
               onClick={onClose}
@@ -252,6 +266,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Home size={14} aria-hidden="true" />
             </NavLink>
           </div>
+          {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
         </div>
       </aside>
     </>

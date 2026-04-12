@@ -20,7 +20,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
 - Tailwind CSS v4 + shadcn/ui + Motion
 - Supabase (Auth + PostgreSQL + RLS + OAuth GitHub + Google)
-- Vitest (tests unitaires) — pas de Playwright encore
+- Vitest (tests unitaires) + Playwright (E2E — 3 suites : accessibility, mobile, seo)
 - Vercel (déploiement auto sur push main)
 
 ## Fichiers critiques — toucher avec précaution
@@ -43,7 +43,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
-- Phase 5 🔄 Curriculum expansion — 8 modules, 39 leçons, 530 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5 🔄 Curriculum expansion — 10 modules, 52 leçons, 792 tests unitaires + 176 E2E Playwright (en cours)
 
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
@@ -81,6 +81,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
   gh pr view N --comments 2>&1 | grep -A 15 -i "sourcery\|issue\|suggestion\|bug"
   ```
   Si Sourcery a commenté → corriger dans un commit fixup → repousser → ALORS proposer le merge
+  Si Sourcery = SKIPPED (rate limit hebdomadaire atteint) → acceptable, procéder au merge
 - **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
 - Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
 

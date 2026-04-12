@@ -50,6 +50,17 @@
     <meta name="theme-color" content="#0d1117" />
     <meta name="color-scheme" content="dark" />
 
+    <!-- Performance: preconnect to Supabase (auth check fires on first render) -->
+    <link rel="preconnect" href="https://jdnukbpkjyyyjpuwgxhv.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
+
+    <!-- Critical CSS: dark background before React hydrates — eliminates white flash on FCP -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background-color: #0d1117; color: #e6edf3; }
+      #root { min-height: 100dvh; }
+    </style>
+
     <!-- Structured data — JSON-LD (Schema.org) -->
     <!-- Helps search engines AND LLM crawlers understand the site semantically -->
     <script type="application/ld+json">

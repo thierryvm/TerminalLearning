@@ -1,0 +1,186 @@
+import { useState } from 'react';
+import { X, Smartphone, Monitor, Share, MoreVertical, Plus, Download, CheckCircle2 } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+
+interface PWAInstallModalProps {
+  onClose: () => void;
+}
+
+type Tab = 'ios' | 'android' | 'desktop';
+
+const TAB_LABELS: Record<Tab, string> = {
+  ios: 'iOS (Safari)',
+  android: 'Android (Chrome)',
+  desktop: 'Desktop',
+};
+
+const IOS_STEPS = [
+  { icon: Share, text: 'Ouvre le site dans Safari (pas Chrome ni Firefox).' },
+  { icon: Share, text: 'Appuie sur l\'icône Partager en bas de l\'écran.' },
+  { icon: Plus, text: 'Fais défiler et sélectionne "Sur l\'écran d\'accueil".' },
+  { icon: CheckCircle2, text: 'Confirme avec "Ajouter" — l\'app apparaît sur ton écran d\'accueil.' },
+];
+
+const ANDROID_MANUAL_STEPS = [
+  { icon: MoreVertical, text: 'Appuie sur le menu ⋮ en haut à droite de Chrome.' },
+  { icon: Plus, text: 'Sélectionne "Ajouter à l\'écran d\'accueil" ou "Installer l\'application".' },
+  { icon: CheckCircle2, text: 'Confirme — l\'app s\'installe comme une app native.' },
+];
+
+const DESKTOP_MANUAL_STEPS = [
+  { icon: Download, text: 'Dans Chrome/Edge, cherche l\'icône d\'installation dans la barre d\'adresse (⊕).' },
+  { icon: Download, text: 'Ou ouvre le menu ⋮ → "Installer Terminal Learning...".' },
+  { icon: CheckCircle2, text: 'L\'app s\'ouvre dans sa propre fenêtre, sans barre de navigateur.' },
+];
+
+export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
+  const { platform, isInstalled, canPrompt, prompt } = usePWAInstall();
+  const [activeTab, setActiveTab] = useState<Tab>(
+    platform === 'ios' ? 'ios' : platform === 'android' ? 'android' : 'desktop',
+  );
+  const [installing, setInstalling] = useState(false);
+
+  const handleNativePrompt = async () => {
+    setInstalling(true);
+    await prompt();
+    setInstalling(false);
+  };
+
+  if (isInstalled) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+        <div
+          className="bg-[#161b22] border border-[#30363d] rounded-xl p-8 max-w-sm w-full text-center shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-[#e6edf3] mb-2">Déjà installée !</h2>
+          <p className="text-sm text-[#8b949e] mb-6">Terminal Learning est déjà installée sur cet appareil.</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/20 transition-colors"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Smartphone size={16} className="text-emerald-400" />
+            </div>
+            <h2 className="text-sm font-semibold text-[#e6edf3]">Installer l'application</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1 rounded"
+            aria-label="Fermer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-[#30363d]">
+          {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2.5 text-xs font-mono transition-colors ${
+                activeTab === tab
+                  ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px'
+                  : 'text-[#8b949e] hover:text-[#e6edf3]'
+              }`}
+            >
+              {TAB_LABELS[tab]}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-5 space-y-4">
+          {activeTab === 'ios' && (
+            <>
+              <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                Sur iOS, l'installation se fait uniquement via <strong>Safari</strong>.
+              </p>
+              <Steps steps={IOS_STEPS} />
+            </>
+          )}
+
+          {activeTab === 'android' && (
+            <>
+              {canPrompt ? (
+                <div className="text-center space-y-3 py-2">
+                  <p className="text-sm text-[#8b949e]">Ton navigateur supporte l'installation directe.</p>
+                  <button
+                    onClick={handleNativePrompt}
+                    disabled={installing}
+                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download size={16} />
+                    {installing ? 'Installation...' : 'Installer Terminal Learning'}
+                  </button>
+                </div>
+              ) : (
+                <Steps steps={ANDROID_MANUAL_STEPS} />
+              )}
+            </>
+          )}
+
+          {activeTab === 'desktop' && (
+            <>
+              {canPrompt ? (
+                <div className="text-center space-y-3 py-2">
+                  <p className="text-sm text-[#8b949e]">Installation disponible pour Chrome et Edge.</p>
+                  <button
+                    onClick={handleNativePrompt}
+                    disabled={installing}
+                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Monitor size={16} />
+                    {installing ? 'Installation...' : 'Installer comme application desktop'}
+                  </button>
+                </div>
+              ) : (
+                <Steps steps={DESKTOP_MANUAL_STEPS} />
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-[#30363d]">
+          <p className="text-[10px] text-[#8b949e] text-center">
+            L'app fonctionne hors ligne une fois installée. Aucune donnée supplémentaire collectée.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Steps({ steps }: { steps: { icon: React.ComponentType<{ size?: number; className?: string }>; text: string }[] }) {
+  return (
+    <ol className="space-y-3">
+      {steps.map((step, i) => (
+        <li key={i} className="flex items-start gap-3">
+          <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[10px] text-emerald-400 font-mono mt-0.5">
+            {i + 1}
+          </span>
+          <p className="text-sm text-[#c9d1d9] leading-relaxed">{step.text}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}

@@ -4,8 +4,10 @@ import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen,
   CheckCircle2, Zap, Clock, Star, Coffee, Heart,
-  Compass, Monitor, LogIn, Share2, Check,
+  Compass, Monitor, LogIn, Share2, Check, Download,
 } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+import { PWAInstallModal } from './PWAInstallModal';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
@@ -37,6 +39,8 @@ export function Landing() {
   const [loginOpen, setLoginOpen] = useState(false);
   const { selectedEnv, setEnvironment } = useEnvironment();
   const [shared, setShared] = useState(false);
+  const { isInstalled } = usePWAInstall();
+  const [showPWAModal, setShowPWAModal] = useState(false);
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';
@@ -202,10 +206,11 @@ export function Landing() {
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col items-stretch sm:items-center gap-3 sm:gap-4">
+            {/* Primary CTA */}
             <button
               onClick={() => navigate('/app')}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/20"
+              className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/20 sm:self-center"
               aria-label="Commencer l'apprentissage gratuitement"
             >
               <Terminal size={18} aria-hidden="true" />
@@ -213,34 +218,50 @@ export function Landing() {
               <ChevronRight size={16} aria-hidden="true" />
             </button>
 
+            {/* Secondary CTAs */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center sm:justify-center">
             <button
               onClick={() => document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth' })}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-base transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
             >
-              <Compass size={16} aria-hidden="true" />
+              <Compass size={15} aria-hidden="true" />
               Voir la roadmap
             </button>
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium text-base transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium text-sm transition-all"
               aria-label="Partager Terminal Learning"
             >
               {shared ? (
                 <>
-                  <Check size={16} className="text-emerald-400" aria-hidden="true" />
+                  <Check size={15} className="text-emerald-400" aria-hidden="true" />
                   <span className="text-emerald-400">Lien copié !</span>
                 </>
               ) : (
                 <>
-                  <Share2 size={16} aria-hidden="true" />
+                  <Share2 size={15} aria-hidden="true" />
                   Partager
                 </>
               )}
             </button>
+
+            {!isInstalled && (
+              <button
+                onClick={() => setShowPWAModal(true)}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
+                aria-label="Installer l'application"
+              >
+                <Download size={15} aria-hidden="true" />
+                Installer l'app
+              </button>
+            )}
+            </div>
           </div>
         </div>
       </section>
+
+      {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
 
       {/* ── TRUST BADGES ────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-8">
