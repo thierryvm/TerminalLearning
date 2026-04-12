@@ -132,6 +132,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Module header */}
                 <button
                   onClick={() => !locked && toggleModule(mod.id)}
+                  aria-disabled={locked ? true : undefined}
+                  aria-label={locked
+                    ? `${mod.title} — verrouillé, Niv. ${unlockStatus?.level}`
+                    : `${mod.title} — ${completed}/${total} leçons`}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group ${
                     locked
                       ? 'cursor-not-allowed text-[#8b949e]'
