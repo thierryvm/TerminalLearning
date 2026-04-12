@@ -234,7 +234,7 @@ export const validateGitConfig: ValidateFn = (cmd) => /^git\s+config\s+(--list|-
 
 export const validateGitAddCommit: ValidateFn = (cmd) => /^git\s+add\s+(\.|--all|-a|-p)/.test(cmd.trim().toLowerCase());
 
-export const validateGitStatusLog: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
+export const validateGitStatusLog: ValidateFn = (cmd) => /^git\s+status(\s+(-\w+|--\w[\w-]*))*$/.test(cmd.trim().toLowerCase());
 
 export const validateGitDiffGitignore: ValidateFn = (cmd) => /^git\s+diff(\s+.*)?$/.test(cmd.trim().toLowerCase());
 

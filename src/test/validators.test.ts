@@ -371,7 +371,10 @@ describe('validateGitAddCommit', () => {
 describe('validateGitStatusLog', () => {
   it('accepts "git status"', () => expect(validateGitStatusLog('git status')).toBe(true));
   it('accepts "git status --short"', () => expect(validateGitStatusLog('git status --short')).toBe(true));
+  it('accepts "git status -s"', () => expect(validateGitStatusLog('git status -s')).toBe(true));
+  it('accepts "git status -v"', () => expect(validateGitStatusLog('git status -v')).toBe(true));
   it('rejects "git log"', () => expect(validateGitStatusLog('git log')).toBe(false));
+  it('rejects arbitrary args (git status foo bar)', () => expect(validateGitStatusLog('git status foo bar')).toBe(false));
 });
 
 describe('validateGitDiffGitignore', () => {

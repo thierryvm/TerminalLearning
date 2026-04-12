@@ -1020,7 +1020,7 @@ export const curriculum: Module[] = [
           },
           hint: 'Tapez "ls -la" pour voir les permissions de tous les fichiers',
           hintByEnv: {
-            windows: 'Tapez: Get-Acl $HOME',
+            windows: 'Tapez: Get-Acl $HOME | Format-List',
           },
           validate: validateSecurityPermissions,
           successMessage: 'Excellent ! Vous intégrez maintenant la sécurité dans votre gestion de fichiers.',
