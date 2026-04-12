@@ -3,16 +3,16 @@ import {
   Terminal, BookOpen, Zap, Shield,
   ShieldCheck, Github, Infinity, Lock,
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
-  Monitor,
+  Monitor, Code2,
 } from 'lucide-react';
-import { curriculum } from './curriculum';
 import { commandCatalogue } from './commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
 import type { SelectedEnvironment } from '../context/EnvironmentContext';
 
 // ── Computed totals ───────────────────────────────────────────────────────────
 
-export const TOTAL_LESSONS = curriculum.reduce((sum, mod) => sum + mod.lessons.length, 0);
+/** Hardcoded — update when adding lessons. Source of truth: curriculum.ts. */
+export const TOTAL_LESSONS = 52;
 export const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
 export const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active');
 
@@ -106,6 +106,7 @@ export const MODULE_ICONS: Record<string, ComponentType<{ size?: number; classNa
   FileText,
   Shield,
   Cpu,
+  Code2,
   GitMerge,
   GitBranch,
   GitFork,
@@ -114,15 +115,45 @@ export const MODULE_ICONS: Record<string, ComponentType<{ size?: number; classNa
 
 // ── Level badge styles ────────────────────────────────────────────────────────
 
-export const LEVEL_BADGE: Record<number, { label: string; text: string; border: string; bg: string }> = {
+export const LEVEL_BADGE: Record<1 | 2 | 3 | 4 | 5, { label: string; text: string; border: string; bg: string }> = {
   1: { label: 'Niveau 1', text: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
   2: { label: 'Niveau 2', text: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' },
+  3: { label: 'Niveau 3', text: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
+  4: { label: 'Niveau 4', text: 'text-orange-400', border: 'border-orange-500/30', bg: 'bg-orange-500/10' },
+  5: { label: 'Niveau 5', text: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-500/10' },
 };
+
+// ── Module previews — lightweight summary for the Landing page ────────────────
+// Keep in sync with curriculum.ts when adding/removing modules or lessons.
+
+export interface ModulePreview {
+  id: string;
+  title: string;
+  description: string;
+  iconName: string;
+  color: string;
+  level: 1 | 2 | 3 | 4 | 5;
+  firstLessonId: string;
+  lessonCount: number;
+}
+
+export const MODULE_PREVIEWS: ModulePreview[] = [
+  { id: 'navigation', title: 'Navigation', description: 'Maîtrisez vos déplacements dans le système de fichiers', iconName: 'Compass', color: '#22c55e', level: 1, firstLessonId: 'orientation', lessonCount: 5 },
+  { id: 'fichiers', title: 'Fichiers & Dossiers', description: 'Créez, copiez, déplacez et supprimez fichiers et répertoires', iconName: 'FolderOpen', color: '#3b82f6', level: 1, firstLessonId: 'mkdir', lessonCount: 5 },
+  { id: 'lecture', title: 'Lecture de fichiers', description: 'Affichez, recherchez et analysez le contenu des fichiers', iconName: 'FileText', color: '#a855f7', level: 1, firstLessonId: 'cat', lessonCount: 4 },
+  { id: 'permissions', title: 'Permissions', description: "Contrôlez l'accès aux fichiers et répertoires", iconName: 'Shield', color: '#f59e0b', level: 2, firstLessonId: 'comprendre-permissions', lessonCount: 5 },
+  { id: 'processus', title: 'Processus', description: "Gérez les programmes en cours d'exécution", iconName: 'Cpu', color: '#ef4444', level: 2, firstLessonId: 'ps', lessonCount: 4 },
+  { id: 'redirection', title: 'Redirection & Pipes', description: 'Chaînez les commandes et redirigez les flux de données', iconName: 'GitMerge', color: '#06b6d4', level: 2, firstLessonId: 'redirection-sortie', lessonCount: 4 },
+  { id: 'variables', title: 'Variables & Scripts', description: "Maîtrisez les variables d'environnement, les fichiers de config et l'automatisation", iconName: 'Code2', color: '#f59e0b', level: 3, firstLessonId: 'env-vars', lessonCount: 6 },
+  { id: 'reseau', title: 'Réseau & SSH', description: 'Testez la connectivité, effectuez des requêtes HTTP et connectez-vous à des serveurs distants', iconName: 'Globe', color: '#06b6d4', level: 3, firstLessonId: 'ping', lessonCount: 6 },
+  { id: 'git', title: 'Git Fondamentaux', description: "Maîtrisez le contrôle de version avec Git — l'outil indispensable de tout développeur professionnel", iconName: 'GitBranch', color: '#f97316', level: 4, firstLessonId: 'git-init', lessonCount: 7 },
+  { id: 'github-collaboration', title: 'GitHub & Collaboration', description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise', iconName: 'GitFork', color: '#8b5cf6', level: 4, firstLessonId: 'git-remote', lessonCount: 6 },
+];
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
 
 export const STATS = [
-  { value: String(curriculum.length), label: 'Modules', icon: BookOpen },
+  { value: String(MODULE_PREVIEWS.length), label: 'Modules', icon: BookOpen },
   { value: String(TOTAL_LESSONS), label: 'Leçons', icon: FileText },
   { value: `${TOTAL_COMMANDS}+`, label: 'Commandes', icon: Terminal },
   { value: String(ACTIVE_ENVIRONMENTS.length), label: 'Environnements', icon: Monitor },
