@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 12 April 2026 — THI-36 Terminal Sentinel ✅, THI-37 RBAC DB layer ✅, THI-76 RBAC test kit ✅, THI-80 RBAC integration tests ✅ — 10 modules / 52 lessons / 876 tests — perf: main bundle 16kB, FCP 0.6s
+> Last updated: 12 April 2026 — THI-81 Landing −112kB ✅, THI-82 Supabase lazy −194kB ✅, stale-chunk guard (Mobile Safari) ✅ — 10 modules / 52 lessons / 876 tests — perf: main bundle 16kB, FCP 0.6s
 
 ---
 
