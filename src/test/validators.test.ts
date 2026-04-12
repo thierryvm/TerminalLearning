@@ -148,6 +148,13 @@ describe('validateCat', () => {
   it('rejects "cat other.txt"', () => expect(validateCat('cat other.txt', linux)).toBe(false));
 });
 
+describe('validateHeadTail', () => {
+  it('accepts "head -n 3 documents/rapport.md"', () => expect(validateHeadTail('head -n 3 documents/rapport.md', linux)).toBe(true));
+  it('accepts "head -n 3 documents/rapport.md" on macos', () => expect(validateHeadTail('head -n 3 documents/rapport.md', macos)).toBe(true));
+  it('accepts windows pipeline with Get-Content + Select-Object', () => expect(validateHeadTail('Get-Content documents/rapport.md | Select-Object -First 3', win)).toBe(true));
+  it('rejects "head documents/rapport.md" (no -n)', () => expect(validateHeadTail('head documents/rapport.md', linux)).toBe(false));
+});
+
 describe('validateGrep', () => {
   it('accepts "grep important documents/notes.txt"', () => expect(validateGrep('grep important documents/notes.txt', linux)).toBe(true));
   it('accepts "grep -i important documents/notes.txt"', () => expect(validateGrep('grep -i important documents/notes.txt', linux)).toBe(true));
@@ -155,7 +162,21 @@ describe('validateGrep', () => {
   it('rejects "grep other file.txt"', () => expect(validateGrep('grep other file.txt', linux)).toBe(false));
 });
 
+describe('validateWc', () => {
+  it('accepts "wc -l documents/rapport.md"', () => expect(validateWc('wc -l documents/rapport.md', linux)).toBe(true));
+  it('accepts windows (.content).Count pattern', () => expect(validateWc('(Get-Content documents/rapport.md).Count', win)).toBe(true));
+  it('rejects "wc documents/rapport.md" (no -l)', () => expect(validateWc('wc documents/rapport.md', linux)).toBe(false));
+  it('rejects "wc -l other.txt"', () => expect(validateWc('wc -l other.txt', linux)).toBe(false));
+});
+
 // ── Permissions ───────────────────────────────────────────────────────────────
+describe('validateComprendrePermissions', () => {
+  it('accepts "ls -l"', () => expect(validateComprendrePermissions('ls -l', linux)).toBe(true));
+  it('accepts "Get-Acl" on windows', () => expect(validateComprendrePermissions('Get-Acl', win)).toBe(true));
+  it('accepts "icacls" on windows', () => expect(validateComprendrePermissions('icacls /', win)).toBe(true));
+  it('rejects "ls"', () => expect(validateComprendrePermissions('ls', linux)).toBe(false));
+});
+
 describe('validateChmod', () => {
   it('accepts "chmod +x projets/script.sh"', () => expect(validateChmod('chmod +x projets/script.sh', linux)).toBe(true));
   it('accepts "chmod 755 projets/script.sh"', () => expect(validateChmod('chmod 755 projets/script.sh', linux)).toBe(true));
@@ -164,13 +185,45 @@ describe('validateChmod', () => {
   it('rejects "chmod +x other.sh"', () => expect(validateChmod('chmod +x other.sh', linux)).toBe(false));
 });
 
+describe('validateChown', () => {
+  it('accepts "ls -la"', () => expect(validateChown('ls -la', linux)).toBe(true));
+  it('accepts "ls -al"', () => expect(validateChown('ls -al', linux)).toBe(true));
+  it('accepts "ls -l"', () => expect(validateChown('ls -l something', linux)).toBe(true));
+  it('accepts "Get-Acl" on windows', () => expect(validateChown('Get-Acl path', win)).toBe(true));
+  it('rejects "ls"', () => expect(validateChown('ls', linux)).toBe(false));
+});
+
 describe('validateSudo', () => {
   it('accepts "whoami"', () => expect(validateSudo('whoami')).toBe(true));
   it('accepts "sudo whoami"', () => expect(validateSudo('sudo whoami')).toBe(true));
   it('rejects "sudo ls"', () => expect(validateSudo('sudo ls')).toBe(false));
 });
 
+describe('validateSecurityPermissions', () => {
+  it('accepts "ls"', () => expect(validateSecurityPermissions('ls', linux)).toBe(true));
+  it('accepts "ls -la"', () => expect(validateSecurityPermissions('ls -la', linux)).toBe(true));
+  it('accepts "Get-Acl path" on windows', () => expect(validateSecurityPermissions('Get-Acl /etc', win)).toBe(true));
+  it('accepts "icacls path" on windows', () => expect(validateSecurityPermissions('icacls /etc', win)).toBe(true));
+  it('rejects "cat file"', () => expect(validateSecurityPermissions('cat file', linux)).toBe(false));
+});
+
 // ── Processus ─────────────────────────────────────────────────────────────────
+describe('validateTop', () => {
+  it('accepts "ps aux"', () => expect(validateTop('ps aux', linux)).toBe(true));
+  it('accepts "top"', () => expect(validateTop('top', linux)).toBe(true));
+  it('accepts "ps aux" on macos', () => expect(validateTop('ps aux', macos)).toBe(true));
+  it('accepts "top" on macos', () => expect(validateTop('top', macos)).toBe(true));
+  it('accepts "Get-Process | Sort-Object" on windows', () => expect(validateTop('Get-Process | Sort-Object', win)).toBe(true));
+  it('rejects "ls"', () => expect(validateTop('ls', linux)).toBe(false));
+});
+
+describe('validateBackground', () => {
+  it('accepts "jobs"', () => expect(validateBackground('jobs', linux)).toBe(true));
+  it('accepts "jobs" on macos', () => expect(validateBackground('jobs', macos)).toBe(true));
+  it('accepts "Get-Job" on windows', () => expect(validateBackground('Get-Job', win)).toBe(true));
+  it('rejects "ps"', () => expect(validateBackground('ps', linux)).toBe(false));
+});
+
 describe('validatePs', () => {
   it('accepts "ps"', () => expect(validatePs('ps', linux)).toBe(true));
   it('accepts "ps aux"', () => expect(validatePs('ps aux', linux)).toBe(true));
@@ -207,11 +260,41 @@ describe('validateStderr', () => {
   it('rejects "ls"', () => expect(validateStderr('ls', linux)).toBe(false));
 });
 
+describe('validateTee', () => {
+  it('accepts "ls | tee output.txt"', () => expect(validateTee('ls | tee output.txt', linux)).toBe(true));
+  it('accepts "ls | tee-object output.txt" on windows', () => expect(validateTee('ls | Tee-Object output.txt', win)).toBe(true));
+  it('rejects "ls > file.txt"', () => expect(validateTee('ls > file.txt', linux)).toBe(false));
+  it('rejects bare "ls"', () => expect(validateTee('ls', linux)).toBe(false));
+});
+
 // ── Variables ─────────────────────────────────────────────────────────────────
 describe('validateEnvVars', () => {
   it('accepts "export MY_VAR=value"', () => expect(validateEnvVars('export MY_VAR=value', linux)).toBe(true));
   it('accepts "$env:MY_VAR = value" on windows', () => expect(validateEnvVars('$env:MY_VAR = value', win)).toBe(true));
   it('rejects "MY_VAR=value" (no export)', () => expect(validateEnvVars('MY_VAR=value', linux)).toBe(false));
+});
+
+describe('validatePathVariable', () => {
+  it('accepts "echo $PATH"', () => expect(validatePathVariable('echo $PATH', linux)).toBe(true));
+  it('accepts "echo $PATH" on macos', () => expect(validatePathVariable('echo $PATH', macos)).toBe(true));
+  it('accepts "echo $env:PATH" on windows', () => expect(validatePathVariable('echo $env:PATH', win)).toBe(true));
+  it('accepts "$env:PATH" on windows', () => expect(validatePathVariable('$env:PATH', win)).toBe(true));
+  it('rejects "cat ~/.bashrc"', () => expect(validatePathVariable('cat ~/.bashrc', linux)).toBe(false));
+});
+
+describe('validateDotenv', () => {
+  it('accepts "cat .env"', () => expect(validateDotenv('cat .env', linux)).toBe(true));
+  it('accepts "Get-Content .env" on windows', () => expect(validateDotenv('Get-Content .env', win)).toBe(true));
+  it('accepts "gc .env" on windows', () => expect(validateDotenv('gc .env', win)).toBe(true));
+  it('rejects "cat .envrc"', () => expect(validateDotenv('cat .envrc', linux)).toBe(false));
+});
+
+describe('validateScripts', () => {
+  it('accepts "./script.sh"', () => expect(validateScripts('./script.sh', linux)).toBe(true));
+  it('accepts "bash script.sh"', () => expect(validateScripts('bash script.sh', linux)).toBe(true));
+  it('accepts "./script.sh" on macos', () => expect(validateScripts('./script.sh', macos)).toBe(true));
+  it('accepts ".\\script.sh" on windows', () => expect(validateScripts('.\\script.sh', win)).toBe(true));
+  it('rejects "sh other.sh"', () => expect(validateScripts('sh other.sh', linux)).toBe(false));
 });
 
 describe('validateShellConfig', () => {
@@ -237,6 +320,21 @@ describe('validateCurl', () => {
   it('accepts "curl https://example.com"', () => expect(validateCurl('curl https://example.com', linux)).toBe(true));
   it('accepts "Invoke-WebRequest -Uri https://example.com" on windows', () => expect(validateCurl('Invoke-WebRequest -Uri https://example.com', win)).toBe(true));
   it('rejects bare "curl"', () => expect(validateCurl('curl', linux)).toBe(false));
+});
+
+describe('validateWget', () => {
+  it('accepts "wget https://example.com/file"', () => expect(validateWget('wget https://example.com/file', linux)).toBe(true));
+  it('accepts "Invoke-WebRequest https://example.com" on windows', () => expect(validateWget('Invoke-WebRequest https://example.com', win)).toBe(true));
+  it('accepts "iwr https://example.com" on windows', () => expect(validateWget('iwr https://example.com', win)).toBe(true));
+  it('rejects bare "wget"', () => expect(validateWget('wget', linux)).toBe(false));
+});
+
+describe('validateDns', () => {
+  it('accepts "nslookup google.com"', () => expect(validateDns('nslookup google.com', linux)).toBe(true));
+  it('accepts "dig google.com"', () => expect(validateDns('dig google.com', linux)).toBe(true));
+  it('accepts "Resolve-DnsName google.com" on windows', () => expect(validateDns('Resolve-DnsName google.com', win)).toBe(true));
+  it('accepts "nslookup google.com" on windows', () => expect(validateDns('nslookup google.com', win)).toBe(true));
+  it('rejects "ping google.com"', () => expect(validateDns('ping google.com', linux)).toBe(false));
 });
 
 describe('validateSsh', () => {
@@ -274,6 +372,13 @@ describe('validateGitStatusLog', () => {
   it('accepts "git status"', () => expect(validateGitStatusLog('git status')).toBe(true));
   it('accepts "git status --short"', () => expect(validateGitStatusLog('git status --short')).toBe(true));
   it('rejects "git log"', () => expect(validateGitStatusLog('git log')).toBe(false));
+});
+
+describe('validateGitDiffGitignore', () => {
+  it('accepts "git diff"', () => expect(validateGitDiffGitignore('git diff')).toBe(true));
+  it('accepts "git diff HEAD"', () => expect(validateGitDiffGitignore('git diff HEAD')).toBe(true));
+  it('accepts "git diff --staged"', () => expect(validateGitDiffGitignore('git diff --staged')).toBe(true));
+  it('rejects "git status"', () => expect(validateGitDiffGitignore('git status')).toBe(false));
 });
 
 describe('validateGitBranch', () => {
