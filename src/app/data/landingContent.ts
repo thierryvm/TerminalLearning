@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   Terminal, BookOpen, Zap, Shield,
-  ShieldCheck, Github, Infinity, Lock,
+  ShieldCheck, Github, Infinity, Lock, CheckCircle2,
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
   Monitor, Code2,
 } from 'lucide-react';
@@ -91,11 +91,15 @@ export const SUPPORTERS: string[] = [
 
 // ── Trust badges ──────────────────────────────────────────────────────────────
 
+// Points to the production URL intentionally — the badge is proof of the live site's rating.
+const SECURITY_HEADERS_PROOF_URL = 'https://securityheaders.com/?q=https%3A%2F%2Fterminallearning.dev%2Fapp&followRedirects=on';
+
 export const TRUST_BADGES = [
-  { icon: ShieldCheck, label: 'A+ Security Rating', href: undefined },
+  { icon: ShieldCheck, label: 'A+ Security Rating', href: SECURITY_HEADERS_PROOF_URL },
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
+  { icon: CheckCircle2, label: '876 tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
 ] as const;
 
 // ── Module icons map ──────────────────────────────────────────────────────────
