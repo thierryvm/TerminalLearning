@@ -273,6 +273,14 @@ export interface Database {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      get_my_institution_id: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      is_teacher_of_class: {
+        Args: { p_class_id: string };
+        Returns: boolean;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

@@ -48,7 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // revocation completing a few seconds later is an acceptable trade-off.
     // See: https://supabase.com/docs/reference/javascript/auth-signout
     setSession(null);
-    void supabase.auth.signOut({ scope: 'global' });
+    supabase.auth.signOut({ scope: 'global' }).then(({ error }) => {
+      if (error) {
+        // Log revocation failures — token may still be valid server-side until expiry.
+        // Not fatal: local session is already cleared and the user is logged out in the UI.
+        console.error('[auth] signOut revocation failed:', error.message);
+      }
+    });
   }, []);
 
   return (

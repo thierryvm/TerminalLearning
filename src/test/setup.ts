@@ -18,17 +18,20 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
 });
 
-// window.matchMedia polyfill — jsdom does not implement it
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
-});
+// window.matchMedia polyfill — jsdom does not implement it.
+// Guard required: node-environment tests (e.g. rbac.integration.test.ts) share this setupFile.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
