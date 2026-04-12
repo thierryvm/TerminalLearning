@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 12 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 792 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 856 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -49,6 +49,9 @@
 | THI-62 | refactor | Extraire données statiques Landing → landingContent.ts (PR #87) ✅ Done |
 | THI-74 | feat | Guide d'installation PWA multi-plateforme (PR #89) ✅ Done |
 | THI-64 | refactor | Refactor cmdPipe (bloqué par THI-59) — Medium |
+| THI-76 | dev | Kit utilisateurs tests RBAC — 5 rôles complets (migration 006) 🔄 In Progress |
+| THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
+| THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 
 ---
 
