@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 12 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 579 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 792 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
 
@@ -10,7 +10,7 @@
 | Issue Linear | Phase | Contenu |
 |-------------|-------|---------|
 | THI-27 | 5 | Module 8 — Réseau & SSH (`ping`, `curl`, `wget`, `ssh`, `scp`, DNS) ✅ Done |
-| THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* — 52 leçons, 579 tests (PR #72) ✅ Done |
+| THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* — 52 leçons, 792 tests (PR #72) ✅ Done |
 | THI-29 | 5 | Module 11 — L'IA comme outil dev |
 | THI-35 | docs | Architecture stratégique — Terminal Sentinel, RBAC, Admin Panel, PWA ✅ Done |
 | THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
@@ -38,11 +38,16 @@
 | THI-68 | fix | Supabase auth lock deadlock — defer sync hors onAuthStateChange + abort in-flight (PR #78) ✅ Done |
 | chore | seo | Sitemap — domaine terminallearning.dev, lastmod 11 avril (PR #79) ✅ Done |
 | THI-59 | refactor | Split processCommand en modules — In Progress |
-| THI-69 | a11y | label-content-name-mismatch sur module cards Landing — High |
-| THI-70 | a11y | Audit a11y complet toutes pages post-merge — High |
-| THI-61 | refactor | Générer getHelpText programmatiquement — Medium |
-| THI-62 | refactor | Extraire données statiques Landing — Medium |
-| THI-63 | refactor | Extraire validate() de curriculum.ts — High |
+| THI-63 | refactor | Extraire validate() de curriculum.ts vers validators.ts (PR #84) ✅ Done |
+| THI-69 | a11y | label-content-name-mismatch sur module cards Landing ✅ Done |
+| THI-70 | a11y | SEO, accessibilité & balises canoniques — usePageSEO hook Dashboard + Reference (PR #86) ✅ Done |
+| THI-71 | content | Fix validators.ts — patterns manquants audit content (PR #85) ✅ Done |
+| THI-72 | content | Fix commandCatalogue — commandes manquantes audit content (PR #85) ✅ Done |
+| THI-73 | content | Fix exercise hints — cohérence audit content (PR #85) ✅ Done |
+| THI-75 | feat | Bouton Partager — Web Share API + clipboard fallback (PR #86) ✅ Done |
+| THI-61 | refactor | Générer getHelpText programmatiquement depuis CMD_HELP (PR #87) ✅ Done |
+| THI-62 | refactor | Extraire données statiques Landing → landingContent.ts (PR #87) ✅ Done |
+| THI-74 | feat | Guide d'installation PWA multi-plateforme (PR #89) 🔄 In Review |
 | THI-64 | refactor | Refactor cmdPipe (bloqué par THI-59) — Medium |
 
 ---
