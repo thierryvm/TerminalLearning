@@ -1127,6 +1127,28 @@ const CMD_HELP: Record<string, CmdHelp> = {
       macos: ['crontab -l', 'crontab -e'],
     },
   },
+  uname: {
+    synopsis: 'uname [-a]',
+    description: 'Affiche les informations du système (nom, version, architecture).',
+    examples: {
+      linux: ['uname', 'uname -a'],
+    },
+  },
+  date: {
+    synopsis: 'date',
+    description: 'Affiche la date et l\'heure courante.',
+    examples: {
+      linux: ['date'],
+      macos: ['date'],
+    },
+  },
+  pbcopy: {
+    synopsis: 'pbcopy / pbpaste',
+    description: 'Copie stdin vers / colle depuis le presse-papiers (macOS).',
+    examples: {
+      macos: ['echo "texte" | pbcopy', 'pbpaste'],
+    },
+  },
 };
 
 // Alias map: maps PS cmdlet names / aliases back to CMD_HELP keys
@@ -1147,125 +1169,91 @@ const CMD_HELP_ALIASES: Record<string, string> = {
   'tee-object': 'tee',
 };
 
+function toPascalCase(s: string): string {
+  return s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('-');
+}
+
 function getHelpText(env: TerminalEnv = 'linux'): string {
-  if (env === 'windows') {
-    return `Commandes disponibles — PowerShell / Windows:
-  Get-Location (gl)           Afficher le répertoire courant
-  Set-Location (sl) [path]    Changer de répertoire
-  Get-ChildItem (dir)         Lister les fichiers et dossiers
-  Get-Content (gc) [file]     Afficher le contenu d'un fichier
-  New-Item (ni) [name]        Créer un fichier ou dossier
-  Copy-Item (copy) src dst    Copier un fichier
-  Move-Item (move) src dst    Déplacer / renommer
-  Remove-Item (del) [file]    Supprimer un fichier
-  Write-Host [texte]          Afficher du texte (supporte $env:VAR)
-  $env:VAR = "val"            Définir une variable d'environnement
-  Get-ChildItem Env:          Lister toutes les variables d'env
-  Start-Job { ... }           Lancer un job en arrière-plan
-  Get-Job / Stop-Job          Gérer les jobs PowerShell
-  Tee-Object -FilePath f      Afficher ET sauvegarder la sortie
-  Get-Process (gps)           Lister les processus
-  Stop-Process -Name [nom]    Arrêter un processus
-  Select-String pat file      Rechercher dans un fichier
-  Clear-Host (cls)            Effacer le terminal
-  history                     Historique des commandes
-  winget install|list         Gestionnaire de paquets
-  help [commande]             Aide sur une commande
-  about                       Informations sur le projet
-
-─────────────────────────────────────────────────────────────
-💡 Dans un vrai PowerShell, cherche de l'aide avec :
-  Get-Help <commande>   # aide complète (ex: Get-Help Get-ChildItem)
-  <commande> -?         # aide rapide
-  Get-Command           # lister toutes les commandes disponibles
-  Get-Member            # explorer les propriétés et méthodes d'un objet`;
+  // Reverse alias map: CMD_HELP key → list of PS aliases (insertion order preserved)
+  const reverseAliases: Record<string, string[]> = {};
+  for (const [alias, key] of Object.entries(CMD_HELP_ALIASES)) {
+    (reverseAliases[key] ??= []).push(alias);
   }
-  if (env === 'macos') {
-    return `Commandes disponibles — macOS / zsh:
-  pwd              Afficher le répertoire courant
-  ls [-la] [path]  Lister les fichiers (-l: détails, -a: cachés)
-  cd [chemin]      Changer de répertoire
-  mkdir [-p] [nom] Créer un répertoire
-  touch [nom]      Créer un fichier
-  cat [file]       Afficher le contenu d'un fichier
-  echo [texte]     Afficher du texte (supporte $VAR)
-  rm [-r] [file]   Supprimer un fichier
-  cp [-r] src dst  Copier
-  mv src dst       Déplacer / renommer
-  grep [-ni] p f   Rechercher dans un fichier
-  head / tail      Début / fin d'un fichier (-n N)
-  wc [-lwc] [file] Compter lignes/mots/octets
-  chmod m file     Changer les permissions
-  export [VAR=val] Définir une variable d'environnement
-  env / printenv   Afficher les variables d'environnement
-  source ~/.zshrc  Recharger la configuration shell
-  crontab [-l|-e]  Gérer les tâches planifiées
-  chown u[:g] f    Changer le propriétaire d'un fichier
-  sudo commande    Exécuter avec les droits root
-  top / htop       Monitoring processus en temps réel
-  jobs / fg / bg   Gérer les processus en arrière-plan
-  tee [-a] fichier Afficher ET sauvegarder la sortie
-  open [file|URL]  Ouvrir avec l'app par défaut
-  pbcopy/pbpaste   Presse-papiers
-  brew install|list Gestionnaire de paquets Homebrew
-  ps [aux]         Lister les processus
-  kill [PID]       Arrêter un processus
-  history          Historique des commandes
-  clear            Effacer le terminal
-  help [commande]  Aide sur une commande
-  about            Informations sur le projet
 
-─────────────────────────────────────────────────────────────
-💡 Dans un vrai terminal macOS, cherche de l'aide avec :
-  man <commande>       # manuel complet (q pour quitter)
-  <commande> --help    # aide rapide
-  whatis <commande>    # description en une ligne
-  apropos <mot-clé>    # trouver une commande par description`;
+  const COL = 28;
+  // Commands whose bash synopsis would be misleading in Windows context —
+  // they are covered by the specialByEnv.windows entries instead
+  const SKIP_WINDOWS = new Set(['jobs', 'export', 'env', 'printenv', 'source']);
+
+  const cmdLines: string[] = [];
+  for (const [key, entry] of Object.entries(CMD_HELP)) {
+    if (!entry.examples?.[env]) continue;
+    if (env === 'windows' && SKIP_WINDOWS.has(key)) continue;
+
+    let synopsis: string;
+    if (env === 'windows') {
+      const aliases = reverseAliases[key] ?? [];
+      const fullName = aliases.find((a) => a.includes('-'));
+      const shortAlias = aliases.find((a) => !a.includes('-'));
+      synopsis = fullName
+        ? shortAlias ? `${toPascalCase(fullName)} (${shortAlias})` : toPascalCase(fullName)
+        : entry.synopsis;
+    } else {
+      synopsis = entry.synopsis;
+    }
+    cmdLines.push(`  ${synopsis.padEnd(COL)}${entry.description}`);
   }
-  // linux (default)
-  return `Commandes disponibles — Linux / bash:
-  pwd              Afficher le répertoire courant
-  ls [-la] [path]  Lister les fichiers (-l: détails, -a: cachés)
-  cd [chemin]      Changer de répertoire
-  mkdir [-p] [nom] Créer un répertoire
-  touch [nom]      Créer un fichier
-  cat [file]       Afficher le contenu d'un fichier
-  echo [texte]     Afficher du texte (supporte $VAR)
-  rm [-r] [file]   Supprimer un fichier (-r: répertoire)
-  cp [-r] src dst  Copier un fichier
-  mv src dst       Déplacer / renommer
-  grep [-ni] p f   Rechercher dans un fichier
-  head / tail      Début / fin d'un fichier (-n N)
-  wc [-lwc] [file] Compter lignes/mots/octets
-  chmod m file     Changer les permissions
-  export [VAR=val] Définir une variable d'environnement
-  env / printenv   Afficher les variables d'environnement
-  source fichier   Recharger la configuration shell
-  crontab [-l|-e]  Gérer les tâches planifiées
-  chown u[:g] f    Changer le propriétaire d'un fichier
-  sudo commande    Exécuter avec les droits root
-  top / htop       Monitoring processus en temps réel
-  jobs / fg / bg   Gérer les processus en arrière-plan
-  tee [-a] fichier Afficher ET sauvegarder la sortie
-  whoami           Utilisateur courant
-  date             Date et heure
-  uname [-a]       Informations système
-  ps [aux]         Lister les processus
-  kill [PID]       Arrêter un processus
-  history          Historique des commandes
-  clear            Effacer le terminal
-  man [commande]   Manuel d'une commande
-  help [commande]  Aide sur une commande
-  about            Informations sur le projet
-  donate / support Soutenir le projet
-  hall-of-fame     Liste des contributeurs
 
-─────────────────────────────────────────────────────────────
+  const specialByEnv: Record<TerminalEnv, string[]> = {
+    linux: [
+      `  ${'man [commande]'.padEnd(COL)}Manuel d'une commande`,
+      `  ${'help [commande]'.padEnd(COL)}Aide sur une commande`,
+      `  ${'about'.padEnd(COL)}Informations sur le projet`,
+      `  ${'donate / support'.padEnd(COL)}Soutenir le projet`,
+      `  ${'hall-of-fame'.padEnd(COL)}Liste des contributeurs`,
+    ],
+    macos: [
+      `  ${'help [commande]'.padEnd(COL)}Aide sur une commande`,
+      `  ${'about'.padEnd(COL)}Informations sur le projet`,
+    ],
+    windows: [
+      `  ${'$env:VAR = "val"'.padEnd(COL)}Définir une variable d'environnement`,
+      `  ${'Get-ChildItem Env:'.padEnd(COL)}Lister toutes les variables d'env`,
+      `  ${'Start-Job { ... }'.padEnd(COL)}Lancer un job en arrière-plan`,
+      `  ${'Get-Job / Stop-Job'.padEnd(COL)}Gérer les jobs PowerShell`,
+      `  ${'help [commande]'.padEnd(COL)}Aide sur une commande`,
+      `  ${'about'.padEnd(COL)}Informations sur le projet`,
+    ],
+  };
+
+  const HEADERS: Record<TerminalEnv, string> = {
+    linux:   'Commandes disponibles — Linux / bash:',
+    macos:   'Commandes disponibles — macOS / zsh:',
+    windows: 'Commandes disponibles — PowerShell / Windows:',
+  };
+
+  const TIPS: Record<TerminalEnv, string> = {
+    linux: `─────────────────────────────────────────────────────────────
 💡 Dans un vrai terminal Linux, cherche de l'aide avec :
   man <commande>       # manuel complet (q pour quitter)
   <commande> --help    # aide rapide
   whatis <commande>    # description en une ligne
-  apropos <mot-clé>    # trouver une commande par description`;
+  apropos <mot-clé>    # trouver une commande par description`,
+    macos: `─────────────────────────────────────────────────────────────
+💡 Dans un vrai terminal macOS, cherche de l'aide avec :
+  man <commande>       # manuel complet (q pour quitter)
+  <commande> --help    # aide rapide
+  whatis <commande>    # description en une ligne
+  apropos <mot-clé>    # trouver une commande par description`,
+    windows: `─────────────────────────────────────────────────────────────
+💡 Dans un vrai PowerShell, cherche de l'aide avec :
+  Get-Help <commande>   # aide complète (ex: Get-Help Get-ChildItem)
+  <commande> -?         # aide rapide
+  Get-Command           # lister toutes les commandes disponibles
+  Get-Member            # explorer les propriétés et méthodes d'un objet`,
+  };
+
+  return [HEADERS[env], ...cmdLines, ...specialByEnv[env], '', TIPS[env]].join('\n');
 }
 
 function getCmdHelp(cmdName: string, env: TerminalEnv = 'linux'): OutputLine[] | null {
