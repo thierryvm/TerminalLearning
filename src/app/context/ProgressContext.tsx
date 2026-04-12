@@ -198,6 +198,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       unsubscribe = () => subscription.unsubscribe();
       // If cancelled while the promise was resolving, clean up immediately.
       if (cancelled) { unsubscribe(); unsubscribe = null; }
+    }).catch(() => {
+      // Dynamic import failure (e.g. network error on chunk load) —
+      // fall back to local-only mode so the app stays usable offline.
+      if (!cancelled) setSyncStatus('local');
     });
 
     return () => {

@@ -115,9 +115,12 @@ export const MODULE_ICONS: Record<string, ComponentType<{ size?: number; classNa
 
 // ── Level badge styles ────────────────────────────────────────────────────────
 
-export const LEVEL_BADGE: Record<number, { label: string; text: string; border: string; bg: string }> = {
+export const LEVEL_BADGE: Record<1 | 2 | 3 | 4 | 5, { label: string; text: string; border: string; bg: string }> = {
   1: { label: 'Niveau 1', text: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
   2: { label: 'Niveau 2', text: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' },
+  3: { label: 'Niveau 3', text: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
+  4: { label: 'Niveau 4', text: 'text-orange-400', border: 'border-orange-500/30', bg: 'bg-orange-500/10' },
+  5: { label: 'Niveau 5', text: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-500/10' },
 };
 
 // ── Module previews — lightweight summary for the Landing page ────────────────

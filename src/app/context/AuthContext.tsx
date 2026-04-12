@@ -41,6 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
       });
       unsubscribe = () => subscription.unsubscribe();
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
     });
 
     return () => {
