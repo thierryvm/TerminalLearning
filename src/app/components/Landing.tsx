@@ -18,8 +18,8 @@ import {
   TOTAL_LESSONS, TOTAL_COMMANDS,
   FEATURES, ROADMAP_AVAILABLE, ROADMAP_IN_PROGRESS, ROADMAP_PLANNED,
   SUPPORTERS, TRUST_BADGES, MODULE_ICONS, LEVEL_BADGE, STATS, ENV_LEVELS,
+  MODULE_PREVIEWS,
 } from '../data/landingContent';
-import { curriculum } from '../data/curriculum';
 
 // ── Environment icon helper ──────────────────────────────────────────────────
 
@@ -331,14 +331,14 @@ export function Landing() {
           transition={{ duration: 0.4 }}
         >
           <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">
-            {curriculum.length} modules progressifs
+            {MODULE_PREVIEWS.length} modules progressifs
           </h2>
           <p className="text-[#8b949e] text-center mb-10">
             Du système de fichiers à la redirection de flux — deux niveaux, sans prérequis pour commencer.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {curriculum.map((mod, i) => {
+            {MODULE_PREVIEWS.map((mod, i) => {
               const Icon = MODULE_ICONS[mod.iconName] ?? BookOpen;
               const levelBadge = LEVEL_BADGE[mod.level ?? 1] ?? LEVEL_BADGE[1];
               return (
@@ -350,13 +350,13 @@ export function Landing() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3, delay: i * 0.06 }}
                   className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm cursor-pointer"
-                  onClick={() => navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
+                  onClick={() => navigate(`/app/learn/${mod.id}/${mod.firstLessonId}`)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`);
+                      navigate(`/app/learn/${mod.id}/${mod.firstLessonId}`);
                     }
                   }}
                   aria-label={`Accéder au module ${mod.title}`}
@@ -378,7 +378,7 @@ export function Landing() {
                   <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
                   <div className="mt-3 flex items-center gap-1.5">
                     <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
-                    <span className="text-emerald-400 text-xs">{mod.lessons.length} leçons disponibles</span>
+                    <span className="text-emerald-400 text-xs">{mod.lessonCount} leçons disponibles</span>
                   </div>
                 </motion.div>
               );

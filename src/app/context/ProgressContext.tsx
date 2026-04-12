@@ -1,7 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Module } from '../data/curriculum';
-import { supabase } from '../../lib/supabase';
 import { mergeProgress, getDelta } from '../lib/progressSync';
+
+// Dynamic import — same chunk deferral as AuthContext. Supabase SDK (194 kB)
+// loads in parallel with initial render, never blocking FCP.
+const supabaseLoader = import('../../lib/supabase');
 import type { ModuleUnlockStatus } from '../lib/unlocking';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,98 +104,106 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   // ── Sync on auth change ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!supabase) return;
-    const client = supabase;
     let cancelled = false;
     let activeController: AbortController | null = null;
     let activeUserId: string | null = null;
+    let unsubscribe: (() => void) | null = null;
 
-    const syncWithRemote = async (userId: string) => {
-      // Supersede any previous in-flight sync (rapid account switches).
-      activeController?.abort();
-      const controller = new AbortController();
-      activeController = controller;
-      activeUserId = userId;
+    supabaseLoader.then(({ supabase }) => {
+      if (!supabase || cancelled) return;
+      const client = supabase;
 
-      setSyncStatus('syncing');
+      const syncWithRemote = async (userId: string) => {
+        // Supersede any previous in-flight sync (rapid account switches).
+        activeController?.abort();
+        const controller = new AbortController();
+        activeController = controller;
+        activeUserId = userId;
 
-      // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
-      // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
-      const abortTimer = setTimeout(() => controller.abort(), 5_000);
+        setSyncStatus('syncing');
 
-      // Bail out silently if the sync was cancelled by unmount, sign-out, or
-      // a newer sync — those paths already set the correct syncStatus.
-      const superseded = () => cancelled || activeUserId !== userId;
+        // Abort if Supabase doesn't respond within 5 s — prevents a long yellow dot.
+        // Free-tier cold starts are typically < 3 s; 5 s gives a safe margin.
+        const abortTimer = setTimeout(() => controller.abort(), 5_000);
 
-      try {
-        const { data: remote, error } = await client
-          .from('progress')
-          .select('lesson_id, completed')
-          .eq('user_id', userId)
-          .abortSignal(controller.signal);
+        // Bail out silently if the sync was cancelled by unmount, sign-out, or
+        // a newer sync — those paths already set the correct syncStatus.
+        const superseded = () => cancelled || activeUserId !== userId;
 
-        if (superseded()) return;
-        if (error) throw error;
+        try {
+          const { data: remote, error } = await client
+            .from('progress')
+            .select('lesson_id, completed')
+            .eq('user_id', userId)
+            .abortSignal(controller.signal);
 
-        const local = loadProgress();
-        const merged = mergeProgress(local.completedLessons, remote ?? []);
-        const mergedState: ProgressState = { completedLessons: merged };
+          if (superseded()) return;
+          if (error) throw error;
 
-        const delta = getDelta(local.completedLessons, remote ?? []);
-        if (delta.length > 0) {
-          const upserts = delta.map((lesson_id) => ({
-            user_id: userId,
-            lesson_id,
-            completed: true as const,
-            completed_at: new Date().toISOString(),
-          }));
-          await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
+          const local = loadProgress();
+          const merged = mergeProgress(local.completedLessons, remote ?? []);
+          const mergedState: ProgressState = { completedLessons: merged };
+
+          const delta = getDelta(local.completedLessons, remote ?? []);
+          if (delta.length > 0) {
+            const upserts = delta.map((lesson_id) => ({
+              user_id: userId,
+              lesson_id,
+              completed: true as const,
+              completed_at: new Date().toISOString(),
+            }));
+            await client.from('progress').upsert(upserts, { onConflict: 'user_id,lesson_id' });
+          }
+
+          if (superseded()) return;
+          saveProgress(mergedState);
+          setProgress(mergedState);
+          setSyncStatus('synced');
+        } catch {
+          if (superseded()) return;
+          setSyncStatus('error');
+        } finally {
+          clearTimeout(abortTimer);
+        }
+      };
+
+      // The callback must NOT be async: gotrue-js holds an internal lock while it
+      // runs, and any awaited Supabase call inside deadlocks until a 5 s timeout
+      // — visible as "Lock not released within 5000ms" in the console and a
+      // multi-second delay on first profile sync. Defer async work with
+      // setTimeout so it runs outside the lock scope.
+      // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
+      const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+        if (!session?.user) {
+          // Sign-out or no session: abort any in-flight sync so it can't
+          // write stale state after the user has logged out.
+          activeController?.abort();
+          activeController = null;
+          activeUserId = null;
+          setSyncStatus('local');
+          return;
         }
 
-        if (superseded()) return;
-        saveProgress(mergedState);
-        setProgress(mergedState);
-        setSyncStatus('synced');
-      } catch {
-        if (superseded()) return;
-        setSyncStatus('error');
-      } finally {
-        clearTimeout(abortTimer);
-      }
-    };
+        // Only sync on initial load or explicit sign-in.
+        // TOKEN_REFRESHED, USER_UPDATED, etc. must not re-trigger a full sync —
+        // that would cause "sync..." to flash every ~50 min while the user is active.
+        if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
-    // The callback must NOT be async: gotrue-js holds an internal lock while it
-    // runs, and any awaited Supabase call inside deadlocks until a 5 s timeout
-    // — visible as "Lock not released within 5000ms" in the console and a
-    // multi-second delay on first profile sync. Defer async work with
-    // setTimeout so it runs outside the lock scope.
-    // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
-    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        // Sign-out or no session: abort any in-flight sync so it can't
-        // write stale state after the user has logged out.
-        activeController?.abort();
-        activeController = null;
-        activeUserId = null;
-        setSyncStatus('local');
-        return;
-      }
+        const userId = session.user.id;
+        setTimeout(() => {
+          if (!cancelled) void syncWithRemote(userId);
+        }, 0);
+      });
 
-      // Only sync on initial load or explicit sign-in.
-      // TOKEN_REFRESHED, USER_UPDATED, etc. must not re-trigger a full sync —
-      // that would cause "sync..." to flash every ~50 min while the user is active.
-      if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
-
-      const userId = session.user.id;
-      setTimeout(() => {
-        if (!cancelled) void syncWithRemote(userId);
-      }, 0);
+      unsubscribe = () => subscription.unsubscribe();
+      // If cancelled while the promise was resolving, clean up immediately.
+      if (cancelled) { unsubscribe(); unsubscribe = null; }
     });
 
     return () => {
       cancelled = true;
       activeController?.abort();
-      subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, []);
 
@@ -207,12 +218,13 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       };
       saveProgress(next);
 
-      // Fire-and-forget upsert (no await in setState callback)
-      const client = supabase;
-      if (client) {
-        client.auth.getSession().then(({ data }) => {
+      // Fire-and-forget upsert — supabaseLoader is already resolved by the time
+      // a user completes a lesson (loads within ~200 ms of app mount).
+      supabaseLoader.then(({ supabase }) => {
+        if (!supabase) return;
+        supabase.auth.getSession().then(({ data }) => {
           if (!data.session?.user) return;
-          client
+          supabase
             .from('progress')
             .upsert(
               { user_id: data.session.user.id, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
@@ -223,7 +235,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
               else setSyncStatus('error');
             });
         });
-      }
+      });
 
       return next;
     });
