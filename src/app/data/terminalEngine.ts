@@ -437,15 +437,21 @@ function cmdCat(state: TerminalState, args: string[]): OutputLine[] {
   return lines;
 }
 
+const MAX_ENV_VAR_LENGTH = 1024;
+
 function cmdEcho(args: string[], envVars?: Record<string, string>): OutputLine[] {
   const text = args.join(' ');
   if (!envVars) return [{ text, type: 'output' }];
   // Interpolate $env:VAR (PowerShell) and $VAR (bash) from envVars
-  const expanded = text.replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) =>
-    Object.prototype.hasOwnProperty.call(envVars, name) ? envVars[name] : ''
-  ).replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) =>
-    Object.prototype.hasOwnProperty.call(envVars, name) ? envVars[name] : ''
-  );
+  // Values are capped at MAX_ENV_VAR_LENGTH to prevent terminal flooding [H3]
+  const safeVal = (name: string) => {
+    if (!Object.prototype.hasOwnProperty.call(envVars, name)) return '';
+    const v = envVars[name];
+    return v.length > MAX_ENV_VAR_LENGTH ? v.slice(0, MAX_ENV_VAR_LENGTH) + '…' : v;
+  };
+  const expanded = text
+    .replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => safeVal(name))
+    .replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => safeVal(name));
   return [{ text: expanded, type: 'output' }];
 }
 
