@@ -91,8 +91,11 @@ export const SUPPORTERS: string[] = [
 
 // ── Trust badges ──────────────────────────────────────────────────────────────
 
+// Points to the production URL intentionally — the badge is proof of the live site's rating.
+const SECURITY_HEADERS_PROOF_URL = 'https://securityheaders.com/?q=https%3A%2F%2Fterminallearning.dev%2Fapp&followRedirects=on';
+
 export const TRUST_BADGES = [
-  { icon: ShieldCheck, label: 'A+ Security Rating', href: 'https://securityheaders.com/?q=https%3A%2F%2Fterminallearning.dev%2Fapp&followRedirects=on' },
+  { icon: ShieldCheck, label: 'A+ Security Rating', href: SECURITY_HEADERS_PROOF_URL },
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
