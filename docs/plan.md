@@ -53,7 +53,7 @@
 | THI-80 | test | RBAC integration tests (20) + fix 4 RLS bugs + 6 security fixes (PR #94) ✅ Done |
 | THI-81 | perf | Landing : MODULE_PREVIEWS remplace curriculum.map() — −112 kB eager (PR #96) ✅ Done |
 | THI-82 | perf | Dynamic import de supabase dans AuthContext + ProgressContext — −194 kB FCP (PR #96) ✅ Done |
-| THI-83 | perf | INP 592ms regression (Apr 10–11) — investigation en cours 🔍 Backlog |
+| THI-83 | perf | INP 592ms fix — instant scroll + MAX_LINES cap + startTransition (PR #99) ✅ Done |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |
