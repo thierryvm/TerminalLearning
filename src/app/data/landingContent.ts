@@ -64,11 +64,13 @@ export const ROADMAP_AVAILABLE = [
   "Sélection d'environnement Linux / macOS / Windows",
   'Adaptation des commandes par OS',
   'Parcours guidé par niveaux',
+  'Partage natif (Web Share API)',
 ];
 
 export const ROADMAP_IN_PROGRESS = [
-  "Plus d'exercices pratiques",
-  'Quiz par section',
+  "Extension du curriculum — nouveaux modules & exercices",
+  "Plus d'exercices pratiques & quiz par section",
+  'Guide d\'installation PWA (iOS / Android / Desktop)',
   'Agent IA tuteur (BYOK)',
   'Terminal Sentinel — audit sécurité automatisé',
 ];
