@@ -54,6 +54,7 @@
 | THI-81 | perf | Landing : MODULE_PREVIEWS remplace curriculum.map() — −112 kB eager (PR #96) ✅ Done |
 | THI-82 | perf | Dynamic import de supabase dans AuthContext + ProgressContext — −194 kB FCP (PR #96) ✅ Done |
 | THI-83 | perf | INP 592ms fix — instant scroll + MAX_LINES cap + startTransition (PR #99) ✅ Done |
+| THI-84 | content | Trust badges cliquables (securityheaders.com + GitHub Actions) + badge "876 tests · CI verte" (PR #100) ✅ Done |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |
