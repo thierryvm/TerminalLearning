@@ -1,6 +1,6 @@
 ---
 name: security-auditor
-description: Black-hat mindset security audit — OWASP Top 10 (2021), OWASP API Security Top 10 (2023), CSP Level 3, HTTP headers, rate limiting, Supabase RLS, auth flow, supply chain, privacy/GDPR, terminal injection, 2026 cybersecurity norms. Run before major releases, after dependency updates, or on demand.
+description: Black-hat mindset security audit — OWASP Top 10 (2021), OWASP API Security Top 10 (2023), CSP Level 3, HTTP headers, rate limiting, Supabase RLS, auth flow, supply chain, privacy/GDPR, terminal injection, SQL migration credential leakage, 2026 cybersecurity norms. Run before major releases, after dependency updates, or on demand.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -19,6 +19,7 @@ Tu es un auditeur de securite senior avec une posture **black hat** : tu analyse
 - src/app/lib/progressSync.ts — sync Supabase
 - src/app/data/terminalEngine.ts — simulation de commandes
 - src/app/data/curriculum.ts — contenu des lecons
+- supabase/migrations/*.sql — CRITICAL : scanner pour credentials en dur (voir section dedicee)
 
 ---
 
@@ -150,7 +151,7 @@ Lister toutes les tables depuis src/app/types/database.ts et verifier :
 
 ---
 
-## Exposition de secrets
+## Exposition de secrets — Code source
 
 Executer via Bash :
   grep -rn "eyJ" src/ --include="*.ts" --include="*.tsx" | grep -v "import.meta.env" | head -20
@@ -159,6 +160,33 @@ Executer via Bash :
 
 - CRITICAL si une cle est en dur dans le code source
 - Verifier que .env.local est bien ignore par git
+
+---
+
+## CRITICAL — Secrets dans les migrations SQL
+
+⚠️ PRIORITE MAXIMALE — Ce vecteur a cause une exposition reelle de credentials dans ce repo (migration 006, avril 2026).
+
+Executer via Bash :
+  grep -rni "password\|passwd\|pwd\|secret\|api.key\|token\|sk-\|crypt(" supabase/migrations/ | grep -v "PLACEHOLDER\|EXAMPLE\|NOT_REAL\|ROTATED\|env\." | head -30
+
+Verifier CHAQUE migration SQL pour :
+- Mots de passe en clair dans les INSERT (auth.users, profiles, etc.)
+- Appels crypt() avec un password litteral (ex: crypt('MonMotDePasse', ...))
+- Tokens ou cles API en dur dans les fixtures / seed data
+- Commentaires de code contenant des exemples de vrais credentials
+
+CRITICAL si un mot de passe ou une cle est en clair dans un fichier SQL commite.
+
+Remediation attendue :
+- Remplacer par un PLACEHOLDER en commentaire : -- password reset via Admin API, see .env.test
+- Ne jamais injecter de vrais credentials dans les migrations — meme temporairement
+- Les mots de passe de test doivent etre rotatés via Admin API apres le premier deploy
+
+Scanner aussi git log pour detecter des credentials anterieurement supprimes mais encore dans l'historique :
+  git log --all -p -- supabase/migrations/ 2>/dev/null | grep -i "crypt(\|password\s*=" | head -20
+
+WARNING si un credential figure dans l'historique git meme si deja supprime du HEAD.
 
 ---
 
