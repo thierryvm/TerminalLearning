@@ -5,6 +5,7 @@ import {
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { iconMap } from '../data/moduleIcons';
+import { usePageSEO } from '../hooks/useLessonSEO';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -35,6 +36,12 @@ const MODULE_BORDER: Record<string, string> = {
 export function Dashboard() {
   const navigate = useNavigate();
   const { overallProgress, totalCompleted, totalLessons, getModuleProgress, isLessonCompleted, isModuleUnlocked, unlockTree } = useProgress();
+
+  usePageSEO({
+    title: 'Tableau de bord — Terminal Learning',
+    description: 'Suivez votre progression dans l\'apprentissage du terminal. 10 modules progressifs, exercices interactifs, Linux / macOS / Windows.',
+    path: '/app',
+  });
 
   const firstIncompleteLesson = () => {
     for (const mod of curriculum) {
