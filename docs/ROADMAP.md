@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 12 April 2026 — THI-36 Terminal Sentinel ✅, THI-37 RBAC DB layer ✅ — 10 modules / 52 lessons / 856 tests — perf: main bundle 16kB, FCP 0.6s
+> Last updated: 12 April 2026 — THI-36 Terminal Sentinel ✅, THI-37 RBAC DB layer ✅, THI-76 RBAC test kit ✅ — 10 modules / 52 lessons / 856 tests — perf: main bundle 16kB, FCP 0.6s
 
 ---
 
@@ -39,6 +39,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] OAuth loading states, TOKEN_REFRESHED sync fix
 - [x] Auth deadlock fix — defer Supabase sync outside onAuthStateChange lock (PR #78)
 - [x] 160+ unit tests
+- [ ] **Password strength meter + generator (THI-79):** `<PasswordStrengthBar />` (zxcvbn, score 0–4, labels FR), générateur 16 chars via `crypto.getRandomValues()`, clipboard copy — signup uniquement. Policy : students 8 chars min, teachers/admins 12 chars (Phase 9). Tests dans `passwordStrength.test.ts`.
 
 ## Phase 4 — Curriculum v2 + Environment Selection ✅
 - [x] Multi-environment support: Linux, macOS, Windows
@@ -239,6 +240,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 > Single source of truth for all new tables and column extensions introduced in Phase 7+.
 > Later phases (5b, 11b) reference this section rather than redefining fields.
 
+- [x] **Test kit (migration 006 — applied 12 April 2026):** 5 test users (one per role) + institution "École de Test" + class "Terminal 101" + enrollments — THI-76 ✅
 - [x] **New tables (migration 005 — applied 12 April 2026):**
   - `institutions (id, name, domain_whitelist[], admin_id)` ✅
   - `classes (id, teacher_id, institution_id, name)` ✅
@@ -277,6 +279,9 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] **Content Manager** — module activation, lesson editor, command catalogue CRUD
 - [ ] **Ticket Board** — Kanban (open → in_review → resolved), priority, assignment
 - [ ] **Health Monitor** — Supabase quotas, Vercel bandwidth, Sentry issues, npm audit
+- [ ] **Activity Heatmaps** (THI-77 + THI-78):
+  - THI-77: `<StudentActivityHeatmap />` — GitHub-style grid (week × day), nb leçons/jour, palette emerald, vue classe + individuelle — teacher-facing
+  - THI-78: `<TeacherAdoptionHeatmap />` — adoption plateforme par enseignant, métriques d'engagement institution — super_admin/institution_admin-facing
 - [ ] **Classroom View** — per-institution stats, teacher notes, student progress
 - [ ] Weekly security report (Edge Function → email)
 
