@@ -146,13 +146,27 @@ export function Dashboard() {
               ? 'border-[#30363d]'
               : (MODULE_BORDER[mod.id] ?? 'border-gray-500/30 hover:border-gray-500/60');
 
+            const ariaLabel = locked
+              ? `${mod.title} — verrouillé, Niv. ${unlockStatus?.level}`
+              : `${mod.title} — ${completed}/${total} leçons`;
+
             return (
               <div
                 key={mod.id}
+                role={locked ? undefined : 'button'}
+                tabIndex={locked ? undefined : 0}
+                aria-label={ariaLabel}
+                aria-disabled={locked ? true : undefined}
                 className={`relative bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 transition-all duration-200 group ${
                   locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 onClick={() => !locked && navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
+                onKeyDown={locked ? undefined : (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
