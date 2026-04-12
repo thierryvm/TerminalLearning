@@ -232,7 +232,7 @@ export const validateGitInit: ValidateFn = (cmd) => /^git\s+init(\s+.*)?$/.test(
 
 export const validateGitConfig: ValidateFn = (cmd) => /^git\s+config\s+(--list|--global\s+user\.)/.test(cmd.trim().toLowerCase());
 
-export const validateGitAddCommit: ValidateFn = (cmd) => /^git\s+add\s+(\.|--all|-A|-p)/.test(cmd.trim().toLowerCase());
+export const validateGitAddCommit: ValidateFn = (cmd) => /^git\s+add\s+(\.|--all|-a|-p)/.test(cmd.trim().toLowerCase());
 
 export const validateGitStatusLog: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
 
