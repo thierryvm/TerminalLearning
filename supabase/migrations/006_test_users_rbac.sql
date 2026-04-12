@@ -1,7 +1,12 @@
 -- ─── 006: RBAC test-user kit (THI-76) ────────────────────────────────────────
 -- Creates 5 test users (one per role) + 1 institution + 1 class + enrollments.
 -- Idempotent: ON CONFLICT DO NOTHING on all inserts.
--- Password for all accounts: TerminalLearning2026!
+--
+-- ⚠️  PASSWORD NOTE: pgcrypto bcrypt hashes are NOT accepted by GoTrue's
+--     password verification. After applying this migration, reset each user's
+--     password via Supabase Dashboard → Authentication → Users → "Send password
+--     recovery email" (or use the Admin API). The intended password is:
+--     TerminalLearning2026!
 --
 -- Emails:
 --   test.superadmin@terminallearning.dev       → super_admin
