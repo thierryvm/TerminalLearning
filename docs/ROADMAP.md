@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 12 April 2026 — Phase 5 modules 8/9/10 done, 10 modules / 52 lessons / 579 tests — perf: main bundle 16kB (was 140kB), FCP 0.6s — auth deadlock fix live
+> Last updated: 12 April 2026 — THI-36 Terminal Sentinel ✅, THI-37 RBAC DB layer ✅ — 10 modules / 52 lessons / 856 tests — perf: main bundle 16kB, FCP 0.6s
 
 ---
 
@@ -127,18 +127,18 @@ Full module track for senior fullstack + network/server expert + security fundam
 | 16 | Server Administration | 5 |
 | 17 | AI as a Dev Tool | 3 |
 
-## Phase 5.5 — Terminal Sentinel 🔮 THI-36
+## Phase 5.5 — Terminal Sentinel ✅ THI-36 (PR #90 — 12 April 2026)
 > Automated security audit tool — professional security showcase for schools and universities.
 
-- [ ] **Component A — GitHub Actions weekly** (`.github/workflows/security-sentinel.yml`)
+- [x] **Component A — GitHub Actions weekly** (`.github/workflows/security-sentinel.yml`)
   - npm audit, gitleaks (secret scanning), HTTP headers (CSP/HSTS/X-Frame), cookie flags
-  - Output: JSON report → `security_reports` Supabase table + email summary
-- [ ] **Component B — Playwright local script** (`scripts/security-audit.cjs`)
-  - Generic auth error messages, rate limiting active, `/admin` routes return 401 without RBAC, no stack traces in prod
-  - Output: JSON report + readable terminal summary with health score
-- Scope: **audits defenses only** — no active attack simulation on production
+  - Cron Monday 06:00 UTC + `workflow_dispatch` — results stored in `security_audit_logs` Supabase table
+- [x] **Component B — Playwright local script** (`scripts/security-audit.cjs`)
+  - Generic auth error messages, rate limiting active, `/admin` routes blocked, no stack traces in prod
+  - Output: JSON report + readable terminal summary
+- [x] `src/lib/securityReport.ts` — pure parsing helpers (24 unit tests)
+- [x] `supabase/migrations/004_security_audit_logs.sql` — RLS service_role only
 - Results feed into Admin Panel Security Center (Phase 9)
-- DB: `security_reports` table — see canonical schema in Phase 7
 
 ## Phase 6 — Terminal Multi-Session 🔮
 - [ ] Tab system: multiple independent terminal sessions
@@ -172,7 +172,8 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Playwright mobile suite (existing e2e/mobile.spec.ts) extended to cover all new components
 - [ ] Dedicated **Mobile UX Agent** validates every PR touching layout components
 
-## Phase 7 — Member Space + Full RBAC + Pedagogical Platform 🔮 THI-37
+## Phase 7 — Member Space + Full RBAC + Pedagogical Platform 🔄 THI-37
+> DB layer ✅ Done 12 April 2026 (PR #92). UI (teacher pages, student profile, admin panel) = Phase 9.
 > Role model validated 10 April 2026. Prerequisite for Admin Panel and school/university rollout.
 > Extended 10 April 2026: CEFR levels, tracks, predictive analytics, institutional management pages.
 
@@ -238,18 +239,21 @@ Full module track for senior fullstack + network/server expert + security fundam
 > Single source of truth for all new tables and column extensions introduced in Phase 7+.
 > Later phases (5b, 11b) reference this section rather than redefining fields.
 
-- [ ] **New tables:**
-  - `institutions (id, name, domain_whitelist[], admin_id)`
-  - `classes (id, teacher_id, institution_id, name)`
-  - `class_enrollments (class_id, student_id)` — composite PK
+- [x] **New tables (migration 005 — applied 12 April 2026):**
+  - `institutions (id, name, domain_whitelist[], admin_id)` ✅
+  - `classes (id, teacher_id, institution_id, name)` ✅
+  - `class_enrollments (class_id, student_id)` — composite PK ✅
+  - `admin_audit_log (id, actor_id, action, target_type, target_id, metadata jsonb, created_at)` — insert-only ✅
+- [x] **Extended tables:**
+  - `profiles` + `role`, `institution_id`, `display_name`, `preferred_env`, `sector`, `bio`, `role_requested_at` ✅
+- [x] RLS on all new tables — principle of least privilege ✅
+- [x] `get_my_role()` security definer — prevents RLS recursion ✅
+- [x] `prevent_role_escalation` trigger — blocks unauthorized role changes ✅
+- [ ] **Remaining (future sprints):**
   - `tracks (id, title, module_ids[], cefr_target, description)`
   - `badges (id, user_id, badge_type, earned_at, evidence_url, ob3_metadata jsonb)` — OB3-compatible
   - `teacher_notes (id, teacher_id, student_id, note, created_at)`
-  - `audit_log (id, actor_id, action, target_id, metadata jsonb, ip_address, created_at)` — insert-only
-- [ ] **Extended tables:**
-  - `profiles` + `role`, `institution_id`, `display_name`, `preferred_env`, `active_track_id`
-  - `progress` + `time_spent_seconds`, `attempts_count`, `hints_used` *(score column already exists)*
-- [ ] RLS on all new tables — principle of least privilege
+  - `progress` + `time_spent_seconds`, `attempts_count`, `hints_used`
 - [ ] `tickets (id, user_id, type, status, priority, context jsonb)` — Phase 8
 - [ ] `security_reports (id, run_at, score, findings jsonb, component)` — Phase 5.5/9
 

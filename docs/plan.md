@@ -13,8 +13,8 @@
 | THI-28 | 5 | Modules 9+10 — Git Fondamentaux + GitHub & Collaboration *(combinés)* — 52 leçons, 792 tests (PR #72) ✅ Done |
 | THI-29 | 5 | Module 11 — L'IA comme outil dev |
 | THI-35 | docs | Architecture stratégique — Terminal Sentinel, RBAC, Admin Panel, PWA ✅ Done |
-| THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé |
-| THI-37 | 7 | RBAC complet — student / teacher / institution / admin |
+| THI-36 | 5.5 | Terminal Sentinel — outil d'audit de sécurité automatisé (PR #90) ✅ Done |
+| THI-37 | 7 | RBAC complet — student / teacher / institution / admin (PR #92) ✅ Done |
 | THI-45 | agents | Content Auditor V1 — audit pédagogique A→Z (`.claude/agents/content-auditor.md`) |
 | THI-53 | security | Security Auditor Agent — audit black hat OWASP/CSP/RLS/2026 (`.claude/agents/security-auditor.md`) ✅ Done |
 | THI-54 | security | vercel.json — CORP header `Cross-Origin-Resource-Policy: same-origin` + CSP Supabase exact FQDN (PR #66) ✅ Done |
@@ -47,7 +47,7 @@
 | THI-75 | feat | Bouton Partager — Web Share API + clipboard fallback (PR #86) ✅ Done |
 | THI-61 | refactor | Générer getHelpText programmatiquement depuis CMD_HELP (PR #87) ✅ Done |
 | THI-62 | refactor | Extraire données statiques Landing → landingContent.ts (PR #87) ✅ Done |
-| THI-74 | feat | Guide d'installation PWA multi-plateforme (PR #89) 🔄 In Review |
+| THI-74 | feat | Guide d'installation PWA multi-plateforme (PR #89) ✅ Done |
 | THI-64 | refactor | Refactor cmdPipe (bloqué par THI-59) — Medium |
 
 ---
