@@ -1,3 +1,15 @@
+import {
+  validateOrientation, validatePwd, validateLs, validateLsLa, validateCd,
+  validateMkdir, validateTouch, validateCp, validateMv, validateRm,
+  validateCat, validateHeadTail, validateGrep, validateWc,
+  validateComprendrePermissions, validateChmod, validateChown, validateSudo, validateSecurityPermissions,
+  validatePs, validateKill, validateTop, validateBackground,
+  validateRedirectionSortie, validatePipes, validateStderr, validateTee,
+  validateEnvVars, validatePathVariable, validateShellConfig, validateDotenv, validateScripts, validateCron,
+  validatePing, validateCurl, validateWget, validateDns, validateSsh, validateScp,
+  validateGitInit, validateGitConfig, validateGitAddCommit, validateGitStatusLog, validateGitDiffGitignore, validateGitBranch, validateGitMerge,
+  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateConflicts, validateGithubActions,
+} from './validators';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
 
 export interface ContentBlock {
@@ -112,7 +124,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tape simplement "help" et appuie sur Entrée',
           },
-          validate: (cmd) => cmd.trim().toLowerCase() === 'help',
+          validate: validateOrientation,
           successMessage:
             "Parfait ! Tu sais maintenant comment explorer un terminal inconnu. Cette commande sera ton meilleur allié tout au long de la formation.",
         },
@@ -156,11 +168,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Location" ou son alias "gl"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return ['get-location', 'gl', 'pwd'].includes(c);
-            return c === 'pwd';
-          },
+          validate: validatePwd,
           successMessage: 'Parfait ! Vous savez maintenant afficher votre répertoire courant.',
         },
       },
@@ -203,11 +211,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-ChildItem" ou son alias "dir"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-childitem|gci|dir|ls)(\s.*)?$/.test(c);
-            return /^ls(\s.*)?$/.test(c);
-          },
+          validate: validateLs,
           successMessage: 'Excellent ! Vous voyez maintenant le contenu de votre répertoire.',
         },
       },
@@ -256,11 +260,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-ChildItem -Force" ou son alias "dir -Force"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-childitem|gci|dir)\s+(-force|-hidden)/.test(c) || /^ls\s+(-la|-al)$/.test(c);
-            return /^ls\s+(-la|-al|-a -l|-l -a)$/.test(c);
-          },
+          validate: validateLsLa,
           successMessage: 'Bravo ! Vous maîtrisez maintenant les options de listage avancées.',
         },
       },
@@ -309,11 +309,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Set-Location documents" ou simplement "cd documents"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return ['cd documents', 'set-location documents', 'sl documents'].includes(c);
-            return c === 'cd documents';
-          },
+          validate: validateCd,
           successMessage: 'Parfait ! Vous savez maintenant vous déplacer dans le système de fichiers.',
         },
       },
@@ -369,11 +365,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "mkdir test" (fonctionne aussi en PowerShell) ou "New-Item -ItemType Directory -Name test"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(mkdir|md|new-item|ni)\s+.*test/.test(c);
-            return /^mkdir\s+(-p\s+)?test$/.test(c);
-          },
+          validate: validateMkdir,
           successMessage: 'Super ! Vous avez créé votre premier répertoire.',
         },
       },
@@ -412,11 +404,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "New-Item -ItemType File -Name memo.txt" ou son alias "ni memo.txt"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(new-item|ni)\s+.*memo\.txt/.test(c) || c === 'touch memo.txt';
-            return c === 'touch memo.txt';
-          },
+          validate: validateTouch,
           successMessage: 'Parfait ! Vous savez créer des fichiers depuis le terminal.',
         },
       },
@@ -460,11 +448,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Copy-Item documents/notes.txt documents/notes-copy.txt"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(copy-item|cpi|copy|cp)\s+documents\/notes\.txt\s+documents\/notes-copy\.txt/.test(c);
-            return c === 'cp documents/notes.txt documents/notes-copy.txt';
-          },
+          validate: validateCp,
           successMessage: 'Excellent ! Vous maîtrisez la copie de fichiers.',
         },
       },
@@ -508,11 +492,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Move-Item documents/rapport.md documents/rapport-final.md"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(move-item|mi|move|mv)\s+documents\/rapport\.md\s+documents\/rapport-final\.md/.test(c);
-            return c === 'mv documents/rapport.md documents/rapport-final.md';
-          },
+          validate: validateMv,
           successMessage: 'Bravo ! Vous savez maintenant déplacer et renommer des fichiers.',
         },
       },
@@ -556,11 +536,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Remove-Item documents/notes.txt" ou son alias "del documents/notes.txt"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(remove-item|ri|del|erase|rm)\s+documents\/notes\.txt/.test(c);
-            return c === 'rm documents/notes.txt';
-          },
+          validate: validateRm,
           successMessage: 'Parfait ! Vous savez supprimer des fichiers. Utilisez cette commande avec précaution !',
         },
       },
@@ -611,11 +587,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Content documents/notes.txt" ou son alias "gc documents/notes.txt"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-content|gc|cat|type)\s+documents\/notes\.txt/.test(c);
-            return c === 'cat documents/notes.txt';
-          },
+          validate: validateCat,
           successMessage: 'Parfait ! Vous pouvez maintenant lire le contenu des fichiers.',
         },
       },
@@ -659,11 +631,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Content documents/rapport.md | Select-Object -First 3"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /get-content.+rapport\.md.*select-object.*-first\s+3/.test(c) || c === 'head -n 3 documents/rapport.md';
-            return c === 'head -n 3 documents/rapport.md';
-          },
+          validate: validateHeadTail,
           successMessage: 'Excellent ! Vous maîtrisez la lecture partielle de fichiers.',
         },
       },
@@ -707,11 +675,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Select-String \\"important\\" documents/notes.txt"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(select-string|sls)\s+["']?important["']?\s+documents\/notes\.txt/.test(c) || /^grep\s+["']?important["']?\s+documents\/notes\.txt/.test(c);
-            return /^grep\s+(-\w+\s+)*["']?important["']?\s+documents\/notes\.txt$/.test(c);
-          },
+          validate: validateGrep,
           successMessage: 'Bravo ! La recherche dans les fichiers est l\'un des outils les plus puissants du terminal.',
         },
       },
@@ -750,11 +714,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "(Get-Content documents/rapport.md).Count"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /\(get-content.+rapport\.md\)\.count/.test(c) || c === 'wc -l documents/rapport.md';
-            return c === 'wc -l documents/rapport.md';
-          },
+          validate: validateWc,
           successMessage: 'Parfait ! Vous savez analyser la taille d\'un fichier.',
         },
       },
@@ -810,11 +770,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Acl documents/notes.txt" pour afficher les droits d\'accès',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-acl|ls -l|icacls)/.test(c);
-            return c === 'ls -l';
-          },
+          validate: validateComprendrePermissions,
           successMessage: 'Vous voyez maintenant les permissions de chaque fichier !',
         },
       },
@@ -882,11 +838,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Set-ExecutionPolicy RemoteSigned" (requis pour exécuter des scripts PS1)',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^set-executionpolicy\s+(remotesigned|unrestricted|bypass)/.test(c) || /^chmod\s+(\+x|755)\s+projets\/script\.sh/.test(c);
-            return /^chmod\s+(\+x|755|u\+x)\s+projets\/script\.sh$/.test(c);
-          },
+          validate: validateChmod,
           successMessage: 'Super ! Vous maîtrisez les permissions d\'exécution.',
         },
       },
@@ -950,11 +902,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: Get-Acl documents/notes.txt',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-acl|get-item)\s+/.test(c) || c === 'ls -la';
-            return /^ls\s+(-la|-al)$/.test(c) || /^ls\s+-l/.test(c);
-          },
+          validate: validateChown,
           successMessage: 'Parfait ! Vous identifiez maintenant les propriétaires de fichiers.',
         },
       },
@@ -1012,10 +960,7 @@ export const curriculum: Module[] = [
             windows: 'Tapez simplement "whoami"',
             macos: 'Tapez "whoami" puis "sudo whoami"',
           },
-          validate: (cmd) => {
-            const c = cmd.trim().toLowerCase();
-            return c === 'whoami' || c === 'sudo whoami';
-          },
+          validate: validateSudo,
           successMessage: 'Bien ! Vous comprenez maintenant le principe d\'élévation de privilèges.',
         },
       },
@@ -1077,11 +1022,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: Get-Acl $HOME',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-acl|icacls)\s+/.test(c) || c === 'ls -la';
-            return /^ls(\s+(-la|-al|-l|-a))?/.test(c);
-          },
+          validate: validateSecurityPermissions,
           successMessage: 'Excellent ! Vous intégrez maintenant la sécurité dans votre gestion de fichiers.',
         },
       },
@@ -1132,11 +1073,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Process" ou son alias "gps"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-process|gps|tasklist|ps)(\s.*)?$/.test(c);
-            return /^ps(\s+.*)?$/.test(c);
-          },
+          validate: validatePs,
           successMessage: 'Parfait ! Vous voyez maintenant les processus en cours.',
         },
       },
@@ -1204,11 +1141,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Process | Sort-Object CPU -Descending"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(stop-process|spps|taskkill|get-process|gps|ps)(\s.*)?$/.test(c);
-            return /^ps(\s+.*)?$/.test(c);
-          },
+          validate: validateKill,
           successMessage: 'Bien ! Vous savez maintenant surveiller et contrôler les processus.',
         },
       },
@@ -1264,12 +1197,7 @@ export const curriculum: Module[] = [
             macos: 'Tapez: ps aux | sort -k3rn | head -5',
             windows: 'Tapez: Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 5',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^get-process\s*\|/.test(c) || /^(get-process|gps|ps)\s/.test(c);
-            if (env === 'macos') return /^ps\s+aux/.test(c) || /^top/.test(c);
-            return /^ps\s+aux/.test(c) || /^top/.test(c);
-          },
+          validate: validateTop,
           successMessage: 'Excellent ! Vous savez maintenant identifier les processus les plus gourmands.',
         },
       },
@@ -1324,11 +1252,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-Job"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return c === 'get-job' || c === 'jobs';
-            return c === 'jobs';
-          },
+          validate: validateBackground,
           successMessage: 'Bien ! Vous connaissez maintenant les mécanismes de gestion des processus en arrière-plan.',
         },
       },
@@ -1384,11 +1308,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: echo "Bonjour le monde!" > bonjour.txt (fonctionne aussi en PowerShell)',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim();
-            if (env === 'windows') return /^(write-output|write-host|echo)\s+["']?Bonjour le monde!?["']?\s*>\s*bonjour\.txt$/i.test(c);
-            return /^echo\s+["']?Bonjour le monde!?["']?\s+>\s+bonjour\.txt$/.test(c);
-          },
+          validate: validateRedirectionSortie,
           successMessage: 'Excellent ! Vous savez créer des fichiers par redirection.',
         },
       },
@@ -1437,11 +1357,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez "Get-ChildItem | Measure-Object" (équivalent PowerShell de ls | wc -l)',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-childitem|dir|ls)\s*\|\s*(measure-object|measure)/.test(c) || c === 'ls | wc -l';
-            return c === 'ls | wc -l';
-          },
+          validate: validatePipes,
           successMessage: 'Bravo ! Vous maîtrisez maintenant les pipes — l\'essence de la ligne de commande.',
         },
       },
@@ -1505,11 +1421,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: Get-Item fichier-inexistant 2> erreurs.txt',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /2>\s*(erreurs|errors|err)/.test(c) || /2>\$null/.test(c);
-            return /2>/.test(c);
-          },
+          validate: validateStderr,
           successMessage: 'Parfait ! Vous gérez maintenant stdout et stderr séparément.',
         },
       },
@@ -1562,11 +1474,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: Get-ChildItem | Tee-Object -FilePath ma-liste.txt',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /tee-object/.test(c) || /\|\s*tee/.test(c);
-            return /\|\s*tee/.test(c);
-          },
+          validate: validateTee,
           successMessage: 'Excellent ! tee est un outil indispensable pour les scripts de déploiement et les logs.',
         },
       },
@@ -1622,11 +1530,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: $env:GREETING = "Hello"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim();
-            if (env === 'windows') return /^\$env:[A-Za-z_]\w*\s*=\s*.+/.test(c);
-            return /^export\s+[A-Za-z_]\w*=.+/.test(c);
-          },
+          validate: validateEnvVars,
           successMessage: 'Parfait ! Vous avez créé votre première variable d\'environnement.',
         },
       },
@@ -1670,11 +1574,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: echo $env:PATH',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return c === 'echo $env:path' || c === '$env:path';
-            return c === 'echo $path';
-          },
+          validate: validatePathVariable,
           successMessage: 'Excellent ! Vous voyez maintenant les répertoires où le shell cherche vos commandes.',
         },
       },
@@ -1720,12 +1620,7 @@ export const curriculum: Module[] = [
             macos: 'Tapez: cat ~/.zshrc',
             windows: 'Tapez: cat $PROFILE',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'macos') return c === 'cat ~/.zshrc';
-            if (env === 'windows') return /^(cat|get-content|gc)\s+\$profile$/i.test(c);
-            return c === 'cat ~/.bashrc';
-          },
+          validate: validateShellConfig,
           successMessage: 'Bien joué ! Voici votre configuration shell actuelle.',
         },
       },
@@ -1769,11 +1664,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Faites "cd projets" puis "Get-Content .env"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^(get-content|gc|cat)\s+\.env$/.test(c);
-            return c === 'cat .env';
-          },
+          validate: validateDotenv,
           successMessage: 'Parfait ! Vous voyez les variables d\'environnement du projet. Ne commitez jamais ce fichier !',
         },
       },
@@ -1817,11 +1708,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez ".\\script.sh" ou "bash script.sh"',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') return /^\.(\\|\/)script\.sh$/.test(c) || /^bash\s+script\.sh$/.test(c);
-            return c === './script.sh' || c === 'bash script.sh';
-          },
+          validate: validateScripts,
           successMessage: 'Bravo ! Vous venez d\'exécuter votre premier script bash.',
         },
       },
@@ -1865,7 +1752,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: crontab -l (pour voir un exemple de tâches planifiées)',
           },
-          validate: (cmd) => cmd.trim().toLowerCase() === 'crontab -l',
+          validate: validateCron,
           successMessage: 'Parfait ! Vous savez maintenant lister vos tâches planifiées.',
         },
       },
@@ -1929,7 +1816,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Testez la connectivité vers `google.com` avec la commande `ping google.com`.',
           hint: 'Tapez: ping google.com',
-          validate: (cmd) => /^ping\s+.+/.test(cmd.trim().toLowerCase()),
+          validate: validatePing,
           successMessage: 'Excellent ! Vous savez maintenant tester la connectivité réseau.',
         },
       },
@@ -1981,13 +1868,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: curl https://api.github.com (ou Invoke-WebRequest -Uri https://api.github.com)',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') {
-              return /^curl(\.exe)?\s+https?:\/\/.+/.test(c) || /^invoke-webrequest\s+-uri\s+https?:\/\/.+/.test(c);
-            }
-            return /^curl\s+.+/.test(c);
-          },
+          validate: validateCurl,
           successMessage: 'Parfait ! Vous savez maintenant interroger des APIs depuis le terminal.',
         },
       },
@@ -2039,15 +1920,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: Invoke-WebRequest -Uri https://example.com/fichier.zip -OutFile fichier.zip',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') {
-              return /^wget\s+https?:\/\/.+/.test(c) ||
-                /^invoke-webrequest\s+(-uri\s+)?https?:\/\/.+/.test(c) ||
-                /^iwr\s+https?:\/\/.+/.test(c);
-            }
-            return /^wget\s+https?:\/\/.+/.test(c);
-          },
+          validate: validateWget,
           successMessage: 'Bien joué ! Vous savez maintenant télécharger des fichiers depuis le terminal.',
         },
       },
@@ -2099,13 +1972,7 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Tapez: nslookup google.com (ou Resolve-DnsName google.com)',
           },
-          validate: (cmd, env) => {
-            const c = cmd.trim().toLowerCase();
-            if (env === 'windows') {
-              return /^nslookup\s+.+/.test(c) || /^resolve-dnsname\s+.+/.test(c) || /^dig\s+.+/.test(c);
-            }
-            return /^nslookup\s+.+/.test(c) || /^dig\s+.+/.test(c);
-          },
+          validate: validateDns,
           successMessage: 'Parfait ! Vous savez maintenant interroger le DNS depuis le terminal.',
         },
       },
@@ -2145,10 +2012,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Générez une paire de clés SSH ED25519 avec `ssh-keygen -t ed25519`.',
           hint: 'Tapez: ssh-keygen -t ed25519',
-          validate: (cmd) => {
-            const c = cmd.trim().toLowerCase();
-            return /^ssh-keygen\s+.*-t\s+ed25519/.test(c) || /^ssh-keygen\s+-t\s+ed25519/.test(c);
-          },
+          validate: validateSsh,
           successMessage: 'Bravo ! Vous venez de générer votre première paire de clés SSH.',
         },
       },
@@ -2188,7 +2052,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Copiez un fichier vers un serveur distant avec `scp fichier.txt user@serveur.example.com:/home/user/`.',
           hint: 'Tapez: scp fichier.txt user@serveur.example.com:/home/user/',
-          validate: (cmd) => /^scp\s+.+\s+.+@.+:.+/.test(cmd.trim().toLowerCase()),
+          validate: validateScp,
           successMessage: 'Excellent ! Vous savez maintenant transférer des fichiers de manière sécurisée.',
         },
       },
@@ -2242,7 +2106,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Initialisez un nouveau dépôt Git avec `git init`.',
           hint: 'Tapez: git init',
-          validate: (cmd) => /^git\s+init(\s+.*)?$/.test(cmd.trim().toLowerCase()),
+          validate: validateGitInit,
           successMessage: 'Parfait ! Votre premier dépôt Git est initialisé. Le dossier .git/ a été créé.',
         },
       },
@@ -2282,7 +2146,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Vérifiez votre configuration Git avec `git config --list`.',
           hint: 'Tapez: git config --list',
-          validate: (cmd) => /^git\s+config\s+(--list|--global\s+user\.)/.test(cmd.trim().toLowerCase()),
+          validate: validateGitConfig,
           successMessage: 'Votre configuration Git est visible. Nom et email sont les deux réglages essentiels avant le premier commit.',
         },
       },
@@ -2323,7 +2187,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Ajoutez tous les fichiers du répertoire courant à la zone de staging avec `git add .`.',
           hint: 'Tapez: git add .',
-          validate: (cmd) => /^git\s+add\s+(\.|--all|-A|-p)/.test(cmd.trim().toLowerCase()),
+          validate: validateGitAddCommit,
           successMessage: 'Fichiers stagés ! Maintenant vous pouvez les committer avec git commit -m "message".',
         },
       },
@@ -2360,7 +2224,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Affichez le statut de votre dépôt avec `git status`.',
           hint: 'Tapez: git status',
-          validate: (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase()),
+          validate: validateGitStatusLog,
           successMessage: 'Vous savez lire l\'état de votre dépôt. git status sera votre commande la plus utilisée au quotidien.',
         },
       },
@@ -2401,7 +2265,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Visualisez les différences actuelles dans votre dépôt avec `git diff`.',
           hint: 'Tapez: git diff',
-          validate: (cmd) => /^git\s+diff(\s+.*)?$/.test(cmd.trim().toLowerCase()),
+          validate: validateGitDiffGitignore,
           successMessage: 'Vous savez lire un diff Git. Les lignes en vert (+) sont les ajouts, en rouge (-) les suppressions.',
         },
       },
@@ -2441,10 +2305,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Créez une nouvelle branche `feature/ma-feature` et basculez dessus avec `git checkout -b feature/ma-feature`.',
           hint: 'Tapez: git checkout -b feature/ma-feature',
-          validate: (cmd) => {
-            const c = cmd.trim().toLowerCase();
-            return /^git\s+checkout\s+-b\s+\S+/.test(c) || /^git\s+switch\s+-c\s+\S+/.test(c);
-          },
+          validate: validateGitBranch,
           successMessage: 'Branche créée et activée ! Vous développez maintenant en isolation totale de main.',
         },
       },
@@ -2481,7 +2342,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Fusionnez la branche `feature/ma-feature` dans la branche courante avec `git merge feature/ma-feature`.',
           hint: 'Tapez: git merge feature/ma-feature',
-          validate: (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase()),
+          validate: validateGitMerge,
           successMessage: 'Fusion réussie ! Le travail de la branche est maintenant intégré. C\'est le coeur du workflow Git en entreprise.',
         },
       },
@@ -2535,7 +2396,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Ajoutez un remote `origin` pointant vers `https://github.com/user/mon-projet.git` avec `git remote add origin https://github.com/user/mon-projet.git`.',
           hint: 'Tapez: git remote add origin https://github.com/user/mon-projet.git',
-          validate: (cmd) => /^git\s+remote\s+add\s+\S+\s+https?:\/\/\S+/.test(cmd.trim().toLowerCase()),
+          validate: validateGitRemote,
           successMessage: 'Remote ajouté ! Votre dépôt local est maintenant connecté à GitHub.',
         },
       },
@@ -2579,7 +2440,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Envoyez vos commits vers GitHub avec `git push -u origin main`.',
           hint: 'Tapez: git push -u origin main',
-          validate: (cmd) => /^git\s+push(\s+-u\s+\S+\s+\S+|\s+\S+\s+\S+|\s*)$/.test(cmd.trim().toLowerCase()),
+          validate: validateGitPushPull,
           successMessage: 'Push réussi ! Vos commits sont maintenant sur GitHub, visibles par toute votre équipe.',
         },
       },
@@ -2616,7 +2477,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Clonez un dépôt distant avec `git clone https://github.com/user/projet.git`.',
           hint: 'Tapez: git clone https://github.com/user/projet.git',
-          validate: (cmd) => /^git\s+clone\s+\S+/.test(cmd.trim().toLowerCase()),
+          validate: validateGitFetchClone,
           successMessage: 'Dépôt cloné ! Vous pouvez maintenant travailler sur un projet existant avec tout son historique.',
         },
       },
@@ -2656,10 +2517,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Simulez le début d\'un workflow PR : créez une branche `feature/nouvelle-feature` avec `git checkout -b feature/nouvelle-feature`.',
           hint: 'Tapez: git checkout -b feature/nouvelle-feature',
-          validate: (cmd) => {
-            const c = cmd.trim().toLowerCase();
-            return /^git\s+checkout\s+-b\s+feature\/\S+/.test(c) || /^git\s+switch\s+-c\s+feature\/\S+/.test(c);
-          },
+          validate: validatePullRequests,
           successMessage: 'Branche feature créée ! Dans un vrai projet, vous développeriez ici puis ouvreriez une PR vers main.',
         },
       },
@@ -2700,7 +2558,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Fusionnez la branche `feature/nouvelle-feature` dans la branche courante avec `git merge feature/nouvelle-feature`.',
           hint: 'Tapez: git merge feature/nouvelle-feature',
-          validate: (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase()),
+          validate: validateConflicts,
           successMessage: 'Fusion effectuée ! En cas de conflit réel, vous savez maintenant comment les identifier et les résoudre.',
         },
       },
@@ -2745,7 +2603,7 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Vérifiez l\'état de votre dépôt git avant un push avec `git status`.',
           hint: 'Tapez: git status',
-          validate: (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase()),
+          validate: validateGithubActions,
           successMessage: 'Parfait ! Avant chaque push, vérifiez toujours l\'état de votre dépôt. GitHub Actions fera ensuite tourner automatiquement vos tests et votre build.',
         },
       },
