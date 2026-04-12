@@ -20,7 +20,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
 - Tailwind CSS v4 + shadcn/ui + Motion
 - Supabase (Auth + PostgreSQL + RLS + OAuth GitHub + Google)
-- Vitest (tests unitaires) — pas de Playwright encore
+- Vitest (tests unitaires) + Playwright (E2E — 3 suites : accessibility, mobile, seo)
 - Vercel (déploiement auto sur push main)
 
 ## Fichiers critiques — toucher avec précaution
@@ -81,6 +81,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
   gh pr view N --comments 2>&1 | grep -A 15 -i "sourcery\|issue\|suggestion\|bug"
   ```
   Si Sourcery a commenté → corriger dans un commit fixup → repousser → ALORS proposer le merge
+  Si Sourcery = SKIPPED (rate limit hebdomadaire atteint) → acceptable, procéder au merge
 - **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
 - Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
 
