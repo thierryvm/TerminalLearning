@@ -9,6 +9,11 @@ const MAX_INPUT_LENGTH = 500;
 // 300 lines ≈ ~30 commands with multi-line output — well above practical usage.
 const MAX_LINES = 300;
 
+/** Append new lines and enforce the MAX_LINES cap in one place. */
+function appendLines(prev: TerminalLine[], ...next: TerminalLine[]): TerminalLine[] {
+  return [...prev, ...next].slice(-MAX_LINES);
+}
+
 /**
  * Sanitise raw terminal input.
  * - Trims whitespace
@@ -137,7 +142,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       const prompt = getEnvPrompt(activeState, environment);
 
       if (!trimmed) {
-        setLines((prev) => [...prev, { id: nextId(), type: 'prompt' as const, text: '', prompt }].slice(-MAX_LINES));
+        setLines((prev) => appendLines(prev, { id: nextId(), type: 'prompt', text: '', prompt }));
         return;
       }
 
@@ -161,7 +166,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       ];
 
       startTransition(() => {
-        setLines((prev) => [...prev, ...newLines].slice(-MAX_LINES));
+        setLines((prev) => appendLines(prev, ...newLines));
       });
       setTermState(result.newState);
       onCommand?.(trimmed, result.newState);
@@ -190,23 +195,24 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         setInput(completions[0]);
       } else if (completions.length > 1) {
         const prompt = getEnvPrompt(activeState, environment);
-        setLines((prev) => [
-          ...prev,
-          { id: nextId(), type: 'prompt' as const, text: input, prompt },
-          { id: nextId(), type: 'output' as const, text: completions.join('  ') },
-        ].slice(-MAX_LINES));
+        setLines((prev) => appendLines(
+          prev,
+          { id: nextId(), type: 'prompt', text: input, prompt },
+          { id: nextId(), type: 'output', text: completions.join('  ') },
+        ));
       }
     } else if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
-      setLines((prev) => [
-        ...prev,
-        { id: nextId(), type: 'prompt' as const, text: input + '^C', prompt: getEnvPrompt(activeState, environment) },
-      ].slice(-MAX_LINES));
+      setLines((prev) => appendLines(
+        prev,
+        { id: nextId(), type: 'prompt', text: input + '^C', prompt: getEnvPrompt(activeState, environment) },
+      ));
       setInput('');
       setHistoryIndex(-1);
     } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
       setLines([]);
+      setHistoryIndex(-1);
     }
   }, [activeState, historyIndex, input, environment]);
 
