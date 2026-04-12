@@ -4,8 +4,10 @@ import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen,
   CheckCircle2, Zap, Clock, Star, Coffee, Heart,
-  Compass, Monitor, LogIn, Share2, Check,
+  Compass, Monitor, LogIn, Share2, Check, Download,
 } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+import { PWAInstallModal } from './PWAInstallModal';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
@@ -37,6 +39,8 @@ export function Landing() {
   const [loginOpen, setLoginOpen] = useState(false);
   const { selectedEnv, setEnvironment } = useEnvironment();
   const [shared, setShared] = useState(false);
+  const { isInstalled } = usePWAInstall();
+  const [showPWAModal, setShowPWAModal] = useState(false);
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';
@@ -238,9 +242,22 @@ export function Landing() {
                 </>
               )}
             </button>
+
+            {!isInstalled && (
+              <button
+                onClick={() => setShowPWAModal(true)}
+                className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-base transition-all"
+                aria-label="Installer l'application"
+              >
+                <Download size={16} aria-hidden="true" />
+                Installer l'app
+              </button>
+            )}
           </div>
         </div>
       </section>
+
+      {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
 
       {/* ── TRUST BADGES ────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-8">
