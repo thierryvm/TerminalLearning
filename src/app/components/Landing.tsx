@@ -5,7 +5,7 @@ import {
   Terminal, ChevronRight, Github, BookOpen, Zap, Shield, Heart,
   CheckCircle2, Clock, Star, Coffee, ShieldCheck, Lock, Infinity,
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
-  Monitor, LogIn,
+  Monitor, LogIn, Share2, Check,
 } from 'lucide-react';
 
 // ── Environment icon helper ──────────────────────────────────────────────────
@@ -221,6 +221,23 @@ export function Landing() {
   const { syncStatus } = useProgress();
   const [loginOpen, setLoginOpen] = useState(false);
   const { selectedEnv, setEnvironment } = useEnvironment();
+  const [shared, setShared] = useState(false);
+
+  const handleShare = async () => {
+    const url = 'https://terminallearning.dev';
+    const text = 'Apprends le terminal gratuitement — 10 modules interactifs, Linux / macOS / Windows.';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Terminal Learning', text, url });
+      } catch {
+        // user cancelled — no action needed
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -387,6 +404,24 @@ export function Landing() {
             >
               <Compass size={16} aria-hidden="true" />
               Voir la roadmap
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium text-base transition-all"
+              aria-label="Partager Terminal Learning"
+            >
+              {shared ? (
+                <>
+                  <Check size={16} className="text-emerald-400" aria-hidden="true" />
+                  <span className="text-emerald-400">Lien copié !</span>
+                </>
+              ) : (
+                <>
+                  <Share2 size={16} aria-hidden="true" />
+                  Partager
+                </>
+              )}
             </button>
           </div>
         </div>
