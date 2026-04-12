@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import type { EnvId } from '../data/curriculum';
+import { usePageSEO } from '../hooks/useLessonSEO';
 
 interface CommandEntry {
   /** Command name shown — can be overridden per env */
@@ -648,6 +649,12 @@ export function CommandReference() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  usePageSEO({
+    title: 'Référence des commandes — Terminal Learning',
+    description: 'Référence complète de 27+ commandes terminal : syntaxe, exemples, variantes Linux / macOS / Windows. Navigation, fichiers, permissions, réseau, Git.',
+    path: '/app/reference',
+  });
 
   // Resolve per-env fields
   const resolve = <T,>(base: T, byEnv?: Partial<Record<string, T>>): T =>
