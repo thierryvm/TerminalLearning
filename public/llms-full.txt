@@ -1,0 +1,206 @@
+# Terminal Learning — Full Curriculum Reference
+
+> Extended LLM context file. For a shorter overview, see /llms.txt.
+
+## Project Overview
+
+Terminal Learning is a free, open-source, browser-based interactive platform to learn terminal commands for Linux, macOS, and Windows. Users type real commands in a simulated terminal emulator directly in the browser and receive immediate, contextual feedback. No installation required. No subscription.
+
+- **Live app**: https://terminallearning.dev
+- **Source code**: https://github.com/thierryvm/TerminalLearning
+- **Command reference**: https://terminallearning.dev/app/reference
+- **Author**: Thierry Vanmeeteren (Belgium)
+- **UI language**: French — commands are universal (Linux/macOS/Windows)
+- **License**: MIT
+- **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS v4, Supabase (Auth + DB), Vercel
+
+## Curriculum Structure
+
+10 modules, 52 lessons total. Modules unlock progressively as the learner completes prerequisites.
+
+---
+
+### Module 1 — Navigation (5 lessons)
+
+**Goal**: Understand where you are in the filesystem and how to move around.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| Comment demander de l'aide | `man`, `--help`, `help` | /app/learn/navigation/orientation |
+| pwd — Où suis-je ? | `pwd` | /app/learn/navigation/pwd |
+| ls — Lister les fichiers | `ls` | /app/learn/navigation/ls |
+| ls -la — Détails et fichiers cachés | `ls -la`, `ls -lh` | /app/learn/navigation/ls-la |
+| cd — Se déplacer | `cd`, `cd ..`, `cd ~`, `cd -` | /app/learn/navigation/cd |
+
+---
+
+### Module 2 — Fichiers & Dossiers (5 lessons)
+
+**Goal**: Create, copy, move, and delete files and directories.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| mkdir — Créer des répertoires | `mkdir`, `mkdir -p` | /app/learn/fichiers/mkdir |
+| touch — Créer des fichiers | `touch` | /app/learn/fichiers/touch |
+| cp — Copier | `cp`, `cp -r` | /app/learn/fichiers/cp |
+| mv — Déplacer & Renommer | `mv` | /app/learn/fichiers/mv |
+| rm — Supprimer | `rm`, `rm -r`, `rm -rf` | /app/learn/fichiers/rm |
+
+---
+
+### Module 3 — Lecture de fichiers (4 lessons)
+
+**Goal**: View and search file contents without a text editor.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| cat — Afficher le contenu | `cat`, `cat -n` | /app/learn/lecture/cat |
+| head & tail — Début et fin | `head`, `tail`, `tail -f` | /app/learn/lecture/head-tail |
+| grep — Rechercher dans les fichiers | `grep`, `grep -r`, `grep -i`, `grep -n` | /app/learn/lecture/grep |
+| wc — Compter le contenu | `wc`, `wc -l`, `wc -w` | /app/learn/lecture/wc |
+
+---
+
+### Module 4 — Permissions (5 lessons)
+
+**Goal**: Understand and manage Unix file permissions and user privileges.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| Comprendre les permissions | `ls -l` (permission bits) | /app/learn/permissions/comprendre-permissions |
+| chmod — Modifier les permissions | `chmod`, `chmod +x`, octal notation | /app/learn/permissions/chmod |
+| chown — Propriété des fichiers | `chown`, `chgrp` | /app/learn/permissions/chown |
+| sudo — Élévation de privilèges | `sudo`, `sudo -i`, `/etc/sudoers` | /app/learn/permissions/sudo |
+| Sécurité — Bonnes pratiques | principle of least privilege, umask | /app/learn/permissions/security-permissions |
+
+---
+
+### Module 5 — Processus (4 lessons)
+
+**Goal**: Monitor and control running processes.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| ps — Lister les processus | `ps`, `ps aux` | /app/learn/processus/ps |
+| kill — Arrêter un processus | `kill`, `kill -9`, `pkill` | /app/learn/processus/kill |
+| top — Monitoring en temps réel | `top`, `htop` | /app/learn/processus/top |
+| Processus en arrière-plan | `&`, `jobs`, `bg`, `fg`, `nohup` | /app/learn/processus/background |
+
+---
+
+### Module 6 — Redirection & Pipes (4 lessons)
+
+**Goal**: Chain commands and redirect input/output streams.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| > et >> — Redirection de sortie | `>`, `>>` | /app/learn/redirection/redirection-sortie |
+| \| — Les pipes | `\|`, pipeline composition | /app/learn/redirection/pipes |
+| Redirection des erreurs | `2>`, `2>&1`, `/dev/null` | /app/learn/redirection/stderr |
+| tee — Afficher ET sauvegarder | `tee`, `tee -a` | /app/learn/redirection/tee |
+
+---
+
+### Module 7 — Variables & Scripts (6 lessons)
+
+**Goal**: Use environment variables, configure the shell, and write basic automation scripts.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| Variables d'environnement | `export`, `echo $VAR`, `env` | /app/learn/variables/env-vars |
+| $PATH — Le chemin des commandes | `$PATH`, `which`, `type` | /app/learn/variables/path-variable |
+| Fichiers de configuration shell | `.bashrc`, `.zshrc`, `source` | /app/learn/variables/shell-config |
+| Fichiers .env — Secrets et configuration | `.env`, `dotenv`, security best practices | /app/learn/variables/dotenv |
+| Scripts bash — Automatisez vos tâches | `#!/bin/bash`, variables, conditionals, loops | /app/learn/variables/scripts |
+| cron — Planifier des tâches | `crontab -e`, cron syntax, `@reboot` | /app/learn/variables/cron |
+
+---
+
+### Module 8 — Réseau & SSH (6 lessons)
+
+**Goal**: Test connectivity, make HTTP requests, and connect to remote servers securely.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| ping — Tester la connectivité | `ping`, `ping -c` | /app/learn/reseau/ping |
+| curl — Requêtes HTTP | `curl`, `curl -X`, `curl -H`, `curl -d` | /app/learn/reseau/curl |
+| wget — Télécharger des fichiers | `wget`, `wget -O`, `wget -r` | /app/learn/reseau/wget |
+| DNS — Résoudre les noms de domaine | `nslookup`, `dig`, `host` | /app/learn/reseau/dns |
+| SSH — Connexion distante sécurisée | `ssh`, `ssh-keygen`, `~/.ssh/config` | /app/learn/reseau/ssh |
+| scp — Copier des fichiers via SSH | `scp`, `scp -r` | /app/learn/reseau/scp |
+
+---
+
+### Module 9 — Git Fondamentaux (7 lessons)
+
+**Goal**: Master the core Git workflow for version control from scratch.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| git init — Initialiser un dépôt | `git init` | /app/learn/git/git-init |
+| git config — Configurer votre identité | `git config --global user.name`, `user.email` | /app/learn/git/git-config |
+| git add & commit — Enregistrer vos modifications | `git add`, `git add .`, `git commit -m` | /app/learn/git/git-add-commit |
+| git status & log — Surveiller votre dépôt | `git status`, `git log`, `git log --oneline` | /app/learn/git/git-status-log |
+| git diff & .gitignore — Comparer et filtrer | `git diff`, `.gitignore` patterns | /app/learn/git/git-diff-gitignore |
+| git branch — Travailler avec les branches | `git branch`, `git checkout -b`, `git switch` | /app/learn/git/git-branch |
+| git merge — Fusionner des branches | `git merge`, fast-forward vs merge commit | /app/learn/git/git-merge |
+
+---
+
+### Module 10 — GitHub & Collaboration (6 lessons)
+
+**Goal**: Work with remote repositories and collaborate effectively using GitHub.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| git remote — Connecter au dépôt distant | `git remote add`, `git remote -v` | /app/learn/github-collaboration/git-remote |
+| git push & pull — Synchroniser avec GitHub | `git push`, `git pull`, `git push -u origin` | /app/learn/github-collaboration/git-push-pull |
+| git fetch & clone — Récupérer et cloner | `git fetch`, `git clone` | /app/learn/github-collaboration/git-fetch-clone |
+| Pull Requests — Code Review & Collaboration | GitHub PR workflow, review, merge strategies | /app/learn/github-collaboration/pull-requests |
+| Conflits de merge — Les résoudre comme un pro | conflict markers, `git mergetool`, resolution strategies | /app/learn/github-collaboration/conflicts |
+| GitHub Actions — CI/CD automatisé | `.github/workflows/`, YAML syntax, triggers, jobs | /app/learn/github-collaboration/github-actions |
+
+---
+
+## Multi-environment Support
+
+Every lesson covers **Linux**, **macOS**, and **Windows (PowerShell)** with:
+- Environment-specific command syntax and flags
+- OS-specific tips and gotchas
+- Equivalent commands across platforms (e.g., `ls` vs `dir`, `cat` vs `Get-Content`)
+
+Users select their OS once at lesson start; the entire curriculum adapts automatically.
+
+---
+
+## Technical Architecture
+
+- **Frontend**: Vite 6 + React 18 + React Router v7 + TypeScript strict
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Terminal emulator**: custom browser-based engine (`terminalEngine.ts`) — validates real command syntax per OS
+- **Progress tracking**: localStorage (no account) + Supabase PostgreSQL (optional cloud sync)
+- **Auth**: Supabase Auth — GitHub OAuth + Google OAuth
+- **Hosting**: Vercel (EU region, GDPR compliant)
+- **Tests**: Vitest (530+ unit tests on terminal engine)
+
+---
+
+## FAQ
+
+**Is Terminal Learning free?**
+Yes, 100% free and open source. No subscription, no credit card, no account required to start.
+
+**What OS is required?**
+None — it runs entirely in the browser. Works on Linux, macOS, and Windows.
+
+**What skill level is needed?**
+Absolute beginners. No prior terminal experience required. The curriculum starts from zero.
+
+**Can I use it on mobile?**
+Yes. The app is fully responsive and works on phones and tablets.
+
+**Is cloud sync available?**
+Yes, optionally. Sign in with GitHub or Google to sync progress across devices. Fully GDPR compliant.
+
+**Can I contribute?**
+Yes. The project is MIT licensed. Issues and PRs welcome at https://github.com/thierryvm/TerminalLearning.

@@ -11,10 +11,11 @@ Terminal Learning is a beginner-friendly educational web app built with React an
 - **License**: Open source (MIT)
 - **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS v4, Supabase, Vercel
 
-## Curriculum (8 modules, 38 lessons)
+## Curriculum (10 modules, 52 lessons)
 
 ### Module 1 — Navigation
 `pwd`, `ls`, `ls -la`, `cd` — moving through the file system
+- https://terminallearning.dev/app/learn/navigation/orientation
 - https://terminallearning.dev/app/learn/navigation/pwd
 - https://terminallearning.dev/app/learn/navigation/ls
 - https://terminallearning.dev/app/learn/navigation/ls-la
@@ -74,6 +75,25 @@ Environment variables, `$PATH`, `.env`, shell config, bash scripts, `cron`
 - https://terminallearning.dev/app/learn/reseau/dns
 - https://terminallearning.dev/app/learn/reseau/ssh
 - https://terminallearning.dev/app/learn/reseau/scp
+
+### Module 9 — Git Fondamentaux
+`git init`, `git config`, `git add`, `git commit`, `git status`, `git log`, `git diff`, `.gitignore`, branches, merge
+- https://terminallearning.dev/app/learn/git/git-init
+- https://terminallearning.dev/app/learn/git/git-config
+- https://terminallearning.dev/app/learn/git/git-add-commit
+- https://terminallearning.dev/app/learn/git/git-status-log
+- https://terminallearning.dev/app/learn/git/git-diff-gitignore
+- https://terminallearning.dev/app/learn/git/git-branch
+- https://terminallearning.dev/app/learn/git/git-merge
+
+### Module 10 — GitHub & Collaboration
+`git remote`, `git push`, `git pull`, `git fetch`, `git clone`, pull requests, merge conflicts, GitHub Actions
+- https://terminallearning.dev/app/learn/github-collaboration/git-remote
+- https://terminallearning.dev/app/learn/github-collaboration/git-push-pull
+- https://terminallearning.dev/app/learn/github-collaboration/git-fetch-clone
+- https://terminallearning.dev/app/learn/github-collaboration/pull-requests
+- https://terminallearning.dev/app/learn/github-collaboration/conflicts
+- https://terminallearning.dev/app/learn/github-collaboration/github-actions
 
 ## Multi-environment support
 
