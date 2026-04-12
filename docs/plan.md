@@ -52,6 +52,7 @@
 | THI-76 | dev | Kit utilisateurs tests RBAC — 5 rôles complets (migration 006) 🔄 In Progress |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
+| THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |
 
 ---
 

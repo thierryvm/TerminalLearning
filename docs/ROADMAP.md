@@ -39,6 +39,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] OAuth loading states, TOKEN_REFRESHED sync fix
 - [x] Auth deadlock fix — defer Supabase sync outside onAuthStateChange lock (PR #78)
 - [x] 160+ unit tests
+- [ ] **Password strength meter + generator (THI-79):** `<PasswordStrengthBar />` (zxcvbn, score 0–4, labels FR), générateur 16 chars via `crypto.getRandomValues()`, clipboard copy — signup uniquement. Policy : students 8 chars min, teachers/admins 12 chars (Phase 9). Tests dans `passwordStrength.test.ts`.
 
 ## Phase 4 — Curriculum v2 + Environment Selection ✅
 - [x] Multi-environment support: Linux, macOS, Windows
