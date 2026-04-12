@@ -54,7 +54,7 @@ export function createInitialState(): TerminalState {
                 '# Mes Projets\n\nBienvenue dans mon répertoire de projets.\n\n## Projets actuels\n- script.sh : Script de démonstration'
               ),
               '.env': makeFile(
-                '# Variables d\'environnement du projet\n# NE JAMAIS committer ce fichier !\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=myapp\nDB_USER=admin\nDB_PASSWORD=secret123\nAPI_KEY=sk-abc123xyz456\nNODE_ENV=development'
+                '# Variables d\'environnement du projet\n# NE JAMAIS committer ce fichier !\nDB_HOST=localhost\nDB_PORT=5432\nDB_NAME=myapp\nDB_USER=admin\nDB_PASSWORD=EXAMPLE_PASSWORD_NOT_REAL\nAPI_KEY=EXAMPLE_API_KEY_NOT_REAL\nNODE_ENV=development'
               ),
             }),
             '.bashrc': makeFile(

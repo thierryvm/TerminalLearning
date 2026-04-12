@@ -20,7 +20,7 @@
 --     email_change, email_change_token_new, email_change_token_current, phone_change = ''
 --     (GoTrue Go scanner rejects NULL for string columns — see step 1b below)
 --
--- Password: TerminalLearning2026!
+-- Password: [ROTATED — see .env.test which is gitignored. Do not hardcode credentials in migrations.]
 --
 -- Emails:
 --   test.superadmin@terminallearning.dev       → super_admin
@@ -31,7 +31,9 @@
 
 do $$
 declare
-  v_pwd  text        := crypt('TerminalLearning2026!', gen_salt('bf', 10));
+  -- ⚠️ Password placeholder — actual password set via Admin API after migration (GoTrue compat).
+  -- NEVER hardcode real passwords here. This hash is intentionally invalid after rotation.
+  v_pwd  text        := crypt('PLACEHOLDER_RESET_VIA_ADMIN_API', gen_salt('bf', 10));
   v_now  timestamptz := now();
 
   -- Fixed UUIDs for reproducibility
