@@ -92,7 +92,7 @@ export const SUPPORTERS: string[] = [
 // ── Trust badges ──────────────────────────────────────────────────────────────
 
 export const TRUST_BADGES = [
-  { icon: ShieldCheck, label: 'A+ Security Rating', href: undefined },
+  { icon: ShieldCheck, label: 'A+ Security Rating', href: 'https://securityheaders.com/?q=https%3A%2F%2Fterminallearning.dev%2Fapp&followRedirects=on' },
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
