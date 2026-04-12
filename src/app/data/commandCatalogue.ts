@@ -258,6 +258,7 @@ export const commandCatalogue: CategoryMeta[] = [
     ],
   },
 
+  // Phase 5 planned module — present in catalogue (CommandReference page) but not yet in curriculum.ts
   {
     id: 'search',
     label: 'Recherche & Inspection',
