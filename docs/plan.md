@@ -1,6 +1,6 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 11 avril 2026
+> Dernière mise à jour : 12 avril 2026
 > Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 10 modules ✅, 52 leçons, 579 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
 
 ---
@@ -27,6 +27,23 @@
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |
 | THI-49 | fix | Sign-out instant (fire-and-forget) + sync timeout 10s→5s + select partiel ✅ Done |
+| THI-50 | perf | Google Fonts → self-hosted (Geist) — FCP 1.8s → 0.6s (PR #73) ✅ Done |
+| THI-51 | fix | domaine custom terminallearning.dev — Vercel + Supabase redirect URLs (PR #74) ✅ Done |
+| THI-52 | fix | iOS zoom fix — `font-size: 16px` sur input terminal mobile (PR #74) ✅ Done |
+| THI-60 | refactor | cmdHead/cmdTail fusionnés, bug `-n0` corrigé (PR #75) ✅ Done |
+| THI-65 | refactor | Hook `useLessonSEO` extrait de LessonPage (PR #75) ✅ Done |
+| THI-66 | refactor | `moduleIcons.ts` centralisé — iconMap extrait (PR #75) ✅ Done |
+| THI-67 | perf | Lazy-load curriculum — main bundle 140kB → 16kB, FCP 2.96s → 0.6s (PR #77) ✅ Done |
+| a11y | fix | `<main>` landmark Landing, Ko-fi contraste 1.95→5.3:1, manifest dynamique, aria-label terminal (PR #76) ✅ Done |
+| THI-68 | fix | Supabase auth lock deadlock — defer sync hors onAuthStateChange + abort in-flight (PR #78) ✅ Done |
+| chore | seo | Sitemap — domaine terminallearning.dev, lastmod 11 avril (PR #79) ✅ Done |
+| THI-59 | refactor | Split processCommand en modules — In Progress |
+| THI-69 | a11y | label-content-name-mismatch sur module cards Landing — High |
+| THI-70 | a11y | Audit a11y complet toutes pages post-merge — High |
+| THI-61 | refactor | Générer getHelpText programmatiquement — Medium |
+| THI-62 | refactor | Extraire données statiques Landing — Medium |
+| THI-63 | refactor | Extraire validate() de curriculum.ts — High |
+| THI-64 | refactor | Refactor cmdPipe (bloqué par THI-59) — Medium |
 
 ---
 

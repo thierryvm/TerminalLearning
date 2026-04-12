@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 11 April 2026 — Phase 5 modules 8/9/10 done, 10 modules / 52 lessons / 579 tests
+> Last updated: 12 April 2026 — Phase 5 modules 8/9/10 done, 10 modules / 52 lessons / 579 tests — perf: main bundle 16kB (was 140kB), FCP 0.6s — auth deadlock fix live
 
 ---
 
@@ -37,6 +37,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Animated terminal hero
 - [x] Sidebar auth (UserMenu, sync badge)
 - [x] OAuth loading states, TOKEN_REFRESHED sync fix
+- [x] Auth deadlock fix — defer Supabase sync outside onAuthStateChange lock (PR #78)
 - [x] 160+ unit tests
 
 ## Phase 4 — Curriculum v2 + Environment Selection ✅
@@ -50,6 +51,15 @@ professionals who leverage AI as a tool, not a replacement.
   - macOS: `➜ ~` — zsh violet (Oh My Zsh style)
   - Windows: `PS C:\Users\user>` — PowerShell cyan
 - [x] 192 unit tests
+
+## Phase 4b — Perf & Quality ✅
+- [x] Google Fonts → self-hosted Geist — FCP 1.8s → 0.6s (PR #73)
+- [x] Custom domain terminallearning.dev live (PR #74)
+- [x] iOS zoom fix on terminal input — `font-size: 16px` mobile (PR #74)
+- [x] Quick wins refactor: cmdHead/Tail merged, moduleIcons centralized, useLessonSEO hook (PR #75)
+- [x] a11y: `<main>` landmark, Ko-fi contrast 5.3:1, manifest dynamic injection, aria-label terminal (PR #76)
+- [x] Lazy-load curriculum — main bundle 140kB → 16kB, FCP 2.96s → 0.6s (PR #77)
+- [x] Sitemap — terminallearning.dev domain, 42 URLs (PR #79)
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
 Full-stack developer path — 10 modules ✅ (52 lessons, 579 unit tests) + Module 11 in progress
