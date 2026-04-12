@@ -8,7 +8,7 @@
 ## Phase 7 — RBAC & Infrastructure institutionnelle
 *Avril 2026 · THI-37, THI-76, THI-80*
 
-**Le défi :** L'app était conçue pour des apprenants individuels. Mais des enseignants ont commencé à l'utiliser en classe — sans aucun outil pour suivre leurs élèves, sans rôles distincts, sans séparation des données entre institutions.
+**Le défi :** L'app était conçue pour des apprenants individuels. Mais la vision était plus large dès le départ : si un enseignant voulait l'utiliser en classe demain, il n'aurait aucun outil pour suivre ses élèves, aucun rôle distinct, aucune séparation des données entre institutions. Construire le RBAC maintenant, avant que le besoin soit urgent, c'est une décision d'architecture anticipée — pas une réaction à des utilisateurs existants.
 
 **Ce qu'on a construit :**
 - Système de rôles complet : `student`, `teacher`, `institution_admin`, `super_admin`
