@@ -85,6 +85,17 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
 - Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
 
+### Migrations Supabase — auto-géré
+- Toute nouvelle migration doit être appliquée **sans attendre** via le MCP Supabase ou le CLI
+- MCP (prioritaire, Docker non requis) : `mcp__claude_ai_Supabase__apply_migration` avec `project_id: jdnukbpkjyyyjpuwgxhv`
+- CLI (fallback si MCP indisponible) : `supabase db push --project-ref jdnukbpkjyyyjpuwgxhv`
+- Ne jamais laisser une migration en attente dans les "post-merge à faire"
+
+### Secrets GitHub — auto-géré
+- Les secrets nécessaires au workflow CI/CD sont ajoutés via `gh secret set --repo thierryvm/TerminalLearning`
+- Clés Supabase récupérées via `supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv`
+- Ne jamais laisser un secret en attente dans les "post-merge à faire"
+
 ### Scope
 - Changement hors scope détecté → signaler, commit séparé, ne pas agir silencieusement
 - Chaque préoccupation = son propre commit (feature ≠ chore ≠ fix)
