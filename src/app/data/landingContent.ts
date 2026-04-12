@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   Terminal, BookOpen, Zap, Shield,
-  ShieldCheck, Github, Infinity, Lock,
+  ShieldCheck, Github, Infinity, Lock, CheckCircle2,
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
   Monitor, Code2,
 } from 'lucide-react';
@@ -96,6 +96,7 @@ export const TRUST_BADGES = [
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
+  { icon: CheckCircle2, label: '876 tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
 ] as const;
 
 // ── Module icons map ──────────────────────────────────────────────────────────
