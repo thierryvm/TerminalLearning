@@ -19,6 +19,14 @@ body:
         - N/A
     validations:
       required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: App version or commit
+      description: Check the footer or browser console for the version/commit hash.
+      placeholder: "e.g. v1.2.0 or 7568c85"
+    validations:
+      required: false
   - type: textarea
     id: description
     attributes:

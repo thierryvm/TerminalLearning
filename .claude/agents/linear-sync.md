@@ -12,10 +12,14 @@ Tu es un synchronisateur Linear ↔ GitHub pour le repo **thierryvm/TerminalLear
 ## Étape 1 — État Git local
 
 ```bash
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+echo "Default branch: $DEFAULT_BRANCH"
 git branch --show-current
 git log --oneline -5
 git branch --list "feature/*" "fix/*" "chore/*" "security/*"
 ```
+
+Utiliser `$DEFAULT_BRANCH` au lieu de `main` dans toutes les comparaisons suivantes.
 
 ## Étape 2 — PRs GitHub ouvertes
 
@@ -41,11 +45,11 @@ Toute issue archivée qui n'est PAS en `Done` ou `Cancelled` est une anomalie CR
 ## Étape 6 — Branches orphelines
 
 Comparer les branches locales feature/fix/chore/security avec les PRs ouvertes.
-Une branche locale sans PR ouverte et sans commits ahead de main = orpheline → signaler pour suppression.
+Une branche locale sans PR ouverte et sans commits ahead de la branche par défaut = orpheline → signaler pour suppression.
 
 ```bash
 git branch --list "feature/*" "fix/*" "chore/*" "security/*" | while read branch; do
-  ahead=$(git rev-list --count main..$branch 2>/dev/null || echo "0")
+  ahead=$(git rev-list --count $DEFAULT_BRANCH..$branch 2>/dev/null || echo "0")
   echo "$branch : $ahead commits ahead"
 done
 ```
@@ -55,9 +59,9 @@ done
 | Situation | Sévérité | Action requise |
 |-----------|----------|----------------|
 | Issue archivée + statut In Progress/In Review | CRITICAL | → Cancelled ou Done |
-| Issue Done + PR encore ouverte | HIGH | → passer issue à In Review |
-| Issue In Progress + PR ouverte | HIGH | → passer issue à In Review |
-| Issue In Review + PR mergée | HIGH | → passer issue à Done |
+| Issue Done + PR encore ouverte | HIGH | → passer l'issue à In Review |
+| Issue In Progress + PR ouverte | HIGH | → passer l'issue à In Review |
+| Issue In Review + PR mergée | HIGH | → passer l'issue à Done |
 | PR sans référence THI-XX dans le titre/branche | WARNING | → signaler |
 | Branche locale orpheline (0 commits ahead, pas de PR) | INFO | → signaler pour suppression |
 
