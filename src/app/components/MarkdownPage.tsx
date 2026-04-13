@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Terminal, ArrowLeft } from 'lucide-react';
+import { Terminal, ArrowLeft, ArrowUp } from 'lucide-react';
 import type { Components } from 'react-markdown';
 
 const mdComponents: Components = {
@@ -95,9 +95,16 @@ interface MarkdownPageProps {
 
 export function MarkdownPage({ content, title, subtitle }: MarkdownPageProps) {
   const navigate = useNavigate();
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
@@ -131,6 +138,17 @@ export function MarkdownPage({ content, title, subtitle }: MarkdownPageProps) {
           </ReactMarkdown>
         </article>
       </main>
+
+      {/* Scroll to top */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Retour en haut"
+          className="fixed bottom-6 right-6 p-3 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg"
+        >
+          <ArrowUp size={18} />
+        </button>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-[#30363d]/50 px-6 py-6 mt-12">
