@@ -1,31 +1,34 @@
 /**
- * generate-demo-gif.cjs — Landing page demo
+ * generate-demo-terminal-gif.cjs — Terminal preview demo
  *
- * Captures the landing page environment-switching animation (Linux → macOS →
- * Windows → Linux) and saves it as public/demo.gif for use in the README.
+ * Captures the animated terminal preview on the landing page (auto-typing
+ * commands) and saves it as public/demo-terminal.gif for use in the README.
+ *
+ * The TerminalPreview component auto-types commands like pwd, ls, cd, etc.
+ * This script scrolls to it and records the full animation cycle.
  *
  * ┌──────────────────────────────────────────────────────────────────────┐
  * │  Usage                                                              │
  * │                                                                     │
- * │    npm run generate-demo                                            │
+ * │    npm run generate-demo:terminal                                   │
  * │    npm run generate-demo:all          # both landing + terminal     │
  * │                                                                     │
  * │  Options (env vars)                                                 │
  * │                                                                     │
  * │    DEMO_URL     Target URL       (default: https://terminallearning.dev)
  * │    DEMO_WIDTH   Viewport width   (default: 1280)                    │
- * │    DEMO_HEIGHT  Viewport height  (default: 960, 4:3 ratio)         │
+ * │    DEMO_HEIGHT  Viewport height  (default: 720, 16:9 ratio)        │
  * │    DEMO_FPS     Frames/second    (default: 10)                      │
- * │    DEMO_SCROLL  Scroll offset    (default: 80px)                    │
- * │    DEMO_OUTPUT  Output filename  (default: demo.gif)                │
+ * │    DEMO_DURATION Recording secs  (default: 12)                      │
+ * │    DEMO_OUTPUT  Output filename  (default: demo-terminal.gif)       │
  * │                                                                     │
  * │  Requirements                                                       │
  * │                                                                     │
  * │    npm install   (playwright, gif-encoder-2, pngjs are devDeps)     │
  * │    npx playwright install chromium   (if not already installed)      │
  * │                                                                     │
- * │  File location: scripts/generate-demo-gif.cjs                       │
- * │  Output:        public/demo.gif                                     │
+ * │  File location: scripts/generate-demo-terminal-gif.cjs              │
+ * │  Output:        public/demo-terminal.gif                            │
  * └──────────────────────────────────────────────────────────────────────┘
  */
 
@@ -38,13 +41,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const URL    = process.env.DEMO_URL    || 'https://terminallearning.dev';
-const WIDTH  = parseInt(process.env.DEMO_WIDTH  || '1280', 10);
-const HEIGHT = parseInt(process.env.DEMO_HEIGHT || String(Math.round(WIDTH * (3 / 4))), 10);
-const FPS    = parseInt(process.env.DEMO_FPS    || '10',   10);
-const DELAY  = Math.round(1000 / FPS);
-const SCROLL = parseInt(process.env.DEMO_SCROLL || '80',   10);
-const OUTPUT = path.join(__dirname, '..', 'public', process.env.DEMO_OUTPUT || 'demo.gif');
+const URL      = process.env.DEMO_URL      || 'https://terminallearning.dev';
+const WIDTH    = parseInt(process.env.DEMO_WIDTH    || '1280', 10);
+const HEIGHT   = parseInt(process.env.DEMO_HEIGHT   || '720',  10);
+const FPS      = parseInt(process.env.DEMO_FPS      || '10',   10);
+const DURATION = parseInt(process.env.DEMO_DURATION || '12',   10);
+const DELAY    = Math.round(1000 / FPS);
+const OUTPUT   = path.join(__dirname, '..', 'public', process.env.DEMO_OUTPUT || 'demo-terminal.gif');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -53,15 +56,6 @@ async function captureFrame(page) {
   const buf = await page.screenshot({ type: 'png' });
   const png = PNG.sync.read(buf);
   return png.data;
-}
-
-async function record(page, count) {
-  const frames = [];
-  for (let i = 0; i < count; i++) {
-    frames.push(await captureFrame(page));
-    if (i < count - 1) await sleep(DELAY);
-  }
-  return frames;
 }
 
 function encodeGif(frames, width, height, delay, outputPath) {
@@ -93,49 +87,54 @@ function encodeGif(frames, width, height, delay, outputPath) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('  Terminal Learning — Landing Page GIF Generator');
-  console.log(`   URL    : ${URL}`);
-  console.log(`   Size   : ${WIDTH}x${HEIGHT} px`);
-  console.log(`   FPS    : ${FPS} (${DELAY}ms/frame)`);
-  console.log(`   Output : ${OUTPUT}\n`);
+  const totalFrames = DURATION * FPS;
+
+  console.log('  Terminal Learning — Terminal Preview GIF Generator');
+  console.log(`   URL      : ${URL}`);
+  console.log(`   Size     : ${WIDTH}x${HEIGHT} px`);
+  console.log(`   FPS      : ${FPS} (${DELAY}ms/frame)`);
+  console.log(`   Duration : ${DURATION}s (~${totalFrames} frames)`);
+  console.log(`   Output   : ${OUTPUT}\n`);
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
 
+  // Navigate to landing page
   console.log('   Loading page...');
   await page.goto(URL, { waitUntil: 'networkidle', timeout: 30_000 });
   await sleep(1500);
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), SCROLL);
+
+  // Scroll to the terminal preview component
+  const terminalPreview = page.locator('[data-testid="terminal-preview"]');
+  await terminalPreview.waitFor({ state: 'visible', timeout: 10_000 });
+  await terminalPreview.scrollIntoViewIfNeeded();
+  await sleep(500);
+
+  // Center the terminal in the viewport
+  await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="terminal-preview"]');
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const offset = window.scrollY + rect.top - (window.innerHeight - rect.height) / 2;
+      window.scrollTo({ top: Math.max(0, offset), behavior: 'instant' });
+    }
+  });
   await sleep(300);
 
+  // ── Record the auto-typing animation ────────────────────────────────────────
+  console.log(`   Recording ${DURATION}s of terminal animation...`);
   const allFrames = [];
 
-  // ── 1. Linux (default) — hold 1.6s ─────────────────────────────────────────
-  process.stdout.write('   Linux     ');
-  allFrames.push(...await record(page, 8));
-  console.log(`> ${allFrames.length} frames`);
+  for (let i = 0; i < totalFrames; i++) {
+    allFrames.push(await captureFrame(page));
 
-  // ── 2. Switch -> macOS ──────────────────────────────────────────────────────
-  process.stdout.write('   > macOS   ');
-  await page.click('button:has-text("macOS")');
-  await sleep(100);
-  allFrames.push(...await record(page, 10));
-  console.log(`> ${allFrames.length} frames`);
+    const elapsed = ((i + 1) * DELAY / 1000).toFixed(1);
+    process.stdout.write(`\r   ${elapsed}s / ${DURATION}s (${i + 1} frames)`);
 
-  // ── 3. Switch -> Windows ────────────────────────────────────────────────────
-  process.stdout.write('   > Windows ');
-  await page.click('button:has-text("Windows")');
-  await sleep(100);
-  allFrames.push(...await record(page, 10));
-  console.log(`> ${allFrames.length} frames`);
+    if (i < totalFrames - 1) await sleep(DELAY);
+  }
 
-  // ── 4. Back -> Linux ────────────────────────────────────────────────────────
-  process.stdout.write('   > Linux   ');
-  await page.click('button:has-text("Linux")');
-  await sleep(100);
-  allFrames.push(...await record(page, 8));
-  console.log(`> ${allFrames.length} frames`);
-
+  console.log('');
   await browser.close();
 
   // ── Encode GIF ──────────────────────────────────────────────────────────────

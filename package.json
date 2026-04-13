@@ -9,6 +9,8 @@
     "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "vite build",
     "generate-demo": "node scripts/generate-demo-gif.cjs",
+    "generate-demo:terminal": "node scripts/generate-demo-terminal-gif.cjs",
+    "generate-demo:all": "node scripts/generate-demo-gif.cjs && node scripts/generate-demo-terminal-gif.cjs",
     "generate-og": "node scripts/generate-og-image.mjs",
     "generate-sitemap": "node scripts/generate-sitemap.mjs",
     "dev": "vite",
