@@ -18,6 +18,20 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
 });
 
+// IntersectionObserver polyfill — jsdom does not implement it.
+if (typeof window !== 'undefined' && !('IntersectionObserver' in globalThis)) {
+  class MockIntersectionObserver {
+    constructor(private cb: IntersectionObserverCallback) {}
+    observe(el: Element) {
+      // Immediately report as intersecting so scroll-reveal components render in tests
+      this.cb([{ isIntersecting: true, target: el } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  Object.defineProperty(globalThis, 'IntersectionObserver', { value: MockIntersectionObserver });
+}
+
 // window.matchMedia polyfill — jsdom does not implement it.
 // Guard required: node-environment tests (e.g. rbac.integration.test.ts) share this setupFile.
 if (typeof window !== 'undefined') {

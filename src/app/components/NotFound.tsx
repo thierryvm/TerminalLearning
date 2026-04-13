@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { motion } from 'motion/react';
 import { Terminal, Home, Github, BookOpen, Zap, Shield } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
@@ -93,11 +92,8 @@ export function NotFound() {
       <div className="relative z-10 w-full max-w-lg">
 
         {/* Terminal mock */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden mb-8 shadow-xl shadow-black/40"
+        <div
+          className="animate-fade-in-up bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden mb-8 shadow-xl shadow-black/40"
         >
           {/* Window chrome */}
           <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]/50">
@@ -120,14 +116,12 @@ export function NotFound() {
               />
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* 404 + message */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="text-center mb-8"
+        <div
+          className="animate-fade-in-up text-center mb-8"
+          style={{ animationDelay: '200ms' }}
         >
           <div className="text-6xl font-bold text-[#e6edf3] mb-2 tracking-tight">
             4<span className="text-emerald-400">0</span>4
@@ -135,14 +129,12 @@ export function NotFound() {
           <p className="text-[#8b949e] text-base">
             Cette page n'existe pas — mais le terminal, lui, t'attend.
           </p>
-        </motion.div>
+        </div>
 
         {/* Stats pills */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
-          className="flex flex-wrap gap-2 justify-center mb-8"
+        <div
+          className="animate-fade-in-up flex flex-wrap gap-2 justify-center mb-8"
+          style={{ animationDelay: '350ms' }}
         >
           {PILLS.map(({ icon: Icon, label, color, border, bg }) => (
             <span
@@ -153,14 +145,12 @@ export function NotFound() {
               {label}
             </span>
           ))}
-        </motion.div>
+        </div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.5 }}
-          className="flex flex-col sm:flex-row gap-3 justify-center"
+        <div
+          className="animate-fade-in-up flex flex-col sm:flex-row gap-3 justify-center"
+          style={{ animationDelay: '500ms' }}
         >
           <button
             onClick={() => navigate('/')}
@@ -176,14 +166,12 @@ export function NotFound() {
             <Terminal size={15} aria-hidden="true" />
             Commencer l'apprentissage
           </button>
-        </motion.div>
+        </div>
 
         {/* Open source mention */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.7 }}
-          className="text-center mt-8"
+        <div
+          className="animate-fade-in text-center mt-8"
+          style={{ animationDelay: '700ms' }}
         >
           <a
             href="https://github.com/thierryvm/TerminalLearning"
@@ -194,7 +182,7 @@ export function NotFound() {
             <Github size={12} aria-hidden="true" />
             open source · 100% gratuit · pour débutants
           </a>
-        </motion.div>
+        </div>
 
       </div>
     </div>

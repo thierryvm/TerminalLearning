@@ -1,21 +1,8 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
-
-vi.mock('motion/react', () => ({
-  motion: new Proxy({} as Record<string, unknown>, {
-    get: (_target, tag: string) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ children, ...props }: any) => {
-        const { initial, animate, whileInView, whileHover, transition, viewport, ...rest } = props;
-        void initial; void animate; void whileInView; void whileHover; void transition; void viewport;
-        return React.createElement(tag, rest, children);
-      },
-  }),
-}));
 
 const mockNavigate = vi.fn();
 vi.mock('react-router', async () => {

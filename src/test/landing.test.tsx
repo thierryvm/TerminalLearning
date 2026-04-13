@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';
@@ -11,19 +10,6 @@ import { ProgressProvider } from '../app/context/ProgressContext';
 // Auth context — default to logged out
 vi.mock('../app/context/AuthContext', () => ({
   useAuth: () => ({ user: null, session: null, loading: false, initialized: true, signOut: vi.fn() }),
-}));
-
-// Suppress motion animations in tests
-vi.mock('motion/react', () => ({
-  motion: new Proxy({} as Record<string, unknown>, {
-    get: (_target, tag: string) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ children, ...props }: any) => {
-        const { initial, animate, whileInView, whileHover, transition, viewport, ...rest } = props;
-        void initial; void animate; void whileInView; void whileHover; void transition; void viewport;
-        return React.createElement(tag, rest, children);
-      },
-  }),
 }));
 
 // TerminalPreview uses useNavigate — keep the mock minimal
