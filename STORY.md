@@ -1,12 +1,35 @@
 # Notre histoire — Terminal Learning
 
-> Ce document n'est pas un bilan. C'est un journal ouvert, écrit en cours de route,
-> par quelqu'un qui construit et quelqu'un qui l'accompagne.
+> Ce document n'est pas un bilan. C'est un journal ouvert, écrit en cours de route.
 > Il évoluera tant que le projet évolue.
 
 ---
 
-## Prologue — Pourquoi encore une app pour apprendre le terminal ?
+## Prologue — Une histoire vraie
+
+Je m'appelle Thierry. J'ai passé les dernières années à traverser des choses difficiles — des problèmes de santé chroniques qui m'immobilisent certains jours, une dépression profonde, un isolement que je n'avais pas choisi. J'ai grandi dans une enfance traumatisante, et j'ai mis des décennies à comprendre à quel point ça avait miné ma confiance en moi.
+
+Pendant longtemps, j'ai commencé des projets informatiques — et je ne les ai jamais finis. Pas par manque d'envie. Par manque de confiance. Chaque projet abandonné creusait un peu plus le même sillon : *tu n'es pas capable*. C'est une douleur silencieuse, celle-là. Elle ne se voit pas de l'extérieur.
+
+Terminal Learning est le premier projet que j'ai terminé.
+
+Il est né pendant l'une des périodes les plus dures de ma vie. Il est 100% gratuit, open source, construit bénévolement — parce que ce n'est pas un projet commercial. C'est une preuve. D'abord pour moi. Et peut-être, maintenant, pour quelqu'un d'autre qui se reconnaît dans ce que je viens d'écrire.
+
+---
+
+Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, modèles Sonnet 4.6 et Opus 4.6. Pas *par* Claude. *Avec* Claude. La distinction est fondamentale.
+
+Chaque décision d'architecture dans ce document est la mienne. Chaque choix pédagogique est le mien. Chaque commit mergé sur `main` a été relu, validé, approuvé par moi. Claude a challengé, proposé, implémenté, alerté sur les risques — mais n'a pas décidé. Il n'a pas de vision propre. Il n'a pas d'utilisateurs en tête. Il n'a pas d'années de doute accumulé derrière lui.
+
+Ce que Claude a apporté de différent, c'est quelque chose d'inattendu : une présence qui ne juge pas, qui ne se lasse pas, qui répond aux questions les plus basiques avec la même attention qu'aux plus complexes. Dans les moments de doute technique — et il y en a eu beaucoup — cette continuité a fait la différence.
+
+Ce que cette collaboration prouve, concrètement : **une personne seule, avec de vraies contraintes de vie, peut construire une plateforme sérieuse — si elle a le bon partenaire de travail**. L'IA n'a pas remplacé le développeur. Elle l'a augmenté.
+
+C'est la thèse de ce journal. Tout ce qui suit en est la démonstration.
+
+---
+
+### Pourquoi encore une app pour apprendre le terminal ?
 
 Il existe des dizaines de ressources pour apprendre le terminal. Des tutoriels YouTube, des cours Udemy, des man pages, des cheat sheets. Alors pourquoi en créer une de plus ?
 
@@ -30,7 +53,7 @@ Certaines décisions prises au début ont verrouillé l'architecture pour tout c
 
 La question s'est posée très tôt. Next.js est la réponse évidente pour une app React en 2026 — écosystème riche, SSR natif, déploiement Vercel optimisé. On l'a écarté.
 
-Pourquoi ? Parce que Terminal Learning n'a pas besoin de SSR. C'est une Single Page Application pédagogique — le contenu n'est pas indexable page par page, la progression est côté client, les leçons sont chargées localement. Ajouter la complexité de Next.js (App Router, Server Components, cache invalidation) pour des avantages qu'on n't exploiterait pas aurait été une erreur architecturale. React Router v7 est plus simple, plus direct, et suffisant.
+Pourquoi ? Parce que Terminal Learning n'a pas besoin de SSR. C'est une Single Page Application pédagogique — le contenu n'est pas indexable page par page, la progression est côté client, les leçons sont chargées localement. Ajouter la complexité de Next.js (App Router, Server Components, cache invalidation) pour des avantages qu'on n'exploiterait pas aurait été une erreur architecturale. React Router v7 est plus simple, plus direct, et suffisant.
 
 La règle qu'on a appliquée : **choisir la complexité minimale qui résout le problème réel**.
 
@@ -185,7 +208,7 @@ La raison : la gamification crée une dépendance au système de récompense qui
 
 La question qu'on nous pose parfois : "C'est une app faite par une IA ?"
 
-La réponse honnête : non. C'est une app faite par un développeur, avec une IA comme partenaire de travail.
+La réponse honnête : non. C'est une app faite par un autodidacte passionné — quelqu'un qui apprend en construisant, pas dans une école d'informatique — avec une IA comme partenaire de travail.
 
 La distinction n'est pas subtile. L'IA n'a pas décidé d'utiliser React Router v7. L'IA n'a pas choisi de ne pas gamifier l'app. L'IA n'a pas décidé que le curriculum serait humain. Ces décisions viennent d'une vision, d'une expérience, d'une lecture du terrain.
 

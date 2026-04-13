@@ -16,12 +16,26 @@
 - Kit de test : 5 utilisateurs de test (un par rôle), institution fictive, classe, inscriptions
 - 20 tests d'intégration RBAC + 4 bugs RLS corrigés en chemin
 
-**Impact :** La plateforme peut maintenant accueillir des établissements scolaires. Ce n'était pas prévu au départ — c'est une décision prise en cours de route, basée sur les signaux du terrain.
+**Impact :** La plateforme peut maintenant accueillir des établissements scolaires. C'est une décision d'architecture anticipée — construire maintenant pour un besoin qui viendra.
 
 **Sous le capot :**
 - Migrations Supabase 005 + 006 — nouvelles tables `institutions`, `classes`, `enrollments`
 - Principe du moindre privilège agentique appliqué aux politiques RLS
 - GoTrue compatibility rules : pas d'inserts directs dans `auth.users`, Admin API uniquement
+
+---
+
+## Phase 5 — Curriculum expansion *(en cours)*
+*Avril 2026 · THI-xx*
+
+**Le défi :** Le curriculum initial couvrait les bases. Mais apprendre le terminal, c'est aussi Git, les scripts, la manipulation de fichiers avancée, les permissions — tout ce qu'on utilise vraiment en conditions réelles.
+
+**Ce qu'on construit :**
+- 10 modules, 52 leçons planifiées — Linux, macOS, Windows, Git, scripting
+- 876 tests unitaires couvrant chaque commande et chaque variante d'environnement
+- Progression adaptée par OS : un apprenant Windows ne voit pas les commandes bash, et inversement
+
+**Impact :** *En cours de mesure — cette section sera mise à jour à chaque module livré.*
 
 ---
 
@@ -145,5 +159,28 @@
 
 ---
 
+---
+
+## Glossaire
+
+Pour les lecteurs qui découvrent ces termes :
+
+| Terme | Signification |
+|-------|---------------|
+| **RBAC** | Role-Based Access Control — système de permissions où chaque utilisateur a un rôle (étudiant, enseignant, admin) qui détermine ce qu'il peut voir et faire |
+| **RLS** | Row Level Security — mécanisme de base de données qui filtre automatiquement les données selon l'identité de l'utilisateur, au niveau le plus bas possible |
+| **CSP** | Content Security Policy — liste blanche déclarée dans les headers HTTP qui dit au navigateur quels scripts et ressources il a le droit de charger |
+| **OWASP** | Open Web Application Security Project — organisation qui publie les 10 vulnérabilités web les plus critiques (injection SQL, XSS, etc.) |
+| **FCP** | First Contentful Paint — temps entre le clic et le moment où le navigateur affiche le premier élément visible à l'écran |
+| **INP** | Interaction to Next Paint — temps entre une action utilisateur (clic, touche) et le moment où le navigateur *dessine* le résultat à l'écran. Au-dessus de 200 ms, l'interface paraît lente |
+| **Paint** | Action du navigateur qui *dessine* les pixels à l'écran. Un "paint" bloqué = l'écran reste figé même si la logique a déjà tourné |
+| **Bundle** | Fichier JavaScript regroupant tout le code de l'app, envoyé au navigateur au chargement. Plus il est lourd, plus la page met du temps à démarrer |
+| **GoTrue** | Serveur d'authentification open source utilisé par Supabase pour gérer les comptes, sessions et tokens OAuth |
+| **OAuth** | Protocole standard qui permet de se connecter avec un compte existant (GitHub, Google) sans créer de mot de passe supplémentaire |
+| **Core Web Vitals** | Métriques officielles de Google mesurant la performance perçue par les vrais utilisateurs : FCP, INP, et CLS (stabilité visuelle) |
+| **Lazy-load** | Technique qui charge un fichier JavaScript uniquement quand il est nécessaire, plutôt qu'au démarrage de l'app |
+
+---
+
 *Ce changelog est mis à jour à chaque release majeure.*
-*Dernière mise à jour : 12 avril 2026*
+*Dernière mise à jour : 13 avril 2026*
