@@ -259,3 +259,17 @@ export const validatePullRequests: ValidateFn = (cmd) => {
 export const validateConflicts: ValidateFn = (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase());
 
 export const validateGithubActions: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
+
+// ── Module 11 — L'IA comme outil dev ─────────────────────────────────────────
+export const validateAiHelp: ValidateFn = (cmd) => /^ai-help(\s.*)?$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpCapabilities: ValidateFn = (cmd) => /^ai-help\s+capabilities$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpLimits: ValidateFn = (cmd) => /^ai-help\s+limits$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpPrompts: ValidateFn = (cmd) => /^ai-help\s+prompts$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpContext: ValidateFn = (cmd) => /^ai-help\s+context$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpValidate: ValidateFn = (cmd) => /^ai-help\s+validate$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpDebug: ValidateFn = (cmd) => /^ai-help\s+debug$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpSecurity: ValidateFn = (cmd) => /^ai-help\s+security$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpClaudeCli: ValidateFn = (cmd) => /^ai-help\s+claude-cli$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpCareers: ValidateFn = (cmd) => /^ai-help\s+careers$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpSenior: ValidateFn = (cmd) => /^ai-help\s+senior$/.test(cmd.trim().toLowerCase());
+export const validateAiHelpWorkflow: ValidateFn = (cmd) => /^ai-help\s+workflow$/.test(cmd.trim().toLowerCase());
