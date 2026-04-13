@@ -12,7 +12,7 @@
 --         curl -s -X PUT "https://<ref>.supabase.co/auth/v1/admin/users/$UUID" \
 --           -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
 --           -H "Content-Type: application/json" \
---           -d '{"password":"TerminalLearning2026!"}'
+--           -d '{"password":"<random-32-chars — see .env.test>"}'
 --       done
 --
 -- ⚠️  GOTRUE COMPAT: direct auth.users inserts require these fields set to '' (not NULL):

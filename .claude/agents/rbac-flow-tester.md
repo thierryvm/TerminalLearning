@@ -31,7 +31,9 @@ SERVICE_KEY=$(supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv --ou
 | pending_teacher    | test.pendingt@terminallearning.dev             | ...111104   |
 | student            | test.student@terminallearning.dev              | ...111105   |
 
-Password: `TerminalLearning2026!`
+Passwords: each account has a unique password in `.env.test` (never hardcode):
+- `TEST_SUPERADMIN_PASSWORD`, `TEST_INSTITUTIONADMIN_PASSWORD`, `TEST_TEACHER_PASSWORD`
+- `TEST_PENDINGTEACHER_PASSWORD`, `TEST_STUDENT_PASSWORD`
 
 ## Checks to perform (23 total)
 
@@ -59,7 +61,7 @@ Password: `TerminalLearning2026!`
 TOKEN=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"${EMAIL}\",\"password\":\"TerminalLearning2026!\"}" \
+  -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}" \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('access_token','FAIL'))")
 ```
 
