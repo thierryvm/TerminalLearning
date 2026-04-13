@@ -10,6 +10,8 @@ interface UserMenuProps {
    * compact — avatar circulaire dans un header/navbar
    */
   variant?: 'card' | 'compact';
+  /** Actions supplémentaires affichées à droite du header de la card (ex. Home, Install) */
+  extraActions?: React.ReactNode;
 }
 
 const SYNC_CONFIG: Record<UserMenuProps['syncStatus'], { label: string; dot: string; text: string }> = {
@@ -31,7 +33,7 @@ function UserAvatar({ avatarUrl, initials, size }: { avatarUrl?: string; initial
   );
 }
 
-export function UserMenu({ syncStatus, variant = 'card' }: UserMenuProps) {
+export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMenuProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -72,10 +74,11 @@ export function UserMenu({ syncStatus, variant = 'card' }: UserMenuProps) {
           <span className="w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center shrink-0">
             <User size={14} className="text-[#8b949e]" aria-hidden="true" />
           </span>
-          <div className="min-w-0">
+          <div className="flex-1 min-w-0">
             <p className="text-xs text-[#e6edf3] font-medium">Mode invité</p>
             <p className="text-[10px] text-[#8b949e] font-mono">Progression locale uniquement</p>
           </div>
+          {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
         <button
           onClick={() => navigate('/')}
@@ -112,10 +115,11 @@ export function UserMenu({ syncStatus, variant = 'card' }: UserMenuProps) {
               className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#161b22] ${sync.dot}`}
             />
           </div>
-          <div className="min-w-0">
+          <div className="flex-1 min-w-0">
             <p className="text-xs text-[#e6edf3] font-medium truncate">{displayName}</p>
             <p className={`text-[10px] font-mono truncate ${sync.text}`}>{sync.label}</p>
           </div>
+          {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
         <button
           onClick={handleSignOut}

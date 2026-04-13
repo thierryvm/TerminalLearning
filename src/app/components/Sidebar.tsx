@@ -241,31 +241,33 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </p>
           </div>
 
-          {/* Profile card + bouton home + install côte à côte */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex-1 min-w-0">
-              <UserMenu syncStatus={syncStatus} />
-            </div>
-            {!isInstalled && (
-              <button
-                onClick={() => setShowPWAModal(true)}
-                className="shrink-0 p-2 rounded-lg text-[#8b949e] hover:text-emerald-400 hover:bg-[#161b22] border border-transparent hover:border-[#30363d] transition-all"
-                aria-label="Installer l'application"
-                title="Installer l'application"
-              >
-                <Download size={14} aria-hidden="true" />
-              </button>
-            )}
-            <NavLink
-              to="/"
-              onClick={onClose}
-              className="shrink-0 p-2 rounded-lg text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent hover:border-[#30363d] transition-all"
-              aria-label="Retour à l'accueil"
-              title="Retour à l'accueil"
-            >
-              <Home size={14} aria-hidden="true" />
-            </NavLink>
-          </div>
+          {/* Profile card avec actions intégrées */}
+          <UserMenu
+            syncStatus={syncStatus}
+            extraActions={
+              <>
+                {!isInstalled && (
+                  <button
+                    onClick={() => setShowPWAModal(true)}
+                    className="p-1.5 rounded-md text-[#8b949e] hover:text-emerald-400 hover:bg-[#21262d] transition-all"
+                    aria-label="Installer l'application"
+                    title="Installer l'application"
+                  >
+                    <Download size={13} aria-hidden="true" />
+                  </button>
+                )}
+                <NavLink
+                  to="/"
+                  onClick={onClose}
+                  className="p-1.5 rounded-md text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all"
+                  aria-label="Retour à l'accueil"
+                  title="Retour à l'accueil"
+                >
+                  <Home size={13} aria-hidden="true" />
+                </NavLink>
+              </>
+            }
+          />
           {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
         </div>
       </aside>
