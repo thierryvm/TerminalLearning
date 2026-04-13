@@ -31,6 +31,19 @@ export function initSentry() {
       )
         return null;
 
+      // Drop stale chunk errors — self-healed by the guard in main.tsx (hard reload)
+      // Happens when a new deployment invalidates old chunk hashes for users with
+      // the previous version still open. Guard reloads automatically, no user impact.
+      if (
+        event.exception?.values?.some(
+          (e) =>
+            e.value?.includes('Failed to fetch dynamically imported module') ||
+            e.value?.includes('Importing a module script failed') ||
+            e.value?.includes('is not a valid JavaScript MIME type')
+        )
+      )
+        return null;
+
       // Strip any potential PII from request URLs
       if (event.request?.url) {
         try {

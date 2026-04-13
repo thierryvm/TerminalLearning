@@ -26,6 +26,12 @@ const LessonPage = lazy(() =>
 const CommandReference = lazy(() =>
   import('./components/CommandReference').then(({ CommandReference }) => ({ default: CommandReference }))
 );
+const Changelog = lazy(() =>
+  import('./components/Changelog').then(({ Changelog }) => ({ default: Changelog }))
+);
+const Story = lazy(() =>
+  import('./components/Story').then(({ Story }) => ({ default: Story }))
+);
 const NotFound = lazy(() =>
   import('./components/NotFound').then(({ NotFound }) => ({ default: NotFound }))
 );
@@ -34,6 +40,8 @@ export const router = createBrowserRouter([
   // Public pages
   { path: '/', Component: Landing },
   { path: '/privacy', Component: PrivacyPolicy },
+  { path: '/changelog', Component: Changelog },
+  { path: '/story', Component: Story },
   { path: '/auth/callback', Component: AuthCallback },
 
   // App — all learning routes under /app
