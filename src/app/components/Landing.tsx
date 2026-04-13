@@ -617,6 +617,8 @@ export function Landing() {
             <button onClick={() => navigate('/app')} className="hover:text-[#e6edf3] transition-colors">Application</button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
             <span className="text-[#7d8590] cursor-not-allowed" title="Bientôt disponible" aria-disabled="true">Ko-fi</span>
+            <button onClick={() => navigate('/changelog')} className="hover:text-[#e6edf3] transition-colors">Changelog</button>
+            <button onClick={() => navigate('/story')} className="hover:text-[#e6edf3] transition-colors">Notre histoire</button>
             <button onClick={() => navigate('/privacy')} className="hover:text-[#e6edf3] transition-colors">Confidentialité</button>
           </div>
           <p className="text-[#8b949e] text-xs flex items-center gap-1">
