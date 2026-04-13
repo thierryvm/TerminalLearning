@@ -3,7 +3,7 @@ import {
   Terminal, BookOpen, Zap, Shield,
   ShieldCheck, Github, Infinity, Lock, CheckCircle2,
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
-  Monitor, Code2,
+  Monitor, Code2, Bot,
 } from 'lucide-react';
 import { commandCatalogue } from './commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
@@ -12,7 +12,7 @@ import type { SelectedEnvironment } from '../context/EnvironmentContext';
 // ── Computed totals ───────────────────────────────────────────────────────────
 
 /** Hardcoded — update when adding lessons. Source of truth: curriculum.ts. */
-export const TOTAL_LESSONS = 52;
+export const TOTAL_LESSONS = 64;
 export const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
 export const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active');
 
@@ -115,6 +115,7 @@ export const MODULE_ICONS: Record<string, ComponentType<{ size?: number; classNa
   GitBranch,
   GitFork,
   Globe,
+  Bot,
 };
 
 // ── Level badge styles ────────────────────────────────────────────────────────
@@ -152,6 +153,7 @@ export const MODULE_PREVIEWS: ModulePreview[] = [
   { id: 'reseau', title: 'Réseau & SSH', description: 'Testez la connectivité, effectuez des requêtes HTTP et connectez-vous à des serveurs distants', iconName: 'Globe', color: '#06b6d4', level: 3, firstLessonId: 'ping', lessonCount: 6 },
   { id: 'git', title: 'Git Fondamentaux', description: "Maîtrisez le contrôle de version avec Git — l'outil indispensable de tout développeur professionnel", iconName: 'GitBranch', color: '#f97316', level: 4, firstLessonId: 'git-init', lessonCount: 7 },
   { id: 'github-collaboration', title: 'GitHub & Collaboration', description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise', iconName: 'GitFork', color: '#8b5cf6', level: 4, firstLessonId: 'git-remote', lessonCount: 6 },
+  { id: 'ia-dev', title: "L'IA comme outil dev", description: "Maîtrisez l'IA comme amplificateur de vos compétences — du prompt au déploiement", iconName: 'Bot', color: '#a78bfa', level: 5, firstLessonId: 'ia-dev-intro', lessonCount: 12 },
 ];
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
