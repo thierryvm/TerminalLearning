@@ -5,6 +5,23 @@
 
 ---
 
+## 900 tests unitaires — couverture complète du curriculum
+*13 avril 2026 · PR #112*
+
+**Le milestone :** Le projet atteint **900 tests unitaires** (+ 20 tests RBAC d'intégration skippés en CI, en attente d'un env staging Supabase). C'est le résultat naturel de l'architecture multi-environnement : chaque commande est testée sur Linux, macOS et Windows.
+
+**Anatomie des 900 tests :**
+- **terminalEngine** (~295) — chaque commande × chaque OS × cas positifs/négatifs (ex: `ls` sur Linux, `dir` sur Windows, `Get-ChildItem` sur PowerShell)
+- **validators** (242) — les 67 fonctions `validate()` : acceptation, rejet, injection XSS/SQL, DoS, casse et espaces
+- **curriculumEnvAwareness** (~200) — cohérence structurelle de chaque leçon × chaque environnement
+- **unlocking** (~50) — graphe de prérequis : modules accessibles dans le bon ordre, zéro dépendance circulaire
+- **progressSync** (~40) — synchronisation localStorage ↔ Supabase : merge, delta, conflits, mode offline
+- **divers** (~53) — routing, helpers, edge cases
+
+**Aussi dans cette PR :** `validatePing` resserré — rejetait auparavant n'importe quel contenu après `ping `, accepte maintenant uniquement des hostnames valides (`[a-zA-Z0-9._-]`).
+
+---
+
 ## Phase 4c — Bundle Optimization : motion/react retiré, 22 deps nettoyées
 *13 avril 2026 · THI-87 · PR #108*
 
