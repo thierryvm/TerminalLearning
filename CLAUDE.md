@@ -51,6 +51,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
 - Phase 5 🔄 Curriculum expansion — 11 modules, 64 leçons, 891 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5.5 ✅ Terminal Sentinel — agents sécurité + contenu automatisés (PR #90, 12 avril 2026)
+- Phase 7 ✅ RBAC complet — student/teacher/institution_admin/super_admin + RLS + audit log (PR #92, 12 avril 2026)
 - THI-29 ✅ Module 11 — L'IA comme outil dev (12 leçons, `ai-help` + 11 sous-commandes, PR #103, 13 avril 2026)
 - THI-84 ✅ Changelog public — CHANGELOG.md + STORY.md + routes /changelog /story + SEO (PRs #100–102, 13 avril 2026)
 
@@ -67,7 +69,6 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
   → à terme : déplacer vers `src/types/database.ts`
-- `Dashboard.tsx` lignes 51 + 204 : `navigate('/learn/...')` → `navigate('/app/learn/...')` (redirect actif mais incohérent)
 
 ## Protocole de session — OBLIGATOIRE
 
