@@ -102,11 +102,13 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 10 modules, 52 lessons, 792 unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 10 modules, 52 lessons, 876 unit tests + 176 E2E |
+| **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
+| **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
+| **THI-84** | ✅ Done | Public changelog ([/changelog](/changelog)) + project story ([/story](/story)) + trust badges |
 | **Maintenance** | 🔄 Ongoing | Security audits (OWASP/CSP/RLS), Sentry monitoring, dependency updates |
-| **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) + changelog |
-| **Phase 7** | 🔮 Planned | Member space — profiles, stats, roles (student/teacher), badges |
-| **Phase 8** | 🔮 Planned | Ticket system — bug reports, suggestions, in-app feedback |
+| **Phase 6** | 🔮 Planned | Terminal multi-session (tabs) |
+| **Phase 8** | 🔮 Planned | Member space — profiles, stats, badges |
 | **Phase 9** | 🔮 Planned | Admin panel — real-time health, security center, analytics, RBAC |
 | **Phase 10** | 🔮 Planned | Automated content — new commands unlocked every 2 weeks |
 

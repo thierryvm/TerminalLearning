@@ -292,8 +292,10 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Source: exhaustive command lists (Linux `man -k`, macOS man pages, PowerShell Get-Command, tldr, SS64)
 - [ ] Admin can manually adjust release schedule
 
-## Phase 11 — Changelog & Community 🔮
-- [ ] Visible weekly/monthly changelog on the app
+## Phase 11 — Changelog & Community 🔄 Partial (THI-84 — 13 avril 2026)
+- [x] Public changelog page `/changelog` — structured release notes with metrics (PR #101–102)
+- [x] Project story page `/story` — living narrative journal, human+AI collaboration (PR #101–102)
+- [x] Trust badges on landing — A+ Security Rating, 876 tests CI green (PR #100)
 - [ ] Hall of Fame (opt-in contributors list)
 - [ ] GitHub Sponsors + Ko-fi (pending RIZIV/INAMI authorization)
 - [ ] School/university partnership program
