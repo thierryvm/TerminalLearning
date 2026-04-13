@@ -1,7 +1,7 @@
 # Changelog — Terminal Learning
 
 > Journal des évolutions majeures. Chaque entrée raconte le défi, la décision, et l'impact mesurable.
-> Pour l'histoire complète de la collaboration et des choix techniques : [Notre histoire](/story).
+> Pour l'histoire complète de la collaboration et des choix techniques : [Notre histoire](STORY.md).
 
 ---
 
@@ -26,7 +26,7 @@
 ---
 
 ## Phase 5 — Curriculum expansion *(en cours)*
-*Avril 2026 · THI-xx*
+*Avril 2026 · THI-35*
 
 **Le défi :** Le curriculum initial couvrait les bases. Mais apprendre le terminal, c'est aussi Git, les scripts, la manipulation de fichiers avancée, les permissions — tout ce qu'on utilise vraiment en conditions réelles.
 
@@ -42,7 +42,7 @@
 ## Phase 5.5 — Terminal Sentinel
 *Avril 2026 · THI-36 · PR #90*
 
-**Le défi :** Après l'audit sécurité OWASP, on avait corrigé les vulnérabilités connues. Mais comment s'assurer que de nouvelles n'entrent pas silencieusement avec chaque PR ?
+**Le défi :** Après l'audit de sécurité OWASP, on avait corrigé les vulnérabilités connues. Mais comment s'assurer que de nouvelles n'entrent pas silencieusement avec chaque PR ?
 
 **Ce qu'on a construit :**
 - Agent `security-auditor` : audit black-hat automatisé à chaque release majeure

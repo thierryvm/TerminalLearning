@@ -126,7 +126,7 @@ Le moment où la règle a prouvé son utilité : une refactorisation de `process
 
 ## Partie III — La discipline
 
-### L'audit sécurité qui a tout changé
+### L'audit de sécurité qui a tout changé
 
 À un moment du projet, on a décidé de faire un audit de sécurité sérieux — pas une checklist rapide, mais une analyse black-hat complète : OWASP Top 10, API Security, CSP Level 3, Row Level Security, auth flow, supply chain.
 
