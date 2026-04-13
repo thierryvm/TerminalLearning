@@ -74,6 +74,7 @@
     "react-day-picker": "8.10.1",
     "react-dnd": "16.0.1",
     "react-dnd-html5-backend": "16.0.1",
+    "react-helmet-async": "^3.0.0",
     "react-hook-form": "7.55.0",
     "react-markdown": "^10.1.0",
     "react-popper": "2.3.0",

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Terminal, ArrowLeft, ArrowUp } from 'lucide-react';
@@ -95,9 +96,16 @@ interface MarkdownPageProps {
   content: string;
   title: string;
   subtitle?: string;
+  seo: {
+    title: string;
+    description: string;
+    canonicalUrl: string;
+    ogImage?: string;
+    keywords: string;
+  };
 }
 
-export function MarkdownPage({ content, title, subtitle }: MarkdownPageProps) {
+export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProps) {
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -111,8 +119,30 @@ export function MarkdownPage({ content, title, subtitle }: MarkdownPageProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const ogImage = seo.ogImage ?? 'https://terminallearning.dev/og-image.png';
+
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <Helmet>
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+        <meta name="keywords" content={seo.keywords} />
+        <link rel="canonical" href={seo.canonicalUrl} />
+        {/* Open Graph */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={seo.canonicalUrl} />
+        <meta property="og:title" content={seo.title} />
+        <meta property="og:description" content={seo.description} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:site_name" content="Terminal Learning" />
+        <meta property="og:locale" content="fr_BE" />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seo.title} />
+        <meta name="twitter:description" content={seo.description} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="twitter:creator" content="@thierryvm" />
+      </Helmet>
       {/* Nav */}
       <nav className="border-b border-[#30363d]/50 px-6 py-4 flex items-center justify-between max-w-4xl mx-auto">
         <div className="flex items-center gap-2.5">
