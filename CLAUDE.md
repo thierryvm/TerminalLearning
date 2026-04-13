@@ -22,6 +22,12 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Supabase (Auth + PostgreSQL + RLS + OAuth GitHub + Google)
 - Vitest (tests unitaires) + Playwright (E2E — 3 suites : accessibility, mobile, seo)
 - Vercel (déploiement auto sur push main)
+- react-markdown + remark-gfm (rendu markdown — pages /changelog et /story)
+- react-helmet-async (metas SEO/OG dynamiques par route — `HelmetProvider` dans `App.tsx`)
+
+## Alias & imports
+- `@/*` → `./src/*` (Vite + tsconfig)
+- `~/` → racine du projet (Vite + tsconfig) — utiliser pour `CHANGELOG.md?raw`, `STORY.md?raw`
 
 ## Fichiers critiques — toucher avec précaution
 - `src/app/data/curriculum.ts` — toutes les leçons et modules. Toute modification casse potentiellement les tests et la progression des utilisateurs.
@@ -29,6 +35,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - `src/app/data/terminalEngine.ts` — moteur de commandes. Chaque nouvelle commande doit avoir un test dans `src/test/terminalEngine.test.ts`.
 
 ## Sécurité
+- Stale chunk errors filtrées dans `src/lib/sentry.ts` `beforeSend` — self-healed par le guard dans `main.tsx`
 - Zéro `dangerouslySetInnerHTML` dans le codebase
 - Zéro secret côté client
 - Zéro `any` TypeScript
@@ -44,6 +51,17 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
 - Phase 5 🔄 Curriculum expansion — 10 modules, 52 leçons, 792 tests unitaires + 176 E2E Playwright (en cours)
+- THI-84 ✅ Changelog public — CHANGELOG.md + STORY.md + routes /changelog /story + SEO (PRs #100–102, 13 avril 2026)
+
+## Contenus narratifs — règle d'enrichissement
+- `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
+- Ne pas attendre une "grande release" — petits enrichissements réguliers préférables
+- `/changelog` → décideurs/enseignants (métriques, releases) · `/story` → communauté (débats, décisions humain+IA)
+
+## Sourcery — patterns récurrents à anticiper
+- Imports relatifs profonds (`../../../`) → utiliser alias `~/` ou `@/`
+- Détection inline vs block code dans react-markdown → utiliser présence de `className`, pas `'node' in props`
+- `<pre>` remplacé par `<div>` → conserver la sémantique `<pre>` pour l'accessibilité
 
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
