@@ -193,7 +193,7 @@ export const validateScripts: ValidateFn = (cmd, env) => {
 
 export const validateCron: ValidateFn = (cmd) => cmd.trim().toLowerCase() === 'crontab -l';
 
-export const validatePing: ValidateFn = (cmd) => /^ping\s+.+/.test(cmd.trim().toLowerCase());
+export const validatePing: ValidateFn = (cmd) => /^ping\s+[a-zA-Z0-9._-]+$/.test(cmd.trim().toLowerCase());
 
 export const validateCurl: ValidateFn = (cmd, env) => {
     const c = cmd.trim().toLowerCase();

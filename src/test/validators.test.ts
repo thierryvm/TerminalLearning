@@ -52,6 +52,18 @@ import {
   validatePullRequests,
   validateConflicts,
   validateGithubActions,
+  validateAiHelp,
+  validateAiHelpCapabilities,
+  validateAiHelpLimits,
+  validateAiHelpPrompts,
+  validateAiHelpContext,
+  validateAiHelpValidate,
+  validateAiHelpDebug,
+  validateAiHelpSecurity,
+  validateAiHelpClaudeCli,
+  validateAiHelpCareers,
+  validateAiHelpSenior,
+  validateAiHelpWorkflow,
 } from '../app/data/validators';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -429,6 +441,72 @@ describe('validateConflicts', () => {
 describe('validateGithubActions', () => {
   it('accepts "git status"', () => expect(validateGithubActions('git status')).toBe(true));
   it('rejects "git push"', () => expect(validateGithubActions('git push')).toBe(false));
+});
+
+// ── AI Help (Module 11) ──────────────────────────────────────────────────────
+describe('validateAiHelp', () => {
+  it('accepts "ai-help"', () => expect(validateAiHelp('ai-help')).toBe(true));
+  it('accepts "ai-help capabilities"', () => expect(validateAiHelp('ai-help capabilities')).toBe(true));
+  it('rejects "help"', () => expect(validateAiHelp('help')).toBe(false));
+  it('rejects empty', () => expect(validateAiHelp('')).toBe(false));
+});
+
+describe('validateAiHelpCapabilities', () => {
+  it('accepts "ai-help capabilities"', () => expect(validateAiHelpCapabilities('ai-help capabilities')).toBe(true));
+  it('rejects "ai-help"', () => expect(validateAiHelpCapabilities('ai-help')).toBe(false));
+  it('rejects "ai-help limits"', () => expect(validateAiHelpCapabilities('ai-help limits')).toBe(false));
+});
+
+describe('validateAiHelpLimits', () => {
+  it('accepts "ai-help limits"', () => expect(validateAiHelpLimits('ai-help limits')).toBe(true));
+  it('rejects "ai-help capabilities"', () => expect(validateAiHelpLimits('ai-help capabilities')).toBe(false));
+});
+
+describe('validateAiHelpPrompts', () => {
+  it('accepts "ai-help prompts"', () => expect(validateAiHelpPrompts('ai-help prompts')).toBe(true));
+  it('rejects "ai-help context"', () => expect(validateAiHelpPrompts('ai-help context')).toBe(false));
+});
+
+describe('validateAiHelpContext', () => {
+  it('accepts "ai-help context"', () => expect(validateAiHelpContext('ai-help context')).toBe(true));
+  it('rejects "ai-help prompts"', () => expect(validateAiHelpContext('ai-help prompts')).toBe(false));
+});
+
+describe('validateAiHelpValidate', () => {
+  it('accepts "ai-help validate"', () => expect(validateAiHelpValidate('ai-help validate')).toBe(true));
+  it('rejects "ai-help debug"', () => expect(validateAiHelpValidate('ai-help debug')).toBe(false));
+});
+
+describe('validateAiHelpDebug', () => {
+  it('accepts "ai-help debug"', () => expect(validateAiHelpDebug('ai-help debug')).toBe(true));
+  it('rejects "ai-help validate"', () => expect(validateAiHelpDebug('ai-help validate')).toBe(false));
+});
+
+describe('validateAiHelpSecurity', () => {
+  it('accepts "ai-help security"', () => expect(validateAiHelpSecurity('ai-help security')).toBe(true));
+  it('rejects "ai-help debug"', () => expect(validateAiHelpSecurity('ai-help debug')).toBe(false));
+});
+
+describe('validateAiHelpClaudeCli', () => {
+  it('accepts "ai-help claude-cli"', () => expect(validateAiHelpClaudeCli('ai-help claude-cli')).toBe(true));
+  it('rejects "ai-help security"', () => expect(validateAiHelpClaudeCli('ai-help security')).toBe(false));
+});
+
+describe('validateAiHelpCareers', () => {
+  it('accepts "ai-help careers"', () => expect(validateAiHelpCareers('ai-help careers')).toBe(true));
+  it('rejects "ai-help senior"', () => expect(validateAiHelpCareers('ai-help senior')).toBe(false));
+});
+
+describe('validateAiHelpSenior', () => {
+  it('accepts "ai-help senior"', () => expect(validateAiHelpSenior('ai-help senior')).toBe(true));
+  it('rejects "ai-help careers"', () => expect(validateAiHelpSenior('ai-help careers')).toBe(false));
+});
+
+describe('validateAiHelpWorkflow', () => {
+  it('accepts "ai-help workflow"', () => expect(validateAiHelpWorkflow('ai-help workflow')).toBe(true));
+  it('rejects "ai-help senior"', () => expect(validateAiHelpWorkflow('ai-help senior')).toBe(false));
+  it('handles case insensitivity', () => expect(validateAiHelpWorkflow('AI-HELP WORKFLOW')).toBe(true));
+  it('handles leading/trailing spaces', () => expect(validateAiHelpWorkflow('  ai-help workflow  ')).toBe(true));
 });
 
 // ── Security: injection attempts ──────────────────────────────────────────────
