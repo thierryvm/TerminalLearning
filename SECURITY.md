@@ -52,18 +52,22 @@ You will receive an acknowledgement within 72 hours.
 - Dependabot alerts enabled on the repository
 - Proactive CVE patching — critical vulnerabilities in build tooling are patched as soon as a fix is available
 
-## Planned Security Enhancements
-
-### Phase 5.5 — Terminal Sentinel (THI-36)
+### Terminal Sentinel (Phase 5.5 — live, THI-36, PR #90)
 Automated security audit tool running on two levels:
-- **GitHub Actions weekly**: npm audit, gitleaks (secret scanning), HTTP security headers, cookie flags
+- **GitHub Actions weekly** (`security-sentinel.yml`): npm audit, gitleaks (secret scanning), HTTP security headers, cookie flags — SHA-pinned actions
 - **Playwright local script** (pre-release): auth error message genericity, rate limiting, RBAC route guards, absence of stack traces in production
+- Results stored in `security_audit_logs` Supabase table (RLS: service_role only)
 
-### Phase 7 — RBAC + Audit Log (THI-37)
+### RBAC + Audit Log (Phase 7 — live, THI-37, PR #92)
 - Role-based access control: `super_admin`, `institution_admin`, `teacher`, `student`, `public`
+- `get_my_role()` security definer — prevents RLS recursion
+- `prevent_role_escalation` trigger — blocks unauthorized role changes
 - Teacher identity verified via admin approval flow (no document upload — GDPR)
-- Insert-only `audit_log` table: every privileged action recorded with actor, action, target, IP, timestamp
-- RLS extended to all new tables — principle of least privilege
+- Insert-only `admin_audit_log` table: every privileged action recorded with actor, action, target, metadata, timestamp
+- RLS on all new tables (institutions, classes, enrollments) — principle of least privilege
+- 20 integration tests + 4 RLS bugs fixed during implementation
+
+## Planned Security Enhancements
 
 ### Phase 9 — Admin Panel Security Center
 - Real-time anomaly detection: failed logins, rate-limit hits, terminal fuzzing patterns

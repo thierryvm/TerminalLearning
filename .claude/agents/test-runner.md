@@ -23,9 +23,19 @@ Extrait uniquement :
 - Tests skippés si > 5
 - Si 0 failures : confirme "✅ All N tests pass"
 
-## Étape 3 — Vérifier la couverture
+## Étape 3 — Vérifier la couverture commandes
 
 Identifie les commandes présentes dans `src/app/data/curriculum.ts` qui n'ont aucun test correspondant dans `src/test/terminalEngine.test.ts`. Compare par nom de commande (ex: `ping`, `curl`, `ssh`).
+
+## Étape 4 — Vérifier la couverture validators
+
+Identifie les fonctions `validate*` exportées dans `src/app/data/validators.ts` qui n'ont aucun test correspondant dans `src/test/validators.test.ts`. Lister les fonctions manquantes.
+
+```bash
+grep "^export const validate" src/app/data/validators.ts | sed 's/export const //' | sed 's/:.*//'
+```
+
+Comparer avec les describe/it dans validators.test.ts.
 
 ## Format de rapport obligatoire
 

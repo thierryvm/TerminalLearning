@@ -21,6 +21,7 @@ Analyse en profondeur l'ensemble du curriculum et produis un rapport structuré 
 ### 1. Couverture des environnements
 Pour chaque leçon, vérifier la présence de `instructionByEnv`, `hintByEnv` et `contentByEnv` couvrant `linux`, `macos`, `windows`.
 - CRITICAL si un env manque sans raison légitime
+- **INFO (pas CRITICAL)** si la commande de l'exercice est une **commande simulée identique sur tous les OS** (ex: `ai-help`, `about`, `donate`, `hall-of-fame`, `help`). Ces commandes n'ont pas besoin d'`instructionByEnv` car elles fonctionnent pareil partout.
 - WARNING si une leçon est volontairement mono-OS. Heuristique : classer en WARNING (pas CRITICAL) si la commande appartient à l'une des listes suivantes :
   - Windows-only : `taskkill`, `Get-Help`, `Get-Command`, `Get-Member`, `Get-ChildItem`, `Invoke-WebRequest`, `iwr`, `Resolve-DnsName`, `wevtutil`, `Get-EventLog`
   - Linux/macOS-only : `man`, `whatis`, `apropos`, `brew`, `apt`, `dpkg`
@@ -48,6 +49,7 @@ Pour chaque exercice, la fonction `validate()` doit être non-triviale :
 - Regex trop permissive : `/.*cmd.*/` — WARNING
 - Validate toujours `true` — CRITICAL
 - Validate vide ou absente — CRITICAL
+- **IMPORTANT** : avant de signaler un validator comme "assigné à la mauvaise leçon", lire l'`instruction` de l'exercice. Si l'instruction demande une commande X et que le validator vérifie X, c'est cohérent même si le nom du validator ne correspond pas au titre de la leçon. Exemple : un exercice dans la leçon "kill" peut demander d'exécuter `ps aux` pour identifier les processus — le validator vérifie `ps`, c'est correct.
 
 ### 7. Liens externes (best-effort, limité)
 Si des URLs apparaissent dans `contentByEnv` ou `hintByEnv`, tenter une requête WebFetch sur les **10 premières URLs distinctes** uniquement.

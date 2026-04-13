@@ -1,6 +1,6 @@
 # Architecture — Terminal Learning
 
-> Last updated: 10 April 2026
+> Last updated: 13 April 2026
 
 ## Stack
 
@@ -23,6 +23,8 @@
 ```
 /                        → Landing.tsx          (public, SEO)
 /privacy                 → PrivacyPolicy.tsx     (GDPR)
+/changelog               → ChangelogPage.tsx     (public release notes)
+/story                   → StoryPage.tsx         (public project story)
 /auth/callback           → AuthCallback.tsx      (OAuth PKCE exchange)
 /app                     → Layout.tsx            (app shell)
 /app/                    → Dashboard.tsx         (progress overview)
@@ -69,23 +71,30 @@ src/
 │   │   ├── curriculum.ts         # ENVIRONMENTS, LEVELS, ROADMAP_PRIORITIES, EnvId
 │   │   └── database.ts           # Supabase DB types (Phases 3+)
 │   ├── data/
-│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons (32 lessons, 7 modules)
+│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons (64 lessons, 11 modules)
 │   │   ├── terminalEngine.ts     # Terminal command interpreter (60+ commands, env-aware)
-│   │   └── commandCatalogue.ts   # Command catalogue with level + prerequisites metadata
-│   └── hooks/                    # Custom hooks (currently empty)
+│   │   ├── commandCatalogue.ts   # Command catalogue with level + prerequisites metadata
+│   │   ├── validators.ts         # 44 exercise validation functions (extracted from curriculum)
+│   │   └── landingContent.ts     # Static data for Landing page (MODULE_PREVIEWS)
+│   └── hooks/
+│       └── useLessonSEO.ts       # SEO meta tags hook for lesson pages
 ├── test/
 │   ├── setup.ts
 │   ├── progress.test.tsx         # ProgressContext tests
 │   ├── progressSync.test.ts      # mergeProgress + getDelta (10 tests)
-│   ├── terminalEngine.test.ts    # Terminal command tests (242 total)
+│   ├── terminalEngine.test.ts    # Terminal command tests (891 total across all suites)
+│   ├── validators.test.ts        # Exercise validator tests
 │   ├── curriculumTypes.test.ts   # Curriculum structure + catalogue consistency
+│   ├── curriculumEnvAwareness.test.ts # Multi-env coverage tests
 │   ├── unlocking.test.ts         # Module unlock / prerequisite logic
+│   ├── auth.test.tsx             # Auth context tests
+│   ├── terminalPreview.test.tsx  # Terminal preview component tests
 │   └── landing.test.tsx          # Landing page module cards
 ├── styles/
 │   ├── index.css                 # Entry CSS
 │   ├── tailwind.css              # Tailwind directives
 │   ├── theme.css                 # CSS custom properties (design tokens)
-│   └── fonts.css                 # JetBrains Mono + Inter via Google Fonts
+│   └── fonts.css                 # Self-hosted Geist (Sans + Mono)
 └── main.tsx                      # App entry point
 ```
 
@@ -185,21 +194,24 @@ progress (user_id uuid FK, lesson_id text, completed bool,
           completed_at timestamptz, score int 0-100) PK: (user_id, lesson_id)
 ```
 
-**Phase 7 (planned — RBAC):**
+**Phase 7 (live — RBAC, migrations 005+006, 12 April 2026):**
 ```sql
-institutions (id, name, domain_whitelist[], admin_id)
-classes (id, teacher_id, institution_id, name)
-class_enrollments (class_id, student_id)  -- PK composite
--- profiles extensions: role, institution_id, display_name, preferred_env
+institutions (id, name, domain_whitelist[], admin_id)         -- ✅ live
+classes (id, teacher_id, institution_id, name)                -- ✅ live
+class_enrollments (class_id, student_id)  -- PK composite    -- ✅ live
+-- profiles extensions: role, institution_id, display_name, preferred_env  -- ✅ live
+admin_audit_log (id, actor_id, action, target_type, target_id, metadata jsonb, created_at)
+-- insert-only — RLS: SELECT for super_admin only            -- ✅ live
+-- get_my_role() security definer — prevents RLS recursion   -- ✅ live
+-- prevent_role_escalation trigger                            -- ✅ live
+```
+
+**Phase 7+ (planned):**
+```sql
 -- progress extensions: time_spent_seconds, attempts_count, hints_used
 badges (user_id, badge_id, earned_at)
 teacher_notes (id, teacher_id, student_id, note)
-audit_log (id, actor_id, action, target_id, metadata jsonb, ip_address, created_at)
--- insert-only — RLS: SELECT for super_admin only
-```
-
-**Phase 9 (planned — Terminal Sentinel):**
-```sql
+tracks (id, title, module_ids[], cefr_target, description)
 security_reports (id, run_at, score int, findings jsonb, component text)
 ```
 
@@ -212,11 +224,12 @@ security_reports (id, run_at, score int, findings jsonb, component text)
 | 2 | ✅ | Vercel Analytics + Sentry |
 | 3 | ✅ | Supabase Auth + progress persistence |
 | 4 | ✅ | Curriculum v2 + multi-environment + terminal profiles (192 tests) |
-| 5 | 🔄 | Curriculum expansion — 7 modules, 32 lessons, 242 unit + 176 E2E tests |
-| 5.5 | 🔮 | Terminal Sentinel — automated security audit (THI-36) |
-| 6 | 🔮 | Terminal multi-session (tabs) + changelog |
-| 7 | 🔮 | Full RBAC — student/teacher/institution/admin + approval flow (THI-37) |
+| 5 | 🔄 | Curriculum expansion — 11 modules, 64 lessons, 891 unit + 176 E2E tests |
+| 5.5 | ✅ | Terminal Sentinel — automated security audit (THI-36, PR #90) |
+| 6 | 🔮 | Terminal multi-session (tabs) |
+| 7 | ✅ | Full RBAC — student/teacher/institution/admin + RLS (THI-37, PR #92) |
 | 8 | 🔮 | Ticket system — in-app bug reports + suggestions |
 | 9 | 🔮 | Admin Panel — 7 sections, Security Center fed by Terminal Sentinel |
 | 10 | 🔮 | Automated content scheduler (new commands every 2 weeks) |
+| 11 | 🔄 | Changelog & Community — /changelog + /story live (THI-84) |
 | Final | 🔮 | PWA advanced — installable, offline, push notifications |

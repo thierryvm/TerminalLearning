@@ -186,7 +186,13 @@ Remediation attendue :
 Scanner aussi git log pour detecter des credentials anterieurement supprimes mais encore dans l'historique :
   git log --all -p -- supabase/migrations/ 2>/dev/null | grep -i "crypt(\|password\s*=" | head -20
 
-WARNING si un credential figure dans l'historique git meme si deja supprime du HEAD.
+CRITICAL si un credential figure dans l'historique git même si déjà supprimé du HEAD — l'historique public est aussi exploitable que le HEAD.
+
+### Scan git history étendu (au-delà des migrations)
+Exécuter :
+  git log --all -p -- "*.ts" "*.tsx" "*.json" "*.env*" 2>/dev/null | grep -iE "password|secret|token|apikey|service_role" | grep -v "PLACEHOLDER\|EXAMPLE\|import.meta.env\|process.env\|test\(" | head -30
+
+WARNING si des patterns suspects apparaissent dans l'historique.
 
 ---
 
@@ -222,6 +228,20 @@ Executer :
 - npm ci utilise en CI (pas npm install) ?
 - Scripts postinstall/preinstall dans les deps directes ?
 - Packages aux noms proches de dependances reelles (typosquatting) ?
+
+### Versions des dépendances critiques
+Vérifier les versions actuelles des packages de sécurité :
+  grep -E '"@supabase/supabase-js"|"@sentry/react"|"vite"|"react-router"' package.json
+
+- @supabase/supabase-js : vérifier les advisories récentes sur GitHub
+- Vite : vérifier les CVEs récentes (GHSA)
+- CRITICAL si une version avec CVE connue et fix disponible est utilisée
+
+### GitHub Actions — SHA pins
+Verifier que les actions dans .github/workflows/*.yml utilisent des SHA commits (pas des tags mutables comme @v4) :
+  grep -rn "uses:" .github/workflows/ | grep -v "#" | grep "@v[0-9]"
+
+WARNING si des actions utilisent des tags mutables sans SHA pin.
 
 ---
 

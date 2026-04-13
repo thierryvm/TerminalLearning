@@ -15,7 +15,8 @@ Analyse `src/app/data/curriculum.ts` et `src/test/terminalEngine.test.ts`, puis 
 2. **IDs uniques** : aucun `lessonId` ou `moduleId` dupliqué
 3. **Tests présents** : chaque commande référencée dans curriculum.ts a-t-elle un test dans terminalEngine.test.ts ?
 4. **Completeness** : modules sans leçons, leçons sans exercices, exercices sans solution attendue
-5. **ExerciseTypes (Phase 5b — futur)** : si un champ `type` existe sur les exercices, vérifier qu'il utilise uniquement : `fill-flag`, `objective`, `error-fix`, `pipeline`, `scenario`, `quiz-mcq`, `quiz-recall`. Si le champ n'existe pas encore dans l'interface TypeScript, ignorer cette vérification.
+5. **SuccessMessage count** : le nombre de `successMessage` doit correspondre au nombre de leçons. WARNING si différent.
+6. **ExerciseTypes (Phase 5b — futur)** : si un champ `type` existe sur les exercices, vérifier qu'il utilise uniquement : `fill-flag`, `objective`, `error-fix`, `pipeline`, `scenario`, `quiz-mcq`, `quiz-recall`. Si le champ n'existe pas encore dans l'interface TypeScript, ignorer cette vérification.
 
 ## Format de rapport obligatoire
 
