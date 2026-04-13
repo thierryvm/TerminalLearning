@@ -50,7 +50,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
-- Phase 5 🔄 Curriculum expansion — 10 modules, 52 leçons, 792 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5 🔄 Curriculum expansion — 11 modules, 64 leçons, 891 tests unitaires + 176 E2E Playwright (en cours)
+- THI-29 ✅ Module 11 — L'IA comme outil dev (12 leçons, `ai-help` + 11 sous-commandes, PR #103, 13 avril 2026)
 - THI-84 ✅ Changelog public — CHANGELOG.md + STORY.md + routes /changelog /story + SEO (PRs #100–102, 13 avril 2026)
 
 ## Contenus narratifs — règle d'enrichissement

@@ -102,7 +102,7 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 10 modules, 52 lessons, 876 unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 891 unit tests + 176 E2E |
 | **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
 | **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
 | **THI-84** | ✅ Done | Public changelog ([/changelog](/changelog)) + project story ([/story](/story)) + trust badges |

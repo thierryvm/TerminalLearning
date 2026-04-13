@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 12 April 2026 — THI-83 INP 592ms → 11ms ✅ (instant scroll + MAX_LINES + startTransition) — 10 modules / 52 lessons / 876 tests — perf: main bundle 16kB, FCP 0.6s, INP <200ms
+> Last updated: 13 April 2026 — THI-29 Module 11 "L'IA comme outil dev" ✅ (PR #103) — 11 modules / 64 lessons / 891 tests — perf: main bundle 16kB, FCP 0.6s, INP <200ms
 
 ---
 
@@ -63,7 +63,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Sitemap — terminallearning.dev domain, 42 URLs (PR #79)
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
-Full-stack developer path — 10 modules ✅ (52 lessons, 579 unit tests) + Module 11 in progress
+Full-stack developer path — 11 modules ✅ (64 lessons, 891 unit tests)
 
 ### Modules 1–7 ✅ (Phases 1–4)
 - [x] Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes (Modules 1–6)
@@ -87,10 +87,11 @@ Full-stack developer path — 10 modules ✅ (52 lessons, 579 unit tests) + Modu
 - [x] GitHub Actions CI basics
 - [x] Linear workflow integration
 
-### Module 11 — L'IA comme outil dev 🔄 THI-29 (next)
-- [ ] Contextual prompting, validating AI output
-- [ ] Claude Code CLI, known limits and risks
-- [ ] AI-assisted debugging and code review
+### Module 11 — L'IA comme outil dev ✅ THI-29 (PR #103 — 13 April 2026)
+- [x] 12 lessons: intro, capabilities, limits, basic prompts, advanced prompts, validation, debugging, security, Claude CLI, career paths, senior posture, complete workflow
+- [x] `ai-help` command with 11 subcommands in terminal engine
+- [x] 15 unit tests for ai-help command
+- [x] Level 5 module — prerequisite: GitHub & Collaboration (Module 10)
 
 ### Planned additions (next sprints)
 - [ ] **Monitoring & System Tools**: `htop` dedicated module, `ps`, `lsof`, `df`/`du`, `free`
@@ -126,7 +127,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 | 14 | Docker CLI | 4 |
 | 15 | Security Fundamentals (non-offensive) | 4 |
 | 16 | Server Administration | 5 |
-| 17 | AI as a Dev Tool | 3 |
+| 17 | AI as a Dev Tool | 3 | *(Note: Module 11 ia-dev already covers this at Level 5 — Phase 5c may refine or replace)* |
 
 ## Phase 5.5 — Terminal Sentinel ✅ THI-36 (PR #90 — 12 April 2026)
 > Automated security audit tool — professional security showcase for schools and universities.

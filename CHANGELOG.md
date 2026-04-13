@@ -25,14 +25,29 @@
 
 ---
 
+## Module 11 — L'IA comme outil dev
+*13 avril 2026 · THI-29 · PR #103*
+
+**Le défi :** Les plateformes pédagogiques ignorent l'IA ou la traitent comme une boîte noire. Nos élèves et enseignants ont besoin de comprendre comment utiliser l'IA comme un amplificateur de compétences — pas comme un remplaçant. C'est un module de graduation (Niveau 5), le dernier du parcours actuel.
+
+**Ce qu'on a construit :**
+- 12 leçons couvrant l'intégralité du workflow IA pour développeurs : des capacités aux limites, des prompts basiques aux prompts avancés, de la validation au debugging, de la sécurité aux parcours métiers
+- Commande `ai-help` avec 11 sous-commandes interactives dans le terminal
+- Posture "senior avec IA" : apprendre à challenger, valider et contextualiser les réponses IA
+- Parcours métiers : comment l'IA s'intègre dans chaque branche professionnelle
+
+**Impact :** 11 modules, 64 leçons, 891 tests. Le curriculum couvre maintenant de la navigation de base jusqu'à l'utilisation professionnelle de l'IA — un parcours complet du débutant au développeur augmenté.
+
+---
+
 ## Phase 5 — Curriculum expansion *(en cours)*
 *Avril 2026 · THI-35*
 
 **Le défi :** Le curriculum initial couvrait les bases. Mais apprendre le terminal, c'est aussi Git, les scripts, la manipulation de fichiers avancée, les permissions — tout ce qu'on utilise vraiment en conditions réelles.
 
 **Ce qu'on construit :**
-- 10 modules, 52 leçons planifiées — Linux, macOS, Windows, Git, scripting
-- 876 tests unitaires couvrant chaque commande et chaque variante d'environnement
+- 11 modules, 64 leçons — Linux, macOS, Windows, Git, scripting, IA
+- 891 tests unitaires couvrant chaque commande et chaque variante d'environnement
 - Progression adaptée par OS : un apprenant Windows ne voit pas les commandes bash, et inversement
 
 **Impact :** *En cours de mesure — cette section sera mise à jour à chaque module livré.*
