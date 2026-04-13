@@ -239,16 +239,25 @@ L'autre découverte : les agents qu'on avait construits pour automatiser la vigi
 
 Ce qu'on retient : un audit n'est pas un événement. C'est une discipline. La sécurité ne s'améliore pas en corrigeant des failles — elle s'améliore en rendant la détection automatique.
 
+**Le nettoyage qui a changé les règles — PR #108 (13 avril 2026)**
+
+En optimisant les performances (THI-87), on a tiré un fil qui a révélé un problème plus profond. `motion/react` pesait ~40 kB gzip dans le bundle Landing pour des animations qu'on pouvait reproduire en CSS pur. Mais en auditant les dépendances, la vraie surprise est arrivée : **22 packages npm installés mais jamais utilisés**. MUI, Emotion, canvas-confetti, react-dnd, recharts — tous fantômes. Et 8 composants shadcn/ui qui dépendaient de ces packages.
+
+Comment c'est arrivé ? Probablement des sessions de développement qui ont installé des packages, prototypé, pivoté — et oublié de nettoyer. Aucun agent ne vérifiait ça. Aucune règle ne l'empêchait. C'est le type de dette technique qui s'accumule silencieusement, un `npm install` à la fois.
+
+La correction technique est simple : remplacer motion par des CSS @keyframes, supprimer les deps, supprimer les composants orphelins. Le vrai changement est structurel : un nouvel agent (`ui-auditor`) qui scanne automatiquement les violations du design system — composants custom là où shadcn devrait être utilisé, deps fantômes, incohérences de style. Et une règle dans le protocole : cet agent doit tourner avant toute PR touchant l'UI. Les CRITICAL bloquent le merge.
+
+Résultat : -2 453 lignes, +329 ajoutées. Le Landing passe de ~65 kB à ~25 kB gzip. Zéro régression visuelle — confirmé par comparaison screenshots production vs preview en desktop et mobile.
+
+Ce qu'on retient : les garde-fous ne sont pas optionnels sur un projet pédagogique. Si on enseigne les bonnes pratiques, on les applique d'abord.
+
 ### Ce sur quoi on travaille maintenant
+
+**Migration shadcn/ui (THI-85)**
+39 composants Radix UI sont installés, mais l'UI est 100% custom Tailwind. La migration se fera page par page — Dashboard d'abord, puis LessonPage, puis Landing. L'agent ui-auditor guidera chaque étape.
 
 **Admin Panel institutionnel (Phase 9)**
 Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de progression par élève. La plateforme peut maintenant accueillir des établissements — il faut maintenant leur donner les outils pour que ça soit utile.
-
-**Dashboard santé super_admin (THI-85)**
-Mode maintenance ON/OFF, graphiques de santé en temps réel, vérification de compatibilité des frameworks. Un vrai cockpit d'administration.
-
-**Système de tickets intégré (THI-86) + capture d'écran intelligente (THI-87)**
-Les enseignants et élèves pourront remonter des bugs, suggestions et corrections directement depuis l'app — avec capture pleine page annotable. Pas besoin d'installer un outil tiers.
 
 ### Les débats ouverts
 

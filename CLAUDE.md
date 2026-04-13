@@ -18,7 +18,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 
 ## Stack
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
-- Tailwind CSS v4 + shadcn/ui + Motion
+- Tailwind CSS v4 + shadcn/ui (Radix UI) + CSS animations (motion/react retiré PR #108)
 - Supabase (Auth + PostgreSQL + RLS + OAuth GitHub + Google)
 - Vitest (tests unitaires) + Playwright (E2E — 3 suites : accessibility, mobile, seo)
 - Vercel (déploiement auto sur push main)
@@ -55,6 +55,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 7 ✅ RBAC complet — student/teacher/institution_admin/super_admin + RLS + audit log (PR #92, 12 avril 2026)
 - THI-29 ✅ Module 11 — L'IA comme outil dev (12 leçons, `ai-help` + 11 sous-commandes, PR #103, 13 avril 2026)
 - THI-84 ✅ Changelog public — CHANGELOG.md + STORY.md + routes /changelog /story + SEO (PRs #100–102, 13 avril 2026)
+- THI-87 ✅ Bundle optimization — motion/react retiré, 22 deps inutilisées supprimées, 8 composants shadcn dormants supprimés (PR #108, 13 avril 2026)
+- Phase 4c ✅ Bundle Optimization complète — Landing chunk ~65kB→~25kB gzip
 
 ## Contenus narratifs — règle d'enrichissement
 - `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
@@ -69,6 +71,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Tech debt
 - `src/lib/supabase.ts` importe depuis `src/app/types/` — dépendance inversée
   → à terme : déplacer vers `src/types/database.ts`
+- **shadcn/ui non utilisé** — 39 composants Radix UI installés, mais l'UI est 100% custom Tailwind. THI-85 planifié pour migrer page par page. Ne jamais installer de nouveau composant shadcn sans l'utiliser immédiatement.
 
 ## Protocole de session — OBLIGATOIRE
 
@@ -78,6 +81,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
 - **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne de prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
 - **`security-auditor`** — audit cybersécurité black hat : OWASP Top 10 (2021), OWASP API Sec (2023), CSP L3, rate limiting, RLS, auth flow, supply chain, RGPD, vecteurs 2026. Lancer avant chaque release majeure, après mise à jour de dépendances, ou à la demande. (THI-53)
+- **`ui-auditor`** — détecte composants custom qui devraient utiliser shadcn/ui, deps fantômes, composants installés mais jamais importés, couleurs/tailles en dur. **Obligatoire avant toute PR touchant des composants UI.** CRITICAL = bloque le merge. (THI-86)
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
@@ -94,6 +98,10 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Issue Done + PR non mergée → **In Review**
 - Issue In Progress + PR ouverte → **In Review**
 - Issue In Review + PR mergée → **Done**
+
+### Avant toute PR touchant des composants UI
+- Invoquer l'agent **`ui-auditor`** → analyser le rapport, corriger les CRITICAL avant de proposer la PR
+- Tout CRITICAL dans le rapport bloque le merge — pas d'exception
 
 ### Règles merge
 - CI verte **ET** Sourcery vérifié avant de proposer un merge — **dans cet ordre, sans exception**
