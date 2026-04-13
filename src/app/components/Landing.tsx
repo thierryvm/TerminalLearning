@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import {
   Terminal, ChevronRight, Github, BookOpen,
   CheckCircle2, Zap, Clock, Star, Coffee, Heart,
-  Compass, Monitor, LogIn, Share2, Check, Download,
+  Compass, Monitor, LogIn, Share2, Check, Download, ArrowUp,
 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { PWAInstallModal } from './PWAInstallModal';
@@ -41,6 +41,13 @@ export function Landing() {
   const [shared, setShared] = useState(false);
   const { isInstalled } = usePWAInstall();
   const [showPWAModal, setShowPWAModal] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';
@@ -605,6 +612,17 @@ export function Landing() {
       )}
 
       </main>
+
+      {/* ── SCROLL TO TOP ───────────────────────────────────────── */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Retour en haut"
+          className="fixed bottom-6 right-6 p-3 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg z-50"
+        >
+          <ArrowUp size={18} />
+        </button>
+      )}
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
       <footer className="border-t border-[#30363d]/50 px-6 py-8">
