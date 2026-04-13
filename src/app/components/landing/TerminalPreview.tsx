@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
 import { useEnvironment, ENV_META } from '../../context/EnvironmentContext';
 import type { SelectedEnvironment } from '../../context/EnvironmentContext';
 
@@ -191,11 +190,9 @@ export function TerminalPreview() {
   }, [selectedEnv, reducedMotion]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.35 }}
-      className="w-full max-w-2xl mx-auto rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-emerald-500/10"
+    <div
+      className="animate-fade-in-up w-full max-w-2xl mx-auto rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-emerald-500/10"
+      style={{ animationDelay: '350ms' }}
       data-testid="terminal-preview"
     >
       {/* Title bar */}
@@ -237,6 +234,6 @@ export function TerminalPreview() {
           />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

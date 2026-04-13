@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 13 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 891 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale)
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 891 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale) — **Tech debt identifiée** : composants shadcn/ui installés mais non utilisés (THI-85), agent ui-auditor créé (THI-86)
 
 ---
 
@@ -55,6 +55,9 @@
 | THI-82 | perf | Dynamic import de supabase dans AuthContext + ProgressContext — −194 kB FCP (PR #96) ✅ Done |
 | THI-83 | perf | INP 592ms fix — instant scroll + MAX_LINES cap + startTransition (PR #99) ✅ Done |
 | THI-84 | content | Trust badges cliquables (securityheaders.com + GitHub Actions) + badge "876 tests · CI verte" (PR #100) + CHANGELOG.md + STORY.md (PR #101) + routes /changelog et /story avec SEO/OG (PR #102) ✅ Done |
+| THI-87 | perf | Remove motion/react (~40 kB gzip) — CSS animations + IntersectionObserver + cleanup 22 deps inutilisées (PR #108) 🔄 In Review |
+| THI-85 | tech-debt | Migrer composants custom vers shadcn/ui — page par page (Dashboard, LessonPage, Landing, etc.) 🔮 Backlog |
+| THI-86 | agents | Ajouter ui-auditor au protocole de session obligatoire + CLAUDE.md 🔮 Backlog |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |

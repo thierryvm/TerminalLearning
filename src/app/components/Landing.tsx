@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { FadeIn } from './landing/FadeIn';
 import {
   Terminal, ChevronRight, Github, BookOpen,
   CheckCircle2, Zap, Clock, Star, Coffee, Heart,
@@ -173,12 +173,9 @@ export function Landing() {
             </div>
 
             {/* ── 3 levels per environment ──────────────────────── */}
-            <motion.div
+            <div
               key={selectedEnv}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto"
+              className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto animate-fade-in-up"
             >
               {ENV_LEVELS[selectedEnv].map((lvl) => (
                 <div
@@ -204,7 +201,7 @@ export function Landing() {
                   </div>
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* Terminal preview — proof before CTA */}
@@ -276,16 +273,14 @@ export function Landing() {
           {TRUST_BADGES.map((badge, i) => {
             const Icon = badge.icon;
             const pill = (
-              <motion.span
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: i * 0.07 }}
+              <FadeIn
+                as="span"
+                delay={i * 70}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-medium"
               >
                 <Icon size={13} aria-hidden="true" />
                 {badge.label}
-              </motion.span>
+              </FadeIn>
             );
 
             if (badge.href) {
@@ -309,13 +304,7 @@ export function Landing() {
 
       {/* ── STATS BAR ───────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-6 border-t border-[#30363d]/50">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
+        <FadeIn className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {STATS.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -326,17 +315,12 @@ export function Landing() {
               </div>
             );
           })}
-        </motion.div>
+        </FadeIn>
       </section>
 
       {/* ── MODULE PREVIEW ──────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-        >
+        <FadeIn direction="none">
           <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">
             {MODULE_PREVIEWS.length} modules progressifs
           </h2>
@@ -349,14 +333,10 @@ export function Landing() {
               const Icon = MODULE_ICONS[mod.iconName] ?? BookOpen;
               const levelBadge = LEVEL_BADGE[mod.level ?? 1] ?? LEVEL_BADGE[1];
               return (
-                <motion.div
+                <FadeIn
                   key={mod.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: i * 0.06 }}
-                  className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm cursor-pointer"
+                  delay={i * 60}
+                  className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
                   onClick={() => navigate(`/app/learn/${mod.id}/${mod.firstLessonId}`)}
                   role="button"
                   tabIndex={0}
@@ -387,7 +367,7 @@ export function Landing() {
                     <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
                     <span className="text-emerald-400 text-xs">{mod.lessonCount} leçons disponibles</span>
                   </div>
-                </motion.div>
+                </FadeIn>
               );
             })}
           </div>
@@ -395,17 +375,12 @@ export function Landing() {
           <p className="mt-8 text-center text-[#8b949e] text-sm">
             10 modules inclus — aucun compte requis.
           </p>
-        </motion.div>
+        </FadeIn>
       </section>
 
       {/* ── FEATURES ────────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-        >
+        <FadeIn direction="none">
           <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">Pourquoi Terminal Learning ?</h2>
           <p className="text-[#8b949e] text-center mb-10">Conçu pour les débutants qui veulent apprendre en faisant.</p>
 
@@ -413,12 +388,9 @@ export function Landing() {
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <motion.div
+                <FadeIn
                   key={f.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.35, delay: i * 0.08 }}
+                  delay={i * 80}
                   className={`p-5 rounded-xl border ${f.border} ${f.bg} backdrop-blur-sm`}
                 >
                   <div className="flex items-start gap-4">
@@ -430,21 +402,16 @@ export function Landing() {
                       <p className="text-[#8b949e] text-sm leading-relaxed">{f.description}</p>
                     </div>
                   </div>
-                </motion.div>
+                </FadeIn>
               );
             })}
           </div>
-        </motion.div>
+        </FadeIn>
       </section>
 
       {/* ── ROADMAP ─────────────────────────────────────────────── */}
       <section id="roadmap" className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-        >
+        <FadeIn direction="none">
           <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">Roadmap publique</h2>
           <p className="text-[#8b949e] text-center mb-10">Ce qui est disponible, ce qu'on construit, et ce qui vient ensuite.</p>
 
@@ -501,18 +468,12 @@ export function Landing() {
               </ul>
             </div>
           </div>
-        </motion.div>
+        </FadeIn>
       </section>
 
       {/* ── ABOUT + SUPPORT ─────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start"
-        >
+        <FadeIn direction="none" className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Left — About (SEO) */}
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-mono mb-6">
@@ -594,7 +555,7 @@ export function Landing() {
               </span>
             </div>
           </div>
-        </motion.div>
+        </FadeIn>
       </section>
 
       {/* ── HALL OF FAME ────────────────────────────────────────── */}

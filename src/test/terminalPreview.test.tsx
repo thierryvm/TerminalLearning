@@ -1,4 +1,3 @@
-import React from 'react';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -6,18 +5,6 @@ import { TerminalPreview } from '../app/components/landing/TerminalPreview';
 import { EnvironmentProvider } from '../app/context/EnvironmentContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-vi.mock('motion/react', () => ({
-  motion: new Proxy({} as Record<string, unknown>, {
-    get: (_target, tag: string) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ children, ...props }: any) => {
-        const { initial, animate, whileInView, transition, viewport, ...rest } = props;
-        void initial; void animate; void whileInView; void transition; void viewport;
-        return React.createElement(tag, rest, children);
-      },
-  }),
-}));
 
 function renderPreview(reducedMotion = false) {
   Object.defineProperty(window, 'matchMedia', {

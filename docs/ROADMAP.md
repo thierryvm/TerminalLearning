@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 13 April 2026 — THI-29 Module 11 "L'IA comme outil dev" ✅ (PR #103) — 11 modules / 64 lessons / 891 tests — perf: main bundle 16kB, FCP 0.6s, INP <200ms
+> Last updated: 13 April 2026 — THI-29 Module 11 "L'IA comme outil dev" ✅ (PR #103) — 11 modules / 64 lessons / 891 tests — perf: main bundle 16kB, FCP 0.6s, INP <200ms — THI-87: motion/react removed (PR #108), THI-85: shadcn/ui migration planned
 
 ---
 
@@ -61,6 +61,19 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] a11y: `<main>` landmark, Ko-fi contrast 5.3:1, manifest dynamic injection, aria-label terminal (PR #76)
 - [x] Lazy-load curriculum — main bundle 140kB → 16kB, FCP 2.96s → 0.6s (PR #77)
 - [x] Sitemap — terminallearning.dev domain, 42 URLs (PR #79)
+
+## Phase 4c — Bundle Optimization ✅
+- [x] Remove curriculum from Landing critical path — −112 kB (PR #96, THI-81)
+- [x] Defer Supabase SDK loading — −194 kB FCP (PR #96, THI-82)
+- [x] Fix INP 592ms regression — instant scroll + MAX_LINES cap (PR #99, THI-83)
+- [x] Remove motion/react (~40 kB gzip) — CSS animations + IntersectionObserver (PR #108, THI-87)
+- [x] Remove 22 unused dependencies (MUI, Emotion, canvas-confetti, react-dnd, recharts, etc.)
+- [x] Agent `ui-auditor` — design system compliance guard
+
+## Phase 4d — Design System Compliance 🔮 Planned (THI-85)
+- [ ] Migrate custom components to shadcn/ui — page by page (Dashboard → LessonPage → Landing → NotFound)
+- [ ] Integrate `ui-auditor` agent into mandatory session protocol (THI-86)
+- [ ] Zero custom `<button>`, `<card>`, `<badge>` patterns where shadcn equivalent exists
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
 Full-stack developer path — 11 modules ✅ (64 lessons, 891 unit tests)
