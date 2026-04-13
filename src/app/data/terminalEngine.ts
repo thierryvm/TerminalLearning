@@ -5,6 +5,7 @@ export type { TerminalEnv, FileNode, DirectoryNode, FSNode, GitCommit, GitState,
 // ─── Command module handlers ──────────────────────────────────────────────────
 import { handleGit } from './commands/git';
 import { handleNetwork } from './commands/network';
+import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
 import type { WindowsCmdDeps } from './commands/windows';
@@ -1660,6 +1661,10 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     // ── Git (Modules 9 & 10) → commands/git.ts ───────────────────────────────
     case 'git':
       return handleGit(newState, args, env);
+
+    // ── IA (Module 11) → commands/ai.ts ──────────────────────────────────────
+    case 'ai-help':
+      return handleAiHelp(args, newState);
 
     // ── Windows/macOS aliases & platform commands → commands/windows.ts ───────
     default: {

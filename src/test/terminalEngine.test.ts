@@ -2073,3 +2073,89 @@ describe('git', () => {
     expect(s.git?.branch).toBe('feature/auth');
   });
 });
+
+// ─── Module 11 — L'IA comme outil dev ─────────────────────────────────────────
+
+describe('ai-help', () => {
+  it('ai-help without args returns overview', () => {
+    const r = processCommand(makeState(), 'ai-help');
+    expect(r.lines.some((l) => l.text.includes('ai-help'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('capabilities'))).toBe(true);
+  });
+
+  it('ai-help with unknown subcommand returns overview', () => {
+    const r = processCommand(makeState(), 'ai-help foobar');
+    expect(r.lines.some((l) => l.text.includes('ai-help'))).toBe(true);
+  });
+
+  it('ai-help capabilities lists what AI can do', () => {
+    const r = processCommand(makeState(), 'ai-help capabilities');
+    expect(r.lines.some((l) => l.text.includes('BIEN'))).toBe(true);
+  });
+
+  it('ai-help limits lists what AI cannot do', () => {
+    const r = processCommand(makeState(), 'ai-help limits');
+    expect(r.lines.some((l) => l.text.includes('SAIT PAS FAIRE'))).toBe(true);
+  });
+
+  it('ai-help prompts shows prompt guide', () => {
+    const r = processCommand(makeState(), 'ai-help prompts');
+    expect(r.lines.some((l) => l.text.includes('RÈGLE'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('Bon'))).toBe(true);
+  });
+
+  it('ai-help context shows advanced prompt guide', () => {
+    const r = processCommand(makeState(), 'ai-help context');
+    expect(r.lines.some((l) => l.text.includes('TECHNIQUE'))).toBe(true);
+  });
+
+  it('ai-help validate shows validation checklist', () => {
+    const r = processCommand(makeState(), 'ai-help validate');
+    expect(r.lines.some((l) => l.text.includes('checklist') || l.text.includes('COMMIT'))).toBe(true);
+  });
+
+  it('ai-help debug shows debug workflow', () => {
+    const r = processCommand(makeState(), 'ai-help debug');
+    expect(r.lines.some((l) => l.text.includes('debug') || l.text.includes('DEBUG'))).toBe(true);
+  });
+
+  it('ai-help security shows security rules', () => {
+    const r = processCommand(makeState(), 'ai-help security');
+    expect(r.lines.some((l) => l.text.includes('JAMAIS'))).toBe(true);
+  });
+
+  it('ai-help claude-cli shows Claude Code commands', () => {
+    const r = processCommand(makeState(), 'ai-help claude-cli');
+    expect(r.lines.some((l) => l.text.includes('claude'))).toBe(true);
+  });
+
+  it('ai-help careers shows career-specific usage', () => {
+    const r = processCommand(makeState(), 'ai-help careers');
+    expect(r.lines.some((l) => l.text.includes('DEVOPS') || l.text.includes('DevOps'))).toBe(true);
+  });
+
+  it('ai-help senior shows senior mindset', () => {
+    const r = processCommand(makeState(), 'ai-help senior');
+    expect(r.lines.some((l) => l.text.includes('amplifie') || l.text.includes('JUNIOR'))).toBe(true);
+  });
+
+  it('ai-help workflow shows full deployment cycle', () => {
+    const r = processCommand(makeState(), 'ai-help workflow');
+    expect(r.lines.some((l) => l.text.includes('BRIEF') || l.text.includes('déploiement'))).toBe(true);
+  });
+
+  it('ai-help is case-insensitive', () => {
+    const r1 = processCommand(makeState(), 'AI-HELP');
+    const r2 = processCommand(makeState(), 'ai-help');
+    expect(r1.lines.length).toBe(r2.lines.length);
+  });
+
+  it('all ai-help subcommands return non-empty output', () => {
+    const subs = ['capabilities', 'limits', 'prompts', 'context', 'validate',
+                  'debug', 'security', 'claude-cli', 'careers', 'senior', 'workflow'];
+    for (const sub of subs) {
+      const r = processCommand(makeState(), `ai-help ${sub}`);
+      expect(r.lines.length).toBeGreaterThan(3);
+    }
+  });
+});
