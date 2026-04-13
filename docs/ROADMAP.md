@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 13 April 2026 — THI-29 Module 11 "L'IA comme outil dev" ✅ (PR #103) — 11 modules / 64 lessons / 891 tests — perf: main bundle 16kB, FCP 0.6s, INP <200ms — THI-87: motion/react removed (PR #108), THI-85: shadcn/ui migration planned
+> Last updated: 13 April 2026 — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 891 tests — Next: THI-85 shadcn/ui migration page by page
 
 ---
 

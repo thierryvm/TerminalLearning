@@ -5,6 +5,26 @@
 
 ---
 
+## Phase 4c — Bundle Optimization : motion/react retiré, 22 deps nettoyées
+*13 avril 2026 · THI-87 · PR #108*
+
+**Le défi :** Le bundle Landing pesait ~65 kB gzip, principalement à cause de `motion/react` (~40 kB gzip / 124 kB raw) chargé pour des animations d'entrée et de scroll-reveal. Plus grave : en auditant les dépendances, on a découvert que **22 packages npm étaient installés mais jamais importés** dans le code source — vestiges de sessions précédentes qui n'ont pas nettoyé derrière elles. Et que **8 composants shadcn/ui** dépendaient de ces packages fantômes.
+
+**Pourquoi c'est important :** Ce projet est une vitrine pédagogique pour des enseignants et élèves. Des dépendances inutilisées, c'est du poids mort qui ralentit l'installation, augmente la surface d'attaque, et envoie le mauvais signal aux contributeurs qui lisent le `package.json`. On ne peut pas enseigner les bonnes pratiques si on ne les applique pas soi-même.
+
+**Ce qu'on a fait :**
+- Remplacé `motion/react` par des CSS `@keyframes` + un hook `useInView` (IntersectionObserver natif) — même rendu visuel, zéro dépendance externe
+- Migré 3 composants : `Landing.tsx` (7 sections), `TerminalPreview.tsx`, `NotFound.tsx` (5 animations)
+- Supprimé 22 dépendances inutilisées (MUI, Emotion, canvas-confetti, react-dnd, recharts, cmdk, vaul, etc.)
+- Supprimé 8 composants shadcn/ui dormants qui ne compilaient plus après le nettoyage
+- Créé l'agent `ui-auditor` pour détecter automatiquement ce type de dette à l'avenir
+
+**Impact :** Landing chunk ~65 kB → ~25 kB gzip. `package-lock.json` allégé de ~1 400 lignes. Installation npm significativement plus rapide. Zéro régression visuelle confirmée par comparaison screenshots prod vs preview (desktop + mobile).
+
+**Leçon tirée :** Un agent d'audit (ui-auditor) a été créé et ajouté au protocole de session obligatoire. Il doit être exécuté avant toute PR touchant l'UI — les CRITICAL bloquent le merge. C'est un garde-fou structurel, pas une vérification ponctuelle.
+
+---
+
 ## Audit sécurité — Durcissement post-Phase 7
 *13 avril 2026 · PR #104*
 
