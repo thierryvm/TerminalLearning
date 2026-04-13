@@ -230,6 +230,15 @@ Le dernier module du curriculum de base. 12 leçons qui couvrent tout le spectre
 **Page `/changelog` et `/story` ✅ (THI-84 — 13 avril 2026)**
 Ce que vous êtes en train de lire est maintenant accessible directement dans l'app, avec un design narratif cohérent.
 
+**Audit sécurité — deuxième passe ✅ (13 avril 2026 · PR #104)**
+Trois semaines de développement intensif, onze modules, cinq migrations Supabase, quatre agents automatisés. On s'est arrêtés et on a regardé le projet comme quelqu'un qui vient de le découvrir sur GitHub — avec de mauvaises intentions.
+
+C'est la deuxième fois qu'on fait cet exercice. La première avait révélé 6 bugs RLS et un endpoint Sentry exploitable. Cette fois, le problème le plus sérieux était invisible à l'œil nu : des mots de passe de test en clair dans l'historique git. Le fichier HEAD était propre — un placeholder inoffensif. Mais `git log -p` racontait une autre histoire. L'historique public d'un repo open source est aussi lisible que le HEAD. C'est une évidence qu'on oublie facilement.
+
+L'autre découverte : les agents qu'on avait construits pour automatiser la vigilance généraient eux-mêmes des faux positifs. Le `content-auditor` signalait 12 leçons du Module 11 comme "CRITICAL" — parce que `ai-help` est une commande simulée identique sur tous les OS, et l'agent ne savait pas faire cette distinction. Corriger les outils qui corrigent le code : c'est une boucle qui finit par converger, mais il faut accepter de la parcourir.
+
+Ce qu'on retient : un audit n'est pas un événement. C'est une discipline. La sécurité ne s'améliore pas en corrigeant des failles — elle s'améliore en rendant la détection automatique.
+
 ### Ce sur quoi on travaille maintenant
 
 **Admin Panel institutionnel (Phase 9)**
@@ -267,4 +276,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 12 avril 2026*
+*Dernière mise à jour : 13 avril 2026*

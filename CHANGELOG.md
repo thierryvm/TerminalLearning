@@ -5,6 +5,27 @@
 
 ---
 
+## Audit sécurité — Durcissement post-Phase 7
+*13 avril 2026 · PR #104*
+
+**Le défi :** Après trois semaines de développement intensif — RBAC, 5 migrations Supabase, 4 agents automatisés, 11 modules de curriculum — le moment était venu de regarder le projet avec les yeux d'un attaquant. Pas une checklist théorique : un audit black-hat complet, comme si le repo venait d'être cloné par quelqu'un qui cherche des failles.
+
+**Ce qu'on a trouvé et corrigé :**
+- CSP `img-src` trop permissive — un wildcard `https:` autorisait le chargement d'images depuis n'importe quel domaine. Restreint aux trois CDN réellement utilisés (avatars GitHub, Google, Vercel Live)
+- GitHub Actions sur tags mutables (`@v4`) — vulnérables à une compromission de tag upstream. Les 6 actions des deux workflows CI et security-sentinel sont maintenant épinglées par SHA de commit
+- 5 comptes de test RBAC avec mots de passe exposés dans l'historique git (migration 006). Mots de passe rotés en production via l'API Supabase — bcrypt cost 12, 64 caractères aléatoires
+- 4 agents d'audit améliorés après analyse des faux positifs : le `content-auditor` ne signale plus les commandes simulées identiques sur tous les OS, le `security-auditor` scanne désormais l'historique git complet
+
+**Impact :** Score de sécurité maintenu à 7.5/10. Les vulnérabilités restantes (CSP `unsafe-inline` pour Motion, rate limiting Sentry tunnel) sont documentées et planifiées — aucune n'est exploitable en l'état.
+
+**Sous le capot :**
+- `vercel.json` — directive `img-src` restreinte à `'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://vercel.live`
+- `.github/workflows/ci.yml` + `security-sentinel.yml` — 6 actions épinglées par SHA
+- `ARCHITECTURE.md` + `SECURITY.md` mis à jour (stats curriculum, phases, tables RBAC)
+- Agents : règles anti-faux-positifs, scan historique git étendu, vérification couverture validators
+
+---
+
 ## Phase 7 — RBAC & Infrastructure institutionnelle
 *Avril 2026 · THI-37, THI-76, THI-80*
 
