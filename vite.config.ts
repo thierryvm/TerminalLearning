@@ -18,6 +18,8 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      // Alias ~ to the project root (for markdown imports)
+      '~': path.resolve(__dirname, '.'),
     },
   },
 

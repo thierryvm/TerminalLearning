@@ -34,11 +34,16 @@ const mdComponents: Components = {
       {children}
     </a>
   ),
-  code: ({ className, children, ...props }) => {
-    const isBlock = 'node' in props;
-    if (isBlock && className) {
+  pre: ({ children }) => (
+    <div className="my-4 bg-[#161b22] border border-[#30363d] rounded-lg p-4 overflow-x-auto">
+      {children}
+    </div>
+  ),
+  code: ({ className, children }) => {
+    // Block code has a language-* className injected by remark; inline code has none
+    if (className) {
       return (
-        <code className="block font-mono text-sm text-[#e6edf3] bg-[#161b22] border border-[#30363d] rounded-lg p-4 overflow-x-auto whitespace-pre">
+        <code className="block font-mono text-sm text-[#e6edf3] whitespace-pre">
           {children}
         </code>
       );
@@ -49,7 +54,6 @@ const mdComponents: Components = {
       </code>
     );
   },
-  pre: ({ children }) => <div className="my-4">{children}</div>,
   blockquote: ({ children }) => (
     <blockquote className="border-l-2 border-emerald-500/40 pl-4 my-4 text-[#8b949e] italic">
       {children}

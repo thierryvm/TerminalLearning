@@ -1,4 +1,4 @@
-import storyContent from '../../../STORY.md?raw';
+import storyContent from '~/STORY.md?raw';
 import { MarkdownPage } from './MarkdownPage';
 
 export function Story() {

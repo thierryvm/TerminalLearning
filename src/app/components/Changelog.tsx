@@ -1,4 +1,4 @@
-import changelogContent from '../../../CHANGELOG.md?raw';
+import changelogContent from '~/CHANGELOG.md?raw';
 import { MarkdownPage } from './MarkdownPage';
 
 export function Changelog() {
