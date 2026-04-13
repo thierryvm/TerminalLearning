@@ -126,6 +126,29 @@ Slack -> Notifie et permet d'en discuter
 
 ---
 
+## Design System — shadcn/ui obligatoire (THI-85)
+
+**Règle :** ne jamais créer de composant custom quand un équivalent shadcn/ui existe.
+
+| Besoin | Composant shadcn | Import |
+|--------|-----------------|--------|
+| Bouton | `<Button>` | `ui/button` |
+| Carte | `<Card>` | `ui/card` |
+| Badge | `<Badge>` | `ui/badge` |
+| Input | `<Input>` | `ui/input` |
+| Onglets | `<Tabs>` | `ui/tabs` |
+| Barre de progression | `<Progress>` | `ui/progress` |
+| Dialog/Modal | `<Dialog>` | `ui/dialog` |
+| Menu déroulant | `<DropdownMenu>` | `ui/dropdown-menu` |
+| Tooltip | `<Tooltip>` | `ui/tooltip` |
+| Tableau | `<Table>` | `ui/table` |
+
+**Exceptions :** composants métier (TerminalEmulator, TerminalPreview) et designs spécifiques Landing hero.
+
+**Garde-fou :** lancer l'agent `ui-auditor` avant toute PR qui touche des composants UI. Tout CRITICAL dans le rapport bloque le merge.
+
+---
+
 ## Validation visuelle obligatoire (projet vitrine)
 
 **Toute PR sur `main` doit passer par cette checklist avant merge :**
