@@ -5,6 +5,28 @@
 
 ---
 
+## INP P75 536ms → ~26ms — fix env switcher avec startTransition
+*14 avril 2026 · THI-90*
+
+**Le défi :** Régression INP persistante sur production desktop depuis plusieurs jours. Vercel Speed Insights affichait **P75 = 536ms (Poor)** avec un pic à 2000ms le 11 avril, sur 197 visites classées "Unknown route". Plusieurs sessions de tentatives sans amélioration visible. Le précédent fix INP (`scrollIntoView` → `scrollTop`) tenait toujours en place, donc la régression venait d'ailleurs.
+
+**La méthode :** Plutôt que continuer à supposer, mesurer. Trace Chrome DevTools sur la prod, puis sous CPU 4× throttling pour reproduire les conditions desktop réelles. Reproduit en lab : **INP = 515ms**, breakdown processing duration = 393ms — le marqueur d'un setState synchrone non-prioritisé sur un sous-arbre lourd.
+
+**Cause racine :** `setEnvironment(envId)` dans `EnvironmentContext` déclenchait un re-render synchrone en cascade : Landing (610 lignes JSX), TerminalPreview (qui tue/relance son animation typing), grille de niveaux remontée à cause de `key={selectedEnv}`, tous les `FadeIn` enfants. Le pointerdown handler restait bloqué 393ms avant de rendre la main au navigateur.
+
+**Le fix :** Une seule ligne dans `EnvironmentContext.tsx` — wrapper `setSelectedEnvState` dans `startTransition`. L'API React canonique pour exactement ce cas : déprioriser le re-render, libérer le main thread immédiatement, laisser React rendre pendant les frames idle. Le bénéfice se propage automatiquement à Landing ET Sidebar (deux callers).
+
+**Validation lab (CPU 4× throttling, vite preview prod) :**
+- Homepage env switcher : **515ms → 26ms** (−95%)
+- Sidebar /app env switcher : **20ms** (consommateur secondaire, même fix)
+- 900/900 tests vitest passent
+
+**Pourquoi c'est important :** L'INP est le Web Vital de la "responsivité ressentie". À 536ms, chaque clic donnait l'impression d'un site qui rame. À 26ms, c'est instantané. Speed Insights confirmera sur prod réelle dans 24-48h.
+
+**Leçon :** Le code "perf-friendly" en surface (useCallback, useMemo, MAX_LINES, `scrollTop` plutôt que `scrollIntoView`) ne suffit pas si un setState reste synchrone sur un sous-arbre large. `startTransition` est gratuit, ciblé, et c'est la première chose à essayer avant d'optimiser des composants individuels.
+
+---
+
 ## Durcissement firewall Vercel — 2 custom rules de blocage
 *14 avril 2026*
 
