@@ -39,7 +39,7 @@ export function Dashboard() {
 
   usePageSEO({
     title: 'Tableau de bord — Terminal Learning',
-    description: 'Suivez votre progression dans l\'apprentissage du terminal. 10 modules progressifs, exercices interactifs, Linux / macOS / Windows.',
+    description: 'Suivez votre progression dans l\'apprentissage du terminal. 11 modules progressifs, exercices interactifs, Linux / macOS / Windows.',
     path: '/app',
   });
 

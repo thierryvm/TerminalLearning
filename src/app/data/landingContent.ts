@@ -56,7 +56,7 @@ export const FEATURES = [
 // ── Roadmap ───────────────────────────────────────────────────────────────────
 
 export const ROADMAP_AVAILABLE = [
-  '10 modules progressifs (navigation → GitHub)',
+  '11 modules progressifs (navigation → IA pour dev)',
   'Terminal interactif avec validation',
   'Dashboard de progression',
   'Sauvegarde locale + cloud (optionnel)',

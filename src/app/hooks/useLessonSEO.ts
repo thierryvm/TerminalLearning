@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Module, Lesson } from '../data/curriculum';
 
 const DEFAULT_TITLE = 'Terminal Learning — Apprends le terminal pas à pas';
-const DEFAULT_DESCRIPTION = 'Apprends les commandes du terminal gratuitement. 10 modules progressifs (Linux, macOS, Windows), émulateur interactif, progression sauvegardée. Pour débutants, open source.';
+const DEFAULT_DESCRIPTION = 'Apprends les commandes du terminal gratuitement. 11 modules progressifs (Linux, macOS, Windows), émulateur interactif, progression sauvegardée. Pour débutants, open source.';
 const DEFAULT_URL = 'https://terminallearning.dev/';
 
 const BASE_URL = 'https://terminallearning.dev';

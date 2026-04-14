@@ -11,7 +11,7 @@ Terminal Learning is a beginner-friendly educational web app built with React an
 - **License**: Open source (MIT)
 - **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS v4, Supabase, Vercel
 
-## Curriculum (10 modules, 52 lessons)
+## Curriculum (11 modules, 64 lessons)
 
 ### Module 1 — Navigation
 `pwd`, `ls`, `ls -la`, `cd` — moving through the file system
@@ -94,6 +94,21 @@ Environment variables, `$PATH`, `.env`, shell config, bash scripts, `cron`
 - https://terminallearning.dev/app/learn/github-collaboration/pull-requests
 - https://terminallearning.dev/app/learn/github-collaboration/conflicts
 - https://terminallearning.dev/app/learn/github-collaboration/github-actions
+
+### Module 11 — L'IA comme outil dev
+`ai-help` and 11 sub-commands: capabilities, limits, prompts, context, validate, debug, security, Claude CLI, professions, posture, workflow — how to use AI as an amplifier (not a crutch), write better prompts, validate generated code, avoid common pitfalls
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-intro
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-capacites
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-limites
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-prompts-basics
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-prompts-avances
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-valider
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-debug
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-securite
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-claude-cli
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-metiers
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-posture
+- https://terminallearning.dev/app/learn/ia-dev/ia-dev-workflow
 
 ## Multi-environment support
 

@@ -52,7 +52,7 @@ export function Landing() {
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';
-    const text = 'Apprends le terminal gratuitement — 10 modules interactifs, Linux / macOS / Windows.';
+    const text = 'Apprends le terminal gratuitement — 11 modules interactifs, Linux / macOS / Windows.';
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Terminal Learning', text, url });
@@ -383,7 +383,7 @@ export function Landing() {
           </div>
 
           <p className="mt-8 text-center text-[#8b949e] text-sm">
-            10 modules inclus — aucun compte requis.
+            11 modules inclus — aucun compte requis.
           </p>
         </FadeIn>
       </section>
