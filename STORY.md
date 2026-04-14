@@ -251,6 +251,22 @@ Résultat : -2 453 lignes, +329 ajoutées. Le Landing passe de ~65 kB à ~25 kB 
 
 Ce qu'on retient : les garde-fous ne sont pas optionnels sur un projet pédagogique. Si on enseigne les bonnes pratiques, on les applique d'abord.
 
+**Le firewall qu'on a pris le temps d'allumer — THI-89 (14 avril 2026)**
+
+Un soir, en ouvrant le dashboard Vercel pour vérifier autre chose, on est tombés sur la page Firewall du projet. **348 événements "Logged" sur les sept derniers jours.** Pas des attaques réussies — rien de cassé, rien d'exploité. Juste du bruit constant : des scanners automatisés qui tapent `/wp-admin`, `/xmlrpc.php`, `/.env`, `/phpmyadmin`, encore et encore. Des bots qui testent aveuglément si le site est une installation WordPress vulnérable, sans savoir — et sans se soucier — que c'est une app Vite/React qui n'a rien à voir.
+
+La réaction naturelle aurait été : "c'est logged, pas bloqué, donc c'est pas grave". Sauf que chaque requête qui atteint l'origine consomme une invocation Fluid Compute, pollue les logs Sentry, envoie un signal implicite que le site est une cible sans résistance. Sur un projet qui se veut exemplaire pédagogiquement, laisser ce bruit sans réponse, c'est incohérent.
+
+Le plan Hobby impose une contrainte honnête : Bot Protection reste bloqué en mode `log` only, impossible de basculer en `challenge` ou `block` sans passer Pro. Pas de rate-limiting au niveau firewall, pas de BotID avancé. On a fait avec. **Deux custom rules**, créées directement via l'API REST Vercel — pas via `vercel.json`, parce que les rules firewall vivent dans une config WAF séparée. La première bloque les chemins d'attaque connus : `wp-admin`, `xmlrpc`, `.env`, `.git`, `phpmyadmin`, `administrator`, `wordpress`, `adminer`. La seconde bloque une liste d'user-agents de scanners offensifs : `sqlmap`, `nikto`, `nuclei`, `masscan`, `gobuster`, `wpscan`, `acunetix`, `nessus`. `curl`, `wget`, `python-requests` et les vrais navigateurs passent sans problème. Les devs ne sont pas gênés, les bots le sont.
+
+Le débat qu'on a eu — et qu'on a tranché sans hésiter : **pas de geo-blocking**. Bloquer la Chine ou la Russie aurait été un gain facile sur les métriques, mais Terminal Learning vise une audience internationale, et un jour un développeur en déplacement, un étudiant expat ou quelqu'un derrière un VPN aurait été bloqué pour la mauvaise raison. Le firewall filtre des comportements, pas des origines.
+
+Les tests en prod ont confirmé le comportement attendu : `/wp-admin` retourne 403 avec le header `x-vercel-mitigated: deny`, `sqlmap` comme user-agent retourne 403, la homepage reste à 200, un navigateur normal reste à 200. Zéro faux positif identifié.
+
+Comme pour le reste du projet, la vigilance manuelle ne passe pas à l'échelle. Un nouvel agent est né — `vercel-firewall-auditor` — en lecture seule, qui relit la config WAF active et lance une batterie de tests HTTP live contre la prod pour confirmer que les rules bloquent bien ce qu'elles doivent et laissent passer ce qui doit passer. À lancer avant chaque release majeure, ou après toute modification du firewall. Le pattern est maintenant familier : dès qu'on prend une décision opérationnelle, on écrit le garde-fou qui la valide automatiquement.
+
+Ce qu'on retient : la sécurité qui n'est pas visible depuis le code est la plus facile à oublier. Un dashboard Vercel qu'on ouvre une fois par mois, des logs qu'on ne lit jamais, une config WAF qu'on pense "sûrement par défaut OK" — c'est exactement là que la dette s'accumule silencieusement. Allumer le firewall, c'est reconnaître que la surface d'attaque d'un site public commence bien avant le code qu'on a écrit.
+
 ### Ce sur quoi on travaille maintenant
 
 **Migration shadcn/ui (THI-85)**
@@ -285,4 +301,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 13 avril 2026*
+*Dernière mise à jour : 14 avril 2026*
