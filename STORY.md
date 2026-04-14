@@ -267,6 +267,18 @@ Comme pour le reste du projet, la vigilance manuelle ne passe pas à l'échelle.
 
 Ce qu'on retient : la sécurité qui n'est pas visible depuis le code est la plus facile à oublier. Un dashboard Vercel qu'on ouvre une fois par mois, des logs qu'on ne lit jamais, une config WAF qu'on pense "sûrement par défaut OK" — c'est exactement là que la dette s'accumule silencieusement. Allumer le firewall, c'est reconnaître que la surface d'attaque d'un site public commence bien avant le code qu'on a écrit.
 
+**La régression INP qu'on a fini par mesurer pour de vrai — THI-90 (14 avril 2026)**
+
+Pendant plusieurs jours, Vercel Speed Insights affichait `INP P75 = 536ms (Poor)` sur production desktop. Pas une dégradation soudaine — un plateau persistant, avec un pic à 2000ms le 11 avril sur 197 visites classées "Unknown route". Plusieurs sessions de tentatives d'optimisation n'avaient rien bougé. Le précédent fix INP de mars (le `scrollIntoView → scrollTop` qui avait réduit le terminal de 592ms à 11ms) tenait toujours en place — la régression venait d'ailleurs.
+
+La tentation, dans ce genre de situation, c'est de continuer à supposer. "C'est peut-être le terminal", "c'est peut-être l'animation", "c'est peut-être Sentry". On a forcé une autre approche : **arrêter de supposer, mesurer**. Trace Chrome DevTools sur la prod réelle, puis sous CPU 4× throttling pour reproduire les conditions desktop d'un utilisateur lambda — pas la machine de dev. La trace a sorti un INP de 515ms sur le clic du sélecteur d'environnement (Linux/macOS/Windows). Match parfait avec le P75 prod. Et un breakdown qui ne laisse aucune ambiguïté : 7ms d'input delay, **393ms de processing duration**, 115ms de presentation. Quand le main thread est bloqué 393ms par le processing, c'est presque toujours le même pattern — un setState synchrone sur un sous-arbre lourd.
+
+La cause s'est révélée structurelle. `setEnvironment(envId)` dans `EnvironmentContext` déclenchait un `setSelectedEnvState` synchrone. Cascade : Landing (610 lignes JSX) re-render entièrement, TerminalPreview tue et relance son animation typing, la grille de niveaux remonte à cause d'un `key={selectedEnv}`, tous les `FadeIn` enfants re-render, et sur `/app` le Sidebar (autre consommateur du même context) re-render aussi. Le pointerdown handler restait coincé 393ms avant de rendre la main au navigateur. Les composants étaient pourtant tous "perf-friendly" en surface — useCallback, useMemo, MAX_LINES, le `scrollTop` d'avant. Mais le **state owner** ne demandait pas à React de prioriser ce re-render. Tout partait en une vague synchrone.
+
+Le fix tient en une ligne. Wrapper `setSelectedEnvState` dans `startTransition` au niveau du context. C'est l'API React canonique pour exactement ce cas : "ce changement d'état est important, mais pas urgent — rends-le quand tu peux, libère le main thread d'abord". Un seul changement bénéficie automatiquement aux deux callers (Landing + Sidebar). Validation lab : 515ms → 26ms sur l'env switcher homepage, 20ms sur Sidebar. −95%. Speed Insights confirmera sur prod réelle dans 24-48h.
+
+La leçon, qui mérite d'être inscrite quelque part : **quand un INP vient d'un setState, on n'optimise pas composant par composant**. On wrappe l'update au niveau du context owner et on laisse React faire son travail de scheduling. C'est gratuit, ciblé, et c'est la première chose à essayer avant de partir dans des refactors lourds.
+
 ### Ce sur quoi on travaille maintenant
 
 **Migration shadcn/ui (THI-85)**
@@ -281,7 +293,7 @@ Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de pro
 Ko-fi et GitHub Sponsors sont techniquement prêts. Les boutons dans l'app sont désactivés en attente d'un accord administratif (mutuelle Solidaris / RIZIV). Ce n'est pas un choix technique — c'est une contrainte réglementaire belge. Quand l'accord arrive, c'est une modification de trois lignes dans le code.
 
 **Multilingue : oui, mais quand ?**
-L'app est en français. L'anglais et le néerlandais sont dans la roadmap. La question n'est pas technique — c'est une question de contenu. Traduire 64 leçons et 891 validations de commandes demande une attention pédagogique qu'on ne peut pas expédier.
+L'app est en français. L'anglais et le néerlandais sont dans la roadmap. La question n'est pas technique — c'est une question de contenu. Traduire 64 leçons et 900 validations de commandes demande une attention pédagogique qu'on ne peut pas expédier.
 
 **Terminal Sentinel en mode public ?**
 L'outil d'audit de sécurité automatisé pourrait être proposé à d'autres projets open source. L'idée est dans les cartons. Elle implique de le documenter, de le rendre configurable, de le maintenir. Ce n'est pas rien.

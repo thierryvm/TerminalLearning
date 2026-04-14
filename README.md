@@ -30,7 +30,7 @@ No account required. No setup. Just open it and start learning.
 
 - 🖥️ **Interactive terminal** — type real commands, get real feedback (not just theory)
 - 🌍 **Multi-environment** — learn on Linux, macOS, or Windows — the interface adapts
-- 🔒 **Progressive curriculum** — 11 modules, 64 lessons, 891 unit tests
+- 🔒 **Progressive curriculum** — 11 modules, 64 lessons, 900 unit tests
 - 🤖 **AI as a dev tool** — dedicated module on using AI professionally (prompts, validation, limits)
 - 💾 **Progress saved automatically** — locally, or synced to the cloud with a free account
 - 📖 **Contextual help** — `help <command>` returns usage and examples for your environment
@@ -66,7 +66,7 @@ This makes learning more realistic and less confusing — you practice the exact
 | Routing | React Router | 7.x |
 | Styling | Tailwind CSS | 4.x |
 | Components | shadcn/ui (Radix UI) | latest |
-| Animations | Motion (Framer Motion) | 12.x |
+| Animations | CSS keyframes + IntersectionObserver | — |
 | Auth & Database | Supabase (PostgreSQL + RLS) | 2.x |
 | Error Tracking | Sentry (free tier) | 8.x |
 | Tests | Vitest + Playwright | — |
@@ -103,7 +103,7 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 891 unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 900 unit tests + 176 E2E |
 | **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
 | **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
 | **THI-29** | ✅ Done | Module 11 — AI as a dev tool (12 lessons, `ai-help` command) |

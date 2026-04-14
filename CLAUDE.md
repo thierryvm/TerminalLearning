@@ -50,13 +50,14 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3 ✅ Supabase Auth + DB — live (projet: `jdnukbpkjyyyjpuwgxhv`, eu-west-1)
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
-- Phase 5 🔄 Curriculum expansion — 11 modules, 64 leçons, 891 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5 🔄 Curriculum expansion — 11 modules, 64 leçons, 900 tests unitaires + 176 E2E Playwright (en cours)
 - Phase 5.5 ✅ Terminal Sentinel — agents sécurité + contenus automatisés (PR #90, 12 avril 2026)
 - Phase 7 ✅ RBAC complet — student/teacher/institution_admin/super_admin + RLS + audit log (PR #92, 12 avril 2026)
 - THI-29 ✅ Module 11 — L'IA comme outil dev (12 leçons, `ai-help` + 11 sous-commandes, PR #103, 13 avril 2026)
 - THI-84 ✅ Changelog public — CHANGELOG.md + STORY.md + routes /changelog /story + SEO (PRs #100–102, 13 avril 2026)
 - THI-87 ✅ Bundle optimization — motion/react retiré, 22 deps inutilisées supprimées, 8 composants shadcn dormants supprimés (PR #108, 13 avril 2026)
 - Phase 4c ✅ Bundle Optimization complète — Landing chunk ~65kB→~25kB gzip
+- THI-90 ✅ INP fix — `setEnvironment` wrappé dans `startTransition`, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, 14 avril 2026)
 
 ## Contenus narratifs — règle d'enrichissement
 - `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
