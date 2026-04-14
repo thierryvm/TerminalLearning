@@ -17,6 +17,15 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        // Terminal Learning — colored pill variants (THI-85)
+        "pill-emerald":
+          "rounded-full border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1.5 px-3 py-1.5",
+        "pill-blue":
+          "rounded-full border-blue-500/30 bg-blue-500/10 text-blue-400 gap-1.5 px-3 py-1.5",
+        "pill-amber":
+          "rounded-full border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1.5 px-3 py-1.5",
+        "pill-purple":
+          "rounded-full border-purple-500/30 bg-purple-500/10 text-purple-400 gap-1.5 px-3 py-1.5",
       },
     },
     defaultVariants: {
