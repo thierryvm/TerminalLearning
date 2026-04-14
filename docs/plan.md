@@ -58,7 +58,7 @@
 | THI-83 | perf | INP 592ms fix — instant scroll + MAX_LINES cap + startTransition (PR #99) ✅ Done |
 | THI-84 | content | Trust badges cliquables (securityheaders.com + GitHub Actions) + badge "876 tests · CI verte" (PR #100) + CHANGELOG.md + STORY.md (PR #101) + routes /changelog et /story avec SEO/OG (PR #102) ✅ Done |
 | THI-87 | perf | Remove motion/react (~40 kB gzip) — CSS animations + IntersectionObserver + cleanup 22 deps inutilisées + 8 composants shadcn dormants supprimés (PR #108) ✅ Done |
-| THI-85 | tech-debt | Migrer composants custom vers shadcn/ui — page par page (Dashboard, LessonPage, Landing, etc.) 🔮 Backlog |
+| THI-85 | tech-debt | Migrer composants custom vers shadcn/ui — page par page. NotFound.tsx ✅ (PR #116, 14 avril 2026 — variantes `emerald` / `ghost-gh` / `pill-*`). Reste : Dashboard, LessonPage, Landing, ChangelogPage, StoryPage, CommandReference 🔄 In Progress |
 | THI-86 | agents | Ajouter ui-auditor au protocole de session obligatoire + CLAUDE.md 🔮 Backlog |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
