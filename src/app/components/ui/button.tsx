@@ -24,6 +24,15 @@ const buttonVariants = cva(
           "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold hover:scale-[1.02] active:scale-[0.98]",
         "ghost-gh":
           "border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium",
+        // Terminal Learning — Landing nav + footer variants (THI-92)
+        "emerald-nav":
+          "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-medium transition-colors",
+        "ghost-gh-neutral":
+          "border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium",
+        "nav-link":
+          "text-[#8b949e] hover:text-[#e6edf3] transition-colors",
+        floating:
+          "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -32,6 +41,12 @@ const buttonVariants = cva(
         icon: "size-9 rounded-md",
         // Terminal Learning — CTA pill matching legacy px-6 py-2.5 rounded-xl
         "cta-pill": "h-auto rounded-xl px-6 py-2.5 text-sm",
+        // Terminal Learning — Landing sizes (THI-92)
+        "nav-pill": "h-auto rounded-lg px-3 sm:px-4 py-1.5 text-xs sm:text-sm whitespace-nowrap",
+        "cta-hero": "h-auto rounded-xl px-8 py-3.5 text-base",
+        "icon-round": "size-auto rounded-full p-3",
+        "link-inline": "h-auto p-0",
+        "footer-link": "h-auto min-h-11 px-2",
       },
     },
     defaultVariants: {
