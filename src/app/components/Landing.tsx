@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
+import { Button } from './ui/button';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import {
   TOTAL_LESSONS, TOTAL_COMMANDS,
@@ -90,21 +91,25 @@ export function Landing() {
           {user ? (
             <UserMenu syncStatus={syncStatus} variant="compact" />
           ) : (
-            <button
+            <Button
+              variant="nav-link"
+              size="link-inline"
               onClick={() => setLoginOpen(true)}
-              className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-mono transition-colors flex items-center gap-1.5"
               aria-label="Se connecter"
+              className="gap-1.5 text-sm font-mono"
             >
               <LogIn size={18} className="sm:hidden" aria-hidden="true" />
               <span className="hidden sm:inline">Se connecter</span>
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="emerald-nav"
+            size="nav-pill"
             onClick={() => navigate('/app')}
-            className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0"
+            className="gap-1 sm:gap-1.5 shrink-0"
           >
             Commencer <ChevronRight size={14} aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       </nav>
 
@@ -212,29 +217,33 @@ export function Landing() {
           {/* CTAs */}
           <div className="flex flex-col items-stretch sm:items-center gap-3 sm:gap-4">
             {/* Primary CTA */}
-            <button
+            <Button
+              variant="emerald"
+              size="cta-hero"
               onClick={() => navigate('/app')}
-              className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/20 sm:self-center"
               aria-label="Commencer l'apprentissage gratuitement"
+              className="shadow-lg shadow-emerald-500/20 sm:self-center"
             >
               <Terminal size={18} aria-hidden="true" />
               Commencer l'apprentissage
               <ChevronRight size={16} aria-hidden="true" />
-            </button>
+            </Button>
 
             {/* Secondary CTAs */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center sm:justify-center">
-            <button
+            <Button
+              variant="ghost-gh"
+              size="cta-pill"
               onClick={() => document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth' })}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
             >
               <Compass size={15} aria-hidden="true" />
               Voir la roadmap
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost-gh-neutral"
+              size="cta-pill"
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium text-sm transition-all"
               aria-label="Partager Terminal Learning"
             >
               {shared ? (
@@ -248,17 +257,18 @@ export function Landing() {
                   Partager
                 </>
               )}
-            </button>
+            </Button>
 
             {!isInstalled && (
-              <button
+              <Button
+                variant="ghost-gh"
+                size="cta-pill"
                 onClick={() => setShowPWAModal(true)}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
                 aria-label="Installer l'application"
               >
                 <Download size={15} aria-hidden="true" />
                 Installer l'app
-              </button>
+              </Button>
             )}
             </div>
           </div>
@@ -576,13 +586,15 @@ export function Landing() {
 
       {/* ── SCROLL TO TOP ───────────────────────────────────────── */}
       {showScrollTop && (
-        <button
+        <Button
+          variant="floating"
+          size="icon-round"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Retour en haut"
-          className="fixed bottom-6 right-6 p-3 rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg z-50"
+          className="fixed bottom-6 right-6 z-50"
         >
           <ArrowUp size={18} />
-        </button>
+        </Button>
       )}
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
@@ -593,12 +605,12 @@ export function Landing() {
             Terminal Learning · MIT License
           </div>
           <div className="flex items-center gap-6 text-sm text-[#8b949e]">
-            <button onClick={() => navigate('/app')} className="hover:text-[#e6edf3] transition-colors">Application</button>
+            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/app')}>Application</Button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
             <span className="text-[#7d8590] cursor-not-allowed" title="Bientôt disponible" aria-disabled="true">Ko-fi</span>
-            <button onClick={() => navigate('/changelog')} className="hover:text-[#e6edf3] transition-colors">Changelog</button>
-            <button onClick={() => navigate('/story')} className="hover:text-[#e6edf3] transition-colors">Notre histoire</button>
-            <button onClick={() => navigate('/privacy')} className="hover:text-[#e6edf3] transition-colors">Confidentialité</button>
+            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/changelog')}>Changelog</Button>
+            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/story')}>Notre histoire</Button>
+            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/privacy')}>Confidentialité</Button>
           </div>
           <p className="text-[#8b949e] text-xs flex items-center gap-1">
             Fait avec <Heart size={10} className="text-pink-400" aria-hidden="true" /> en Belgique
