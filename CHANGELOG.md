@@ -5,6 +5,25 @@
 
 ---
 
+## Durcissement firewall Vercel — 2 custom rules de blocage
+*14 avril 2026*
+
+**Le défi :** Audit du Vercel Firewall sur plan Hobby. Le dashboard montrait 348 événements "Logged" sur 7 jours — des scanners automatisés qui atteignaient l'origine en consommant des invocations Fluid Compute inutiles. Bot Protection en mode `log` uniquement (limite Hobby), aucune custom rule, aucune IP bloquée. Surface de bruit importante qui allait croître avec la visibilité du site.
+
+**Ce qu'on a fait :** Configuration directe via l'API REST Vercel (`PATCH /v1/security/firewall/config`), aucun changement de code, aucune PR. Deux custom rules créées :
+- **Rule 1 — Block Common Attack Paths** (`rule_block_common_attack_paths_vdZOUZ`) : regex sur `/wp-admin`, `/xmlrpc.php`, `/.env`, `/.git`, `/phpmyadmin`, `/administrator`, `/wordpress`, `/adminer`, `/cgi-bin`. Ces chemins n'existent pas sur un Vite SPA — aucun user légitime ne les visite.
+- **Rule 2 — Block Scanner User Agents** (`rule_block_scanner_user_agents_JRvc3A`) : substring match sur `sqlmap`, `nikto`, `nuclei`, `masscan`, `gobuster`, `dirbuster`, `feroxbuster`, `wpscan`, `acunetix`, `nessus`, `openvas`, `zgrab`, `CensysInspect`. `curl`, `wget`, `python-requests` et navigateurs restent autorisés.
+
+**Validation :** Tests HTTP live — `/wp-admin` → 403 `x-vercel-mitigated: deny`, `/xmlrpc.php` → 403, UA sqlmap → 403, UA browser normal → 200, homepage → 200. Zéro impact sur les users légitimes. Projet visant une audience internationale → pas de geo-blocking.
+
+**Pourquoi c'est important :** Chaque requête bloquée au niveau firewall, c'est une invocation Fluid Compute économisée, un log Sentry de moins pollué, un signal clair envoyé aux scanners que le site n'est pas une cible facile. Surtout, c'est une **configuration externe réversible en 1 call API** — aucun risque pour le code.
+
+**Traçabilité :** Documentation complète dans `docs/vercel-firewall.md` (IDs, patterns, procédure de rollback, endpoints API). Agent dédié créé : `.claude/agents/vercel-firewall-auditor.md` — audite la config et teste les rules en conditions réelles, à lancer avant chaque release majeure.
+
+**Limite connue du plan Hobby :** Bot Protection avancé et rate-limiting firewall-level nécessitent Pro. Si le site scale, c'est la première fonctionnalité à activer. Entre-temps, les 2 custom rules + OWASP CRS partiel en `log` couvrent le risque principal.
+
+---
+
 ## 900 tests unitaires — couverture complète du curriculum
 *13 avril 2026 · PR #112*
 

@@ -82,6 +82,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`content-auditor`** — audit pédagogique A→Z : env coverage, cohérence curriculum↔moteur↔tests, liens externes, chaîne de prérequis, qualité validate(). Lancer avant chaque release majeure ou à la demande.
 - **`security-auditor`** — audit cybersécurité black hat : OWASP Top 10 (2021), OWASP API Sec (2023), CSP L3, rate limiting, RLS, auth flow, supply chain, RGPD, vecteurs 2026. Lancer avant chaque release majeure, après mise à jour de dépendances, ou à la demande. (THI-53)
 - **`ui-auditor`** — détecte composants custom qui devraient utiliser shadcn/ui, deps fantômes, composants installés mais jamais importés, couleurs/tailles en dur. **Obligatoire avant toute PR touchant des composants UI.** CRITICAL = bloque le merge. (THI-86)
+- **`vercel-firewall-auditor`** — lit la config Vercel Firewall active (WAF, managed rules, custom rules) et exécute une batterie de tests HTTP live contre `terminallearning.dev` pour confirmer que les rules bloquent bien les patterns d'attaque et laissent passer les users légitimes. Nécessite `$VERCEL_TOKEN` en session. Lancer avant chaque release majeure ou après toute modification firewall. Détails : `docs/vercel-firewall.md`.
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
@@ -102,6 +103,12 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ### Avant toute PR touchant des composants UI
 - Invoquer l'agent **`ui-auditor`** → analyser le rapport, corriger les CRITICAL avant de proposer la PR
 - Tout CRITICAL dans le rapport bloque le merge — pas d'exception
+
+### Vercel Firewall — modifications
+- Toute modification firewall passe par l'**API REST Vercel** (pas par `vercel.json`)
+- Documenter chaque changement dans `docs/vercel-firewall.md` (IDs, patterns, rationale, rollback)
+- Lancer l'agent **`vercel-firewall-auditor`** après chaque modification pour valider en conditions réelles
+- **Ne jamais commiter le `VERCEL_TOKEN`** — variable d'environnement en session uniquement, révoquer après usage
 
 ### Règles merge
 - CI verte **ET** Sourcery vérifié avant de proposer un merge — **dans cet ordre, sans exception**
