@@ -598,20 +598,36 @@ export function Landing() {
       )}
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="border-t border-[#30363d]/50 px-6 py-8">
+      <footer className="border-t border-[#30363d]/50 px-6 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[#8b949e] text-sm font-mono">
             <Terminal size={14} className="text-emerald-400" aria-hidden="true" />
             Terminal Learning · MIT License
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#8b949e]">
-            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/app')}>Application</Button>
-            <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
-            <span className="text-[#7d8590] cursor-not-allowed" title="Bientôt disponible" aria-disabled="true">Ko-fi</span>
-            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/changelog')}>Changelog</Button>
-            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/story')}>Notre histoire</Button>
-            <Button variant="nav-link" size="link-inline" onClick={() => navigate('/privacy')}>Confidentialité</Button>
-          </div>
+          <nav
+            aria-label="Pied de page"
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-[#8b949e]"
+          >
+            <Button variant="nav-link" size="footer-link" onClick={() => navigate('/app')}>Application</Button>
+            <a
+              href="https://github.com/thierryvm/TerminalLearning"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center min-h-11 px-2 hover:text-[#e6edf3] transition-colors"
+            >
+              GitHub
+            </a>
+            <span
+              className="inline-flex items-center min-h-11 px-2 text-[#7d8590] cursor-not-allowed"
+              title="Bientôt disponible"
+              aria-disabled="true"
+            >
+              Ko-fi
+            </span>
+            <Button variant="nav-link" size="footer-link" onClick={() => navigate('/changelog')}>Changelog</Button>
+            <Button variant="nav-link" size="footer-link" onClick={() => navigate('/story')}>Notre histoire</Button>
+            <Button variant="nav-link" size="footer-link" onClick={() => navigate('/privacy')}>Confidentialité</Button>
+          </nav>
           <p className="text-[#8b949e] text-xs flex items-center gap-1">
             Fait avec <Heart size={10} className="text-pink-400" aria-hidden="true" /> en Belgique
           </p>

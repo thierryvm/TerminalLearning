@@ -46,6 +46,7 @@ const buttonVariants = cva(
         "cta-hero": "h-auto rounded-xl px-8 py-3.5 text-base",
         "icon-round": "size-auto rounded-full p-3",
         "link-inline": "h-auto p-0",
+        "footer-link": "h-auto min-h-11 px-2",
       },
     },
     defaultVariants: {
