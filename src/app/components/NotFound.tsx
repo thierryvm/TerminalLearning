@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { Terminal, Home, Github, BookOpen, Zap, Shield, Heart, Clock } from 'lucide-react';
+import { Terminal, Home, Github, BookOpen, Zap, Shield, Heart, Clock, type LucideIcon } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
@@ -20,14 +20,14 @@ const TERMINAL_LINES = [
 
 type PillVariant = 'pill-emerald' | 'pill-blue' | 'pill-amber' | 'pill-purple';
 
-const PILLS: Array<{ icon: typeof BookOpen; label: string; variant: PillVariant }> = [
+const PILLS: Array<{ icon: LucideIcon; label: string; variant: PillVariant }> = [
   { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, variant: 'pill-emerald' },
   { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, variant: 'pill-blue' },
   { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, variant: 'pill-amber' },
   { icon: Shield, label: '100% gratuit', variant: 'pill-purple' },
 ];
 
-const USEFUL_LINKS: Array<{ icon: typeof BookOpen; to: string; label: string; desc: string }> = [
+const USEFUL_LINKS: Array<{ icon: LucideIcon; to: string; label: string; desc: string }> = [
   { icon: BookOpen, to: '/reference', label: 'Référence', desc: 'Toutes les commandes expliquées' },
   { icon: Heart, to: '/story', label: 'L\u2019histoire', desc: 'Pourquoi cette app existe' },
   { icon: Clock, to: '/changelog', label: 'Changelog', desc: 'Nouveautés et mises à jour' },
