@@ -4,6 +4,8 @@ import { Terminal, Home, Github, BookOpen, Zap, Shield } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 const TOTAL_LESSONS = curriculum.reduce((sum, mod) => sum + mod.lessons.length, 0);
 const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
@@ -16,11 +18,13 @@ const TERMINAL_LINES = [
   { prompt: null, command: 'terminal-learning/  commandes/  leçons/', delay: 1800, highlight: true },
 ];
 
-const PILLS = [
-  { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
-  { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' },
-  { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
-  { icon: Shield, label: '100% gratuit', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' },
+type PillVariant = 'pill-emerald' | 'pill-blue' | 'pill-amber' | 'pill-purple';
+
+const PILLS: Array<{ icon: typeof BookOpen; label: string; variant: PillVariant }> = [
+  { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, variant: 'pill-emerald' },
+  { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, variant: 'pill-blue' },
+  { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, variant: 'pill-amber' },
+  { icon: Shield, label: '100% gratuit', variant: 'pill-purple' },
 ];
 
 /** Animated terminal line — types character by character */
@@ -136,14 +140,11 @@ export function NotFound() {
           className="animate-fade-in-up flex flex-wrap gap-2 justify-center mb-8"
           style={{ animationDelay: '350ms' }}
         >
-          {PILLS.map(({ icon: Icon, label, color, border, bg }) => (
-            <span
-              key={label}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${border} ${bg} ${color} text-xs font-medium`}
-            >
-              <Icon size={12} aria-hidden="true" />
+          {PILLS.map(({ icon: Icon, label, variant }) => (
+            <Badge key={label} variant={variant}>
+              <Icon size={12} aria-hidden="true" className="size-[12px]" />
               {label}
-            </span>
+            </Badge>
           ))}
         </div>
 
@@ -152,20 +153,14 @@ export function NotFound() {
           className="animate-fade-in-up flex flex-col sm:flex-row gap-3 justify-center"
           style={{ animationDelay: '500ms' }}
         >
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Home size={15} aria-hidden="true" />
+          <Button variant="emerald" size="cta-pill" onClick={() => navigate('/')}>
+            <Home size={15} aria-hidden="true" className="size-[15px]" />
             Accueil
-          </button>
-          <button
-            onClick={() => navigate('/app')}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium text-sm transition-all"
-          >
-            <Terminal size={15} aria-hidden="true" />
+          </Button>
+          <Button variant="ghost-gh" size="cta-pill" onClick={() => navigate('/app')}>
+            <Terminal size={15} aria-hidden="true" className="size-[15px]" />
             Commencer l'apprentissage
-          </button>
+          </Button>
         </div>
 
         {/* Open source mention */}
