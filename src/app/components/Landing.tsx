@@ -604,7 +604,7 @@ export function Landing() {
             <Terminal size={14} className="text-emerald-400" aria-hidden="true" />
             Terminal Learning · MIT License
           </div>
-          <div className="flex items-center gap-6 text-sm text-[#8b949e]">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#8b949e]">
             <Button variant="nav-link" size="link-inline" onClick={() => navigate('/app')}>Application</Button>
             <a href="https://github.com/thierryvm/TerminalLearning" target="_blank" rel="noopener noreferrer" className="hover:text-[#e6edf3] transition-colors">GitHub</a>
             <span className="text-[#7d8590] cursor-not-allowed" title="Bientôt disponible" aria-disabled="true">Ko-fi</span>
