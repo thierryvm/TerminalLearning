@@ -25,7 +25,7 @@ export function AuthCallback() {
   }, [initialized, session, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+    <div className="min-h-dvh bg-[#0d1117] flex items-center justify-center">
       <span className="text-emerald-400 font-mono text-sm animate-pulse">Connexion en cours…</span>
     </div>
   );

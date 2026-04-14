@@ -6,7 +6,7 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[#0d1117]" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="h-dvh flex overflow-hidden bg-[#0d1117]" style={{ fontFamily: 'Inter, sans-serif' }}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

@@ -12,7 +12,7 @@ import { PageLoader } from './components/PageLoader';
 
 function FallbackUI() {
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-[#e6edf3] font-mono">
+    <div className="min-h-dvh bg-[#0d1117] flex items-center justify-center text-[#e6edf3] font-mono">
       <div className="text-center space-y-4">
         <p className="text-[#f85149] text-lg">Une erreur inattendue s'est produite.</p>
         <button

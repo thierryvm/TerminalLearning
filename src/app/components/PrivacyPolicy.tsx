@@ -11,7 +11,7 @@ export function PrivacyPolicy() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-dvh bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
       {/* Nav */}
       <nav className="border-b border-[#30363d]/50 px-6 py-4 flex items-center justify-between max-w-4xl mx-auto">
         <div className="flex items-center gap-2.5">
