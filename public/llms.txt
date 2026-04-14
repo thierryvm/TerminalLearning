@@ -96,7 +96,7 @@ Environment variables, `$PATH`, `.env`, shell config, bash scripts, `cron`
 - https://terminallearning.dev/app/learn/github-collaboration/github-actions
 
 ### Module 11 — L'IA comme outil dev
-`ai-help` and 11 sub-commands: capabilities, limits, prompts, context, validate, debug, security, claude CLI, professions, posture, workflow — how to use AI as an amplifier (not a crutch), write better prompts, validate generated code, avoid common pitfalls
+`ai-help` and 11 sub-commands: capabilities, limits, prompts, context, validate, debug, security, Claude CLI, professions, posture, workflow — how to use AI as an amplifier (not a crutch), write better prompts, validate generated code, avoid common pitfalls
 - https://terminallearning.dev/app/learn/ia-dev/ia-dev-intro
 - https://terminallearning.dev/app/learn/ia-dev/ia-dev-capacites
 - https://terminallearning.dev/app/learn/ia-dev/ia-dev-limites
