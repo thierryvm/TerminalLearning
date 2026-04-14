@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Terminal, ArrowLeft, Shield } from 'lucide-react';
+import { Terminal, ArrowLeft, Shield, ArrowUp } from 'lucide-react';
+import { Button } from './ui/button';
 
 /**
  * @component PrivacyPolicy
@@ -9,6 +11,13 @@ import { Terminal, ArrowLeft, Shield } from 'lucide-react';
  */
 export function PrivacyPolicy() {
   const navigate = useNavigate();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -159,6 +168,19 @@ export function PrivacyPolicy() {
       <footer className="border-t border-[#30363d]/50 px-6 py-6 text-center text-[#8b949e] text-sm">
         <span className="font-mono">Terminal Learning</span> · Projet open source · MIT License
       </footer>
+
+      {/* ── SCROLL TO TOP ───────────────────────────────────────── */}
+      {showScrollTop && (
+        <Button
+          variant="floating"
+          size="icon-round"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Retour en haut"
+          className="fixed bottom-6 right-6 z-50"
+        >
+          <ArrowUp size={18} />
+        </Button>
+      )}
     </div>
   );
 }
