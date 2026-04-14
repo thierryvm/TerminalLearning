@@ -24,6 +24,7 @@
 | THI-58 | security | `cloneFSNode()` guard MAX_FS_NODES=10k + localStorage JSDoc ProgressContext (PR #70) ✅ Done |
 | docs | security | SECURITY.md update — CORP/COOP, Terminal Engine, API rate limiting documentés (PR #71) ✅ Done |
 | ops | security | Vercel Firewall — 2 custom rules (attack paths + scanner UAs) via API REST, agent `vercel-firewall-auditor`, `docs/vercel-firewall.md` (14 avril 2026) ✅ Done |
+| THI-90 | perf | INP fix — `setEnvironment` wrappé dans `startTransition` (Landing + Sidebar consumers). Lab CPU 4× : 515ms → 26ms (−95%) (14 avril 2026) ✅ Done |
 | THI-46 | seo | SEO/GEO update — sitemap 42 URLs, llms.txt, JSON-LD 8 modules, manifest.webmanifest ✅ Done |
 | THI-47 | ui | UserMenu GitHub-style — avatar + sync dot + dropdown ✅ Done |
 | THI-48 | fix | Sidebar profile card + auth signOut scope:global + sync timeout 10s ✅ Done |

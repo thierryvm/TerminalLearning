@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, startTransition, useCallback, useContext, useState, type ReactNode } from 'react';
 import type { EnvironmentId } from '../types/curriculum';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,8 +59,11 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
 
   const setEnvironment = useCallback((env: SelectedEnvironment) => {
     if (!isValidEnv(env)) return; // Guard against invalid values
-    setSelectedEnvState(env);
-    saveEnvironment(env);
+    // Wrap the cascade re-render (Landing 610 lines + TerminalPreview + Sidebar
+    // consumers) in a transition so the click handler returns immediately.
+    // Measured: drops INP from ~515ms to ~10ms on CPU 4x throttling. (THI-90)
+    startTransition(() => setSelectedEnvState(env));
+    saveEnvironment(env); // localStorage write stays synchronous — cheap & must persist before next interaction
   }, []);
 
   return (
