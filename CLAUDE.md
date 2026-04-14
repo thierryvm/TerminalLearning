@@ -58,7 +58,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - THI-87 ✅ Bundle optimization — motion/react retiré, 22 deps inutilisées supprimées, 8 composants shadcn dormants supprimés (PR #108, 13 avril 2026)
 - Phase 4c ✅ Bundle Optimization complète — Landing chunk ~65kB→~25kB gzip
 - THI-90 ✅ INP fix — `setEnvironment` wrappé dans `startTransition`, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, 14 avril 2026)
-- THI-85 🔄 shadcn migration — NotFound.tsx ✅ (PR #116, 14 avril 2026, variantes `emerald`/`ghost-gh`/`pill-*`, pixel-perfect desktop + mobile). Reste : Dashboard, LessonPage, Landing, ChangelogPage, StoryPage, CommandReference.
+- THI-85 🔄 shadcn migration — NotFound.tsx ✅ (PR #116, 14 avril 2026, variantes `emerald`/`ghost-gh`/`pill-*`, pixel-perfect desktop + mobile) + Enhance 404 (PR #117, 14 avril 2026, bloc "Pages utiles" crawlable + fix contraste footer iPhone 14). Reste : Dashboard, LessonPage, Landing, ChangelogPage, StoryPage, CommandReference.
 
 ## Contenus narratifs — règle d'enrichissement
 - `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
