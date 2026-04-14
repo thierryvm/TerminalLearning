@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 13 April 2026 — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 891 tests — Next: THI-85 shadcn/ui migration page by page
+> Last updated: 14 April 2026 — INP fix THI-90 ✅ (PR #114 merged) — `setEnvironment` wrappé dans `startTransition`, lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 900 tests — Next: THI-85 shadcn/ui migration page by page
 
 ---
 
@@ -69,6 +69,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Remove motion/react (~40 kB gzip) — CSS animations + IntersectionObserver (PR #108, THI-87)
 - [x] Remove 22 unused dependencies (MUI, Emotion, canvas-confetti, react-dnd, recharts, etc.)
 - [x] Agent `ui-auditor` — design system compliance guard
+- [x] INP fix — `setEnvironment` wrappé dans `startTransition` au context owner, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, THI-90)
 
 ## Phase 4d — Design System Compliance 🔮 Planned (THI-85)
 - [ ] Migrate custom components to shadcn/ui — page by page (Dashboard → LessonPage → Landing → NotFound)
@@ -76,7 +77,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [ ] Zero custom `<button>`, `<card>`, `<badge>` patterns where shadcn equivalent exists
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
-Full-stack developer path — 11 modules ✅ (64 lessons, 891 unit tests)
+Full-stack developer path — 11 modules ✅ (64 lessons, 900 unit tests)
 
 ### Modules 1–7 ✅ (Phases 1–4)
 - [x] Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes (Modules 1–6)

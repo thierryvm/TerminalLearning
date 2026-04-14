@@ -82,7 +82,7 @@ src/
 │   ├── setup.ts
 │   ├── progress.test.tsx         # ProgressContext tests
 │   ├── progressSync.test.ts      # mergeProgress + getDelta (10 tests)
-│   ├── terminalEngine.test.ts    # Terminal command tests (891 total across all suites)
+│   ├── terminalEngine.test.ts    # Terminal command tests (900 total across all suites)
 │   ├── validators.test.ts        # Exercise validator tests
 │   ├── curriculumTypes.test.ts   # Curriculum structure + catalogue consistency
 │   ├── curriculumEnvAwareness.test.ts # Multi-env coverage tests
@@ -224,7 +224,7 @@ security_reports (id, run_at, score int, findings jsonb, component text)
 | 2 | ✅ | Vercel Analytics + Sentry |
 | 3 | ✅ | Supabase Auth + progress persistence |
 | 4 | ✅ | Curriculum v2 + multi-environment + terminal profiles (192 tests) |
-| 5 | 🔄 | Curriculum expansion — 11 modules, 64 lessons, 891 unit + 176 E2E tests |
+| 5 | 🔄 | Curriculum expansion — 11 modules, 64 lessons, 900 unit + 176 E2E tests |
 | 5.5 | ✅ | Terminal Sentinel — automated security audit (THI-36, PR #90) |
 | 6 | 🔮 | Terminal multi-session (tabs) |
 | 7 | ✅ | Full RBAC — student/teacher/institution/admin + RLS (THI-37, PR #92) |
