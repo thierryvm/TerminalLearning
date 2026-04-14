@@ -16,7 +16,7 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 
 ## Curriculum Structure
 
-10 modules, 52 lessons total. Modules unlock progressively as the learner completes prerequisites.
+11 modules, 64 lessons total. Modules unlock progressively as the learner completes prerequisites.
 
 ---
 
@@ -159,6 +159,27 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 | Pull Requests — Code Review & Collaboration | GitHub PR workflow, review, merge strategies | /app/learn/github-collaboration/pull-requests |
 | Conflits de merge — Les résoudre comme un pro | conflict markers, `git mergetool`, resolution strategies | /app/learn/github-collaboration/conflicts |
 | GitHub Actions — CI/CD automatisé | `.github/workflows/`, YAML syntax, triggers, jobs | /app/learn/github-collaboration/github-actions |
+
+---
+
+### Module 11 — L'IA comme outil dev (12 lessons)
+
+**Goal**: Use AI as an amplifier, not a crutch. Write better prompts, validate generated code, avoid hallucinations and technical debt.
+
+| Lesson | Commands | URL |
+|--------|----------|-----|
+| L'IA en 2026 : un outil, pas un oracle | `ai-help` | /app/learn/ia-dev/ia-dev-intro |
+| Ce que l'IA sait vraiment faire | `ai-help capabilities` | /app/learn/ia-dev/ia-dev-capacites |
+| Ce que l'IA ne sait pas faire | `ai-help limits` | /app/learn/ia-dev/ia-dev-limites |
+| Écrire un bon prompt — les bases | `ai-help prompts` | /app/learn/ia-dev/ia-dev-prompts-basics |
+| Prompts avancés — contexte technique | `ai-help context` | /app/learn/ia-dev/ia-dev-prompts-avances |
+| Valider la sortie de l'IA | `ai-help validate` | /app/learn/ia-dev/ia-dev-valider |
+| Debug assisté par IA | `ai-help debug` | /app/learn/ia-dev/ia-dev-debug |
+| Sécurité et code IA | `ai-help security` | /app/learn/ia-dev/ia-dev-securite |
+| Claude CLI dans le terminal | `ai-help claude-cli` | /app/learn/ia-dev/ia-dev-claude-cli |
+| L'IA dans différents métiers | `ai-help professions` | /app/learn/ia-dev/ia-dev-metiers |
+| La posture professionnelle face à l'IA | `ai-help posture` | /app/learn/ia-dev/ia-dev-posture |
+| Workflow complet avec l'IA | `ai-help workflow` | /app/learn/ia-dev/ia-dev-workflow |
 
 ---
 
