@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Terminal, Home, Github, BookOpen, Zap, Shield } from 'lucide-react';
+import { useNavigate, Link } from 'react-router';
+import { Terminal, Home, Github, BookOpen, Zap, Shield, Heart, Clock, type LucideIcon } from 'lucide-react';
 import { curriculum } from '../data/curriculum';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { ENVIRONMENTS } from '../types/curriculum';
@@ -20,11 +20,18 @@ const TERMINAL_LINES = [
 
 type PillVariant = 'pill-emerald' | 'pill-blue' | 'pill-amber' | 'pill-purple';
 
-const PILLS: Array<{ icon: typeof BookOpen; label: string; variant: PillVariant }> = [
+const PILLS: Array<{ icon: LucideIcon; label: string; variant: PillVariant }> = [
   { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, variant: 'pill-emerald' },
   { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, variant: 'pill-blue' },
   { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, variant: 'pill-amber' },
   { icon: Shield, label: '100% gratuit', variant: 'pill-purple' },
+];
+
+const USEFUL_LINKS: Array<{ icon: LucideIcon; to: string; label: string; desc: string }> = [
+  { icon: BookOpen, to: '/reference', label: 'Référence', desc: 'Toutes les commandes expliquées' },
+  { icon: Heart, to: '/story', label: 'L\u2019histoire', desc: 'Pourquoi cette app existe' },
+  { icon: Clock, to: '/changelog', label: 'Changelog', desc: 'Nouveautés et mises à jour' },
+  { icon: Shield, to: '/privacy', label: 'Confidentialité', desc: 'Tes données, ta vie privée' },
 ];
 
 /** Animated terminal line — types character by character */
@@ -163,16 +170,43 @@ export function NotFound() {
           </Button>
         </div>
 
+        {/* Useful links — nav de secours (SEO crawlable + UX) */}
+        <nav
+          aria-label="Navigation de secours"
+          className="animate-fade-in-up mt-8"
+          style={{ animationDelay: '650ms' }}
+        >
+          <h2 className="text-center text-[#8b949e] text-xs font-mono mb-4 uppercase tracking-wider">
+            Pages utiles
+          </h2>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 list-none p-0 m-0">
+            {USEFUL_LINKS.map(({ icon: Icon, to, label, desc }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-[#30363d] bg-[#161b22]/50 hover:border-emerald-500/40 hover:bg-[#161b22] transition-all"
+                >
+                  <Icon size={16} aria-hidden="true" className="size-[16px] text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[#e6edf3] text-sm font-medium">{label}</span>
+                    <span className="block text-[#8b949e] text-xs mt-0.5">{desc}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         {/* Open source mention */}
         <div
           className="animate-fade-in text-center mt-8"
-          style={{ animationDelay: '700ms' }}
+          style={{ animationDelay: '800ms' }}
         >
           <a
             href="https://github.com/thierryvm/TerminalLearning"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-[#484f58] hover:text-[#8b949e] text-xs font-mono transition-colors"
+            className="inline-flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] text-xs font-mono transition-colors"
           >
             <Github size={12} aria-hidden="true" />
             open source · 100% gratuit · pour débutants
