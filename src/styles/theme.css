@@ -139,6 +139,22 @@
   animation: fade-in 0.4s ease-out both;
 }
 
+/* ── 2026 a11y — respect prefers-reduced-motion (WCAG 2.2 AA) ──────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

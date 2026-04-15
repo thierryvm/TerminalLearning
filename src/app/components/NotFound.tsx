@@ -88,7 +88,7 @@ export function NotFound() {
 
   return (
     <div
-      className="min-h-screen bg-[#0d1117] text-[#e6edf3] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      className="min-h-dvh bg-[#0d1117] text-[#e6edf3] flex flex-col items-center justify-center p-6 relative overflow-hidden"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       {/* Background glow — top center */}

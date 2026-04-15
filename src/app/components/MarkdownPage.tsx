@@ -122,7 +122,7 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
   const ogImage = seo.ogImage ?? 'https://terminallearning.dev/og-image.png';
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-dvh bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
       <Helmet>
         <title>{seo.title}</title>
         <meta name="description" content={seo.description} />

@@ -67,7 +67,7 @@ export function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-dvh bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
