@@ -26,6 +26,8 @@ const badgeVariants = cva(
           "rounded-full border-amber-500/30 bg-amber-500/10 text-amber-400 gap-1.5 px-3 py-1.5",
         "pill-purple":
           "rounded-full border-purple-500/30 bg-purple-500/10 text-purple-400 gap-1.5 px-3 py-1.5",
+        "pill-muted":
+          "rounded-full border-[#30363d] text-[#8b949e] gap-1.5 px-3 py-1.5 font-medium",
       },
     },
     defaultVariants: {
