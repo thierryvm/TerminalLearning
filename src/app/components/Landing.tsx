@@ -14,6 +14,7 @@ import { useProgress } from '../context/ProgressContext';
 import { UserMenu } from './auth/UserMenu';
 import { LoginModal } from './auth/LoginModal';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import {
   TOTAL_LESSONS, TOTAL_COMMANDS,
@@ -283,13 +284,11 @@ export function Landing() {
           {TRUST_BADGES.map((badge, i) => {
             const Icon = badge.icon;
             const pill = (
-              <FadeIn
-                as="span"
-                delay={i * 70}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-medium"
-              >
-                <Icon size={13} aria-hidden="true" />
-                {badge.label}
+              <FadeIn as="span" delay={i * 70} className="inline-flex">
+                <Badge variant="pill-muted" className="text-xs [&>svg]:size-[13px]">
+                  <Icon aria-hidden="true" />
+                  {badge.label}
+                </Badge>
               </FadeIn>
             );
 
@@ -301,7 +300,7 @@ export function Landing() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={badge.label}
-                  className="hover:opacity-80 transition-opacity"
+                  className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 rounded-full"
                 >
                   {pill}
                 </a>
