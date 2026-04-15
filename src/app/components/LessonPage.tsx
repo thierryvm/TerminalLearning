@@ -259,13 +259,19 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                       type="button"
                       onClick={() => setShowHint((v) => !v)}
                       aria-expanded={showHint}
+                      aria-controls={`lesson-hint-panel-${moduleId}-${lessonId}`}
                       className="flex items-center gap-1 min-h-11 px-2 -ml-2 rounded text-xs text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
                     >
                       <Lightbulb size={12} aria-hidden="true" />
                       {showHint ? "Masquer l'indice" : "Afficher un indice"}
                     </button>
                     {showHint && (
-                      <p className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2">
+                      <p
+                        id={`lesson-hint-panel-${moduleId}-${lessonId}`}
+                        role="region"
+                        aria-label="Indice"
+                        className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
+                      >
                         💡 {lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint}
                       </p>
                     )}
@@ -281,7 +287,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               type="button"
               onClick={() => handleNavigate(prevLesson)}
               disabled={!prevLesson}
-              aria-label={prevLesson ? 'Leçon précédente' : 'Aucune leçon précédente'}
+              aria-disabled={!prevLesson}
               className="flex items-center gap-2 min-h-11 px-2 -ml-2 rounded text-sm text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={16} aria-hidden="true" />
