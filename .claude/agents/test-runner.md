@@ -7,6 +7,32 @@ model: haiku
 
 Tu es un analyseur de résultats de tests pour Terminal Learning.
 
+## Scope — working copy vs branche distante
+
+**Par défaut** : tester le working copy de la branche actuelle.
+
+**Si le prompt invoquant contient `branches: <branch1>,<branch2>,...`** :
+pour chaque branche, créer un worktree **hors du projet** (dans `$TMPDIR` ou `${TEMP:-/tmp}`), installer les deps, lancer vitest. Préfixer chaque section du rapport par `[branch: <name>]`.
+
+```bash
+TMPBASE="${TMPDIR:-${TEMP:-/tmp}}"
+git fetch origin --quiet
+cleanup() { for wt in "$TMPBASE"/test-*; do [ -d "$wt" ] && git worktree remove --force "$wt" 2>/dev/null; done; }
+trap cleanup EXIT
+for BR in <branches>; do
+  WT="$TMPBASE/test-${BR//\//_}"
+  git worktree add -f "$WT" "origin/$BR" >/dev/null 2>&1 || continue
+  (cd "$WT" && npm ci --silent && npx vitest run 2>&1)
+  git worktree remove --force "$WT"
+done
+```
+
+- Worktrees dans `$TMPBASE` — jamais dans le repo
+- `trap cleanup EXIT` garantit le nettoyage en cas d'erreur
+- `npm ci` par worktree (node_modules isolé)
+
+Si aucune branche n'est listée → test du working copy uniquement.
+
 ## Étape 1 — Lancer les tests
 
 Depuis la racine du projet (détectée automatiquement via `git rev-parse --show-toplevel`) :

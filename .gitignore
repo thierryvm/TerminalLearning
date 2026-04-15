@@ -17,8 +17,13 @@ pnpm-debug.log*
 
 # Claude Code local settings (permissions, not for repo)
 .claude/settings.local.json
+.claude/settings.json
+.claude/scheduled_tasks.lock
 # Sub-agents are shared and version-controlled
 !.claude/agents/
+
+# Local screenshots from preview testing (not for repo)
+.screenshots/
 
 # Supabase CLI temp files
 supabase/.temp/

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { FadeIn } from './landing/FadeIn';
 import {
   Terminal, ChevronRight, Github, BookOpen,
@@ -152,8 +152,9 @@ export function Landing() {
                 return (
                   <button
                     key={envId}
+                    type="button"
                     onClick={() => setEnvironment(envId)}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                       active
                         ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
                         : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] border border-transparent'
@@ -342,40 +343,32 @@ export function Landing() {
               const Icon = MODULE_ICONS[mod.iconName] ?? BookOpen;
               const levelBadge = LEVEL_BADGE[mod.level ?? 1] ?? LEVEL_BADGE[1];
               return (
-                <FadeIn
-                  key={mod.id}
-                  delay={i * 60}
-                  className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
-                  onClick={() => navigate(`/app/learn/${mod.id}/${mod.firstLessonId}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/app/learn/${mod.id}/${mod.firstLessonId}`);
-                    }
-                  }}
-                  aria-label={`Accéder au module ${mod.title}`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
-                        <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
+                <FadeIn key={mod.id} delay={i * 60}>
+                  <Link
+                    to={`/app/learn/${mod.id}/${mod.firstLessonId}`}
+                    aria-label={`Accéder au module ${mod.title} : ${mod.description}`}
+                    className="block h-full p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
+                          <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
+                        </div>
+                        <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
                       </div>
-                      <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full border font-mono ${levelBadge.text} ${levelBadge.border} ${levelBadge.bg}`}
+                      >
+                        {levelBadge.label}
+                      </span>
                     </div>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full border font-mono ${levelBadge.text} ${levelBadge.border} ${levelBadge.bg}`}
-                    >
-                      {levelBadge.label}
-                    </span>
-                  </div>
-                  <h3 className="text-[#e6edf3] font-semibold text-sm mb-1">{mod.title}</h3>
-                  <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
-                  <div className="mt-3 flex items-center gap-1.5">
-                    <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
-                    <span className="text-emerald-400 text-xs">{mod.lessonCount} leçons disponibles</span>
-                  </div>
+                    <h3 className="text-[#e6edf3] font-semibold text-sm mb-1">{mod.title}</h3>
+                    <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
+                      <span className="text-emerald-400 text-xs">{mod.lessonCount} leçons disponibles</span>
+                    </div>
+                  </Link>
                 </FadeIn>
               );
             })}

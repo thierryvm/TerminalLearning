@@ -1,7 +1,7 @@
 ---
 name: ui-auditor
 description: Audit UI component usage — detects custom HTML/Tailwind patterns where shadcn/ui components should be used, finds unused dependencies, and verifies design system consistency. Run before major releases or after UI changes.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Bash
 model: haiku
 ---
 
@@ -9,6 +9,33 @@ Tu es un auditeur de composants UI pour Terminal Learning.
 
 Le projet utilise **shadcn/ui** (Radix UI + Tailwind CSS) comme design system.
 Les composants shadcn sont dans `src/app/components/ui/`.
+
+## Scope de l'audit — working copy vs branche distante
+
+**Par défaut** : auditer le working copy de la branche actuelle.
+
+**Si le prompt invoquant contient une ligne `branches: <branch1>,<branch2>,...`** :
+auditer chaque branche via un worktree temporaire **hors du projet** (utiliser `$TMPDIR` ou `${TEMP:-/tmp}`, jamais un chemin à l'intérieur du repo).
+
+```bash
+TMPBASE="${TMPDIR:-${TEMP:-/tmp}}"
+git fetch origin --quiet
+cleanup() { for wt in "$TMPBASE"/audit-*; do [ -d "$wt" ] && git worktree remove --force "$wt" 2>/dev/null; done; }
+trap cleanup EXIT
+for BR in <branches>; do
+  WT="$TMPBASE/audit-${BR//\//_}"
+  git worktree add -f "$WT" "origin/$BR" >/dev/null 2>&1 || continue
+  # lancer Read/Grep/Glob sur $WT pour cette branche
+  git worktree remove --force "$WT"
+done
+```
+
+- Les worktrees vivent dans `$TMPBASE` — jamais dans le repo
+- `.git/worktrees/<name>` (métadonnées seulement) est nettoyé par `worktree remove --force`
+- Le `trap cleanup EXIT` garantit le nettoyage même en cas d'erreur
+
+Le rapport doit préfixer chaque finding par `[branch: <name>]` pour éviter la confusion.
+Si aucune branche n'est listée → audit du working copy uniquement (comportement historique).
 
 ## Objectif
 
