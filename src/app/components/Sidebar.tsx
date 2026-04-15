@@ -50,7 +50,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[#0d1117] border-r border-[#30363d] flex flex-col transition-transform duration-300 ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[#0d1117] border-r border-[#30363d] flex flex-col transition-transform duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -66,8 +66,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </NavLink>
           <button
+            type="button"
             onClick={onClose}
-            className="lg:hidden text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1"
+            className="lg:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
             aria-label="Fermer le menu"
           >
             <X size={18} aria-hidden="true" />
@@ -95,7 +96,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             end
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+              `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                 isActive
                   ? 'bg-[#21262d] text-[#e6edf3]'
                   : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]'
@@ -109,7 +110,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             to="/app/reference"
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+              `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                 isActive
                   ? 'bg-[#21262d] text-[#e6edf3]'
                   : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]'
@@ -135,12 +136,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <div key={mod.id}>
                 {/* Module header */}
                 <button
+                  type="button"
                   onClick={() => !locked && toggleModule(mod.id)}
                   aria-disabled={locked ? true : undefined}
                   aria-label={locked
                     ? `${mod.title} — verrouillé, Niv. ${unlockStatus?.level}`
                     : `${mod.title} — ${completed}/${total} leçons`}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group ${
+                  className={`w-full flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 group ${
                     locked
                       ? 'cursor-not-allowed text-[#8b949e]'
                       : 'hover:bg-[#161b22] text-[#c9d1d9]'
@@ -182,8 +184,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       return (
                         <button
                           key={lesson.id}
+                          type="button"
                           onClick={() => handleLessonClick(mod.id, lesson.id)}
-                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] group text-left"
+                          className="w-full flex items-center gap-2 min-h-10 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 group text-left"
                         >
                           {done ? (
                             <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
@@ -215,8 +218,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 return (
                   <button
                     key={envId}
+                    type="button"
                     onClick={() => setEnvironment(envId)}
-                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-mono transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-1 min-h-9 py-1.5 rounded-md text-[10px] font-mono transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                       active
                         ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}`
                         : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent'
@@ -248,8 +252,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <>
                 {!isInstalled && (
                   <button
+                    type="button"
                     onClick={() => setShowPWAModal(true)}
-                    className="p-1.5 rounded-md text-[#8b949e] hover:text-emerald-400 hover:bg-[#21262d] transition-all"
+                    className="flex items-center justify-center w-11 h-11 rounded-md text-[#8b949e] hover:text-emerald-400 hover:bg-[#21262d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-all"
                     aria-label="Installer l'application"
                     title="Installer l'application"
                   >
@@ -259,7 +264,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <NavLink
                   to="/"
                   onClick={onClose}
-                  className="p-1.5 rounded-md text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] transition-all"
+                  className="flex items-center justify-center w-11 h-11 rounded-md text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-all"
                   aria-label="Retour à l'accueil"
                   title="Retour à l'accueil"
                 >
@@ -278,8 +283,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 export function MenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="lg:hidden fixed top-3.5 left-4 z-50 p-2 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+      className="lg:hidden fixed top-[max(0.875rem,env(safe-area-inset-top))] left-4 z-50 flex items-center justify-center w-11 h-11 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
       aria-label="Ouvrir le menu de navigation"
     >
       <Menu size={18} aria-hidden="true" />
