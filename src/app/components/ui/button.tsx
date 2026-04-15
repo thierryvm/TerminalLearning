@@ -33,6 +33,9 @@ const buttonVariants = cva(
           "text-[#8b949e] hover:text-[#e6edf3] transition-colors",
         floating:
           "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg",
+        // Terminal Learning — translucent emerald CTA (LessonPage nav, THI-99)
+        "emerald-soft":
+          "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
