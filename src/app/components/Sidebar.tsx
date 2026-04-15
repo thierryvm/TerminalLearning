@@ -285,7 +285,7 @@ export function MenuButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="lg:hidden fixed top-[max(0.875rem,env(safe-area-inset-top))] left-4 z-50 flex items-center justify-center w-11 h-11 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
+      className="lg:hidden shrink-0 flex items-center justify-center w-11 h-11 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
       aria-label="Ouvrir le menu de navigation"
     >
       <Menu size={18} aria-hidden="true" />
