@@ -170,9 +170,10 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
       {/* Top bar */}
       <div className="shrink-0 border-b border-[#30363d] bg-[#161b22] px-4 py-3 flex items-center gap-3">
         <button
+          type="button"
           onClick={() => navigate('/app')}
           aria-label="Retour au tableau de bord"
-          className="flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors text-sm"
+          className="flex items-center gap-1.5 min-h-11 px-2 -ml-2 rounded text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors text-sm"
         >
           <ChevronLeft size={16} aria-hidden="true" />
           <span className="hidden sm:inline">Tableau de bord</span>
@@ -191,10 +192,13 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 
         {/* Mobile toggle */}
         <button
+          type="button"
           onClick={() => setShowTerminal((v) => !v)}
-          className="lg:hidden flex items-center gap-1.5 text-[#8b949e] hover:text-emerald-400 transition-colors text-sm border border-[#30363d] rounded px-2 py-1"
+          aria-pressed={showTerminal}
+          aria-label={showTerminal ? 'Afficher le contenu de la leçon' : 'Afficher le terminal interactif'}
+          className="lg:hidden flex items-center gap-1.5 min-h-11 px-3 text-[#8b949e] hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors text-sm border border-[#30363d] rounded"
         >
-          <Terminal size={14} />
+          <Terminal size={14} aria-hidden="true" />
           <span className="text-xs">{showTerminal ? 'Contenu' : 'Terminal'}</span>
         </button>
       </div>
@@ -252,10 +256,12 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                 {!exerciseCompleted && (
                   <div className="mt-3">
                     <button
+                      type="button"
                       onClick={() => setShowHint((v) => !v)}
-                      className="text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors flex items-center gap-1"
+                      aria-expanded={showHint}
+                      className="flex items-center gap-1 min-h-11 px-2 -ml-2 rounded text-xs text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
                     >
-                      <Lightbulb size={12} />
+                      <Lightbulb size={12} aria-hidden="true" />
                       {showHint ? "Masquer l'indice" : "Afficher un indice"}
                     </button>
                     {showHint && (
@@ -272,29 +278,35 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           {/* Navigation */}
           <div className="shrink-0 border-t border-[#30363d] px-5 py-4 flex items-center justify-between">
             <button
+              type="button"
               onClick={() => handleNavigate(prevLesson)}
               disabled={!prevLesson}
-              className="flex items-center gap-2 text-sm text-[#8b949e] hover:text-[#e6edf3] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label={prevLesson ? 'Leçon précédente' : 'Aucune leçon précédente'}
+              className="flex items-center gap-2 min-h-11 px-2 -ml-2 rounded text-sm text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} aria-hidden="true" />
               <span>Précédent</span>
             </button>
 
             {nextLesson ? (
               <button
+                type="button"
                 onClick={() => handleNavigate(nextLesson)}
-                className="flex items-center gap-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 transition-colors"
+                aria-label="Passer à la leçon suivante"
+                className="flex items-center gap-2 min-h-11 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
               >
                 <span>Suivant</span>
-                <ChevronRight size={16} />
+                <ChevronRight size={16} aria-hidden="true" />
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => navigate('/app')}
-                className="flex items-center gap-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 transition-colors"
+                aria-label="Retour au tableau de bord"
+                className="flex items-center gap-2 min-h-11 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
               >
                 <span>Tableau de bord</span>
-                <ChevronRight size={16} />
+                <ChevronRight size={16} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -308,13 +320,15 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               <span className="text-sm text-[#8b949e]">Terminal interactif</span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 setTerminalKey(`${moduleId}-${lessonId}-${Date.now()}`);
                 setExerciseMessage('');
               }}
-              className="flex items-center gap-1.5 text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+              aria-label="Réinitialiser le terminal"
+              className="flex items-center gap-1.5 min-h-11 px-2 -mr-2 rounded text-xs text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
             >
-              <RotateCcw size={12} />
+              <RotateCcw size={12} aria-hidden="true" />
               <span>Réinitialiser</span>
             </button>
           </div>
@@ -348,7 +362,11 @@ export function LessonPage() {
         <div className="text-center">
           <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
           <p>Leçon introuvable</p>
-          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+          <button
+            type="button"
+            onClick={() => navigate('/app')}
+            className="mt-4 inline-flex items-center justify-center min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 text-sm transition-colors"
+          >
             Retour au tableau de bord
           </button>
         </div>
@@ -363,7 +381,11 @@ export function LessonPage() {
           <Lock size={48} className="mx-auto mb-4 opacity-30" />
           <p>Ce module est verrouillé</p>
           <p className="text-xs mt-2">Complétez les prérequis pour y accéder.</p>
-          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+          <button
+            type="button"
+            onClick={() => navigate('/app')}
+            className="mt-4 inline-flex items-center justify-center min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 text-sm transition-colors"
+          >
             Retour au tableau de bord
           </button>
         </div>
