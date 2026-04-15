@@ -165,7 +165,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 placeholder="email@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
               <input
@@ -175,7 +175,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 placeholder="Mot de passe (8 car. min.)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
 
