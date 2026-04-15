@@ -346,7 +346,7 @@ export function Landing() {
                 <FadeIn key={mod.id} delay={i * 60}>
                   <Link
                     to={`/app/learn/${mod.id}/${mod.firstLessonId}`}
-                    aria-label={`Accéder au module ${mod.title}`}
+                    aria-label={`Accéder au module ${mod.title} : ${mod.description}`}
                     className="block h-full p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60"
                   >
                     <div className="flex items-center justify-between mb-3">

@@ -88,11 +88,25 @@ describe('Landing — trust badges', () => {
 describe('Landing — module grid', () => {
   it('renders all 11 module cards with unique labels', () => {
     renderLanding();
-    // Each card has an aria-label "Accéder au module X"
+    // Each card has an aria-label "Accéder au module X : description"
     const moduleCards = screen.getAllByRole('link', { name: /accéder au module/i });
     expect(moduleCards).toHaveLength(11);
     const labels = moduleCards.map((card) => card.getAttribute('aria-label'));
     expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('each module card has the correct href to its first lesson', () => {
+    renderLanding();
+    const moduleCards = screen.getAllByRole('link', { name: /accéder au module/i });
+    // All hrefs must match /app/learn/:moduleId/:lessonId
+    const hrefPattern = /^\/app\/learn\/[a-z0-9-]+\/[a-z0-9-]+$/;
+    moduleCards.forEach((card) => {
+      const href = card.getAttribute('href');
+      expect(href).toMatch(hrefPattern);
+    });
+    // All hrefs unique
+    const hrefs = moduleCards.map((card) => card.getAttribute('href'));
+    expect(new Set(hrefs).size).toBe(hrefs.length);
   });
 
   it('each module card shows lesson count', () => {
