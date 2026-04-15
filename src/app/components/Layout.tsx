@@ -11,7 +11,7 @@ export function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile top bar */}
-        <div className="lg:hidden shrink-0 h-12 border-b border-[#30363d] bg-[#161b22] flex items-center px-4 pl-14">
+        <div className="lg:hidden shrink-0 h-14 border-b border-[#30363d] bg-[#161b22] flex items-center gap-3 px-3">
           <MenuButton onClick={() => setSidebarOpen(true)} />
           <span className="text-sm text-[#e6edf3] font-mono">Terminal Master</span>
         </div>

@@ -15,6 +15,7 @@ import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
+import { Button } from './ui/button';
 
 function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: EnvId }) {
   // Resolve env-specific content/label, falling back to defaults
@@ -169,14 +170,17 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
     <div className="h-full flex flex-col bg-[#0d1117] text-[#e6edf3] overflow-hidden">
       {/* Top bar */}
       <div className="shrink-0 border-b border-[#30363d] bg-[#161b22] px-4 py-3 flex items-center gap-3">
-        <button
+        <Button
+          type="button"
+          variant="nav-link"
+          size="link-inline"
           onClick={() => navigate('/app')}
           aria-label="Retour au tableau de bord"
-          className="flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] transition-colors text-sm"
+          className="gap-1.5 min-h-11 px-2 -ml-2 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
         >
-          <ChevronLeft size={16} aria-hidden="true" />
+          <ChevronLeft className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">Tableau de bord</span>
-        </button>
+        </Button>
 
         <div className="text-[#30363d]">/</div>
         <span className="text-[#8b949e] text-sm hidden sm:inline">{mod.title}</span>
@@ -190,13 +194,18 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
         {exerciseCompleted && <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />}
 
         {/* Mobile toggle */}
-        <button
+        <Button
+          type="button"
+          variant="ghost-gh"
+          size="link-inline"
           onClick={() => setShowTerminal((v) => !v)}
-          className="lg:hidden flex items-center gap-1.5 text-[#8b949e] hover:text-emerald-400 transition-colors text-sm border border-[#30363d] rounded px-2 py-1"
+          aria-pressed={showTerminal}
+          aria-label={showTerminal ? 'Afficher le contenu de la leçon' : 'Afficher le terminal interactif'}
+          className="lg:hidden gap-1.5 min-h-11 px-3 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-[#30363d]"
         >
-          <Terminal size={14} />
+          <Terminal className="size-3.5" aria-hidden="true" />
           <span className="text-xs">{showTerminal ? 'Contenu' : 'Terminal'}</span>
-        </button>
+        </Button>
       </div>
 
       {/* Main split */}
@@ -251,15 +260,25 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 
                 {!exerciseCompleted && (
                   <div className="mt-3">
-                    <button
+                    <Button
+                      type="button"
+                      variant="nav-link"
+                      size="link-inline"
                       onClick={() => setShowHint((v) => !v)}
-                      className="text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors flex items-center gap-1"
+                      aria-expanded={showHint}
+                      aria-controls={`lesson-hint-panel-${moduleId}-${lessonId}`}
+                      className="gap-1 min-h-11 px-2 -ml-2 rounded text-xs font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
                     >
-                      <Lightbulb size={12} />
+                      <Lightbulb className="size-3" aria-hidden="true" />
                       {showHint ? "Masquer l'indice" : "Afficher un indice"}
-                    </button>
+                    </Button>
                     {showHint && (
-                      <p className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2">
+                      <p
+                        id={`lesson-hint-panel-${moduleId}-${lessonId}`}
+                        role="region"
+                        aria-label="Indice"
+                        className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
+                      >
                         💡 {lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint}
                       </p>
                     )}
@@ -271,31 +290,43 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 
           {/* Navigation */}
           <div className="shrink-0 border-t border-[#30363d] px-5 py-4 flex items-center justify-between">
-            <button
+            <Button
+              type="button"
+              variant="nav-link"
+              size="link-inline"
               onClick={() => handleNavigate(prevLesson)}
               disabled={!prevLesson}
-              className="flex items-center gap-2 text-sm text-[#8b949e] hover:text-[#e6edf3] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-disabled={!prevLesson}
+              className="gap-2 min-h-11 px-2 -ml-2 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent disabled:opacity-30"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft className="size-4" aria-hidden="true" />
               <span>Précédent</span>
-            </button>
+            </Button>
 
             {nextLesson ? (
-              <button
+              <Button
+                type="button"
+                variant="emerald-soft"
+                size="link-inline"
                 onClick={() => handleNavigate(nextLesson)}
-                className="flex items-center gap-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 transition-colors"
+                aria-label="Passer à la leçon suivante"
+                className="gap-2 min-h-11 rounded-lg px-3 py-2 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-emerald-500/20"
               >
                 <span>Suivant</span>
-                <ChevronRight size={16} />
-              </button>
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </Button>
             ) : (
-              <button
+              <Button
+                type="button"
+                variant="emerald-soft"
+                size="link-inline"
                 onClick={() => navigate('/app')}
-                className="flex items-center gap-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg px-3 py-2 transition-colors"
+                aria-label="Retour au tableau de bord"
+                className="gap-2 min-h-11 rounded-lg px-3 py-2 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-emerald-500/20"
               >
                 <span>Tableau de bord</span>
-                <ChevronRight size={16} />
-              </button>
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </Button>
             )}
           </div>
         </div>
@@ -307,16 +338,20 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               <Terminal size={14} className="text-emerald-400" />
               <span className="text-sm text-[#8b949e]">Terminal interactif</span>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="nav-link"
+              size="link-inline"
               onClick={() => {
                 setTerminalKey(`${moduleId}-${lessonId}-${Date.now()}`);
                 setExerciseMessage('');
               }}
-              className="flex items-center gap-1.5 text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+              aria-label="Réinitialiser le terminal"
+              className="gap-1.5 min-h-11 px-2 -mr-2 rounded text-xs font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
             >
-              <RotateCcw size={12} />
+              <RotateCcw className="size-3" aria-hidden="true" />
               <span>Réinitialiser</span>
-            </button>
+            </Button>
           </div>
           <TerminalEmulator
             key={terminalKey}
@@ -348,9 +383,15 @@ export function LessonPage() {
         <div className="text-center">
           <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
           <p>Leçon introuvable</p>
-          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+          <Button
+            type="button"
+            variant="nav-link"
+            size="link-inline"
+            onClick={() => navigate('/app')}
+            className="mt-4 min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+          >
             Retour au tableau de bord
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -363,9 +404,15 @@ export function LessonPage() {
           <Lock size={48} className="mx-auto mb-4 opacity-30" />
           <p>Ce module est verrouillé</p>
           <p className="text-xs mt-2">Complétez les prérequis pour y accéder.</p>
-          <button onClick={() => navigate('/app')} className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm">
+          <Button
+            type="button"
+            variant="nav-link"
+            size="link-inline"
+            onClick={() => navigate('/app')}
+            className="mt-4 min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+          >
             Retour au tableau de bord
-          </button>
+          </Button>
         </div>
       </div>
     );
