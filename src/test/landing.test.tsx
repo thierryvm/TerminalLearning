@@ -89,7 +89,7 @@ describe('Landing — module grid', () => {
   it('renders all 11 module cards with unique labels', () => {
     renderLanding();
     // Each card has an aria-label "Accéder au module X"
-    const moduleCards = screen.getAllByRole('button', { name: /accéder au module/i });
+    const moduleCards = screen.getAllByRole('link', { name: /accéder au module/i });
     expect(moduleCards).toHaveLength(11);
     const labels = moduleCards.map((card) => card.getAttribute('aria-label'));
     expect(new Set(labels).size).toBe(labels.length);
