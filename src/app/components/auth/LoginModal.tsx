@@ -95,7 +95,12 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <h2 className="text-lg font-semibold text-[#e6edf3] font-mono">
             {mode === 'login' ? 'Connexion' : 'Créer un compte'}
           </h2>
-          <button onClick={handleClose} className="text-[#8b949e] hover:text-[#e6edf3] transition-colors text-xl leading-none">
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Fermer"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors text-xl leading-none"
+          >
             ×
           </button>
         </div>
@@ -111,9 +116,10 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             {/* OAuth buttons */}
             <div className="space-y-2 mb-4">
               <button
+                type="button"
                 onClick={() => handleOAuth('github')}
                 disabled={loadingOAuth !== null}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono hover:border-emerald-500/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full min-h-11 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono hover:border-emerald-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loadingOAuth === 'github' ? (
                   <span className="w-4 h-4 border-2 border-[#e6edf3]/30 border-t-[#e6edf3] rounded-full animate-spin" />
@@ -123,9 +129,10 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 {loadingOAuth === 'github' ? 'Redirection…' : 'Continuer avec GitHub'}
               </button>
               <button
+                type="button"
                 onClick={() => handleOAuth('google')}
                 disabled={loadingOAuth !== null}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono hover:border-emerald-500/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full min-h-11 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono hover:border-emerald-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loadingOAuth === 'google' ? (
                   <span className="w-4 h-4 border-2 border-[#e6edf3]/30 border-t-[#e6edf3] rounded-full animate-spin" />
@@ -149,18 +156,26 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             <form onSubmit={handleEmailAuth} className="space-y-3">
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="email@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/50 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
               <input
                 type="password"
+                name="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 placeholder="Mot de passe (8 car. min.)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/50 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
 
@@ -171,7 +186,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-[#0d1117] font-semibold text-sm font-mono transition-colors"
+                className="w-full min-h-11 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-[#0d1117] font-semibold text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 transition-colors"
               >
                 {loading ? '...' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
               </button>
@@ -180,8 +195,9 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             <p className="mt-4 text-center text-xs text-[#8b949e] font-mono">
               {mode === 'login' ? "Pas encore de compte ? " : 'Déjà un compte ? '}
               <button
+                type="button"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                className="text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:underline transition-colors"
               >
                 {mode === 'login' ? 'Créer un compte' : 'Se connecter'}
               </button>

@@ -185,7 +185,7 @@ describe('LoginModal — validation', () => {
   it('closes on backdrop click', () => {
     const onClose = vi.fn();
     render(<MemoryRouter><LoginModal open={true} onClose={onClose} /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /×/ }));
+    fireEvent.click(screen.getByRole('button', { name: /fermer/i }));
     expect(onClose).toHaveBeenCalledOnce();
   });
 });
