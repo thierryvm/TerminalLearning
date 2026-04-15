@@ -177,7 +177,10 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
       {showScrollTop && (
         <button
           type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onClick={() => {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+          }}
           aria-label="Retour en haut"
           className="fixed right-6 bottom-[max(1.5rem,env(safe-area-inset-bottom))] w-11 h-11 flex items-center justify-center rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors shadow-lg"
         >
