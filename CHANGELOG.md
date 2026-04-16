@@ -5,6 +5,34 @@
 
 ---
 
+## Web 2026 compliance — mobile + clavier, 6 PRs livrées en 48h
+*14–16 avril 2026 · Epic THI-96 (THI-97 → THI-102)*
+
+**Le défi :** L'app était fonctionnelle sur desktop moderne, mais n'avait jamais été auditée contre les standards web 2026 : WCAG 2.2 AAA (touch targets 44 × 44 px), Apple HIG (safe-area-insets iPhone notch/home indicator), `dvh` (URL bar iOS dynamique), `prefers-reduced-motion` (utilisateurs photosensibles), `focus-visible` ring clavier. Un élève sur iPhone SE 2016, un enseignant qui navigue uniquement au clavier, un étudiant avec vertiges provoqués par les animations fluides — aucun de ces profils n'avait été testé.
+
+**La méthode :** Epic parent THI-96 décomposé en 8 sub-issues (6 shippées, 2 restantes : Desktop a11y avancé + CSS moderne 2026). Chaque sub-issue ciblée sur un écran ou un composant précis, avec validation live via Chrome DevTools MCP en émulation iPhone SE (375 × 667 × 2), screenshots avant merge, et audit Sourcery systématique.
+
+**Ce qui a été livré :**
+- **THI-97** — `viewport-fit=cover` dans `index.html` (BLOCKER iOS), `min-h-dvh` remplace `min-h-screen` partout, `@media (prefers-reduced-motion: reduce)` globalisé
+- **THI-98** — Sidebar : `padding: max(1rem, env(safe-area-inset-bottom))`, touch targets 44 px, focus-visible ring emerald
+- **THI-99** — LessonPage mobile 2026 : nav bottom safe-area, CTA Next pill 44 px, focus-visible partout
+- **THI-100** — LoginModal : `autoComplete="email|current-password|new-password"`, `inputMode="email"`, touch targets
+- **THI-101** — MarkdownPage (changelog + story) : FAB scroll-top safe-area + `prefers-reduced-motion`, touch 44 px
+- **THI-102** — Batch 4 petites pages (NotFound, Privacy, Dashboard, CommandReference) : 404 fluide via `clamp(3rem,10vw,3.75rem)`, footer safe-area Privacy, CTA Dashboard migré vers `<Button variant="emerald" size="cta-pill">`, modules `<div role="button">` avec `onKeyDown(Enter|Space)`, filtres catégorie Reference 44 px + focus-visible
+
+**Validation :**
+- 901 tests unitaires passent sur chaque PR
+- Lighthouse a11y mobile et desktop stables
+- Zéro régression visuelle desktop (tous les ajouts sont invisibles hors focus clavier)
+- Chrome DevTools MCP émulation iPhone SE 375 × 667 : 404 sur 1 ligne, FAB Privacy au-dessus du home indicator, filtres Reference tous à 44 px, focus rings visibles partout
+- Zéro erreur console sur la preview Vercel
+
+**Pourquoi c'est important :** L'accessibilité n'est pas un bonus — c'est la condition pour que l'app soit utilisable par les publics qu'elle cible réellement. Une plateforme pédagogique qui n'accueille pas correctement les utilisateurs d'iPhone d'entrée de gamme, les personnes clavier-first, ou les utilisateurs photosensibles, exclut silencieusement une partie de son audience. Dans un contexte scolaire belge où les établissements ont des parcs hétérogènes (Chromebooks 2018, iPads prêtés, PC fixes 4:3), chaque détail compte.
+
+**Leçon :** Les standards web 2026 ne sont pas une checklist à cocher en fin de projet — ils sont un ensemble de règles qui, appliquées tôt, rendent le code plus simple, pas plus complexe. `dvh` est plus court que `height: 100vh; @supports (dvh)`. `env(safe-area-inset-bottom)` est plus court qu'un hack JS de détection du notch. `focus-visible` est un pseudo-classe natif. L'accessibilité bien faite coûte zéro ligne de plus que l'accessibilité bâclée.
+
+---
+
 ## INP P75 536ms → ~26ms — fix env switcher avec startTransition
 *14 avril 2026 · THI-90*
 
