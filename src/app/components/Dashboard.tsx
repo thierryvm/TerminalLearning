@@ -256,6 +256,7 @@ export function Dashboard() {
                 return (
                   <button
                     key={`${mod.id}/${lesson.id}`}
+                    type="button"
                     onClick={() => navigate(`/app/learn/${mod.id}/${lesson.id}`)}
                     className="w-full min-h-11 flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/60"
                   >
