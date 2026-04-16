@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 14 April 2026 — INP fix THI-90 ✅ (PR #114 merged) — `setEnvironment` wrappé dans `startTransition`, lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 900 tests — Next: THI-85 shadcn/ui migration page by page
+> Last updated: 16 April 2026 — **Epic THI-96 Web 2026 Compliance** 🔄 6/8 sub-issues shipped in 48h (THI-97 → THI-102) — viewport-fit=cover, min-h-dvh, safe-area-inset-bottom, WCAG 2.2 AAA touch targets (44px), focus-visible rings emerald, autoComplete/inputMode on LoginModal, clamp() fluid typography on 404 — remaining: Desktop a11y + CSS moderne 2026 — INP fix THI-90 ✅ (PR #114 merged) — `setEnvironment` wrappé dans `startTransition`, lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 901 tests — Next: THI-85 shadcn/ui migration page by page + finish Web 2026 epic
 
 ---
 
@@ -75,6 +75,18 @@ professionals who leverage AI as a tool, not a replacement.
 - [ ] Migrate custom components to shadcn/ui — page by page (Dashboard → LessonPage → Landing → NotFound)
 - [ ] Integrate `ui-auditor` agent into mandatory session protocol (THI-86)
 - [ ] Zero custom `<button>`, `<card>`, `<badge>` patterns where shadcn equivalent exists
+
+## Phase 4e — Web 2026 Compliance 🔄 Epic THI-96 (14–16 April 2026)
+> Full desktop + mobile conformance to 2026 web standards. 6/8 sub-issues shipped in 48h. Target users: iPhone SE 2016, Chromebook 2019, keyboard-only navigators (motor accessibility), photosensitive users.
+
+- [x] **THI-97** — `viewport-fit=cover` + `min-h-dvh` — iPhone notch + iOS dynamic URL bar (PR #121, 14 April 2026)
+- [x] **THI-98** — Sidebar mobile 2026 — `env(safe-area-inset-bottom)` with `max()` fallback, touch targets ≥44px (WCAG 2.2 AAA), focus-visible emerald rings (PR #123, 15 April 2026)
+- [x] **THI-99** — LessonPage mobile 2026 — touch targets + focus-visible (PR #126, 15 April 2026)
+- [x] **THI-100** — LoginModal mobile 2026 — `autoComplete="email"`, `inputMode="email"`, `type="button"`, touch targets (PR #122, 15 April 2026)
+- [x] **THI-101** — MarkdownPage FAB scroll-top — touch + safe-area (PR #127, 16 April 2026)
+- [x] **THI-102** — NotFound / Privacy / Dashboard / CommandReference batch — touch targets + focus-visible + `clamp(3rem,10vw,3.75rem)` fluid 404 typography (PR #128, 16 April 2026)
+- [ ] **Desktop a11y** — keyboard-only navigation audit on landing + app shell
+- [ ] **CSS moderne 2026** — container queries, `@property`, `color-mix()` where it simplifies the codebase
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
 Full-stack developer path — 11 modules ✅ (64 lessons, 900 unit tests)

@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 14 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 900 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale) — **Tech debt identifiée** : composants shadcn/ui installés mais non utilisés (THI-85), agent ui-auditor créé (THI-86)
+> Dernière mise à jour : 16 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 901 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées en 48h (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Tech debt identifiée** : composants shadcn/ui installés mais non utilisés (THI-85), agent ui-auditor créé (THI-86)
 
 ---
 
@@ -60,6 +60,13 @@
 | THI-87 | perf | Remove motion/react (~40 kB gzip) — CSS animations + IntersectionObserver + cleanup 22 deps inutilisées + 8 composants shadcn dormants supprimés (PR #108) ✅ Done |
 | THI-85 | tech-debt | Migrer composants custom vers shadcn/ui — page par page. NotFound.tsx ✅ (PR #116, 14 avril 2026 — variantes `emerald` / `ghost-gh` / `pill-*`). Enhance 404 (PR #117, 14 avril 2026) — bloc "Pages utiles" SEO/GEO crawlable + fix contraste footer iPhone 14 (`#484f58` → `#8b949e`). Reste : Dashboard, LessonPage, Landing, ChangelogPage, StoryPage, CommandReference 🔄 In Progress |
 | THI-86 | agents | Ajouter ui-auditor au protocole de session obligatoire + CLAUDE.md 🔮 Backlog |
+| THI-96 | a11y | **Epic Web 2026 Compliance** — conformité desktop + mobile aux normes 2026 (6/8 sub-issues livrées en 48h) 🔄 In Progress |
+| THI-97 | a11y | `viewport-fit=cover` + `min-h-dvh` — support notch iPhone + URL bar iOS dynamique (PR #121, 14 avril 2026) ✅ Done |
+| THI-98 | a11y | Sidebar mobile 2026 — `env(safe-area-inset-bottom)`, touch targets ≥44px, focus-visible rings (PR #123, 15 avril 2026) ✅ Done |
+| THI-99 | a11y | LessonPage mobile 2026 — touch targets + focus-visible (PR #126, 15 avril 2026) ✅ Done |
+| THI-100 | a11y | LoginModal mobile 2026 — `autoComplete` + `inputMode` + touch targets (PR #122, 15 avril 2026) ✅ Done |
+| THI-101 | a11y | MarkdownPage FAB scroll-top — touch + safe-area (PR #127, 16 avril 2026) ✅ Done |
+| THI-102 | a11y | NotFound / Privacy / Dashboard / CommandReference — touch targets + focus-visible + `clamp()` typography 404 (PR #128, 16 avril 2026) ✅ Done |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |

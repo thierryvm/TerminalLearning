@@ -65,6 +65,7 @@ export const ROADMAP_AVAILABLE = [
   'Adaptation des commandes par OS',
   'Parcours guidé par niveaux',
   'Partage natif (Web Share API)',
+  'Accessibilité mobile & clavier (WCAG 2.2 AAA, safe-area iOS, focus-visible)',
 ];
 
 export const ROADMAP_IN_PROGRESS = [
@@ -77,7 +78,7 @@ export const ROADMAP_IN_PROGRESS = [
 
 export const ROADMAP_PLANNED = [
   'Mode histoire narratif',
-  'Multilingue (EN / NL)',
+  'Multilingue (EN / NL / FR)',
   'Badges et défis',
   'Révisions intelligentes',
   'Parcours avancés (Docker, scripting, IA)',
@@ -99,7 +100,7 @@ export const TRUST_BADGES = [
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
-  { icon: CheckCircle2, label: '876 tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
+  { icon: CheckCircle2, label: '901 tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
 ] as const;
 
 // ── Module icons map ──────────────────────────────────────────────────────────
