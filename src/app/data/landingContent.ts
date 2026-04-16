@@ -78,7 +78,7 @@ export const ROADMAP_IN_PROGRESS = [
 
 export const ROADMAP_PLANNED = [
   'Mode histoire narratif',
-  'Multilingue (EN / NL)',
+  'Multilingue (EN / NL / FR)',
   'Badges et défis',
   'Révisions intelligentes',
   'Parcours avancés (Docker, scripting, IA)',
