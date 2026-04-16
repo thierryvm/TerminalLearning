@@ -6,6 +6,7 @@ import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { iconMap } from '../data/moduleIcons';
 import { usePageSEO } from '../hooks/useLessonSEO';
+import { Button } from './ui/button';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -120,14 +121,16 @@ export function Dashboard() {
       </div>
 
       {/* CTA */}
-      <button
+      <Button
+        variant="emerald"
+        size="cta-pill"
         onClick={handleContinue}
-        className="w-full mb-8 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] rounded-xl py-3 px-4 transition-colors"
+        className="w-full mb-8 min-h-11"
       >
-        <Terminal size={18} />
+        <Terminal size={18} aria-hidden="true" />
         <span>{totalCompleted === 0 ? 'Commencer l\'apprentissage' : totalCompleted === totalLessons ? 'Revoir depuis le début' : 'Continuer'}</span>
-        <ChevronRight size={16} />
-      </button>
+        <ChevronRight size={16} aria-hidden="true" />
+      </Button>
 
       {/* Modules */}
       <div>
@@ -157,7 +160,7 @@ export function Dashboard() {
                 tabIndex={locked ? undefined : 0}
                 aria-label={ariaLabel}
                 aria-disabled={locked ? true : undefined}
-                className={`relative bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 transition-all duration-200 group ${
+                className={`relative min-h-11 bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                   locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 onClick={() => !locked && navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
@@ -253,8 +256,9 @@ export function Dashboard() {
                 return (
                   <button
                     key={`${mod.id}/${lesson.id}`}
+                    type="button"
                     onClick={() => navigate(`/app/learn/${mod.id}/${lesson.id}`)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition-colors text-left"
+                    className="w-full min-h-11 flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/60"
                   >
                     <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0">

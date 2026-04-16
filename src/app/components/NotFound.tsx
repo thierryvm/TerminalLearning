@@ -134,7 +134,7 @@ export function NotFound() {
           className="animate-fade-in-up text-center mb-8"
           style={{ animationDelay: '200ms' }}
         >
-          <div className="text-6xl font-bold text-[#e6edf3] mb-2 tracking-tight">
+          <div className="text-[clamp(3rem,10vw,3.75rem)] font-bold text-[#e6edf3] mb-2 tracking-tight leading-none">
             4<span className="text-emerald-400">0</span>4
           </div>
           <p className="text-[#8b949e] text-base">
