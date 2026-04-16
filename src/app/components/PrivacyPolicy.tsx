@@ -165,7 +165,7 @@ export function PrivacyPolicy() {
         </div>
       </main>
 
-      <footer className="border-t border-[#30363d]/50 px-6 py-6 text-center text-[#8b949e] text-sm">
+      <footer className="border-t border-[#30363d]/50 px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-[#8b949e] text-sm">
         <span className="font-mono">Terminal Learning</span> · Projet open source · MIT License
       </footer>
 
@@ -174,11 +174,14 @@ export function PrivacyPolicy() {
         <Button
           variant="floating"
           size="icon-round"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onClick={() => {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+          }}
           aria-label="Retour en haut"
-          className="fixed bottom-6 right-6 z-50"
+          className="fixed right-6 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-50 w-11 h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
         >
-          <ArrowUp size={18} />
+          <ArrowUp size={18} aria-hidden="true" />
         </Button>
       )}
     </div>

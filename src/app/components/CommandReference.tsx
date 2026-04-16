@@ -719,8 +719,9 @@ export function CommandReference() {
         {categories.map((cat) => (
           <button
             key={cat}
+            type="button"
             onClick={() => setActiveCategory(cat)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            className={`min-h-11 text-xs px-3 py-1.5 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
               activeCategory === cat
                 ? 'bg-[#e6edf3] text-[#0d1117] border-[#e6edf3]'
                 : 'text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3]'
