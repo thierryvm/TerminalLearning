@@ -173,10 +173,10 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
         <Button
           type="button"
           variant="nav-link"
-          size="link-inline"
+          size="tl-nav-inline"
           onClick={() => navigate('/app')}
           aria-label="Retour au tableau de bord"
-          className="gap-1.5 min-h-11 px-2 -ml-2 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+          className="-ml-2"
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">Tableau de bord</span>
@@ -197,11 +197,11 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
         <Button
           type="button"
           variant="ghost-gh"
-          size="link-inline"
+          size="tl-nav-inline"
           onClick={() => setShowTerminal((v) => !v)}
           aria-pressed={showTerminal}
           aria-label={showTerminal ? 'Afficher le contenu de la leçon' : 'Afficher le terminal interactif'}
-          className="lg:hidden gap-1.5 min-h-11 px-3 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-[#30363d]"
+          className="lg:hidden px-3"
         >
           <Terminal className="size-3.5" aria-hidden="true" />
           <span className="text-xs">{showTerminal ? 'Contenu' : 'Terminal'}</span>
@@ -263,11 +263,11 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                     <Button
                       type="button"
                       variant="nav-link"
-                      size="link-inline"
+                      size="tl-nav-inline-xs"
                       onClick={() => setShowHint((v) => !v)}
                       aria-expanded={showHint}
                       aria-controls={`lesson-hint-panel-${moduleId}-${lessonId}`}
-                      className="gap-1 min-h-11 px-2 -ml-2 rounded text-xs font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+                      className="-ml-2"
                     >
                       <Lightbulb className="size-3" aria-hidden="true" />
                       {showHint ? "Masquer l'indice" : "Afficher un indice"}
@@ -293,11 +293,11 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             <Button
               type="button"
               variant="nav-link"
-              size="link-inline"
+              size="tl-nav-inline"
               onClick={() => handleNavigate(prevLesson)}
               disabled={!prevLesson}
               aria-disabled={!prevLesson}
-              className="gap-2 min-h-11 px-2 -ml-2 rounded text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent disabled:opacity-30"
+              className="gap-2 -ml-2 disabled:opacity-30"
             >
               <ChevronLeft className="size-4" aria-hidden="true" />
               <span>Précédent</span>
@@ -307,10 +307,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               <Button
                 type="button"
                 variant="emerald-soft"
-                size="link-inline"
+                size="tl-nav-cta"
                 onClick={() => handleNavigate(nextLesson)}
                 aria-label="Passer à la leçon suivante"
-                className="gap-2 min-h-11 rounded-lg px-3 py-2 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-emerald-500/20"
               >
                 <span>Suivant</span>
                 <ChevronRight className="size-4" aria-hidden="true" />
@@ -319,10 +318,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               <Button
                 type="button"
                 variant="emerald-soft"
-                size="link-inline"
+                size="tl-nav-cta"
                 onClick={() => navigate('/app')}
                 aria-label="Retour au tableau de bord"
-                className="gap-2 min-h-11 rounded-lg px-3 py-2 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-emerald-500/20"
               >
                 <span>Tableau de bord</span>
                 <ChevronRight className="size-4" aria-hidden="true" />
@@ -341,13 +339,13 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             <Button
               type="button"
               variant="nav-link"
-              size="link-inline"
+              size="tl-nav-inline-xs"
               onClick={() => {
                 setTerminalKey(`${moduleId}-${lessonId}-${Date.now()}`);
                 setExerciseMessage('');
               }}
               aria-label="Réinitialiser le terminal"
-              className="gap-1.5 min-h-11 px-2 -mr-2 rounded text-xs font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+              className="gap-1.5 -mr-2"
             >
               <RotateCcw className="size-3" aria-hidden="true" />
               <span>Réinitialiser</span>
@@ -386,9 +384,9 @@ export function LessonPage() {
           <Button
             type="button"
             variant="nav-link"
-            size="link-inline"
+            size="tl-nav-inline"
             onClick={() => navigate('/app')}
-            className="mt-4 min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+            className="mt-4 px-4 text-emerald-400 hover:text-emerald-300"
           >
             Retour au tableau de bord
           </Button>
@@ -407,9 +405,9 @@ export function LessonPage() {
           <Button
             type="button"
             variant="nav-link"
-            size="link-inline"
+            size="tl-nav-inline"
             onClick={() => navigate('/app')}
-            className="mt-4 min-h-11 px-4 rounded text-emerald-400 hover:text-emerald-300 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 focus-visible:border-transparent"
+            className="mt-4 px-4 text-emerald-400 hover:text-emerald-300"
           >
             Retour au tableau de bord
           </Button>
