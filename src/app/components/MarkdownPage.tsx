@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Terminal, ArrowLeft, ArrowUp } from 'lucide-react';
 import type { Components } from 'react-markdown';
+import { Button } from './ui/button';
 
 const mdComponents: Components = {
   h1: ({ children }) => (
@@ -149,13 +150,14 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
           <Terminal size={18} className="text-emerald-400" />
           <span className="font-mono text-sm text-[#e6edf3]">Terminal Learning</span>
         </div>
-        <button
+        <Button
+          variant="nav-link"
+          size="link-inline"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[#8b949e] hover:text-[#e6edf3] text-sm transition-colors"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={14} className="size-[14px]" aria-hidden="true" />
           Retour
-        </button>
+        </Button>
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
@@ -175,17 +177,19 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
 
       {/* Scroll to top */}
       {showScrollTop && (
-        <button
+        <Button
           type="button"
+          variant="floating"
+          size="icon-round"
           onClick={() => {
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
           }}
           aria-label="Retour en haut"
-          className="fixed right-6 bottom-[max(1.5rem,env(safe-area-inset-bottom))] w-11 h-11 flex items-center justify-center rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors shadow-lg"
+          className="fixed right-6 bottom-[max(1.5rem,env(safe-area-inset-bottom))] w-11 h-11 focus-visible:ring-emerald-500/60"
         >
           <ArrowUp size={18} aria-hidden="true" />
-        </button>
+        </Button>
       )}
 
       {/* Footer */}
@@ -195,9 +199,14 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
             <Terminal size={12} className="text-emerald-400" />
             Terminal Learning · MIT License
           </span>
-          <button onClick={() => navigate('/')} className="hover:text-[#e6edf3] transition-colors">
+          <Button
+            variant="nav-link"
+            size="link-inline"
+            onClick={() => navigate('/')}
+            className="text-xs"
+          >
             ← Accueil
-          </button>
+          </Button>
         </div>
       </footer>
     </div>
