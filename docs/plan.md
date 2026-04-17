@@ -98,6 +98,7 @@ Cibles d'adoption prioritaires : **AVIQ / Forem / Bruxelles Formation** (agile, 
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |
 | THI-105 | tech-debt | **Consolidation post-migration `button.tsx`** — suite feedback Sourcery sur la complexité CVA après umbrella **THI-91** : extraire les tokens de couleur GitHub-dark (`#0d1117`, `#161b22`, etc.) dans `tailwind.config.ts` ou CSS vars, regrouper les variantes `tl-*` par famille (sidebar / nav / filter / tab), documenter la convention de préfixage. Non bloquant, à traiter quand d'autres composants UI devront être migrés. 🔮 Backlog |
+| THI-106 | a11y | **Fix A11y Button variants (suite audit THI-91)** — focus-visible ring emerald ajouté sur `tl-icon-ghost`, `tl-tab`, `tl-tab-active`, `tl-filter-pill`, `tl-filter-pill-active` ; Sidebar module verrouillé passe de `aria-disabled` seul à `disabled={locked}` natif (sorti du tab order) ; `tl-sidebar-row-locked` reçoit `disabled:opacity-100` pour préserver le contraste AA sur `#0d1117` ; cleanup de `aria-disabled` redondant dans LessonPage. Scope étendu pendant audit (5 findings traités en une PR courte). PR #140, 18 avril 2026 ✅ Done |
 
 ---
 
