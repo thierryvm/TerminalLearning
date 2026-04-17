@@ -23,19 +23,19 @@ const buttonVariants = cva(
         emerald:
           "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold hover:scale-[1.02] active:scale-[0.98]",
         "ghost-gh":
-          "border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium",
+          "border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium focus-visible:border-[#30363d] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — Landing nav + footer variants (THI-92)
         "emerald-nav":
           "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-medium transition-colors",
         "ghost-gh-neutral":
           "border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium",
         "nav-link":
-          "text-[#8b949e] hover:text-[#e6edf3] transition-colors",
+          "text-[#8b949e] hover:text-[#e6edf3] transition-colors focus-visible:border-transparent focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         floating:
           "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg",
         // Terminal Learning — translucent emerald CTA (LessonPage nav, THI-99)
         "emerald-soft":
-          "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors",
+          "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors focus-visible:border-emerald-500/20 focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — list row (Dashboard recent lessons, THI-95)
         "tl-ghost":
           "w-full justify-start text-left whitespace-normal text-[#e6edf3] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
@@ -106,6 +106,12 @@ const buttonVariants = cva(
         "tl-sidebar-lesson": "h-auto min-h-10 px-2 py-1.5 text-xs rounded-md",
         // Terminal Learning — Env switcher pill
         "tl-env-pill": "h-auto flex-1 min-h-9 py-1.5 px-1 text-[10px] gap-1 rounded-md",
+        // Terminal Learning — LessonPage inline nav (back, reset, mobile toggle, hint, prev)
+        "tl-nav-inline": "h-auto min-h-11 rounded px-2 text-sm font-normal gap-1.5",
+        // Terminal Learning — LessonPage hint toggle (xs, tighter gap)
+        "tl-nav-inline-xs": "h-auto min-h-11 rounded px-2 text-xs font-normal gap-1",
+        // Terminal Learning — LessonPage next/finish CTA (emerald-soft)
+        "tl-nav-cta": "h-auto min-h-11 rounded-lg px-3 py-2 text-sm font-normal gap-2",
       },
     },
     defaultVariants: {
