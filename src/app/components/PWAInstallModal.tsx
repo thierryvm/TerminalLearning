@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Smartphone, Monitor, Share, MoreVertical, Plus, Download, CheckCircle2 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { Button } from './ui/button';
 
 interface PWAInstallModalProps {
   onClose: () => void;
@@ -56,12 +57,13 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
           <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-[#e6edf3] mb-2">Déjà installée !</h2>
           <p className="text-sm text-[#8b949e] mb-6">Terminal Learning est déjà installée sur cet appareil.</p>
-          <button
+          <Button
+            variant="emerald-soft"
+            size="cta-pill-sm"
             onClick={onClose}
-            className="px-6 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/20 transition-colors"
           >
             Fermer
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -81,29 +83,28 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
             </div>
             <h2 className="text-sm font-semibold text-[#e6edf3]">Installer l'application</h2>
           </div>
-          <button
+          <Button
+            variant="tl-icon-ghost"
+            size="tl-icon-sm"
             onClick={onClose}
-            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1 rounded"
             aria-label="Fermer"
           >
-            <X size={16} />
-          </button>
+            <X size={16} aria-hidden="true" />
+          </Button>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-[#30363d]">
           {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => (
-            <button
+            <Button
               key={tab}
+              variant={activeTab === tab ? 'tl-tab-active' : 'tl-tab'}
+              size="tl-tab-size"
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 text-xs font-mono transition-colors ${
-                activeTab === tab
-                  ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px'
-                  : 'text-[#8b949e] hover:text-[#e6edf3]'
-              }`}
+              aria-pressed={activeTab === tab}
             >
               {TAB_LABELS[tab]}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -123,14 +124,15 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
               {canPrompt ? (
                 <div className="text-center space-y-3 py-2">
                   <p className="text-sm text-[#8b949e]">Ton navigateur supporte l'installation directe.</p>
-                  <button
+                  <Button
+                    variant="emerald"
+                    size="tl-install-cta"
                     onClick={handleNativePrompt}
                     disabled={installing}
-                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
-                    <Download size={16} />
+                    <Download size={16} aria-hidden="true" />
                     {installing ? 'Installation...' : 'Installer Terminal Learning'}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <Steps steps={ANDROID_MANUAL_STEPS} />
@@ -143,14 +145,15 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
               {canPrompt ? (
                 <div className="text-center space-y-3 py-2">
                   <p className="text-sm text-[#8b949e]">Installation disponible pour Chrome et Edge.</p>
-                  <button
+                  <Button
+                    variant="emerald"
+                    size="tl-install-cta"
                     onClick={handleNativePrompt}
                     disabled={installing}
-                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
-                    <Monitor size={16} />
+                    <Monitor size={16} aria-hidden="true" />
                     {installing ? 'Installation...' : 'Installer comme application desktop'}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <Steps steps={DESKTOP_MANUAL_STEPS} />

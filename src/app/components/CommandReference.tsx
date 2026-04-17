@@ -3,6 +3,7 @@ import { Search, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import type { EnvId } from '../data/curriculum';
 import { usePageSEO } from '../hooks/useLessonSEO';
+import { Button } from './ui/button';
 
 interface CommandEntry {
   /** Command name shown — can be overridden per env */
@@ -717,18 +718,16 @@ export function CommandReference() {
       {/* Category filters */}
       <div className="flex gap-2 flex-wrap mb-6">
         {categories.map((cat) => (
-          <button
+          <Button
             key={cat}
             type="button"
+            variant={activeCategory === cat ? 'tl-filter-pill-active' : 'tl-filter-pill'}
+            size="tl-filter-pill-size"
             onClick={() => setActiveCategory(cat)}
-            className={`min-h-11 text-xs px-3 py-1.5 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
-              activeCategory === cat
-                ? 'bg-[#e6edf3] text-[#0d1117] border-[#e6edf3]'
-                : 'text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3]'
-            }`}
+            aria-pressed={activeCategory === cat}
           >
             {cat}
-          </button>
+          </Button>
         ))}
       </div>
 
