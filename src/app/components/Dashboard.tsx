@@ -7,6 +7,8 @@ import { useProgress } from '../context/ProgressContext';
 import { iconMap } from '../data/moduleIcons';
 import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Progress } from './ui/progress';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -32,6 +34,10 @@ const MODULE_BORDER: Record<string, string> = {
   reseau: 'border-cyan-400/30 hover:border-cyan-400/60',
   git: 'border-orange-500/30 hover:border-orange-500/60',
   'github-collaboration': 'border-violet-500/30 hover:border-violet-500/60',
+};
+
+type ModuleProgressStyle = React.CSSProperties & {
+  '--tl-progress-color'?: string;
 };
 
 export function Dashboard() {
@@ -80,44 +86,47 @@ export function Dashboard() {
         </div>
 
         {/* Overall progress */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Award size={18} className="text-amber-400" />
-              <span className="text-sm text-[#8b949e]">Progression globale</span>
+        <Card variant="tl-surface" className="p-5">
+          <CardHeader className="p-0 mb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award size={18} className="text-amber-400" />
+                <span className="text-sm text-[#8b949e]">Progression globale</span>
+              </div>
+              <span className="text-emerald-400 font-mono text-sm">{overallProgress}%</span>
             </div>
-            <span className="text-emerald-400 font-mono text-sm">{overallProgress}%</span>
-          </div>
-          <div className="h-2 bg-[#21262d] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700"
-              style={{ width: `${overallProgress}%` }}
+          </CardHeader>
+          <CardContent className="p-0">
+            <Progress
+              variant="tl"
+              value={overallProgress}
+              aria-label={`Progression globale : ${overallProgress}%`}
             />
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-[#8b949e]">
-            <span>{totalCompleted} leçons complétées</span>
-            <span>{totalLessons - totalCompleted} restantes</span>
-          </div>
-        </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-[#8b949e]">
+              <span>{totalCompleted} leçons complétées</span>
+              <span>{totalLessons - totalCompleted} restantes</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex flex-col items-center">
+        <Card variant="tl-stat">
           <BookOpen size={20} className="text-blue-400 mb-2" />
           <div className="text-xl text-[#e6edf3] font-mono">{totalLessons}</div>
           <div className="text-xs text-[#8b949e] text-center">Leçons au total</div>
-        </div>
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex flex-col items-center">
+        </Card>
+        <Card variant="tl-stat">
           <CheckCircle2 size={20} className="text-emerald-400 mb-2" />
           <div className="text-xl text-[#e6edf3] font-mono">{totalCompleted}</div>
           <div className="text-xs text-[#8b949e] text-center">Complétées</div>
-        </div>
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 flex flex-col items-center">
+        </Card>
+        <Card variant="tl-stat">
           <Zap size={20} className="text-amber-400 mb-2" />
           <div className="text-xl text-[#e6edf3] font-mono">{curriculum.length}</div>
           <div className="text-xs text-[#8b949e] text-center">Modules</div>
-        </div>
+        </Card>
       </div>
 
       {/* CTA */}
@@ -154,13 +163,14 @@ export function Dashboard() {
               : `${mod.title} — ${completed}/${total} leçons`;
 
             return (
-              <div
+              <Card
                 key={mod.id}
+                variant="tl-module"
                 role={locked ? undefined : 'button'}
                 tabIndex={locked ? undefined : 0}
                 aria-label={ariaLabel}
                 aria-disabled={locked ? true : undefined}
-                className={`relative min-h-11 bg-gradient-to-br ${gradient} border ${border} rounded-xl p-4 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                className={`relative min-h-11 border group ${gradient} ${border} ${
                   locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 onClick={() => !locked && navigate(`/app/learn/${mod.id}/${mod.lessons[0].id}`)}
@@ -208,16 +218,17 @@ export function Dashboard() {
                 {!locked && (
                   <>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-black/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%`, backgroundColor: mod.color }}
-                        />
-                      </div>
+                      <Progress
+                        variant="tl-thin"
+                        value={pct}
+                        className="flex-1"
+                        style={{ '--tl-progress-color': mod.color } as ModuleProgressStyle}
+                        aria-label={`${mod.title} : ${completed} sur ${total} leçons`}
+                      />
                       <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
                     </div>
 
-                    {/* Lessons dots */}
+                    {/* Lessons dots — micro decoration, no shadcn equivalent */}
                     <div className="flex gap-1 mt-2.5">
                       {mod.lessons.map((lesson) => (
                         <div
@@ -232,7 +243,7 @@ export function Dashboard() {
                     </div>
                   </>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -242,7 +253,7 @@ export function Dashboard() {
       {totalCompleted > 0 && (
         <div className="mt-8">
           <h2 className="text-[#e6edf3] mb-4">Leçons récentes</h2>
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl divide-y divide-[#21262d]">
+          <Card variant="tl-surface" className="divide-y divide-[#21262d] overflow-hidden">
             {curriculum
               .flatMap((mod) =>
                 mod.lessons
@@ -254,11 +265,12 @@ export function Dashboard() {
               .map(({ mod, lesson }) => {
                 const Icon = iconMap[mod.iconName] ?? BookOpen;
                 return (
-                  <button
+                  <Button
                     key={`${mod.id}/${lesson.id}`}
                     type="button"
+                    variant="tl-ghost"
+                    size="tl-list-row"
                     onClick={() => navigate(`/app/learn/${mod.id}/${lesson.id}`)}
-                    className="w-full min-h-11 flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/60"
                   >
                     <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -269,10 +281,10 @@ export function Dashboard() {
                       </div>
                     </div>
                     <ChevronRight size={14} className="text-[#8b949e] shrink-0" />
-                  </button>
+                  </Button>
                 );
               })}
-          </div>
+          </Card>
         </div>
       )}
     </div>

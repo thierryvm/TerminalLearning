@@ -1,15 +1,41 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "./utils";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+const cardVariants = cva(
+  "flex flex-col rounded-xl border",
+  {
+    variants: {
+      variant: {
+        default: "bg-card text-card-foreground gap-6",
+        // Terminal Learning — GitHub-dark surface (THI-95)
+        "tl-surface":
+          "bg-[#161b22] border-[#30363d] text-[#e6edf3] gap-0",
+        // Terminal Learning — compact stat tile (THI-95)
+        "tl-stat":
+          "bg-[#161b22] border-[#30363d] text-[#e6edf3] items-center justify-center p-4 gap-0",
+        // Terminal Learning — module card with dynamic gradient (THI-95)
+        // The gradient + border colour are injected via className at usage site.
+        "tl-module":
+          "bg-gradient-to-br text-[#e6edf3] transition-all duration-200 p-4 gap-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+function Card({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border",
-        className,
-      )}
+      className={cn(cardVariants({ variant, className }))}
       {...props}
     />
   );
@@ -89,4 +115,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  cardVariants,
 };

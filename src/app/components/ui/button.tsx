@@ -36,6 +36,9 @@ const buttonVariants = cva(
         // Terminal Learning — translucent emerald CTA (LessonPage nav, THI-99)
         "emerald-soft":
           "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors",
+        // Terminal Learning — list row (Dashboard recent lessons, THI-95)
+        "tl-ghost":
+          "w-full justify-start text-left whitespace-normal text-[#e6edf3] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -50,6 +53,8 @@ const buttonVariants = cva(
         "icon-round": "size-auto rounded-full p-3",
         "link-inline": "h-auto p-0",
         "footer-link": "h-auto min-h-11 px-2",
+        // Terminal Learning — Dashboard list row (THI-95)
+        "tl-list-row": "h-auto min-h-11 px-4 py-3 rounded-none",
       },
     },
     defaultVariants: {
