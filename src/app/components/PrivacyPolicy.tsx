@@ -27,13 +27,15 @@ export function PrivacyPolicy() {
           <Terminal size={18} className="text-emerald-400" />
           <span className="font-mono text-sm text-[#e6edf3]">Terminal Learning</span>
         </div>
-        <button
+        <Button
+          variant="nav-link"
+          size="link-inline"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[#8b949e] hover:text-[#e6edf3] text-sm transition-colors"
+          className="text-sm gap-2"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={14} aria-hidden="true" />
           Retour
-        </button>
+        </Button>
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
