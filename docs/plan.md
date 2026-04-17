@@ -1,7 +1,32 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 16 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 901 tests unitaires + 176 E2E — Architecture stratégique validée (THI-35) : Terminal Sentinel (Phase 5.5), RBAC complet (Phase 7), Admin Panel 7 sections (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées en 48h (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Tech debt identifiée** : composants shadcn/ui installés mais non utilisés (THI-85), agent ui-auditor créé (THI-86)
+> Dernière mise à jour : 17 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 901 tests unitaires + 176 E2E — **Vision consolidée 17 avril 2026** : repositionnement LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
+
+---
+
+## Vision consolidée (17 avril 2026)
+
+Décisions stratégiques ancrées dans les 4 ADRs :
+- [ADR-001](./adr/ADR-001-lti-first-positioning.md) — **Positionnement LTI-first** : tool pédagogique spécialisée intégrable dans Moodle/Smartschool/Classroom via LTI 1.3, pas un LMS complet
+- [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour étudiants précaires, un seul SDK compatible OpenAI
+- [ADR-003](./adr/ADR-003-ttfr-kpi.md) — **TTFR KPI** : Time To First Real-world command comme mesure de valeur pédagogique réelle
+- [ADR-004](./adr/ADR-004-classroom-composer-ui.md) — **Classroom-as-Code** : UI Composer visuel, JSON en stockage invisible, fork/remix entre profs
+
+Chantiers structurants qui en découlent (voir `docs/ROADMAP.md` Phases 10-13) :
+- Demo interactive landing ("try-before-signup" 30 secondes)
+- Tuteur IA socratique transversal (BYOK + garde-fous + OpenRouter)
+- Audit multi-tenancy RLS (fondation B2B institutionnel)
+- Pages `/guide/:audience` (teacher/student/institution)
+- Vérification identité 4 couches (domain allowlist BE + pending + invitation code + SSO)
+- Classroom Composer UI (gros chantier 2-3 semaines)
+- LTI 1.3 + SSO OIDC (Smartschool, Google EDU, MS EDU — 1-2 mois)
+- i18n FR/NL/EN (DE plus tard) avec `react-i18next`
+- Terminal Sentinel spin-off (modularisation zéro couplage + intégration Super-Admin panel)
+
+Cibles d'adoption prioritaires : **AVIQ / Forem / Bruxelles Formation** (agile, B2B public numérique), puis CFA/EFP, Hautes Écoles, Universités, secondaires FWB, puis Smartschool Flandre post-traduction NL.
+
+**Règle absolue** : tous les claims B2B publics doivent être 100% vérifiables (voir `docs/GUIDELINES.md` section Crédibilité).
 
 ---
 
