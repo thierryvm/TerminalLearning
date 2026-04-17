@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, Download,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import { iconMap } from '../data/moduleIcons';
-import { PWAInstallModal } from './PWAInstallModal';
-import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Button } from './ui/button';
 
 interface SidebarProps {
@@ -22,8 +20,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const { selectedEnv, setEnvironment } = useEnvironment();
-  const { isInstalled } = usePWAInstall();
-  const [showPWAModal, setShowPWAModal] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -249,39 +245,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <UserMenu
             syncStatus={syncStatus}
             extraActions={
-              <>
-                {!isInstalled && (
-                  <Button
-                    type="button"
-                    variant="tl-sidebar-icon"
-                    size="tl-icon-44-md"
-                    onClick={() => setShowPWAModal(true)}
-                    className="hover:text-emerald-400 hover:bg-[#21262d]"
-                    aria-label="Installer l'application"
-                    title="Installer l'application"
-                  >
-                    <Download size={13} className="size-[13px]" aria-hidden="true" />
-                  </Button>
-                )}
-                <Button
-                  asChild
-                  variant="tl-sidebar-icon"
-                  size="tl-icon-44-md"
-                  className="hover:bg-[#21262d]"
+              <Button
+                asChild
+                variant="tl-sidebar-icon"
+                size="tl-icon-44-md"
+                className="hover:bg-[#21262d]"
+              >
+                <NavLink
+                  to="/"
+                  onClick={onClose}
+                  aria-label="Retour à l'accueil"
+                  title="Retour à l'accueil"
                 >
-                  <NavLink
-                    to="/"
-                    onClick={onClose}
-                    aria-label="Retour à l'accueil"
-                    title="Retour à l'accueil"
-                  >
-                    <Home size={13} className="size-[13px]" aria-hidden="true" />
-                  </NavLink>
-                </Button>
-              </>
+                  <Home size={13} className="size-[13px]" aria-hidden="true" />
+                </NavLink>
+              </Button>
             }
           />
-          {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
         </div>
       </aside>
     </>
