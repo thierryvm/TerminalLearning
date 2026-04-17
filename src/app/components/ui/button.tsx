@@ -39,6 +39,19 @@ const buttonVariants = cva(
         // Terminal Learning — list row (Dashboard recent lessons, THI-95)
         "tl-ghost":
           "w-full justify-start text-left whitespace-normal text-[#e6edf3] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
+        // Terminal Learning — icon-only ghost action (close X, modal dismiss)
+        "tl-icon-ghost":
+          "rounded text-[#8b949e] hover:text-[#e6edf3] transition-colors",
+        // Terminal Learning — tab segmented control (PWAInstallModal tabs)
+        "tl-tab":
+          "font-mono transition-colors text-[#8b949e] hover:text-[#e6edf3] rounded-none",
+        "tl-tab-active":
+          "font-mono transition-colors text-emerald-400 border-b-2 border-emerald-400 -mb-px rounded-none",
+        // Terminal Learning — CommandReference filter pill
+        "tl-filter-pill":
+          "border transition-colors text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3]",
+        "tl-filter-pill-active":
+          "border transition-colors bg-[#e6edf3] text-[#0d1117] border-[#e6edf3] hover:bg-[#e6edf3]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -55,6 +68,16 @@ const buttonVariants = cva(
         "footer-link": "h-auto min-h-11 px-2",
         // Terminal Learning — Dashboard list row (THI-95)
         "tl-list-row": "h-auto min-h-11 px-4 py-3 rounded-none",
+        // Terminal Learning — Small icon button (modal close X, p-1)
+        "tl-icon-sm": "size-auto p-1",
+        // Terminal Learning — CTA pill small (rounded-lg, py-2) — "Fermer" in installed modal
+        "cta-pill-sm": "h-auto rounded-lg px-6 py-2 text-sm",
+        // Terminal Learning — Install CTA (full-width, rounded-lg, py-2.5)
+        "tl-install-cta": "h-auto w-full py-2.5 text-sm rounded-lg gap-2",
+        // Terminal Learning — Tab in modal (flex-1, py-2.5, no rounded)
+        "tl-tab-size": "h-auto flex-1 py-2.5 text-xs",
+        // Terminal Learning — CommandReference filter pill
+        "tl-filter-pill-size": "h-auto min-h-11 px-3 py-1.5 text-xs rounded-full",
       },
     },
     defaultVariants: {
