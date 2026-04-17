@@ -296,7 +296,6 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               size="tl-nav-inline"
               onClick={() => handleNavigate(prevLesson)}
               disabled={!prevLesson}
-              aria-disabled={!prevLesson}
               className="gap-2 -ml-2 disabled:opacity-30"
             >
               <ChevronLeft className="size-4" aria-hidden="true" />
