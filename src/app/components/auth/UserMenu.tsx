@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { LogOut, LogIn, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Button } from '../ui/button';
 
 interface UserMenuProps {
   syncStatus: 'local' | 'synced' | 'syncing' | 'error';
@@ -80,13 +81,15 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
-        <button
+        <Button
+          variant="emerald-soft"
+          size="link-inline"
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+          className="w-full gap-2 py-1.5 rounded-md text-xs font-mono hover:border-emerald-500/40"
         >
           <LogIn size={12} aria-hidden="true" />
           Se connecter
-        </button>
+        </Button>
       </div>
     );
   }
@@ -121,14 +124,16 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="link-inline"
           onClick={handleSignOut}
           disabled={signingOut}
-          className="w-full flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-mono text-[#f85149] border border-[#f85149]/20 hover:bg-[#f85149]/10 hover:border-[#f85149]/40 transition-all outline-none focus-visible:ring-1 focus-visible:ring-[#f85149] disabled:opacity-50"
+          className="w-full gap-2 py-1.5 rounded-md text-xs font-mono text-[#f85149] border border-[#f85149]/20 hover:bg-[#f85149]/10 hover:text-[#f85149] hover:border-[#f85149]/40 transition-all focus-visible:ring-[#f85149]/60 focus-visible:ring-2 focus-visible:ring-offset-0"
         >
           <LogOut size={12} aria-hidden="true" />
           {signingOut ? 'Déconnexion…' : 'Se déconnecter'}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -136,19 +141,22 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
   // ── Variant compact — navbar / header ─────────────────────────────────────────
   return (
     <div ref={menuRef} className="relative">
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="link-inline"
         onClick={() => setOpen((o) => !o)}
         aria-label={`Compte de ${displayName} — ${sync.label}`}
         aria-expanded={open}
         aria-haspopup="true"
-        className="relative flex items-center justify-center rounded-full ring-2 ring-transparent hover:ring-emerald-500/50 focus-visible:ring-emerald-500 transition-all outline-none"
+        className="relative rounded-full ring-2 ring-transparent hover:ring-emerald-500/50 hover:bg-transparent focus-visible:ring-emerald-500 focus-visible:ring-2 focus-visible:ring-offset-0 transition-all"
       >
         <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
         <span
           aria-hidden="true"
           className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0d1117] ${sync.dot}`}
         />
-      </button>
+      </Button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 z-50 w-60 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl overflow-hidden">
@@ -164,14 +172,16 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
             </div>
           </div>
           <div className="py-1">
-            <button
+            <Button
+              variant="ghost"
+              size="link-inline"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#f85149] hover:bg-[#f85149]/10 font-mono transition-colors disabled:opacity-50 outline-none focus-visible:bg-[#f85149]/10"
+              className="w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[#f85149] font-mono hover:bg-[#f85149]/10 hover:text-[#f85149] rounded-none transition-colors focus-visible:ring-[#f85149]/60 focus-visible:ring-2 focus-visible:ring-offset-0"
             >
               <LogOut size={14} aria-hidden="true" />
               {signingOut ? 'Déconnexion…' : 'Se déconnecter'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
