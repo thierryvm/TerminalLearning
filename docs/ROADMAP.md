@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 17 April 2026 — **Strategic vision consolidated (ADRs 001-004)**: LTI-first positioning, OpenRouter BYOK 4-tiers, TTFR KPI, Classroom Composer UI — **Epic THI-96 Web 2026 Compliance** 🔄 6/8 sub-issues shipped (THI-97 → THI-102) — viewport-fit=cover, min-h-dvh, safe-area-inset-bottom, WCAG 2.2 AAA touch targets (44px), focus-visible rings emerald, autoComplete/inputMode on LoginModal, clamp() fluid typography on 404 — remaining: Desktop a11y + CSS moderne 2026 — INP fix THI-90 ✅ (PR #114 merged), lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — 11 modules / 64 lessons / 901 tests — **Next priorities**: landing interactive demo, BYOK OpenRouter + AI tutor socratic A1, multi-tenancy RLS audit, i18n FR/NL/EN setup
+> Last updated: 18 April 2026 — **Strategic vision consolidated (ADRs 001-004)**: LTI-first positioning, OpenRouter BYOK 4-tiers, TTFR KPI, Classroom Composer UI — **Epic THI-96 Web 2026 Compliance** 🔄 6/8 sub-issues shipped (THI-97 → THI-102) — viewport-fit=cover, min-h-dvh, safe-area-inset-bottom, WCAG 2.2 AAA touch targets (44px), focus-visible rings emerald, autoComplete/inputMode on LoginModal, clamp() fluid typography on 404 — remaining: Desktop a11y + CSS moderne 2026 — **shadcn/ui migration ✅ closed** (THI-91 umbrella, THI-106 a11y fix, THI-107 11 native buttons migrated — PRs #131/#134/#135/#137/#139/#140/#142) — INP fix THI-90 ✅ (PR #114 merged), lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — 11 modules / 64 lessons / 901 tests — **Next priorities**: THI-105 button.tsx refactor (CVA tokens + tl-env-pill-lg), landing interactive demo, BYOK OpenRouter + AI tutor socratic A1, multi-tenancy RLS audit, i18n FR/NL/EN setup
 
 ---
 
@@ -71,10 +71,12 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Agent `ui-auditor` — design system compliance guard
 - [x] INP fix — `setEnvironment` wrappé dans `startTransition` au context owner, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, THI-90)
 
-## Phase 4d — Design System Compliance 🔮 Planned (THI-85)
-- [ ] Migrate custom components to shadcn/ui — page by page (Dashboard → LessonPage → Landing → NotFound)
-- [ ] Integrate `ui-auditor` agent into mandatory session protocol (THI-86)
-- [ ] Zero custom `<button>`, `<card>`, `<badge>` patterns where shadcn equivalent exists
+## Phase 4d — Design System Compliance ✅ Done (THI-85 / THI-91 / THI-106 / THI-107)
+- [x] Migrate custom components to shadcn/ui — NotFound (THI-85), Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunk B/C (THI-91 chunks B/C), Sidebar (THI-91 chunk A), LoginModal / UserMenu / PrivacyPolicy / App FallbackUI (THI-107)
+- [x] `ui-auditor` agent integrated into mandatory session protocol (THI-86)
+- [x] A11y harmonisation on Button CVA variants — focus-visible rings emerald, native `disabled` on Sidebar locked rows (THI-106)
+- [x] Zero native `<button>` in src/app/ except 2 intentional exceptions: `src/app/components/ui/sidebar.tsx` (shadcn internal) + `src/app/components/Landing.tsx:153` env toggle (deferred to THI-105 — needs new `tl-env-pill-lg` size)
+- [ ] **THI-105** — `button.tsx` post-migration refactor: extract GitHub-dark hex tokens (`#0d1117`, `#161b22`, etc.) to `tailwind.config.ts` or CSS vars, group `tl-*` variants by family (sidebar / nav / filter / tab), add `tl-env-pill-lg` size, migrate Landing env toggle, document prefix convention 🔮 Backlog
 
 ## Phase 4e — Web 2026 Compliance 🔄 Epic THI-96 (14–16 April 2026)
 > Full desktop + mobile conformance to 2026 web standards. 6/8 sub-issues shipped in 48h. Target users: iPhone SE 2016, Chromebook 2019, keyboard-only navigators (motor accessibility), photosensitive users.

@@ -5,6 +5,32 @@
 
 ---
 
+## Migration shadcn/ui — clôturée
+*17–18 avril 2026 · THI-85 / THI-91 / THI-106 / THI-107*
+
+**Le défi :** 39 composants Radix UI étaient installés depuis la Phase 3, mais l'UI était 100% custom Tailwind — un écart silencieux entre ce que `package.json` annonçait et ce que le code utilisait réellement. Chaque `<button>` natif recodait ses propres focus rings, ses propres couleurs hover, ses propres tailles — sans garantie de cohérence d'une page à l'autre.
+
+**La méthode :** Migration page par page pilotée par l'agent `ui-auditor` qui scanne avant chaque PR : Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunks B/C, Sidebar (THI-91 chunk A), NotFound (THI-85). Puis clôture en deux temps : d'abord un fix a11y sur 5 variantes Button qui n'avaient pas de `focus-visible` ring (THI-106), puis la migration des 11 derniers `<button>` natifs de `src/app/` (THI-107) — App FallbackUI, LoginModal (close + OAuth GitHub/Google + submit + link switch), UserMenu (guest CTA + card/dropdown sign-out + avatar toggle), PrivacyPolicy back nav.
+
+**Ce qui a été livré :**
+- Tous les éléments interactifs passent par `<Button variant=... size=...>` avec variantes CVA centralisées dans `src/app/components/ui/button.tsx`
+- `focus-visible` ring emerald (`ring-emerald-500/60 ring-2`) harmonisé sur l'ensemble du codebase
+- Sidebar modules verrouillés : `disabled={locked}` natif (sortis du tab order) + `disabled:opacity-100` pour préserver le contraste AA sur fond `#0d1117`
+- Cleanup des `aria-disabled` redondants (LessonPage)
+- 2 natives délibérées restantes : `sidebar.tsx` (shadcn interne) + `Landing.tsx:153` toggle env (différé à THI-105 qui ajoutera une size `tl-env-pill-lg`)
+
+**Validation :**
+- 901 tests unitaires verts sur chaque PR
+- Sourcery review OK sur #140, #141, #142, #143
+- Vérification visuelle Chrome DevTools MCP desktop + iPhone 14 sur Landing, LoginModal, PrivacyPolicy, Dashboard sidebar — zéro régression
+- `ui-auditor` post-PR : baseline 2 natives restantes confirmée, zéro nouvelle violation
+
+**Pourquoi c'est important :** Un design system n'est pas une dépendance qu'on installe — c'est une discipline qu'on applique. Avoir Radix UI dans `package.json` sans l'utiliser, c'était vivre avec un mensonge de 50 lignes. La clôture de cette saga signifie qu'à partir de maintenant, toute nouvelle UI passera par le composant `<Button>` (ou équivalent `<Card>`, `<Badge>`) — et `ui-auditor` est là pour s'assurer que personne n'oublie.
+
+**Leçon :** Quand une refactor s'étend sur plusieurs PRs, un umbrella issue (ici THI-91) qui liste les sous-chantiers et un agent qui audite avant chaque merge suffisent pour éviter le drift. Les petites corrections a11y trouvées en route (THI-106) ne méritent pas leur propre saga — elles se greffent à la PR en cours et avancent en même temps.
+
+---
+
 ## Web 2026 compliance — mobile + clavier, 6 PRs livrées en 48h
 *14–16 avril 2026 · Epic THI-96 (THI-97 → THI-102)*
 

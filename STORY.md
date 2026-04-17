@@ -299,8 +299,8 @@ Et ce qu'on retient aussi, plus personnellement : **on peut soulever des montagn
 
 ### Ce sur quoi on travaille maintenant
 
-**Migration shadcn/ui (THI-85)**
-39 composants Radix UI sont installés, mais l'UI est 100% custom Tailwind. La migration se fera page par page — Dashboard d'abord, puis LessonPage, puis Landing. L'agent ui-auditor guidera chaque étape.
+**Migration shadcn/ui — clôturée (THI-85 / THI-91 / THI-106 / THI-107)**
+La migration page par page est finie. Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunks B/C, Sidebar (chunk A), NotFound, puis dans la dernière passe LoginModal / UserMenu / PrivacyPolicy / App FallbackUI (THI-107). L'agent ui-auditor a servi de filet à chaque étape — trois findings a11y côté variants Button ont été corrigés en passant (THI-106). Il reste deux natives délibérées : un bouton interne à shadcn (`sidebar.tsx`) et le toggle d'environnement du Landing, qui a besoin d'une nouvelle size `tl-env-pill-lg`. Ce dernier chantier est tracé sous THI-105 — c'est un refactor CVA (extraction des tokens GitHub-dark, regroupement des variantes `tl-*` par famille), pas une migration.
 
 **Admin Panel institutionnel (Phase 9)**
 Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de progression par élève. La plateforme peut maintenant accueillir des établissements — il faut maintenant leur donner les outils pour que ça soit utile.
