@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, Download,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import { iconMap } from '../data/moduleIcons';
-import { PWAInstallModal } from './PWAInstallModal';
-import { usePWAInstall } from '../hooks/usePWAInstall';
+import { Button } from './ui/button';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,8 +20,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const { selectedEnv, setEnvironment } = useEnvironment();
-  const { isInstalled } = usePWAInstall();
-  const [showPWAModal, setShowPWAModal] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -65,14 +62,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <div className="text-xs text-emerald-400 font-mono">Master</div>
             </div>
           </NavLink>
-          <button
+          <Button
             type="button"
+            variant="tl-sidebar-icon"
+            size="tl-icon-44"
             onClick={onClose}
-            className="lg:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
+            className="lg:hidden -mr-2"
             aria-label="Fermer le menu"
           >
             <X size={18} aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         {/* Progress bar */}
@@ -135,24 +134,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             return (
               <div key={mod.id}>
                 {/* Module header */}
-                <button
+                <Button
                   type="button"
+                  variant={locked ? 'tl-sidebar-row-locked' : 'tl-sidebar-row'}
+                  size="tl-sidebar-row"
                   onClick={() => !locked && toggleModule(mod.id)}
                   aria-disabled={locked ? true : undefined}
                   aria-label={locked
                     ? `${mod.title} — verrouillé, Niv. ${unlockStatus?.level}`
                     : `${mod.title} — ${completed}/${total} leçons`}
-                  className={`w-full flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 group ${
-                    locked
-                      ? 'cursor-not-allowed text-[#8b949e]'
-                      : 'hover:bg-[#161b22] text-[#c9d1d9]'
-                  }`}
+                  className="group"
                   title={locked ? `Prérequis : ${unlockStatus?.missingPrerequisiteLabels.join(', ')}` : undefined}
                 >
                   {locked ? (
-                    <Lock size={15} className="text-[#8b949e] shrink-0" />
+                    <Lock size={15} className="size-[15px] text-[#8b949e] shrink-0" />
                   ) : (
-                    <span style={{ color: mod.color }}><Icon size={15} /></span>
+                    <span style={{ color: mod.color }}><Icon size={15} className="size-[15px]" /></span>
                   )}
                   <span className="flex-1 text-left truncate">{mod.title}</span>
                   {locked ? (
@@ -161,13 +158,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <>
                       <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
                       {isExpanded ? (
-                        <ChevronDown size={14} className="text-[#8b949e] shrink-0" />
+                        <ChevronDown size={14} className="size-[14px] text-[#8b949e] shrink-0" />
                       ) : (
-                        <ChevronRight size={14} className="text-[#8b949e] shrink-0" />
+                        <ChevronRight size={14} className="size-[14px] text-[#8b949e] shrink-0" />
                       )}
                     </>
                   )}
-                </button>
+                </Button>
 
                 {/* Locked hint */}
                 {locked && (
@@ -182,19 +179,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {mod.lessons.map((lesson) => {
                       const done = isLessonCompleted(mod.id, lesson.id);
                       return (
-                        <button
+                        <Button
                           key={lesson.id}
                           type="button"
+                          variant="tl-sidebar-lesson"
+                          size="tl-sidebar-lesson"
                           onClick={() => handleLessonClick(mod.id, lesson.id)}
-                          className="w-full flex items-center gap-2 min-h-10 px-2 py-1.5 rounded-md text-xs transition-colors hover:bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 group text-left"
                         >
                           {done ? (
-                            <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
+                            <CheckCircle2 size={12} className="size-[12px] text-emerald-400 shrink-0" />
                           ) : (
-                            <Circle size={12} className="text-[#30363d] shrink-0 group-hover:text-[#8b949e]" />
+                            <Circle size={12} className="size-[12px] text-[#30363d] shrink-0 group-hover:text-[#8b949e]" />
                           )}
                           <span className="truncate">{lesson.title}</span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -216,27 +214,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 const meta = ENV_META[envId];
                 const active = selectedEnv === envId;
                 return (
-                  <button
+                  <Button
                     key={envId}
                     type="button"
+                    variant="tl-env-pill"
+                    size="tl-env-pill"
                     onClick={() => setEnvironment(envId)}
-                    className={`flex-1 flex items-center justify-center gap-1 min-h-9 py-1.5 rounded-md text-[10px] font-mono transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
-                      active
-                        ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}`
-                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent'
-                    }`}
+                    className={active ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}` : undefined}
                     title={`${meta.label} — ${meta.shell}`}
                     aria-pressed={active}
                   >
                     {envId === 'linux' ? (
-                      <Terminal size={10} aria-hidden="true" />
+                      <Terminal size={10} className="size-[10px]" aria-hidden="true" />
                     ) : envId === 'macos' ? (
                       <span className="text-[10px] leading-none select-none" aria-hidden="true"></span>
                     ) : (
                       <span className="text-[9px] leading-none select-none" aria-hidden="true">⊞</span>
                     )}
                     {meta.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -249,31 +245,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <UserMenu
             syncStatus={syncStatus}
             extraActions={
-              <>
-                {!isInstalled && (
-                  <button
-                    type="button"
-                    onClick={() => setShowPWAModal(true)}
-                    className="flex items-center justify-center w-11 h-11 rounded-md text-[#8b949e] hover:text-emerald-400 hover:bg-[#21262d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-all"
-                    aria-label="Installer l'application"
-                    title="Installer l'application"
-                  >
-                    <Download size={13} aria-hidden="true" />
-                  </button>
-                )}
+              <Button
+                asChild
+                variant="tl-sidebar-icon"
+                size="tl-icon-44-md"
+                className="hover:bg-[#21262d]"
+              >
                 <NavLink
                   to="/"
                   onClick={onClose}
-                  className="flex items-center justify-center w-11 h-11 rounded-md text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-all"
                   aria-label="Retour à l'accueil"
                   title="Retour à l'accueil"
                 >
-                  <Home size={13} aria-hidden="true" />
+                  <Home size={13} className="size-[13px]" aria-hidden="true" />
                 </NavLink>
-              </>
+              </Button>
             }
           />
-          {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
         </div>
       </aside>
     </>
@@ -282,13 +270,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
 export function MenuButton({ onClick }: { onClick: () => void }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="tl-menu-fab"
+      size="tl-icon-44"
       onClick={onClick}
-      className="lg:hidden shrink-0 flex items-center justify-center w-11 h-11 rounded-lg bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 transition-colors"
+      className="lg:hidden shrink-0"
       aria-label="Ouvrir le menu de navigation"
     >
-      <Menu size={18} aria-hidden="true" />
-    </button>
+      <Menu size={18} className="size-[18px]" aria-hidden="true" />
+    </Button>
   );
 }
