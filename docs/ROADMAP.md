@@ -1,6 +1,6 @@
 # Roadmap — Terminal Learning
 
-> Last updated: 16 April 2026 — **Epic THI-96 Web 2026 Compliance** 🔄 6/8 sub-issues shipped in 48h (THI-97 → THI-102) — viewport-fit=cover, min-h-dvh, safe-area-inset-bottom, WCAG 2.2 AAA touch targets (44px), focus-visible rings emerald, autoComplete/inputMode on LoginModal, clamp() fluid typography on 404 — remaining: Desktop a11y + CSS moderne 2026 — INP fix THI-90 ✅ (PR #114 merged) — `setEnvironment` wrappé dans `startTransition`, lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — motion/react removed, 22 unused deps cleaned, Landing ~25kB gzip — ui-auditor agent created — 11 modules / 64 lessons / 901 tests — Next: THI-85 shadcn/ui migration page by page + finish Web 2026 epic
+> Last updated: 17 April 2026 — **Strategic vision consolidated (ADRs 001-004)**: LTI-first positioning, OpenRouter BYOK 4-tiers, TTFR KPI, Classroom Composer UI — **Epic THI-96 Web 2026 Compliance** 🔄 6/8 sub-issues shipped (THI-97 → THI-102) — viewport-fit=cover, min-h-dvh, safe-area-inset-bottom, WCAG 2.2 AAA touch targets (44px), focus-visible rings emerald, autoComplete/inputMode on LoginModal, clamp() fluid typography on 404 — remaining: Desktop a11y + CSS moderne 2026 — INP fix THI-90 ✅ (PR #114 merged), lab 515ms → 26ms (−95%) — Phase 4c Bundle Optimization ✅ (PR #108 merged) — 11 modules / 64 lessons / 901 tests — **Next priorities**: landing interactive demo, BYOK OpenRouter + AI tutor socratic A1, multi-tenancy RLS audit, i18n FR/NL/EN setup
 
 ---
 
