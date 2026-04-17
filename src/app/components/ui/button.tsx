@@ -41,17 +41,17 @@ const buttonVariants = cva(
           "w-full justify-start text-left whitespace-normal text-[#e6edf3] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
         // Terminal Learning — icon-only ghost action (close X, modal dismiss)
         "tl-icon-ghost":
-          "rounded text-[#8b949e] hover:text-[#e6edf3] transition-colors",
+          "rounded text-[#8b949e] hover:text-[#e6edf3] transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — tab segmented control (PWAInstallModal tabs)
         "tl-tab":
-          "font-mono transition-colors text-[#8b949e] hover:text-[#e6edf3] rounded-none",
+          "font-mono transition-colors text-[#8b949e] hover:text-[#e6edf3] rounded-none focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         "tl-tab-active":
-          "font-mono transition-colors text-emerald-400 border-b-2 border-emerald-400 -mb-px rounded-none",
+          "font-mono transition-colors text-emerald-400 border-b-2 border-emerald-400 -mb-px rounded-none focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — CommandReference filter pill
         "tl-filter-pill":
-          "border transition-colors text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3]",
+          "border transition-colors text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         "tl-filter-pill-active":
-          "border transition-colors bg-[#e6edf3] text-[#0d1117] border-[#e6edf3] hover:bg-[#e6edf3]",
+          "border transition-colors bg-[#e6edf3] text-[#0d1117] border-[#e6edf3] hover:bg-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — Sidebar icon 44px with emerald ring (close, install, NavLink icons)
         "tl-sidebar-icon":
           "text-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
@@ -59,8 +59,9 @@ const buttonVariants = cva(
         "tl-sidebar-row":
           "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#c9d1d9] hover:bg-[#161b22]",
         // Terminal Learning — Locked sidebar row (no hover bg, greyed)
+        // disabled:opacity-100 overrides the base disabled:opacity-50 — the grey color + lock icon already signal the disabled state, and halving opacity would drop contrast below WCAG AA on #0d1117.
         "tl-sidebar-row-locked":
-          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] cursor-not-allowed",
+          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] cursor-not-allowed disabled:opacity-100",
         // Terminal Learning — Sidebar lesson subitem
         "tl-sidebar-lesson":
           "w-full justify-start text-left gap-2 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] group",

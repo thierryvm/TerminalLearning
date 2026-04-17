@@ -138,8 +138,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   type="button"
                   variant={locked ? 'tl-sidebar-row-locked' : 'tl-sidebar-row'}
                   size="tl-sidebar-row"
-                  onClick={() => !locked && toggleModule(mod.id)}
-                  aria-disabled={locked ? true : undefined}
+                  onClick={locked ? undefined : () => toggleModule(mod.id)}
+                  disabled={locked}
                   aria-label={locked
                     ? `${mod.title} — verrouillé, Niv. ${unlockStatus?.level}`
                     : `${mod.title} — ${completed}/${total} leçons`}
