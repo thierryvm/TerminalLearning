@@ -52,6 +52,24 @@ const buttonVariants = cva(
           "border transition-colors text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3]",
         "tl-filter-pill-active":
           "border transition-colors bg-[#e6edf3] text-[#0d1117] border-[#e6edf3] hover:bg-[#e6edf3]",
+        // Terminal Learning — Sidebar icon 44px with emerald ring (close, install, NavLink icons)
+        "tl-sidebar-icon":
+          "text-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
+        // Terminal Learning — Sidebar module row (w-full, left-align)
+        "tl-sidebar-row":
+          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#c9d1d9] hover:bg-[#161b22]",
+        // Terminal Learning — Locked sidebar row (no hover bg, greyed)
+        "tl-sidebar-row-locked":
+          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] cursor-not-allowed",
+        // Terminal Learning — Sidebar lesson subitem
+        "tl-sidebar-lesson":
+          "w-full justify-start text-left gap-2 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] group",
+        // Terminal Learning — Env switcher pill base (active state via className override)
+        "tl-env-pill":
+          "transition-all focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 font-mono text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent",
+        // Terminal Learning — Menu FAB (mobile nav trigger)
+        "tl-menu-fab":
+          "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -78,6 +96,16 @@ const buttonVariants = cva(
         "tl-tab-size": "h-auto flex-1 py-2.5 text-xs",
         // Terminal Learning — CommandReference filter pill
         "tl-filter-pill-size": "h-auto min-h-11 px-3 py-1.5 text-xs rounded-full",
+        // Terminal Learning — 44x44 icon button (sidebar close, install, menu FAB)
+        "tl-icon-44": "size-11 rounded-lg",
+        // Terminal Learning — 44x44 icon button (rounded-md variant for install button in UserMenu)
+        "tl-icon-44-md": "size-11 rounded-md",
+        // Terminal Learning — Sidebar module row
+        "tl-sidebar-row": "h-auto min-h-11 px-3 py-2 text-sm rounded-lg",
+        // Terminal Learning — Sidebar lesson subitem
+        "tl-sidebar-lesson": "h-auto min-h-10 px-2 py-1.5 text-xs rounded-md",
+        // Terminal Learning — Env switcher pill
+        "tl-env-pill": "h-auto flex-1 min-h-9 py-1.5 px-1 text-[10px] gap-1 rounded-md",
       },
     },
     defaultVariants: {
