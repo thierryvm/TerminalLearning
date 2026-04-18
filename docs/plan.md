@@ -9,7 +9,7 @@
 
 Décisions stratégiques ancrées dans les 5 ADRs :
 - [ADR-001](./adr/ADR-001-lti-first-positioning.md) — **Positionnement LTI-first** : tool pédagogique spécialisée intégrable dans Moodle/Smartschool/Classroom via LTI 1.3, pas un LMS complet
-- [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour étudiants précaires, un seul SDK compatible OpenAI
+- [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour apprenants sans budget API, un seul SDK compatible OpenAI
 - [ADR-003](./adr/ADR-003-ttfr-kpi.md) — **TTFR KPI** : Time To First Real-world command comme mesure de valeur pédagogique réelle
 - [ADR-004](./adr/ADR-004-classroom-composer-ui.md) — **Classroom-as-Code** : UI Composer visuel, JSON en stockage invisible, fork/remix entre profs
 - [ADR-005](./adr/ADR-005-ai-tutor-v1-implementation.md) — **AI Tutor V1** : `localStorage` plain défaut + opt-in Web Crypto, rate-limit soft client-side, agent `prompt-guardrail-auditor` créé avant implémentation, Web Worker isolation différée V1.5

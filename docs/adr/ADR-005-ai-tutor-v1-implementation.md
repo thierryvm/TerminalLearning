@@ -14,7 +14,7 @@ ADR-002 fige l'architecture BYOK 4-tiers avec OpenRouter prioritaire (zéro clé
 
 - **Défaut V1** : `localStorage` non chiffré avec un warning visible dans `/app/settings` ("Votre clé est lisible par les extensions du navigateur — activez le chiffrement si vous utilisez une clé payante").
 - **Opt-in** : chiffrement AES-GCM via Web Crypto API, clé dérivée d'une passphrase user via PBKDF2 (≥ 210 000 itérations), stockée en IndexedDB. Passphrase demandée une fois par session, purgée à `beforeunload`.
-- Cible primaire = étudiant précaire Tier 0 avec clé OpenRouter free (0 € de risque) → pas de passphrase imposée.
+- Cible primaire = apprenant Tier 0 sans budget API avec clé OpenRouter free (0 € de risque) → pas de passphrase imposée.
 - Cible secondaire = dev Tier 2 avec clé Anthropic/OpenAI (risque financier) → active le chiffrement.
 
 ### 2. Isolation Web Worker — **différée à V1.5 (ticket séparé, créé immédiatement)**
@@ -65,7 +65,7 @@ ADR-002 fige l'architecture BYOK 4-tiers avec OpenRouter prioritaire (zéro clé
 
 ### Alternatives rejetées
 - **Supabase Vault server-side decryption** : contredit ADR-002 "zéro clé serveur"
-- **Passphrase obligatoire pour tous les tiers** : friction prohibitive pour A1 CEFR étudiant précaire
+- **Passphrase obligatoire pour tous les tiers** : friction prohibitive pour un apprenant A1 CEFR qui découvre la notion de clé API
 - **Edge Function proxy rate-limit V1** : anticipation sans signal d'abus observé, contredit ADR-002, nouvelle surface
 - **Agent guardrail créé après implémentation** : anti-pattern "tests à la fin", blocker surprise au merge final
 
