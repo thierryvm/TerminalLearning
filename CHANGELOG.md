@@ -6,7 +6,7 @@
 ---
 
 ## Migration shadcn/ui — clôturée
-*17–18 avril 2026 · THI-85 / THI-91 / THI-106 / THI-107*
+*17–18 avril 2026 · THI-85 / THI-91 / THI-105 / THI-106 / THI-107*
 
 **Le défi :** 39 composants Radix UI étaient installés depuis la Phase 3, mais l'UI était 100% custom Tailwind — un écart silencieux entre ce que `package.json` annonçait et ce que le code utilisait réellement. Chaque `<button>` natif recodait ses propres focus rings, ses propres couleurs hover, ses propres tailles — sans garantie de cohérence d'une page à l'autre.
 

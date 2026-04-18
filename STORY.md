@@ -299,8 +299,8 @@ Et ce qu'on retient aussi, plus personnellement : **on peut soulever des montagn
 
 ### Ce sur quoi on travaille maintenant
 
-**Migration shadcn/ui — clôturée (THI-85 / THI-91 / THI-106 / THI-107)**
-La migration page par page est finie. Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunks B/C, Sidebar (chunk A), NotFound, puis dans la dernière passe LoginModal / UserMenu / PrivacyPolicy / App FallbackUI (THI-107). L'agent ui-auditor a servi de filet à chaque étape — trois findings a11y côté variants Button ont été corrigés en passant (THI-106). Il reste deux natives délibérées : un bouton interne à shadcn (`sidebar.tsx`) et le toggle d'environnement du Landing, qui a besoin d'une nouvelle size `tl-env-pill-lg`. Ce dernier chantier est tracé sous THI-105 — c'est un refactor CVA (extraction des tokens GitHub-dark, regroupement des variantes `tl-*` par famille), pas une migration.
+**Migration shadcn/ui — clôturée (THI-85 / THI-91 / THI-105 / THI-106 / THI-107)**
+La migration page par page est finie. Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunks B/C, Sidebar (chunk A), NotFound, puis dans la dernière passe LoginModal / UserMenu / PrivacyPolicy / App FallbackUI (THI-107). L'agent ui-auditor a servi de filet à chaque étape — trois findings a11y côté variants Button ont été corrigés en passant (THI-106). Une fois la migration close, on a consolidé `button.tsx` (THI-105, PR #147) : trois wrappers Sidebar (`SidebarRowButton`, `SidebarLessonButton`, `EnvPill`) encapsulent les variantes `tl-sidebar-*` / `tl-env-pill` derrière une API métier, et la size `icon-lg` devient neutre (la corner shape `rounded-lg`/`rounded-md` passe par `className` au call-site). Il reste un seul native délibéré : le toggle d'environnement du Landing, qui a besoin d'une size `tl-env-pill-lg` encore à produire — c'est un follow-up standalone, pas un blocage.
 
 **Admin Panel institutionnel (Phase 9)**
 Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de progression par élève. La plateforme peut maintenant accueillir des établissements — il faut maintenant leur donner les outils pour que ça soit utile.
