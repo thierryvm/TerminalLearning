@@ -12,7 +12,8 @@ import { Button } from './ui/button';
 // /changelog and /story — so cross-links in their markdown must resolve to
 // those routes instead of the raw .md file (which would 404 on the SPA).
 // Keep in sync with src/app/routes.ts.
-const MARKDOWN_ROUTE_MAP: Record<string, string> = {
+// Exported so src/test/markdownLinks.test.ts can use it as single source of truth.
+export const MARKDOWN_ROUTE_MAP: Record<string, string> = {
   'STORY.md': '/story',
   'CHANGELOG.md': '/changelog',
 };
