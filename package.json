@@ -88,6 +88,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "fake-indexeddb": "^6.2.5",
     "gif-encoder-2": "^1.0.5",
     "jsdom": "^29.0.1",
     "pngjs": "^7.0.0",
