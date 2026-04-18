@@ -64,7 +64,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - THI-107 ✅ A11y focus-visible + 11 native `<button>` migrés (PRs #140/142, 17 avril 2026)
 - THI-96 🔄 Web 2026 compliance — 6/8 sub-issues shipped (THI-97 à 102), reste desktop a11y + CSS moderne 2026
 - THI-115 ✅ Doc alignment ADR-002 + ADR-005 (AI Tutor V1) — plan.md Phase 7b réécrit, 4 décisions figées (PR #151, 18 avril 2026)
-- **Phase 7b 🔄 AI Tutor V1 (chaîne ADR-005)** — THI-109 (prompt-guardrail-auditor agent) → THI-110 (key manager V1) → THI-111 (AiTutorPanel + providers + sanitizer) → THI-112 (onboarding AiKeySetup/AiConsentModal) → THI-113 (audit final) · THI-114 (Web Worker isolation V1.5 post-ship)
+- THI-109 ✅ Agent `prompt-guardrail-auditor` — gate zéro ADR-005, OWASP LLM Top 10, créé AVANT implémentation (PR #153, 18 avril 2026)
+- **Phase 7b 🔄 AI Tutor V1 (chaîne ADR-005)** — ✅ THI-109 · 🔜 THI-110 (key manager V1) → THI-111 (AiTutorPanel + providers + sanitizer) → THI-112 (onboarding AiKeySetup/AiConsentModal) → THI-113 (audit final) · THI-114 (Web Worker isolation V1.5 post-ship)
 
 ## Contenus narratifs — règle d'enrichissement
 - `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
