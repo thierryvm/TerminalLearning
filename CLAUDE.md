@@ -58,7 +58,13 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - THI-87 ✅ Bundle optimization — motion/react retiré, 22 deps inutilisées supprimées, 8 composants shadcn dormants supprimés (PR #108, 13 avril 2026)
 - Phase 4c ✅ Bundle Optimization complète — Landing chunk ~65kB→~25kB gzip
 - THI-90 ✅ INP fix — `setEnvironment` wrappé dans `startTransition`, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, 14 avril 2026)
-- THI-85 🔄 shadcn migration — NotFound.tsx ✅ (PR #116, 14 avril 2026, variantes `emerald`/`ghost-gh`/`pill-*`, pixel-perfect desktop + mobile) + Enhance 404 (PR #117, 14 avril 2026, bloc "Pages utiles" crawlable + fix contraste footer iPhone 14). Reste : Dashboard, LessonPage, Landing, ChangelogPage, StoryPage, CommandReference.
+- THI-85 ✅ shadcn migration — NotFound.tsx (PR #116, 14 avril 2026)
+- THI-91 ✅ shadcn migration umbrella — Dashboard, LessonPage, Landing A/B/C, ChangelogPage, StoryPage, CommandReference migrés (PRs #131/134/135/137/139/140/142, 15-17 avril 2026)
+- THI-105 ✅ button.tsx consolidation — Sidebar wrappers + `icon-lg` neutre (PR #147, 18 avril 2026)
+- THI-107 ✅ A11y focus-visible + 11 native `<button>` migrés (PRs #140/142, 17 avril 2026)
+- THI-96 🔄 Web 2026 compliance — 6/8 sub-issues shipped (THI-97 à 102), reste desktop a11y + CSS moderne 2026
+- THI-115 ✅ Doc alignment ADR-002 + ADR-005 (AI Tutor V1) — plan.md Phase 7b réécrit, 4 décisions figées (PR #151, 18 avril 2026)
+- **Phase 7b 🔄 AI Tutor V1 (chaîne ADR-005)** — THI-109 (prompt-guardrail-auditor agent) → THI-110 (key manager V1) → THI-111 (AiTutorPanel + providers + sanitizer) → THI-112 (onboarding AiKeySetup/AiConsentModal) → THI-113 (audit final) · THI-114 (Web Worker isolation V1.5 post-ship)
 
 ## Contenus narratifs — règle d'enrichissement
 - `CHANGELOG.md` et `STORY.md` à la racine : mettre à jour à chaque release majeure ou décision significative
