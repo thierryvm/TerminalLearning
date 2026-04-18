@@ -258,6 +258,8 @@ export const validatePullRequests: ValidateFn = (cmd) => {
 
 export const validateConflicts: ValidateFn = (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase());
 
+export const validateMergeStrategies: ValidateFn = (cmd) => /^git\s+merge\s+--no-ff\s+\S+/.test(cmd.trim().toLowerCase());
+
 export const validateGithubActions: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
 
 // ── Module 11 — L'IA comme outil dev ─────────────────────────────────────────

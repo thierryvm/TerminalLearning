@@ -8,7 +8,7 @@ import {
   validateEnvVars, validatePathVariable, validateShellConfig, validateDotenv, validateScripts, validateCron,
   validatePing, validateCurl, validateWget, validateDns, validateSsh, validateScp,
   validateGitInit, validateGitConfig, validateGitAddCommit, validateGitStatusLog, validateGitDiffGitignore, validateGitBranch, validateGitMerge,
-  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateConflicts, validateGithubActions,
+  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateMergeStrategies, validateConflicts, validateGithubActions,
   validateAiHelp, validateAiHelpCapabilities, validateAiHelpLimits, validateAiHelpPrompts,
   validateAiHelpContext, validateAiHelpValidate, validateAiHelpDebug, validateAiHelpSecurity,
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
@@ -2522,6 +2522,52 @@ export const curriculum: Module[] = [
           hint: 'Tapez: git checkout -b feature/nouvelle-feature',
           validate: validatePullRequests,
           successMessage: 'Branche feature créée ! Dans un vrai projet, vous développeriez ici puis ouvreriez une PR vers main.',
+        },
+      },
+      {
+        id: 'merge-strategies',
+        title: 'Stratégies de merge — Merge commit, Squash, Rebase',
+        description: 'Choisissez la bonne stratégie de merge selon le contexte (feature, hotfix, historique propre)',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Quand vous fermez une Pull Request, GitHub vous propose trois boutons : **Create a merge commit**, **Squash and merge**, **Rebase and merge**. Chacun produit un historique différent sur `main`. Ce choix n\'est pas cosmétique — il détermine la lisibilité du `git log`, la facilité à revenir en arrière, et la traçabilité des features.',
+          },
+          {
+            type: 'code',
+            content: '# Stratégie 1 : Merge commit (--no-ff)\n# Garde la branche comme un bloc identifiable dans l\'historique\n\n$ git checkout main\n$ git merge --no-ff feature/panier\nMerge made by the \'ort\' strategy.\n panier.html | 42 ++++++\n cart.js     | 18 +++++\n 2 files changed, 60 insertions(+)\n\n$ git log --oneline --graph\n*   d4f8a91 Merge branch \'feature/panier\'\n|\\\n| * b7e2d45 feat(panier): add cart UI\n| * a3f8c12 feat(panier): init cart model\n|/\n* c1d2e34 chore: bump version',
+            label: '1️⃣ Merge commit (--no-ff)',
+          },
+          {
+            type: 'code',
+            content: '# Stratégie 2 : Squash merge (--squash)\n# Condense toute la branche en UN SEUL commit sur main\n\n$ git checkout main\n$ git merge --squash feature/panier\n$ git commit -m "feat(panier): add cart module (#42)"\n\n$ git log --oneline\n* e5f6a78 feat(panier): add cart module (#42)\n* c1d2e34 chore: bump version\n\n# Équivalent via GitHub CLI :\n$ gh pr merge 42 --squash --delete-branch',
+            label: '2️⃣ Squash merge (--squash)',
+          },
+          {
+            type: 'code',
+            content: '# Stratégie 3 : Rebase merge (--rebase)\n# Rejoue les commits de la branche au sommet de main (historique linéaire, pas de merge commit)\n\n$ git checkout feature/panier\n$ git rebase main\n$ git checkout main\n$ git merge feature/panier  # fast-forward, linéaire\n\n$ git log --oneline\n* b7e2d45 feat(panier): add cart UI\n* a3f8c12 feat(panier): init cart model\n* c1d2e34 chore: bump version\n\n# Équivalent via GitHub CLI :\n$ gh pr merge 42 --rebase --delete-branch',
+            label: '3️⃣ Rebase merge (--rebase)',
+          },
+          {
+            type: 'info',
+            content:
+              '**Tableau de décision — quand choisir quoi ?**\n\n• **Merge commit (--no-ff)** → feature large, plusieurs commits qui racontent une histoire utile (refactor progressif, spike documenté). On garde la branche visible pour pouvoir la revisiter 6 mois plus tard.\n\n• **Squash (--squash)** → petit fix, feature courte, PR avec 12 commits "wip" / "oops typo" / "fix tests". Un seul commit propre sur main = `git log` lisible, `git bisect` fiable.\n\n• **Rebase (--rebase)** → équipe qui tient un historique strictement linéaire, pas de merge commits. Demande de la discipline (jamais rebaser une branche déjà partagée) et une bonne maîtrise des conflits.',
+          },
+          {
+            type: 'tip',
+            content: 'Dans les **Settings → General → Pull Requests** d\'un repo GitHub, on peut désactiver les stratégies qu\'on ne veut pas voir utilisées. La plupart des équipes pro activent **Squash only** pour la cohérence : un commit sur main = une PR = une feature identifiable.',
+          },
+          {
+            type: 'warning',
+            content: '**Règle absolue du rebase** : ne jamais rebaser une branche déjà poussée et partagée avec d\'autres développeurs. Rebaser réécrit l\'historique — si quelqu\'un a pullé votre branche, son repo local sera incohérent avec le remote après votre force-push.',
+          },
+        ],
+        exercise: {
+          instruction: 'Fusionnez la branche `feature/ma-feature` avec un **merge commit explicite** (option `--no-ff`) : `git merge --no-ff feature/ma-feature`.',
+          hint: 'Tapez: git merge --no-ff feature/ma-feature',
+          validate: validateMergeStrategies,
+          successMessage: 'Merge commit créé ! Votre branche reste identifiable dans l\'historique — utile pour retrouver le contexte d\'une feature 6 mois plus tard.',
         },
       },
       {

@@ -50,6 +50,7 @@ import {
   validateGitPushPull,
   validateGitFetchClone,
   validatePullRequests,
+  validateMergeStrategies,
   validateConflicts,
   validateGithubActions,
   validateAiHelp,
@@ -431,6 +432,19 @@ describe('validatePullRequests', () => {
   it('accepts "git checkout -b feature/my-pr"', () => expect(validatePullRequests('git checkout -b feature/my-pr')).toBe(true));
   it('accepts "git switch -c feature/my-pr"', () => expect(validatePullRequests('git switch -c feature/my-pr')).toBe(true));
   it('rejects "git checkout -b fix/bug"', () => expect(validatePullRequests('git checkout -b fix/bug')).toBe(false));
+});
+
+describe('validateMergeStrategies', () => {
+  it('accepts "git merge --no-ff feature/ma-feature"', () =>
+    expect(validateMergeStrategies('git merge --no-ff feature/ma-feature')).toBe(true));
+  it('accepts "git merge --no-ff bugfix/123"', () =>
+    expect(validateMergeStrategies('git merge --no-ff bugfix/123')).toBe(true));
+  it('rejects plain "git merge feature/ma-feature" (no --no-ff)', () =>
+    expect(validateMergeStrategies('git merge feature/ma-feature')).toBe(false));
+  it('rejects "git merge --squash feature/ma-feature"', () =>
+    expect(validateMergeStrategies('git merge --squash feature/ma-feature')).toBe(false));
+  it('rejects bare "git merge --no-ff"', () =>
+    expect(validateMergeStrategies('git merge --no-ff')).toBe(false));
 });
 
 describe('validateConflicts', () => {

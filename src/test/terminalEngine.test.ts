@@ -1935,6 +1935,14 @@ describe('git', () => {
     expect(r.lines[0].type).toBe('error');
   });
 
+  it('git merge --no-ff <branch> skips the flag and creates a merge commit', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/panier'], stagedFiles: [], commits: [], remotes: {} } });
+    const r = processCommand(s, 'git merge --no-ff feature/panier');
+    expect(r.lines[0].type).toBe('success');
+    expect(r.newState.git?.commits).toHaveLength(1);
+    expect(r.newState.git?.commits[0].message).toContain('feature/panier');
+  });
+
   // ── git remote ────────────────────────────────────────────────────────────────
   it('git remote -v shows configured remotes', () => {
     const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/user/repo.git' } } });
