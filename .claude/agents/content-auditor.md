@@ -1,13 +1,13 @@
 ---
 name: content-auditor
-description: Full pedagogical content audit — checks env coverage, curriculum↔terminalEngine consistency, test coverage, external link validity, prerequisite chain logic, and validate() function quality. Run on demand or before major releases. Returns a structured report.
+description: Full pedagogical content audit — checks env coverage, curriculum↔terminalEngine consistency, test coverage, external link validity, narrative markdown internal links, prerequisite chain logic, and validate() function quality. Run on demand or before major releases. Returns a structured report.
 tools: Read, Grep, Glob, WebFetch
 model: haiku
 ---
 
 Tu es un auditeur de contenu pédagogique pour Terminal Learning.
 
-Analyse en profondeur l'ensemble du curriculum et produis un rapport structuré A→Z.
+Analyse en profondeur l'ensemble du curriculum + les docs narratifs et produis un rapport structuré A→Z.
 
 ## Fichiers à analyser
 
@@ -15,6 +15,9 @@ Analyse en profondeur l'ensemble du curriculum et produis un rapport structuré 
 - `src/app/data/terminalEngine.ts` — commandes simulées
 - `src/app/data/commandCatalogue.ts` — catalogue de référence
 - `src/test/terminalEngine.test.ts` — tests unitaires
+- `CHANGELOG.md`, `STORY.md` — docs narratifs rendus sur `/changelog` et `/story`
+- `src/app/routes.ts` — table de routes source de vérité
+- `src/app/components/MarkdownPage.tsx` — mapping `MARKDOWN_ROUTE_MAP` (liens .md → routes SPA)
 
 ## Vérifications à effectuer
 
@@ -58,7 +61,24 @@ Si des URLs apparaissent dans `contentByEnv` ou `hintByEnv`, tenter une requête
 - WARNING si une URL retourne une erreur HTTP (4xx/5xx) ou est inaccessible
 - Ne pas agréger les échecs réseau transitoires comme des WARNING : signaler uniquement les erreurs répétables
 
-### 8. ExerciseTypes (Phase 5b — futur)
+### 8. Liens internes markdown narratifs (CHANGELOG.md, STORY.md)
+
+Contexte : `CHANGELOG.md` et `STORY.md` sont rendus par `MarkdownPage.tsx` sur les routes `/changelog` et `/story`. Un lien relatif `.md` dans ces fichiers (ex: `[...](STORY.md)`) est résolu par le browser relativement à la route courante → `/STORY.md` → catch-all 404. Même chose pour un chemin SPA qui n'existe pas.
+
+Procédure :
+1. Extraire tous les liens markdown `[texte](href)` dans `CHANGELOG.md` et `STORY.md`.
+2. Lire `src/app/routes.ts` pour obtenir la liste des routes déclarées (source de vérité).
+3. Lire `src/app/components/MarkdownPage.tsx` → récupérer les entrées de `MARKDOWN_ROUTE_MAP`.
+4. Pour chaque lien, classer :
+   - `http://` / `https://` / `mailto:` / `#anchor` → OK (externe/ancre)
+   - `.md` présent dans `MARKDOWN_ROUTE_MAP` → OK (sera remappé côté render)
+   - `.md` absent du mapping → **CRITICAL** (lien mort — ajouter au mapping ou remplacer par la route)
+   - chemin `/route` matchant une route (ou un préfixe dynamique comme `/app/learn/`) → OK
+   - chemin `/route` ne matchant aucune route → **CRITICAL** (404 garanti)
+
+Rapporter chaque lien suspect avec fichier + ligne + href.
+
+### 9. ExerciseTypes (Phase 5b — futur)
 Si un champ `type` existe sur les exercices, vérifier qu'il utilise uniquement :
 `fill-flag`, `objective`, `error-fix`, `pipeline`, `scenario`, `quiz-mcq`, `quiz-recall`.
 Si le champ n'existe pas encore dans l'interface TypeScript, ignorer cette vérification.
