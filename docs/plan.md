@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 18 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 923 tests unitaires (903 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 955 tests unitaires (935 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Phase 7b (AI Tutor V1)** : THI-115 ✅, THI-109 ✅, THI-110 ✅, 🔜 THI-120 (scrubber Sentry) avant THI-111
 
 ---
 
@@ -690,12 +690,13 @@ src/lib/ai/
 #### Séquence d'implémentation (ADR-005)
 
 1. ✅ Doc alignment + ADR-005 (PR #151 mergée — THI-115)
-2. ✅ Agent `prompt-guardrail-auditor` (THI-109 — cette PR)
-3. Key manager V1 — THI-110
-4. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter — THI-111
-5. Onboarding UX + Consent modal — THI-112
-6. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b — THI-113
-7. 🔮 Web Worker isolation V1.5 post-ship — THI-114
+2. ✅ Agent `prompt-guardrail-auditor` (PR #153 mergée — THI-109)
+3. ✅ Key manager V1 — `src/lib/ai/keyManager.ts`, localStorage plain + IndexedDB AES-GCM + PBKDF2 210k iter, 32 tests, premier audit `prompt-guardrail-auditor` PASS (PR #155 mergée — THI-110)
+4. 🔜 Scrubber Sentry `beforeSend` (Authorization + champs `key`/`token`/`secret`/`auth`) — gate avant THI-111 — THI-120
+5. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter — THI-111
+6. Onboarding UX + Consent modal — THI-112
+7. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b — THI-113
+8. 🔮 Web Worker isolation V1.5 post-ship — THI-114
 
 ---
 
