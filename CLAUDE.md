@@ -91,6 +91,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`security-auditor`** — audit cybersécurité black hat : OWASP Top 10 (2021), OWASP API Sec (2023), CSP L3, rate limiting, RLS, auth flow, supply chain, RGPD, vecteurs 2026. Lancer avant chaque release majeure, après mise à jour de dépendances, ou à la demande. (THI-53)
 - **`ui-auditor`** — détecte composants custom qui devraient utiliser shadcn/ui, deps fantômes, composants installés mais jamais importés, couleurs/tailles en dur. **Obligatoire avant toute PR touchant des composants UI.** CRITICAL = bloque le merge. (THI-86)
 - **`vercel-firewall-auditor`** — lit la config Vercel Firewall active (WAF, managed rules, custom rules) et exécute une batterie de tests HTTP live contre `terminallearning.dev` pour confirmer que les rules bloquent bien les patterns d'attaque et laissent passer les users légitimes. Nécessite `$VERCEL_TOKEN` en session. Lancer avant chaque release majeure ou après toute modification firewall. Détails : `docs/vercel-firewall.md`.
+- **`prompt-guardrail-auditor`** — audit sécurité LLM (OWASP LLM Top 10) du Tuteur IA (BYOK OpenRouter — ADR-002 + ADR-005) : prompt injection, jailbreaks, prompt leaks, role enforcement, bypass sanitizer, XSS sur rendu réponse, fuite clé API. **Obligatoire avant toute PR touchant `src/lib/ai/*` ou `src/app/components/ai/*`.** CRITICAL = bloque le merge. Créé AVANT implémentation (THI-109, gate zéro ADR-005) pour éviter la surprise en fin de chantier.
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
@@ -111,6 +112,11 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ### Avant toute PR touchant des composants UI
 - Invoquer l'agent **`ui-auditor`** → analyser le rapport, corriger les CRITICAL avant de proposer la PR
 - Tout CRITICAL dans le rapport bloque le merge — pas d'exception
+
+### Avant toute PR touchant le Tuteur IA (`src/lib/ai/*` ou `src/app/components/ai/*`)
+- Invoquer l'agent **`prompt-guardrail-auditor`** → analyser le rapport, corriger les CRITICAL avant de proposer la PR
+- Tout CRITICAL dans le rapport bloque le merge — pas d'exception
+- Lancer aussi `security-auditor` pour les aspects transverses (CSP `connect-src`, fuite clé dans Sentry, etc.)
 
 ### Vercel Firewall — modifications
 - Toute modification firewall passe par l'**API REST Vercel** (pas par `vercel.json`)

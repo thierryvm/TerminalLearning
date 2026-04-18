@@ -592,7 +592,7 @@ Utilisateur → clé API saisie 1× → stockage local (voir ADR-005) → fetch 
 | **Stockage clé** | `localStorage` plain par défaut + opt-in Web Crypto AES-GCM (IndexedDB, PBKDF2 ≥ 210k iter, passphrase user) | — |
 | **Isolation** | Clé accessible au main thread (CSP strict + HSTS = premier rempart) | Web Worker sandboxé (ticket créé dès validation) |
 | **Rate limiting** | Soft client-side (compteur IndexedDB + badge UI + backoff 429 + circuit breaker) | Edge Function proxy uniquement si abus observé, via nouvelle ADR |
-| **Guardrails** | Agent `prompt-guardrail-auditor` (Sonnet) créé AVANT implémentation, system prompt socratique versionné, sanitizer input + post-filter output | Red-team externe post-ship |
+| **Guardrails** | Agent `prompt-guardrail-auditor` (Haiku) créé AVANT implémentation, system prompt socratique versionné, sanitizer input + post-filter output | Red-team externe post-ship |
 
 #### Comportement adaptatif (V1 — algorithmique, sans LLM supplémentaire)
 
@@ -675,7 +675,7 @@ src/lib/ai/
 └── rateLimit.ts            # Soft counter + circuit breaker
 
 .claude/agents/
-└── prompt-guardrail-auditor.md   # Agent Sonnet — jailbreak tests OWASP LLM
+└── prompt-guardrail-auditor.md   # Agent Haiku — jailbreak tests OWASP LLM
 ```
 
 #### Accessibilité & UX
@@ -689,13 +689,13 @@ src/lib/ai/
 
 #### Séquence d'implémentation (ADR-005)
 
-1. ✅ Doc alignment + ADR-005 (cette PR)
-2. Agent `prompt-guardrail-auditor` (PR 2)
-3. Key manager V1 (PR 3)
-4. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter (PR 4)
-5. Onboarding UX + Consent modal (PR 5)
-6. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b (PR 6)
-7. 🔮 Web Worker isolation V1.5 post-ship (ticket séparé)
+1. ✅ Doc alignment + ADR-005 (PR #151 mergée — THI-115)
+2. ✅ Agent `prompt-guardrail-auditor` (THI-109 — cette PR)
+3. Key manager V1 — THI-110
+4. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter — THI-111
+5. Onboarding UX + Consent modal — THI-112
+6. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b — THI-113
+7. 🔮 Web Worker isolation V1.5 post-ship — THI-114
 
 ---
 
