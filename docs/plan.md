@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
 > Dernière mise à jour : 18 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 909 tests unitaires + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 923 tests unitaires (903 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
 
 ---
 

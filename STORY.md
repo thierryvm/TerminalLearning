@@ -78,7 +78,7 @@ On a choisi la simulation pour plusieurs raisons :
 - **Coût** : des containers éphémères à la demande coûtent. Une simulation en mémoire coûte zéro.
 - **Pédagogie** : pour apprendre les commandes de base, la simulation est suffisamment fidèle. Le gap avec un vrai terminal est négligeable pour un débutant.
 
-La contrepartie : chaque commande simulée doit être implémentée manuellement. Ce n'est pas `bash` — c'est une abstraction de `bash`. Ça signifie des centaines de cas à couvrir, des edge cases à gérer, et 876 tests pour s'assurer que la simulation reste fidèle.
+La contrepartie : chaque commande simulée doit être implémentée manuellement. Ce n'est pas `bash` — c'est une abstraction de `bash`. Ça signifie des centaines de cas à couvrir, des edge cases à gérer, et plus de 900 tests unitaires pour s'assurer que la simulation reste fidèle.
 
 **Curriculum humain, pas généré par IA**
 
@@ -112,9 +112,9 @@ Ce qui paraissait simple ne l'était pas. Il n'y a pas que les commandes qui cha
 
 On a décidé de ne pas inclure WSL dans la V1, même si c'est l'environnement Linux le plus utilisé sur Windows. Pourquoi ? Parce que WSL est une couche d'émulation sur Windows — la frontière entre les deux systèmes est floue, et simuler cette ambiguïté fidèlement aurait demandé un travail disproportionné. Mieux vaut bien faire trois environnements que mal en faire quatre.
 
-### Les 876 tests : une discipline qui s'est imposée
+### La discipline des tests qui s'est imposée
 
-On n'a pas décidé d'avoir 876 tests. On a décidé d'en avoir *suffisamment* — et c'est en suivant cette règle systématiquement que le nombre a grandi.
+On n'a pas décidé d'avoir un nombre précis de tests. On a décidé d'en avoir *suffisamment* — et c'est en suivant cette règle systématiquement que le nombre a grandi (900+ et ça continue).
 
 La règle est simple : **toute nouvelle commande simulée doit avoir un test avant d'être mergée**. Pas après. Avant.
 
