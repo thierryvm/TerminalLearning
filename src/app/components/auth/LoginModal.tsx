@@ -99,10 +99,10 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <Button
             type="button"
             variant="tl-icon-ghost"
-            size="tl-icon-44"
+            size="icon-lg"
             onClick={handleClose}
             aria-label="Fermer"
-            className="-mr-2 text-xl leading-none"
+            className="-mr-2 text-xl leading-none rounded-lg"
           >
             ×
           </Button>
