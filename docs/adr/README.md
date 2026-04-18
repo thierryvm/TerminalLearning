@@ -11,6 +11,7 @@
 | [ADR-002](./ADR-002-openrouter-byok-tiers.md) | BYOK 4-tiers avec OpenRouter prioritaire | 17 avril 2026 | Accepted |
 | [ADR-003](./ADR-003-ttfr-kpi.md) | TTFR (Time To First Real-world command) comme KPI central | 17 avril 2026 | Accepted |
 | [ADR-004](./ADR-004-classroom-composer-ui.md) | Classroom-as-Code via UI composer (JSON en stockage) | 17 avril 2026 | Accepted |
+| [ADR-005](./ADR-005-ai-tutor-v1-implementation.md) | AI Tutor V1 — stockage clé, rate limiting, guardrails | 18 avril 2026 | Accepted |
 
 ## Process
 

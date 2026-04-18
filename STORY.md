@@ -78,7 +78,7 @@ On a choisi la simulation pour plusieurs raisons :
 - **Coût** : des containers éphémères à la demande coûtent. Une simulation en mémoire coûte zéro.
 - **Pédagogie** : pour apprendre les commandes de base, la simulation est suffisamment fidèle. Le gap avec un vrai terminal est négligeable pour un débutant.
 
-La contrepartie : chaque commande simulée doit être implémentée manuellement. Ce n'est pas `bash` — c'est une abstraction de `bash`. Ça signifie des centaines de cas à couvrir, des edge cases à gérer, et 876 tests pour s'assurer que la simulation reste fidèle.
+La contrepartie : chaque commande simulée doit être implémentée manuellement. Ce n'est pas `bash` — c'est une abstraction de `bash`. Ça signifie des centaines de cas à couvrir, des edge cases à gérer, et plus de 900 tests unitaires pour s'assurer que la simulation reste fidèle.
 
 **Curriculum humain, pas généré par IA**
 
@@ -112,9 +112,9 @@ Ce qui paraissait simple ne l'était pas. Il n'y a pas que les commandes qui cha
 
 On a décidé de ne pas inclure WSL dans la V1, même si c'est l'environnement Linux le plus utilisé sur Windows. Pourquoi ? Parce que WSL est une couche d'émulation sur Windows — la frontière entre les deux systèmes est floue, et simuler cette ambiguïté fidèlement aurait demandé un travail disproportionné. Mieux vaut bien faire trois environnements que mal en faire quatre.
 
-### Les 876 tests : une discipline qui s'est imposée
+### La discipline des tests qui s'est imposée
 
-On n'a pas décidé d'avoir 876 tests. On a décidé d'en avoir *suffisamment* — et c'est en suivant cette règle systématiquement que le nombre a grandi.
+On n'a pas décidé d'avoir un nombre précis de tests. On a décidé d'en avoir *suffisamment* — et c'est en suivant cette règle systématiquement que le nombre a grandi (900+ et ça continue).
 
 La règle est simple : **toute nouvelle commande simulée doit avoir un test avant d'être mergée**. Pas après. Avant.
 
@@ -304,6 +304,13 @@ La migration page par page est finie. Dashboard (THI-95), LessonPage (THI-91 chu
 
 **Admin Panel institutionnel (Phase 9)**
 Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de progression par élève. La plateforme peut maintenant accueillir des établissements — il faut maintenant leur donner les outils pour que ça soit utile.
+
+**AI Tutor BYOK — les décisions V1 sont gelées (ADR-005)**
+La veille, l'ADR-002 avait figé l'architecture BYOK à 4 tiers avec OpenRouter prioritaire — un choix social avant d'être technique : un apprenant qui n'a pas 20 € par mois à mettre dans une API ne doit pas être exclu. Mais l'ADR-002 laissait quatre questions ouvertes, et le `plan.md` Phase 7b décrivait encore l'ancienne architecture — trois providers directs, chiffrement Supabase Vault côté serveur, Edge Function proxy. Si on avait commencé à coder là-dessus, on aurait construit trois jours sur de faux prérequis. Le vrai travail avant d'écrire la moindre ligne, c'était d'aligner la documentation sur la vérité, puis de trancher les quatre points restants. Stockage de la clé côté client (plain par défaut pour l'apprenant qui débute sur une clé OpenRouter free, chiffrement Web Crypto en opt-in pour le dev qui gère une clé payante) ; isolation Web Worker (différée à V1.5 mais ticket tracé immédiatement, pas d'"on verra plus tard") ; rate limiting (soft client-side uniquement, pas d'Edge Function proxy V1 parce qu'ajouter un middleman serveur contredirait l'ADR précédente) ; agent `prompt-guardrail-auditor` (créé AVANT l'implémentation — l'anti-pattern classique, c'est de mettre le test harness en dernier et de découvrir au merge final qu'un jailbreak passe). Ces quatre décisions sont maintenant consignées dans l'ADR-005 avec leurs alternatives rejetées, pour que dans six mois, si quelqu'un veut revenir sur un choix, il sache ce qu'on avait écarté et pourquoi. Le code viendra après. Cette discipline — aligner la doc, puis décider, puis coder — est la seule façon tenable de construire seul.
+
+### Ce qu'on a appris sur la dette documentaire
+
+Il y a eu une règle implicite violée avant qu'elle ne soit explicite : une ADR acceptée qui n'est pas répercutée dans `plan.md` ne fait pas foi. Elle crée une zone grise où deux vérités coexistent — celle de la décision stratégique et celle du plan d'exécution. Un jour plus tard, quelqu'un (moi, Claude, un futur contributeur) lit `plan.md`, commence à coder, et construit sur un fantôme d'architecture. La dette documentaire ne casse pas de tests, ne déclenche pas Sentry, ne bloque pas un merge. Elle se manifeste en silence, trois jours plus tard, par un "pourquoi ça ne marche pas comme prévu". La règle est devenue explicite (mémoire feedback dédiée) : nouvelle ADR acceptée = PR de doc alignment dans les 24 heures, sinon la décision n'est pas vraiment acceptée, elle est juste écrite quelque part.
 
 ### Les débats ouverts
 

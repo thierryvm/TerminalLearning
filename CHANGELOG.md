@@ -5,6 +5,35 @@
 
 ---
 
+## AI Tutor BYOK — architecture V1 gelée (ADR-005)
+*18 avril 2026 · Phase 7b · doc alignment + décisions V1*
+
+**Le défi :** L'architecture BYOK 4-tiers avait été figée la veille par l'ADR-002 (OpenRouter prioritaire, client-side only, zéro clé serveur). Mais `plan.md` Phase 7b décrivait encore l'ancienne architecture à 3 providers avec chiffrement Supabase Vault et Edge Function proxy — un écart silencieux qui aurait mené à une implémentation sur de faux prérequis. Avant de coder quoi que ce soit, il fallait aligner les documents guides et arbitrer quatre points laissés ouverts par l'ADR-002 : stockage de la clé côté client, rate limiting, isolation process, et calendrier de création de l'agent de validation.
+
+**La méthode :** Brainstorm structuré en quatre axes (B1 stockage, B2 rate limiting, B3 guardrails socratiques — les threat models OWASP LLM Top 10 d'abord, puis les options techniques), suivi d'un arbitrage décisif par l'owner. Les décisions sont consignées dans l'ADR-005 avec rationale, alternatives rejetées, et séquence d'implémentation en 7 étapes.
+
+**Ce qui a été livré :**
+- **ADR-005** — quatre décisions V1 gelées avec traçabilité complète :
+  1. Stockage clé : `localStorage` plain par défaut + opt-in Web Crypto (AES-GCM, PBKDF2 ≥ 210k iter, passphrase) — progressive disclosure (A1 free tier = zéro friction, Tier 2 pro = chiffrement actif)
+  2. Web Worker isolation différée à V1.5, ticket séparé créé immédiatement (pas de "on verra plus tard")
+  3. Rate limiting client-side soft uniquement en V1 (pas d'Edge Function proxy — contredirait ADR-002)
+  4. Agent `prompt-guardrail-auditor` (Sonnet) créé AVANT l'implémentation — pas après, pour éviter le blocker surprise en fin de chantier
+- **`docs/plan.md` Phase 7b** — intégralement réécrite sur base ADR-002 + ADR-005 : 4 tiers, zéro clé serveur, table Supabase `user_ai_keys` supprimée (la clé reste côté client), séquence d'implémentation en 7 PRs
+- **Mémoire `project_ai_agent_byok.md`** — alignée sur la nouvelle architecture (providers exclus, tiers, workflow)
+- **`docs/ROADMAP.md`** — header remis à jour (ADRs 001-005), retrait de la confusion "Phase 10 brainstorm" (le AI Tutor est Phase 7b)
+- **`docs/adr/README.md`** — index ADR complété
+
+**Validation :**
+- Grep transversal sur `Phase 7b`, `AI Tutor`, `BYOK`, `OpenRouter` — aucun résidu de l'ancienne archi
+- Cohérence interne ADR-002 ↔ ADR-005 ↔ plan.md ↔ mémoire ↔ ROADMAP vérifiée
+- Tests vitest verts (909 pass — aucun code produit, uniquement de la documentation)
+
+**Pourquoi c'est important :** La dette documentaire est la plus insidieuse. Elle ne casse pas un test, ne déclenche pas une alerte Sentry, ne bloque pas un merge. Elle se manifeste quand on commence à coder sur une base qu'on croyait correcte et qu'on réalise, trois jours plus tard, que le plan de référence ne décrivait plus la réalité. Ici, l'écart n'a pas produit de code — parce qu'on a vérifié avant. Cette vérification est devenue une règle explicite (feedback memory `feedback_doc_alignment.md`) : avant tout brainstorm ou plan d'architecture, grep transversal sur les docs guide pour détecter les drifts.
+
+**Leçon :** Quand une ADR consigne une décision stratégique, les plans opérationnels doivent être mis à jour dans la même journée. Un ADR accepté qui n'est pas répercuté dans `plan.md` ne fait pas foi — il crée une zone grise où deux vérités coexistent. La règle devient : **nouvelle ADR acceptée = PR de doc alignment dans les 24h**, ou la décision n'est pas vraiment acceptée.
+
+---
+
 ## Migration shadcn/ui — clôturée
 *17–18 avril 2026 · THI-85 / THI-91 / THI-105 / THI-106 / THI-107*
 

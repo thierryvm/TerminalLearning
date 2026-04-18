@@ -1,17 +1,18 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 17 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 64 leçons, 901 tests unitaires + 176 E2E — **Vision consolidée 17 avril 2026** : repositionnement LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
+> Dernière mise à jour : 18 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 923 tests unitaires (903 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026
 
 ---
 
 ## Vision consolidée (17 avril 2026)
 
-Décisions stratégiques ancrées dans les 4 ADRs :
+Décisions stratégiques ancrées dans les 5 ADRs :
 - [ADR-001](./adr/ADR-001-lti-first-positioning.md) — **Positionnement LTI-first** : tool pédagogique spécialisée intégrable dans Moodle/Smartschool/Classroom via LTI 1.3, pas un LMS complet
-- [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour étudiants précaires, un seul SDK compatible OpenAI
+- [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour apprenants sans budget API, un seul SDK compatible OpenAI
 - [ADR-003](./adr/ADR-003-ttfr-kpi.md) — **TTFR KPI** : Time To First Real-world command comme mesure de valeur pédagogique réelle
 - [ADR-004](./adr/ADR-004-classroom-composer-ui.md) — **Classroom-as-Code** : UI Composer visuel, JSON en stockage invisible, fork/remix entre profs
+- [ADR-005](./adr/ADR-005-ai-tutor-v1-implementation.md) — **AI Tutor V1** : `localStorage` plain défaut + opt-in Web Crypto, rate-limit soft client-side, agent `prompt-guardrail-auditor` créé avant implémentation, Web Worker isolation différée V1.5
 
 Chantiers structurants qui en découlent (voir `docs/ROADMAP.md` Phases 10-13) :
 - Demo interactive landing ("try-before-signup" 30 secondes)
@@ -559,29 +560,39 @@ CREATE TABLE audit_log (
 
 ### 🔮 Phase 7b — Agent IA Tuteur Adaptatif (THI-41)
 
-> Coût Terminal Learning : **$0** — architecture BYOK pur.
-> Pré-requis : Phase 7 (RBAC) terminée. Lié au Module 11 (THI-29).
+> Architecture gelée par [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) (BYOK 4-tiers OpenRouter) et [ADR-005](./adr/ADR-005-ai-tutor-v1-implementation.md) (décisions V1).
+> Coût Terminal Learning : **$0** — zéro clé serveur, zéro risque financier.
+> Pré-requis : Phase 7 (RBAC) ✅ terminée. Lié au Module 11 (THI-29).
 
 #### Philosophie
-L'utilisateur active l'agent avec **sa propre clé API**. Terminal Learning ne paie rien.
-Le Module 11 "L'IA comme outil dev" EST le onboarding : obtenir une clé, comprendre les coûts, activer l'agent.
 
-#### Architecture BYOK — sécurité maximale
+L'utilisateur active l'agent avec **sa propre clé API**. Terminal Learning n'est jamais intermédiaire. Le Module 11 "L'IA comme outil dev" EST le onboarding pédagogique : comprendre ce qu'est une API, obtenir une clé, comprendre les coûts, activer l'agent comme premier "prof à domicile".
+
+#### Architecture BYOK 4-tiers (ADR-002)
 
 ```
-Utilisateur → fournit clé API (1×) → Supabase Vault (chiffré, jamais renvoyé au client)
-Utilisateur → envoie message → Edge Function → déchiffre clé → proxy LLM → réponse
-                                                └── clé effacée de la mémoire immédiatement
+Tier 0 · Free         → OpenRouter free models (DeepSeek V3.1, Llama 3.3, Gemini Flash free)   0 €
+Tier 1 · Pay-as-you-go → OpenRouter payant                                                     ~0.20-0.50 €/mois
+Tier 2 · Pro direct   → Anthropic / OpenAI / Google Gemini (pleine puissance)                  $5-20/mois
+Tier 3 · Local         → LM Studio / Ollama via URL custom                                    0 €, privacy max
 ```
 
-**Providers supportés** :
-- Anthropic Claude (claude-haiku-4-5 = économique, claude-sonnet-4-6 = qualité)
-- OpenAI GPT-4o-mini / GPT-4o
-- Google Gemini (via clé Google Cloud personnelle — RGPD-safe si utilisateur gère)
+**Un seul client SDK** : interface OpenAI-compatible d'OpenRouter → `fetch('/v1/chat/completions')` drop-in pour tous les tiers. Détection auto du provider via préfixe de clé (`sk-or-v1-*`, `sk-ant-*`, `sk-*`, custom base URL pour Tier 3).
 
-**Providers exclus par défaut** :
-- Google Gemini API standard (free tier) → **non conforme RGPD EU** sans contrat enterprise
-- Tout service sans Data Processing Agreement (DPA) documenté
+**Flux client-side pur — zéro clé serveur** :
+
+```
+Utilisateur → clé API saisie 1× → stockage local (voir ADR-005) → fetch direct → provider LLM → réponse
+```
+
+#### Décisions V1 (ADR-005)
+
+| Axe | V1 | V1.5 / V2 |
+|---|---|---|
+| **Stockage clé** | `localStorage` plain par défaut + opt-in Web Crypto AES-GCM (IndexedDB, PBKDF2 ≥ 210k iter, passphrase user) | — |
+| **Isolation** | Clé accessible au main thread (CSP strict + HSTS = premier rempart) | Web Worker sandboxé (ticket créé dès validation) |
+| **Rate limiting** | Soft client-side (compteur IndexedDB + badge UI + backoff 429 + circuit breaker) | Edge Function proxy uniquement si abus observé, via nouvelle ADR |
+| **Guardrails** | Agent `prompt-guardrail-auditor` (Sonnet) créé AVANT implémentation, system prompt socratique versionné, sanitizer input + post-filter output | Red-team externe post-ship |
 
 #### Comportement adaptatif (V1 — algorithmique, sans LLM supplémentaire)
 
@@ -593,57 +604,57 @@ Utilisateur → envoie message → Edge Function → déchiffre clé → proxy L
 | Commande correcte mais non optimale | Montre l'alternative plus élégante |
 | Progression rapide (mastery >95%) | Propose le niveau supérieur en avance |
 
-#### Adaptation selon l'apprenant
+L'agent s'adapte à : niveau CEFR courant, track actif (Full-Stack / Sysadmin / Automation), environnement préféré (Linux/macOS/Windows), historique d'erreurs, rythme d'apprentissage, langue UI (FR/NL/EN/DE).
 
-L'agent détecte et s'adapte à :
-- **Niveau CEFR courant** → complexité du langage des explications
-- **Track actif** (Full-Stack / Sysadmin / Automation) → exemples contextualisés
-- **Environnement préféré** (Linux / macOS / Windows) → syntaxe des exemples
-- **Historique d'erreurs** → insiste sur les points de blocage personnels
-- **Rythme d'apprentissage** → ajuste la densité des hints
+#### Sécurité — OWASP LLM Top 10 (ADR-005)
 
-#### RGPD — obligations (validé 10 avril 2026)
+- **LLM01 Prompt injection** → system prompt fixe + sanitizer input (strip markers `"""`, `---BEGIN`, `### Instruction`)
+- **LLM02 Insecure output** → post-filter regex commandes destructives (`rm -rf`, `drop database`, `format c:`, `:(){:|:&};:`) → wrap `<AiDangerousOutput />` avec confirmation
+- **LLM06 Sensitive data** → clé API **jamais** dans le contexte LLM (uniquement header HTTP), contexte user minimal (pas de JWT, pas de profile complet)
+- **LLM08 Excessive agency** → tutor ne PEUT PAS exécuter, uniquement répondre textuellement. Exécution reste sur `terminalEngine.ts` local.
+- **LLM09 Overreliance** → chaque réponse IA encadrée visuellement : "Suggestion IA — vérifiez avant d'exécuter"
 
-- ✅ Consentement explicite avant 1ère interaction IA (modal dédié)
-- ✅ Page `/privacy` : section "Traitement IA" — provider géré par l'utilisateur
-- ✅ Aucun historique stocké par défaut (opt-in explicite si l'utilisateur veut garder)
-- ✅ Bouton "Supprimer ma clé API" dans `/app/settings`
-- ✅ La clé API = données personnelles → droit à la suppression garanti
-- ✅ Aucun entraînement de modèle avec les données utilisateurs
+Audit obligatoire avant chaque PR qui modifie `systemPrompt.ts` : agent `prompt-guardrail-auditor` lance une batterie de jailbreaks contre la nouvelle version → CRITICAL si une injection passe.
+
+#### RGPD — obligations
+
+- Consentement explicite avant 1ère interaction IA (modal dédié, version tracée)
+- Page `/privacy` : section "Traitement IA" — provider géré par l'utilisateur
+- Aucun historique stocké par défaut (opt-in explicite)
+- Bouton "Oublier ma clé" dans `/app/settings` → `localStorage.clear()` + `indexedDB.deleteDatabase`
+- Clé API = donnée personnelle → droit à la suppression garanti
+- Aucun entraînement de modèle avec les données utilisateurs
 
 #### Évolution post-accord RIZIV
 
-```
-Budget X approuvé →
-  Option A : Anthropic avec DPA officiel → Claude Haiku par défaut (gratuitement pour étudiants)
-  Option B : AWS Bedrock EU region → data residency Belgique/EU garanti
-  Option C : Modèle SaaS → institutions paient (tarif enseignant), étudiants restent gratuits
-  Option D : Modèle freemium → 20 interactions IA/jour gratuit, illimité avec clé perso
-```
+Options par ordre de pertinence (à figer dans nouvelle ADR quand déclenchée) :
+- **Tier 0 upgrade** : passer d'OpenRouter free aux modèles Claude Haiku via Anthropic DPA officiel → gratuit pour étudiants (Terminal Learning paie)
+- **AWS Bedrock EU region** → data residency Belgique/EU garanti
+- **SaaS B2B** : institutions paient (tarif enseignant), étudiants restent gratuits
+- **Freemium** : 20 interactions/jour gratuit via Tier 0 serveur, illimité avec clé perso (Tiers 1/2/3)
 
-#### Nouvelles tables Supabase
+#### Tables Supabase (V1 minimal)
 
 ```sql
--- Clé API utilisateur (chiffrée via Supabase Vault)
-CREATE TABLE user_ai_keys (
-  user_id uuid REFERENCES profiles(id) PRIMARY KEY,
-  provider text NOT NULL CHECK (provider IN ('anthropic','openai','google')),
-  encrypted_key text NOT NULL,    -- chiffré via Supabase Vault, jamais exposé client
-  model_preference text,          -- ex. 'claude-haiku-4-5'
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
--- RLS : utilisateur voit/modifie uniquement sa propre ligne
-
--- Consentement IA (audit RGPD)
+-- Consentement IA (audit RGPD — obligatoire)
 CREATE TABLE ai_consent (
   user_id uuid REFERENCES profiles(id) PRIMARY KEY,
   consented_at timestamptz DEFAULT now(),
-  provider text NOT NULL,
-  ip_address inet,
-  consent_version text NOT NULL    -- version du texte de consentement accepté
+  provider_tier text NOT NULL CHECK (provider_tier IN ('tier0_or_free','tier1_or_paid','tier2_direct','tier3_local')),
+  consent_version text NOT NULL
+);
+-- RLS : user voit/modifie uniquement sa propre ligne
+
+-- System prompt versionné (audit RGPD + rollback)
+CREATE TABLE ai_system_prompts (
+  version text PRIMARY KEY,
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  deprecated_at timestamptz
 );
 ```
+
+> **Pas de table `user_ai_keys`** : la clé reste côté client (ADR-002 / ADR-005). Le serveur ne la voit jamais.
 
 #### Composants à créer
 
@@ -653,10 +664,18 @@ src/app/components/ai/
 ├── AiKeySetup.tsx          # Onboarding clé API (lié à Module 11)
 ├── AiConsentModal.tsx      # Consentement RGPD obligatoire
 ├── AiHintBubble.tsx        # Hint contextuel dans les exercices
-└── AiSettings.tsx          # Gérer/supprimer la clé dans /app/settings
+├── AiSettings.tsx          # Gérer/supprimer la clé dans /app/settings
+└── AiDangerousOutput.tsx   # Wrapper visuel pour commandes destructives suggérées
 
-supabase/functions/
-└── ai-proxy/index.ts       # Edge Function proxy sécurisé (déchiffre clé, jamais retour client)
+src/lib/ai/
+├── keyManager.ts           # localStorage plain | IndexedDB + Web Crypto opt-in
+├── openRouterClient.ts     # Fetch unifié OpenAI-compatible (tous les tiers)
+├── inputSanitizer.ts       # Strip markers prompt injection
+├── outputPostFilter.ts     # Detect destructive commands → wrap
+└── rateLimit.ts            # Soft counter + circuit breaker
+
+.claude/agents/
+└── prompt-guardrail-auditor.md   # Agent Sonnet — jailbreak tests OWASP LLM
 ```
 
 #### Accessibilité & UX
@@ -666,6 +685,17 @@ supabase/functions/
 - Réponses courtes par défaut — "En savoir plus" pour développer
 - Mode "silencieux" : hints uniquement si demandé (pour ne pas infantiliser les B2+)
 - Mobile : panel IA en slide-up sheet, pas en sidebar
+- CSP : ajouter `https://openrouter.ai`, `https://api.anthropic.com`, `https://api.openai.com` dans `connect-src` (`vercel.json`) au moment de l'implémentation
+
+#### Séquence d'implémentation (ADR-005)
+
+1. ✅ Doc alignment + ADR-005 (cette PR)
+2. Agent `prompt-guardrail-auditor` (PR 2)
+3. Key manager V1 (PR 3)
+4. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter (PR 4)
+5. Onboarding UX + Consent modal (PR 5)
+6. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b (PR 6)
+7. 🔮 Web Worker isolation V1.5 post-ship (ticket séparé)
 
 ---
 

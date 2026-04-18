@@ -21,14 +21,14 @@ WHERE p.id = '<user_uuid>';
 -- Format : JSON ou CSV selon la demande
 ```
 
-**NE PAS inclure :** audit_log (données internes), clé API (chiffrée, non récupérable), adresses IP
+**NE PAS inclure :** audit_log (données internes), adresses IP
+**Clé API AI Tutor :** stockée uniquement côté client (localStorage ou IndexedDB chiffrée — voir ADR-002 / ADR-005). Aucune donnée serveur à exporter. L'utilisateur peut la révoquer via `/app/settings` → "Oublier ma clé".
 
 ## Article 17 — Droit à l'effacement
 
 ```sql
 -- Dans cet ordre strict (respecter les FK) :
 DELETE FROM ai_consent WHERE user_id = '<uuid>';
-DELETE FROM user_ai_keys WHERE user_id = '<uuid>';
 DELETE FROM quiz_results WHERE user_id = '<uuid>';
 DELETE FROM badges WHERE user_id = '<uuid>';
 DELETE FROM class_enrollments WHERE student_id = '<uuid>';
@@ -39,6 +39,8 @@ DELETE FROM progress WHERE user_id = '<uuid>';
 DELETE FROM profiles WHERE id = '<uuid>';
 -- Le compte Supabase Auth est supprimé automatiquement en cascade
 ```
+
+> **Clé API AI Tutor** : pas de suppression serveur nécessaire — la clé est stockée côté client (ADR-002 / ADR-005). L'utilisateur la révoque via `/app/settings` ou en vidant le storage de son navigateur.
 
 **Logger dans audit_log :**
 ```sql
