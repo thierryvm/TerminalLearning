@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Terminal, ArrowLeft, ArrowUp } from 'lucide-react';
 import type { Components } from 'react-markdown';
 import { Button } from './ui/button';
+
+// Maps repo-root markdown filenames to their SPA route.
+// Narrative docs at the repo root (CHANGELOG.md, STORY.md) are rendered at
+// /changelog and /story — so cross-links in their markdown must resolve to
+// those routes instead of the raw .md file (which would 404 on the SPA).
+// Keep in sync with src/app/routes.ts.
+// Exported so src/test/markdownLinks.test.ts can use it as single source of truth.
+export const MARKDOWN_ROUTE_MAP: Record<string, string> = {
+  'STORY.md': '/story',
+  'CHANGELOG.md': '/changelog',
+};
 
 const mdComponents: Components = {
   h1: ({ children }) => (
@@ -26,16 +37,30 @@ const mdComponents: Components = {
   em: ({ children }) => (
     <em className="text-[#8b949e] italic">{children}</em>
   ),
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      target={href?.startsWith('http') ? '_blank' : undefined}
-      rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-      className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const linkClass = 'text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors';
+    const mappedRoute = href ? MARKDOWN_ROUTE_MAP[href] : undefined;
+
+    if (mappedRoute) {
+      return (
+        <Link to={mappedRoute} className={linkClass}>
+          {children}
+        </Link>
+      );
+    }
+
+    const isExternal = href?.startsWith('http');
+    return (
+      <a
+        href={href}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
+        className={linkClass}
+      >
+        {children}
+      </a>
+    );
+  },
   pre: ({ children }) => (
     <div className="my-4 bg-[#161b22] border border-[#30363d] rounded-lg p-4 overflow-x-auto">
       {children}
