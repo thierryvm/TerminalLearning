@@ -97,10 +97,8 @@ const buttonVariants = cva(
         "tl-tab-size": "h-auto flex-1 py-2.5 text-xs",
         // Terminal Learning — CommandReference filter pill
         "tl-filter-pill-size": "h-auto min-h-11 px-3 py-1.5 text-xs rounded-full",
-        // Terminal Learning — 44x44 icon button (sidebar close, install, menu FAB)
-        "tl-icon-44": "size-11 rounded-lg",
-        // Terminal Learning — 44x44 icon button (rounded-md variant for install button in UserMenu)
-        "tl-icon-44-md": "size-11 rounded-md",
+        // Terminal Learning — 44x44 icon button, neutral on rounded — apply rounded-lg/md via className
+        "icon-lg": "size-11",
         // Terminal Learning — Sidebar module row
         "tl-sidebar-row": "h-auto min-h-11 px-3 py-2 text-sm rounded-lg",
         // Terminal Learning — Sidebar lesson subitem

@@ -10,6 +10,9 @@ import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import { iconMap } from '../data/moduleIcons';
 import { Button } from './ui/button';
+import { SidebarRowButton } from './ui/sidebar-row-button';
+import { SidebarLessonButton } from './ui/sidebar-lesson-button';
+import { EnvPill } from './ui/env-pill';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -65,9 +68,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Button
             type="button"
             variant="tl-sidebar-icon"
-            size="tl-icon-44"
+            size="icon-lg"
             onClick={onClose}
-            className="lg:hidden -mr-2"
+            className="lg:hidden -mr-2 rounded-lg"
             aria-label="Fermer le menu"
           >
             <X size={18} aria-hidden="true" />
@@ -134,10 +137,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             return (
               <div key={mod.id}>
                 {/* Module header */}
-                <Button
+                <SidebarRowButton
                   type="button"
-                  variant={locked ? 'tl-sidebar-row-locked' : 'tl-sidebar-row'}
-                  size="tl-sidebar-row"
+                  locked={locked}
                   onClick={locked ? undefined : () => toggleModule(mod.id)}
                   disabled={locked}
                   aria-label={locked
@@ -164,7 +166,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       )}
                     </>
                   )}
-                </Button>
+                </SidebarRowButton>
 
                 {/* Locked hint */}
                 {locked && (
@@ -179,11 +181,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {mod.lessons.map((lesson) => {
                       const done = isLessonCompleted(mod.id, lesson.id);
                       return (
-                        <Button
+                        <SidebarLessonButton
                           key={lesson.id}
                           type="button"
-                          variant="tl-sidebar-lesson"
-                          size="tl-sidebar-lesson"
                           onClick={() => handleLessonClick(mod.id, lesson.id)}
                         >
                           {done ? (
@@ -192,7 +192,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <Circle size={12} className="size-[12px] text-[#30363d] shrink-0 group-hover:text-[#8b949e]" />
                           )}
                           <span className="truncate">{lesson.title}</span>
-                        </Button>
+                        </SidebarLessonButton>
                       );
                     })}
                   </div>
@@ -214,15 +214,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 const meta = ENV_META[envId];
                 const active = selectedEnv === envId;
                 return (
-                  <Button
+                  <EnvPill
                     key={envId}
                     type="button"
-                    variant="tl-env-pill"
-                    size="tl-env-pill"
+                    active={active}
+                    activeClassName={`${meta.bgColor} ${meta.color} border ${meta.borderColor}`}
                     onClick={() => setEnvironment(envId)}
-                    className={active ? `${meta.bgColor} ${meta.color} border ${meta.borderColor}` : undefined}
                     title={`${meta.label} — ${meta.shell}`}
-                    aria-pressed={active}
                   >
                     {envId === 'linux' ? (
                       <Terminal size={10} className="size-[10px]" aria-hidden="true" />
@@ -232,7 +230,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <span className="text-[9px] leading-none select-none" aria-hidden="true">⊞</span>
                     )}
                     {meta.label}
-                  </Button>
+                  </EnvPill>
                 );
               })}
             </div>
@@ -248,8 +246,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Button
                 asChild
                 variant="tl-sidebar-icon"
-                size="tl-icon-44-md"
-                className="hover:bg-[#21262d]"
+                size="icon-lg"
+                className="hover:bg-[#21262d] rounded-md"
               >
                 <NavLink
                   to="/"
@@ -273,9 +271,9 @@ export function MenuButton({ onClick }: { onClick: () => void }) {
     <Button
       type="button"
       variant="tl-menu-fab"
-      size="tl-icon-44"
+      size="icon-lg"
       onClick={onClick}
-      className="lg:hidden shrink-0"
+      className="lg:hidden shrink-0 rounded-lg"
       aria-label="Ouvrir le menu de navigation"
     >
       <Menu size={18} className="size-[18px]" aria-hidden="true" />
