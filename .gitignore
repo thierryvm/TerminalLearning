@@ -25,6 +25,7 @@ pnpm-debug.log*
 # Local screenshots from preview testing (not for repo)
 .screenshots/
 .claude/screenshots/
+.claude-screenshots/
 
 # Supabase CLI temp files
 supabase/.temp/
