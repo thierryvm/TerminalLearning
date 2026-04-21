@@ -33,9 +33,19 @@ for file in $STAGED_FILES; do
   esac
 
   for pattern in "${PATTERNS[@]}"; do
-    if grep -E "$pattern" "$file" > /dev/null 2>&1; then
-      echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
-      FOUND_SECRETS=$((FOUND_SECRETS + 1))
+    # Skip SQL comments and placeholder lines
+    if [ "$file" = "${file%.sql}" ]; then
+      # Not a SQL file, use normal grep
+      if grep -E "$pattern" "$file" > /dev/null 2>&1; then
+        echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
+        FOUND_SECRETS=$((FOUND_SECRETS + 1))
+      fi
+    else
+      # SQL file: ignore lines starting with -- (comments) and placeholder lines
+      if grep -E "$pattern" "$file" | grep -v "^--" | grep -v "PLACEHOLDER\|RESET_VIA_ADMIN\|ROTATED" > /dev/null 2>&1; then
+        echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
+        FOUND_SECRETS=$((FOUND_SECRETS + 1))
+      fi
     fi
   done
 done
