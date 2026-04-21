@@ -194,10 +194,13 @@ export function detectProvider(key: string): Provider | null {
 
 /**
  * Stores an API key for the given provider.
- * - Plain by default (localStorage).
+ * - Plain by default (localStorage). ⚠️ ADR-002 gate: UX MUST guide toward encryption, not plain.
+ *   Supply chain attack (XSS via deps) → localStorage compromise → key exfiltrated.
  * - Encrypted when `opts.encrypt === true` (IndexedDB + AES-GCM + PBKDF2).
  *   Requires a non-empty `opts.passphrase`.
  * Migration: switching mode for a provider removes the previous store entry.
+ *
+ * Called by: THI-112 AiKeySetup (design should default to encrypted, session-only fallback if passphrase refused).
  */
 export async function saveKey(
   provider: Provider,

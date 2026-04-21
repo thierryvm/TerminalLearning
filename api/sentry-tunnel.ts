@@ -70,7 +70,7 @@ export default async function handler(req: Request): Promise<Response> {
   const now = Date.now();
   maybeCleanup(now);
   const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    req.headers.get('x-vercel-forwarded-for')?.split(',')[0].trim() ??
     req.headers.get('cf-connecting-ip') ??
     'unknown';
   if (isRateLimited(ip, now)) {

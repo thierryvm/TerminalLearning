@@ -50,6 +50,9 @@ end;
 $$;
 
 -- ── Fix H5: institutions — restrict SELECT to role-appropriate visibility ─────
+-- NOTE (21 avril 2026, Opus audit): policy currently allows teachers to SELECT all institutions.
+-- Should be: (id = public.get_my_institution_id()) OR (get_my_role() in ('super_admin', 'institution_admin')).
+-- Tracked for future migration (priority low, organizational leak only).
 drop policy if exists "institutions: authenticated select" on public.institutions;
 
 create policy "institutions: select by role"
