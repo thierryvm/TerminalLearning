@@ -1,3 +1,4 @@
+import 'vitest/globals';
 import '@testing-library/jest-dom';
 
 // localStorage polyfill for jsdom environments where it is not fully available
