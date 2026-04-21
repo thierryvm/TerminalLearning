@@ -19,6 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "fuzz": "node --loader tsx scripts/fuzz-terminal-engine.ts",
+    "fuzz:batch": "node --loader tsx scripts/fuzz-terminal-engine.ts --count=200",
     "test:e2e": "playwright test",
     "test:e2e:mobile": "playwright test --project=mobile-iphone-se --project=mobile-galaxy",
     "test:e2e:ui": "playwright test --ui",
