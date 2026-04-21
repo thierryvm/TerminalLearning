@@ -120,6 +120,12 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Tout CRITICAL dans le rapport bloque le merge — pas d'exception
 - Lancer aussi `security-auditor` pour les aspects transverses (CSP `connect-src`, fuite clé dans Sentry, etc.)
 
+### Avant toute PR touchant auth/RBAC/RLS/API/crypto
+- **Obligatoire** : invoquer l'agent **`security-auditor`** → analyser le rapport COMPLET, corriger les CRITICAL et HIGH avant merge
+- Scope: modifications à `api/`, `supabase/migrations/`, `src/lib/ai/`, `src/lib/supabase.ts`, JWT handling, rate limiting, CSP, secrets
+- Résumé pré-merge: type des changements sécurité (auth, RLS, encryption, API protection, etc.)
+- Le rapport security-auditor devient obligatoire pour l'approbation de PR — archiver le résultat dans le commentaire PR
+
 ### Vercel Firewall — modifications
 - Toute modification firewall passe par l'**API REST Vercel** (pas par `vercel.json`)
 - Documenter chaque changement dans `docs/vercel-firewall.md` (IDs, patterns, rationale, rollback)
