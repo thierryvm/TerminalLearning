@@ -91,15 +91,17 @@ These files remain in `.archive/` for historical reference. Current session prot
 
 | Document | Last Updated | Status |
 |----------|-------------|--------|
-| ROADMAP.md | 15 April 2026 | 🟢 Active |
+| ROADMAP.md | 21 April 2026 | 🟢 Active |
 | ARCHITECTURE.md | 14 April 2026 | 🟢 Active |
 | SECURITY.md | 21 April 2026 | 🟢 Active |
 | CONVENTIONS.md | 13 April 2026 | 🟢 Active |
-| plan.md | 18 April 2026 | 🟢 Active |
+| plan.md | 21 April 2026 | 🟢 Active |
 | security-audit-log.md | 21 April 2026 | 🟢 Active |
-| GUIDELINES.md | 12 April 2026 | 🟡 Stable |
-| guides/ | 15 April 2026 | 🟢 Active |
+| GUIDELINES.md | 11 April 2026 | 🟡 Stable |
+| vercel-firewall.md | 14 April 2026 | 🟢 Active |
+| ATTRIBUTIONS.md | 2 April 2026 | 🟡 Stable |
 | adr/ | 18 April 2026 | 🟢 Active |
+| guides/ | 15 April 2026 | 🟢 Active |
 
 ---
 
