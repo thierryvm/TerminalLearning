@@ -1,7 +1,7 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 21 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 955 tests unitaires (935 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Phase 7b (AI Tutor V1)** : THI-115 ✅, THI-109 ✅, THI-110 ✅, ✅ THI-120 (scrubber Sentry, C1/C2/C3 security hardening), 🔜 THI-111 (AiTutorPanel + providers + sanitizer)
+> Dernière mise à jour : 21 avril 2026 21:45 UTC+1
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 955 tests unitaires (935 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Phase 7b (AI Tutor V1) ✅ COMPLETE** : THI-115 ✅, THI-109 ✅, THI-110 ✅, ✅ THI-120 (C1/C2/C3 security: pre-commit hardening + input migration + SECURITY.md + migration 012 RLS fix), Next: THI-111 (AiTutorPanel + providers + sanitizer)
 
 ---
 
@@ -95,6 +95,7 @@ Cibles d'adoption prioritaires : **AVIQ / Forem / Bruxelles Formation** (agile, 
 | THI-100 | a11y | LoginModal mobile 2026 — `autoComplete` + `inputMode` + touch targets (PR #122, 15 avril 2026) ✅ Done |
 | THI-101 | a11y | MarkdownPage FAB scroll-top — touch + safe-area (PR #127, 16 avril 2026) ✅ Done |
 | THI-102 | a11y | NotFound / Privacy / Dashboard / CommandReference — touch targets + focus-visible + `clamp()` typography 404 (PR #128, 16 avril 2026) ✅ Done |
+| THI-120 | security | **Phase 7b Security Hardening — AI Tutor V1 Gates** — 3 couches (C1/C2/C3): pre-commit hook word boundary fix (password/secret patterns, avoid false positives on `current-password`/`new-password`), [C2] input migration (LoginModal + CommandReference custom HTML → shadcn `<Input>`), SECURITY.md doc (C1 incident 006 + H1 RLS policy drift), migration 012 fix (drop permissive policy 010, keep restrictive 011), CI npm ci --legacy-peer-deps fix (@radix-ui/react-progress React 19 compat) (PRs #157-#159, 21 avril 2026) ✅ Done |
 | THI-77 | Phase 9 | Heatmap activité élève — vue enseignant (GitHub-style) 🔮 Backlog |
 | THI-78 | Phase 9 | Heatmap adoption plateforme — vue super_admin/institution_admin 🔮 Backlog |
 | THI-79 | feat | Indicateur force mot de passe + générateur (zxcvbn + crypto.getRandomValues()) — signup uniquement 🔮 Backlog |
