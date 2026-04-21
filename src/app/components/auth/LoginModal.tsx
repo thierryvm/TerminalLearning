@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const emailSchema = z.string().email('Email invalide');
 const passwordSchema = z.string().min(8, 'Minimum 8 caractères');
@@ -161,7 +162,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
 
             {/* Email / password form */}
             <form onSubmit={handleEmailAuth} className="space-y-3">
-              <input
+              <Input
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -175,7 +176,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
-              <input
+              <Input
                 type="password"
                 name="password"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}

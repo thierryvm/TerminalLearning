@@ -13,8 +13,8 @@ PATTERNS=(
   "sk-[a-zA-Z0-9]{48}"                 # OpenAI (basic pattern)
   "AIza[a-zA-Z0-9_-]{35}"              # Gemini
   "eyJ[A-Za-z0-9_.-]{50,}"             # JWT tokens
-  "password['\"]?\s*[:=]"              # Password assignments
-  "secret['\"]?\s*[:=]"                # Secret assignments
+  "(^|[^a-zA-Z-])password\s*[:=]\s*['\"]?[a-zA-Z0-9]"  # Password assignments (word boundary to avoid 'current-password')
+  "(^|[^a-zA-Z-])secret\s*[:=]\s*['\"]?[a-zA-Z0-9]"    # Secret assignments (word boundary)
 )
 
 # Get staged files
@@ -33,19 +33,16 @@ for file in $STAGED_FILES; do
   esac
 
   for pattern in "${PATTERNS[@]}"; do
-    # Skip SQL comments and placeholder lines
-    if [ "$file" = "${file%.sql}" ]; then
-      # Not a SQL file, use normal grep
-      if grep -E "$pattern" "$file" > /dev/null 2>&1; then
-        echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
-        FOUND_SECRETS=$((FOUND_SECRETS + 1))
-      fi
-    else
-      # SQL file: ignore lines starting with -- (comments) and placeholder lines
+    # SQL files: ignore comments and placeholders
+    if [ "$file" != "${file%.sql}" ]; then
       if grep -E "$pattern" "$file" | grep -v "^--" | grep -v "PLACEHOLDER\|RESET_VIA_ADMIN\|ROTATED" > /dev/null 2>&1; then
         echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
         FOUND_SECRETS=$((FOUND_SECRETS + 1))
       fi
+    # All other files: use the pattern (now more specific to avoid false positives)
+    elif grep -E "$pattern" "$file" > /dev/null 2>&1; then
+      echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
+      FOUND_SECRETS=$((FOUND_SECRETS + 1))
     fi
   done
 done

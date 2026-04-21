@@ -4,6 +4,7 @@ import { useEnvironment } from '../context/EnvironmentContext';
 import type { EnvId } from '../data/curriculum';
 import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 interface CommandEntry {
   /** Command name shown — can be overridden per env */
@@ -705,7 +706,7 @@ export function CommandReference() {
         {/* Search */}
         <div className="relative mt-4">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e]" />
-          <input
+          <Input
             type="text"
             placeholder="Rechercher une commande..."
             value={search}
