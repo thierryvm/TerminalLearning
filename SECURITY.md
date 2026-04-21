@@ -32,7 +32,8 @@ You will receive an acknowledgement within 72 hours.
 - **Filesystem clone guard** — recursive `cp` operations are capped at a hard node limit to prevent memory exhaustion via deeply nested structures
 
 ### API & Edge Functions
-- **Rate limiting** on all public API endpoints — sliding-window per IP, with automatic stale-entry eviction
+- **Rate limiting** on all public API endpoints — sliding-window per IP (via `x-vercel-forwarded-for`, non-spoofable Vercel header), with automatic stale-entry eviction
+- **X-Forwarded-For fix** (21 avril 2026) — rate limit now reads `x-vercel-forwarded-for` (Vercel-injected) instead of `x-forwarded-for` (user-controllable), prevents IP rotation bypass
 - **Payload size guard** on the error-reporting tunnel — oversized requests are rejected before body buffering
 - **Envelope validation** on the error-reporting tunnel — only envelopes targeting our own project are forwarded; open-proxy abuse is structurally impossible
 
@@ -67,12 +68,43 @@ Automated security audit tool running on two levels:
 - RLS on all new tables (institutions, classes, enrollments) — principle of least privilege
 - 20 integration tests + 4 RLS bugs fixed during implementation
 
+### AI Security (Phase 7b — ADR-005, THI-109+)
+Automated security auditing specifically for LLM-based AI Tutor V1:
+- **Prompt-guardrail-auditor agent** — OWASP LLM Top 10 testing (15+ jailbreak patterns)
+- **Key manager V1** (`src/lib/ai/keyManager.ts`) — OpenRouter key stored locally (AES-GCM + PBKDF2 210k iterations)
+- **Sentry scrubber** (THI-120) — API keys, tokens, PII purged from error payloads before logging
+- **Context grounding** — LLM receives curriculum pages only, never full terminal history
+- **Markdown sanitizer** — LLM responses validated against injection patterns (no HTML/JS)
+- **RGPD consent modal** — explicit user approval before data sent to OpenRouter
+- **Immutable prompt system** — guardrails cannot be overridden via prompt injection
+
+**Threat Model**:
+- Prompt injection (direct & indirect via curriculum)
+- Jailbreak attempts (roleplay, hypothetical, authority)
+- Model poisoning (via BYOK OpenRouter compromise)
+- Data leakage (terminal history exposed to OpenRouter)
+- Hallucination (LLM inventing false commands)
+
+**Mitigations**:
+- Key never sent to LLM (tunnel via Sentry API only)
+- No history context (stateless per-request)
+- Prompt tested vs. 15+ attack patterns
+- Sanitizer whitelist-based (no HTML/JS allowed)
+- Rate limiting on AI endpoint (30 req/min per IP, via `x-vercel-forwarded-for`)
+
 ## Planned Security Enhancements
 
+### Phase 8+ — Advanced AI Defense
+- Token timing attack mitigation (uniform rate limiting)
+- Model versioning lock (prevent drift)
+- Honeytokels in responses (detect exfiltration)
+- Anomaly detection for jailbreak attempts
+
 ### Phase 9 — Admin Panel Security Center
-- Real-time anomaly detection: failed logins, rate-limit hits, terminal fuzzing patterns
+- Real-time anomaly detection: failed logins, rate-limit hits, terminal fuzzing patterns, jailbreak attempts
 - Audit log viewer (super_admin only)
 - Weekly automated security report via Supabase Edge Function → email
+- AI activity dashboard (prompts sent, responses sanitized, jailbreaks blocked)
 
 ## Out of Scope
 
