@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Module } from '../data/curriculum';
 import { mergeProgress, getDelta } from '../lib/progressSync';
 
@@ -81,7 +81,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [currBundle, setCurrBundle] = useState<CurriculumBundle | null>(null);
   // Keep a stable ref so callbacks can read the latest bundle without stale closures
   const currBundleRef = useRef<CurriculumBundle | null>(null);
-  currBundleRef.current = currBundle;
+
+  // Sync ref with state in a layout effect to avoid ESLint warns about refs during render
+  useLayoutEffect(() => {
+    currBundleRef.current = currBundle;
+  }, [currBundle]);
 
   // ── Lazy-load curriculum + unlocking (excluded from main bundle) ──────────
   useEffect(() => {
