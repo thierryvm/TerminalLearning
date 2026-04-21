@@ -58,6 +58,147 @@ function maybeCleanup(now: number): void {
   }
 }
 
+// ─── Scrubber patterns (THI-120) ───────────────────────────────────────────
+// OWASP: API key leakage, token exposure, PII exfiltration.
+// Security: case-insensitive matching on string values only, not JSON keys.
+const SCRUB_PATTERNS = {
+  openrouter: /sk-or-v1-[a-zA-Z0-9]{64}/gi,
+  anthropic: /sk-ant-[a-zA-Z0-9\-]{40,}/gi,
+  openai: /sk-(?!or-|ant-)[a-zA-Z0-9]{48}/gi,
+  gemini: /AIza[a-zA-Z0-9_\-]{35}/gi,
+  jwt_token: /eyJ[A-Za-z0-9_\-]{50,}/gi,
+  email: /[a-zA-Z0-9._%+\-]+@(?!example\.com|terminallearning\.dev|test)[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/gi,
+  generic_api_key: /sk-[a-zA-Z0-9_\-]{20,}/gi, // Fallback for future providers (Mistral, Groq, DeepSeek, etc.)
+} as const;
+
+type PatternKey = keyof typeof SCRUB_PATTERNS;
+
+interface ScrubStats {
+  patterns_hit: PatternKey[];
+  item_type?: string;
+  timestamp: number;
+}
+
+function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubStats } {
+  const stats: ScrubStats = { patterns_hit: [], timestamp: Date.now() };
+  let scrubbed = itemBody;
+
+  // Parse the item (could be JSON or text) safely
+  let itemJson: any;
+  try {
+    itemJson = JSON.parse(itemBody);
+    stats.item_type = itemJson.type;
+  } catch {
+    // Not JSON, treat as plain text
+    itemJson = null;
+  }
+
+  if (!itemJson) {
+    // Fallback: scrub text directly (less precise but safe)
+    Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
+      if (pattern.test(scrubbed)) {
+        stats.patterns_hit.push(key as PatternKey);
+        scrubbed = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+      }
+    });
+    return { scrubbed, stats };
+  }
+
+  // Scrub only event items (not transactions, sessions, etc.)
+  if (itemJson.type !== 'event') {
+    return { scrubbed: itemBody, stats };
+  }
+
+  // Recursively scrub string values in sensitive fields
+  const sensitiveFields = [
+    'exception.values[].value',
+    'breadcrumbs[].data',
+    'extra',
+    'user.email',
+    'user.username',
+    'request.data',
+  ];
+
+  function scrubValue(val: any): any {
+    if (typeof val !== 'string') return val;
+
+    let scrubbed = val;
+    Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
+      if (pattern.test(scrubbed)) {
+        stats.patterns_hit.push(key as PatternKey);
+        scrubbed = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+      }
+    });
+    return scrubbed;
+  }
+
+  // Scrub exception values
+  if (itemJson.exception?.values) {
+    itemJson.exception.values = itemJson.exception.values.map((ex: any) => ({
+      ...ex,
+      value: scrubValue(ex.value),
+    }));
+  }
+
+  // Scrub breadcrumbs
+  if (itemJson.breadcrumbs) {
+    itemJson.breadcrumbs = itemJson.breadcrumbs.map((bc: any) => ({
+      ...bc,
+      data: bc.data ? Object.fromEntries(
+        Object.entries(bc.data).map(([k, v]) => [k, scrubValue(String(v))])
+      ) : bc.data,
+      message: scrubValue(bc.message),
+    }));
+  }
+
+  // Scrub extra
+  if (itemJson.extra) {
+    itemJson.extra = Object.fromEntries(
+      Object.entries(itemJson.extra).map(([k, v]) => [k, scrubValue(String(v))])
+    );
+  }
+
+  // Scrub user
+  if (itemJson.user) {
+    itemJson.user = {
+      ...itemJson.user,
+      email: scrubValue(itemJson.user.email),
+      username: scrubValue(itemJson.user.username),
+    };
+  }
+
+  // Scrub request data
+  if (itemJson.request?.data) {
+    itemJson.request.data = scrubValue(itemJson.request.data);
+  }
+
+  // Scrub contexts (Sentry 10+ custom context fields)
+  if (itemJson.contexts) {
+    itemJson.contexts = Object.fromEntries(
+      Object.entries(itemJson.contexts).map(([k, v]) => [
+        k,
+        typeof v === 'object' && v !== null
+          ? Object.fromEntries(
+              Object.entries(v as Record<string, any>).map(([ck, cv]) => [
+                ck,
+                scrubValue(String(cv))
+              ])
+            )
+          : scrubValue(String(v))
+      ])
+    );
+  }
+
+  // Scrub tags (dev-set metadata)
+  if (itemJson.tags) {
+    itemJson.tags = Object.fromEntries(
+      Object.entries(itemJson.tags).map(([k, v]) => [k, scrubValue(String(v))])
+    );
+  }
+
+  return { scrubbed: JSON.stringify(itemJson), stats };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', {
@@ -116,12 +257,64 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response('Forbidden', { status: 403 });
   }
 
+  // ─── THI-120: Scrub the envelope before relaying to Sentry ───────────────
+  let scrubbed_envelope = envelope;
+  const allStats: ScrubStats[] = [];
+  try {
+    const lines = envelope.split('\n');
+    const scrubbed_lines: string[] = [];
+
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Envelope header (first line) — never scrub
+      if (i === 0) {
+        scrubbed_lines.push(line);
+        i++;
+        continue;
+      }
+
+      // Item header (JSON with type, length, etc.)
+      let itemHeader: any;
+      try {
+        itemHeader = JSON.parse(line);
+      } catch {
+        scrubbed_lines.push(line);
+        i++;
+        continue;
+      }
+
+      scrubbed_lines.push(line); // Push unmodified item header
+      i++;
+
+      // Item body (next line, until we hit an empty line or another header)
+      if (i < lines.length) {
+        const itemBody = lines[i];
+        const { scrubbed, stats } = scrubEnvelopeItem(itemBody);
+        allStats.push(stats);
+
+        if (stats.patterns_hit.length > 0) {
+          console.log(`[sentry-scrubber] patterns detected: ${stats.patterns_hit.join(', ')}, type=${stats.item_type}`);
+        }
+
+        scrubbed_lines.push(scrubbed);
+        i++;
+      }
+    }
+
+    scrubbed_envelope = scrubbed_lines.join('\n');
+  } catch (err) {
+    // If scrubbing fails, send the envelope unmodified rather than losing the error
+    console.error(`[sentry-scrubber] error: ${err instanceof Error ? err.message : String(err)}, proceeding unmodified`);
+  }
+
   const upstream = await fetch(
     `https://${ALLOWED_HOST}/api/${ALLOWED_PROJECT_ID}/envelope/`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-sentry-envelope' },
-      body: envelope,
+      body: scrubbed_envelope,
     },
   );
 

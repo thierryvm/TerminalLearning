@@ -1,11 +1,11 @@
 # Terminal Learning — Plan de lancement public
 
-> Dernière mise à jour : 18 avril 2026
-> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 955 tests unitaires (935 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Phase 7b (AI Tutor V1)** : THI-115 ✅, THI-109 ✅, THI-110 ✅, 🔜 THI-120 (scrubber Sentry) avant THI-111
+> Dernière mise à jour : 21 avril 2026
+> Statut global : **Phase 5 EN COURS** — Curriculum Expansion : 11 modules ✅, 65 leçons, 955 tests unitaires (935 pass + 20 RBAC skipped Phase 9) + 176 E2E — **Vision consolidée** : LTI-first (ADR-001), BYOK OpenRouter 4-tiers (ADR-002), TTFR KPI central (ADR-003), Classroom Composer UI (ADR-004), AI Tutor V1 décisions gelées (ADR-005 — stockage, rate-limit, guardrails), tuteur IA socratique dès A1, i18n FR/NL/EN — Architecture stratégique précédente (THI-35) : Terminal Sentinel (Phase 5.5) ✅, RBAC complet (Phase 7) ✅, Admin Panel (Phase 9), PWA avancée (Phase finale) — **Epic Web 2026 Compliance** (THI-96) : 6/8 sub-issues livrées (THI-97 → THI-102), reste Desktop a11y + CSS moderne 2026 — **Phase 7b (AI Tutor V1)** : THI-115 ✅, THI-109 ✅, THI-110 ✅, ✅ THI-120 (scrubber Sentry, C1/C2/C3 security hardening), 🔜 THI-111 (AiTutorPanel + providers + sanitizer)
 
 ---
 
-## Vision consolidée (17 avril 2026)
+## Vision consolidée (21 avril 2026 — Phase 7b Security Hardening ✅ THI-120)
 
 Décisions stratégiques ancrées dans les 5 ADRs :
 - [ADR-001](./adr/ADR-001-lti-first-positioning.md) — **Positionnement LTI-first** : tool pédagogique spécialisée intégrable dans Moodle/Smartschool/Classroom via LTI 1.3, pas un LMS complet
@@ -692,8 +692,13 @@ src/lib/ai/
 1. ✅ Doc alignment + ADR-005 (PR #151 mergée — THI-115)
 2. ✅ Agent `prompt-guardrail-auditor` (PR #153 mergée — THI-109)
 3. ✅ Key manager V1 — `src/lib/ai/keyManager.ts`, localStorage plain + IndexedDB AES-GCM + PBKDF2 210k iter, 32 tests, premier audit `prompt-guardrail-auditor` PASS (PR #155 mergée — THI-110)
-4. 🔜 Scrubber Sentry `beforeSend` (Authorization + champs `key`/`token`/`secret`/`auth`) — gate avant THI-111 — THI-120
-5. `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter — THI-111
+4. ✅ Phase 7b Security Hardening — Credential Protection + Sentry Scrubber (21 avril 2026 — THI-120)
+   - **C1** : CLAUDE.md credential protection rule absolue — jamais hardcoder secrets, pré-commit hook bash (`.git/hooks/pre-commit`) scan patterns API keys + passwords, vérif pré-merge `git diff | grep -E 'sk-|password|secret'`
+   - **C2** : vercel.json CSP extension — `connect-src` vers OpenRouter/Anthropic/OpenAI/Gemini (support Phase 7b)
+   - **C3** : Sentry scrubber triple-couche — **server-side** (api/sentry-tunnel.ts) scrube exception.values + breadcrumbs + extra + user + request + **contexts + tags**, **client-side** (src/lib/sentry.ts beforeSend) scrube API keys, patterns : OpenRouter/Anthropic/OpenAI/Gemini/JWT/Email + **pattern générique futurs providers** `/sk-[a-zA-Z0-9_\-]{20,}/gi`
+   - **Agents améliorés** : prompt-guardrail-auditor (Étape 4b — vérif Sentry scrubber serveur contexts/tags), security-auditor (A09 — vérif api/sentry-tunnel.ts rate limiting + scrubbing)
+   - Gate avant THI-111 validé ✅
+5. 🔜 `AiTutorPanel` + fetch OpenRouter + system prompt + sanitizer/post-filter — THI-111
 6. Onboarding UX + Consent modal — THI-112
 7. Audit final security-auditor + prompt-guardrail-auditor → merge Phase 7b — THI-113
 8. 🔮 Web Worker isolation V1.5 post-ship — THI-114

@@ -38,7 +38,8 @@ IMPORTANT : ne jamais rapporter un finding "fichier absent" si le fichier existe
 
 - vercel.json — headers CSP, HSTS, X-Frame-Options, rate limiting
 - package.json + package-lock.json — dependances et versions
-- src/lib/sentry.ts — tunnel Sentry, filtres beforeSend
+- src/lib/sentry.ts — tunnel Sentry, filtres beforeSend (client-side)
+- api/sentry-tunnel.ts — proxy Sentry serveur (server-side scrubber) — THI-120
 - src/lib/supabase.ts — client Supabase, exposition cle anon
 - api/ — edge functions Vercel (endpoints publics)
 - src/app/context/AuthContext.tsx — gestion de session
@@ -98,6 +99,12 @@ Executer : npm audit --audit-level=high 2>/dev/null
 ### A09 — Security Logging and Monitoring
 - Les erreurs d'auth sont-elles loggees dans Sentry sans PII ?
 - Le beforeSend supprime-t-il les query params (tokens OAuth dans URL) ?
+- Sentry tunnel côté serveur (api/sentry-tunnel.ts) — THI-120 :
+  - Rate limiting sliding window (50 req/min par IP) configuré ?
+  - Validation du DSN et project ID pour éviter proxy SSRF ?
+  - Scrubbing double couche : exception.values + breadcrumbs + extra + user + request + **contexts + tags** ?
+  - Patterns génériques pour futurs providers `/sk-[a-zA-Z0-9_\-]{20,}/gi` inclus ?
+  - CRITICAL si contexts ou tags ne sont pas scrubés → fuite indirecte via Sentry
 
 ### A10 — SSRF
 - Le tunnel Sentry valide-t-il que la destination est bien *.sentry.io ?

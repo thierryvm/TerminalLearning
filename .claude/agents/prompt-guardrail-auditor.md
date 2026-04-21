@@ -112,6 +112,9 @@ Lire le fichier et vérifier :
 - `Grep` de `apiKey`, `openrouterKey`, `anthropicKey` dans tout le projet — la clé doit être scoped à `src/lib/ai/*` uniquement.
 - Aucun `console.log`, `console.error`, `console.debug` avec la clé ou un objet contenant la clé.
 - Le `beforeSend` Sentry filtre-t-il les champs nommés `*key*`, `*token*`, `Authorization` ?
+  - Patterns spécifiques couverts : `sk-or-v1-` (OpenRouter), `sk-ant-` (Anthropic), `sk-` (OpenAI), `AIza` (Gemini)
+  - Pattern générique fallback : `/sk-[a-zA-Z0-9_\-]{20,}/gi` pour futurs providers (Mistral, Groq, DeepSeek, etc.)
+- Sentry scrubber serveur (api/sentry-tunnel.ts) scrube aussi `contexts` et `tags` Sentry ?
 - Aucun header `Authorization: Bearer <key>` rendu dans un message d'erreur affiché à l'UI.
 - CRITICAL si la clé peut être observée dans les DevTools réseau logs avant envoi OU dans Sentry.
 
@@ -140,6 +143,31 @@ Lire le fichier et vérifier :
 - Présence d'une mention claire : "Votre message sera envoyé à un LLM tiers (OpenRouter/Anthropic/OpenAI/local). Votre clé API reste dans votre navigateur."
 - Bouton "Refuser" aussi visible que "Accepter" (dark pattern = WARNING) ?
 - Version du consentement tracée (ex: `ai_consent_v1`) pour audit trail ?
+
+## Étape 4b — Sentry scrubber serveur (api/sentry-tunnel.ts) — THI-120
+
+Si le fichier `api/sentry-tunnel.ts` existe (défense-en-profondeur du `beforeSend` client) :
+
+### Patterns
+- Les patterns `SCRUB_PATTERNS` couvrent-ils les 6+ formats clés ?
+  - OpenRouter `sk-or-v1-[a-zA-Z0-9]{64}`
+  - Anthropic `sk-ant-[a-zA-Z0-9\-]{40,}`
+  - OpenAI `sk-(?!or-|ant-)[a-zA-Z0-9]{48}`
+  - Gemini `AIza[a-zA-Z0-9_\-]{35}`
+  - JWT `eyJ[A-Za-z0-9_\-]{50,}`
+  - **Generic fallback (futurs providers) : `/sk-[a-zA-Z0-9_\-]{20,}/gi`** ? — WARNING si manquant, permet phishing via futurs providers non listés
+
+### Couverture de scrubbing
+Vérifier que `scrubEnvelopeItem()` scrube **non seulement** `exception.values`, `breadcrumbs`, `extra`, `user` + `request` MAIS AUSSI :
+- **`itemJson.contexts`** — objets custom Sentry 10+ (ex: `contexts.device.model` peut contenir dev metadata)
+- **`itemJson.tags`** — tags key-value dev-set (ex: un dev peut tagger `api_key: sk-...` par erreur)
+- CRITICAL si ces champs ne sont pas scrubés → clé peut fuiter indirectement via Sentry
+
+### Logging sécurisé
+- Le hook log-protégé dans `handler()` affiche-t-il uniquement les noms des patterns hit (ex: `patterns_hit: ['openrouter']`) sans révéler les values matchées ?
+- CRITICAL si la réponse en clair est loggée
+
+---
 
 ## Étape 5 — Surfaces de fetch (src/lib/ai/openrouter.ts ou providers.ts)
 

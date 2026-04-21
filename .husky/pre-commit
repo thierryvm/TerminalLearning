@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# Pre-commit hook: Scan for hardcoded credentials before allowing commit
+# Patterns: API keys (OpenRouter/Anthropic/OpenAI/Gemini), JWT tokens, passwords
+
+set -e
+
+echo "🔐 Scanning for exposed credentials..."
+
+PATTERNS=(
+  "sk-or-v1-[a-zA-Z0-9]{64}"           # OpenRouter
+  "sk-ant-[a-zA-Z0-9_-]{40,}"          # Anthropic
+  "sk-[a-zA-Z0-9]{48}"                 # OpenAI (basic pattern)
+  "AIza[a-zA-Z0-9_-]{35}"              # Gemini
+  "eyJ[A-Za-z0-9_.-]{50,}"             # JWT tokens
+  "password['\"]?\s*[:=]"              # Password assignments
+  "secret['\"]?\s*[:=]"                # Secret assignments
+)
+
+# Get staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRTU)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+FOUND_SECRETS=0
+
+for file in $STAGED_FILES; do
+  # Skip common safe files
+  case "$file" in
+    *.md|*.lock|*.json|node_modules/*|dist/*|build/*) continue ;;
+  esac
+
+  for pattern in "${PATTERNS[@]}"; do
+    if grep -E "$pattern" "$file" > /dev/null 2>&1; then
+      echo "❌ BLOCKED: Potential credential in $file matching pattern '$pattern'"
+      FOUND_SECRETS=$((FOUND_SECRETS + 1))
+    fi
+  done
+done
+
+if [ $FOUND_SECRETS -gt 0 ]; then
+  echo ""
+  echo "🚫 Commit blocked: Found $FOUND_SECRETS potential credential leak(s)."
+  echo "   Remove the credentials and try again."
+  exit 1
+fi
+
+echo "✅ No credentials detected. Proceeding with commit."
+exit 0

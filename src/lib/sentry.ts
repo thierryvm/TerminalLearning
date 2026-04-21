@@ -53,6 +53,46 @@ export function initSentry() {
           // ignore invalid URLs
         }
       }
+
+      // ─── THI-120: Defense-in-depth API key scrubbing (beforeSend client-side) ───
+      // Scrub API keys from extra, breadcrumbs (terminal tutor may log keys if error occurs)
+      const apiKeyPatterns = [
+        { pattern: /sk-or-v1-[a-zA-Z0-9]{64}/gi, label: 'openrouter' },
+        { pattern: /sk-ant-[a-zA-Z0-9\-]{40,}/gi, label: 'anthropic' },
+        { pattern: /sk-(?!or-|ant-)[a-zA-Z0-9]{48}/gi, label: 'openai' },
+      ];
+
+      const scrubString = (str: string | undefined): string | undefined => {
+        if (!str) return str;
+        let scrubbed = str;
+        apiKeyPatterns.forEach(({ pattern, label }) => {
+          if (pattern.test(scrubbed)) {
+            scrubbed = scrubbed.replace(pattern, `[REDACTED:${label}]`);
+          }
+        });
+        return scrubbed;
+      };
+
+      // Scrub breadcrumbs
+      if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.map((bc) => ({
+          ...bc,
+          data: bc.data
+            ? Object.fromEntries(
+                Object.entries(bc.data).map(([k, v]) => [k, scrubString(String(v))])
+              )
+            : bc.data,
+          message: scrubString(bc.message),
+        }));
+      }
+
+      // Scrub extra
+      if (event.extra) {
+        event.extra = Object.fromEntries(
+          Object.entries(event.extra).map(([k, v]) => [k, scrubString(String(v))])
+        );
+      }
+
       return event;
     },
   });

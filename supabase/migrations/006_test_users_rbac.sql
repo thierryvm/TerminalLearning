@@ -20,7 +20,10 @@
 --     email_change, email_change_token_new, email_change_token_current, phone_change = ''
 --     (GoTrue Go scanner rejects NULL for string columns — see step 1b below)
 --
--- Password: [ROTATED — see .env.test which is gitignored. Do not hardcode credentials in migrations.]
+-- Password: [ROTATED 21 april 2026 — see .env.test which is gitignored. Do not hardcode credentials in migrations.]
+-- ⚠️  SECURITY: Previous commit contained plaintext 'TerminalLearning2026!' — rotated via Supabase Admin API.
+--     git history remains exposed; recommend git filter-repo if repo goes public. All 5 test UUIDs (111...101 to 111...105)
+--     now use unique random passwords from environment. Verify via Admin API: no password matches old hardcoded value.
 --
 -- Emails:
 --   test.superadmin@terminallearning.dev       → super_admin

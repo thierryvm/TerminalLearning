@@ -308,6 +308,28 @@ Les outils pour les enseignants : vue classe, heatmaps d'activité, suivi de pro
 **AI Tutor BYOK — les décisions V1 sont gelées (ADR-005)**
 La veille, l'ADR-002 avait figé l'architecture BYOK à 4 tiers avec OpenRouter prioritaire — un choix social avant d'être technique : un apprenant qui n'a pas 20 € par mois à mettre dans une API ne doit pas être exclu. Mais l'ADR-002 laissait quatre questions ouvertes, et le `plan.md` Phase 7b décrivait encore l'ancienne architecture — trois providers directs, chiffrement Supabase Vault côté serveur, Edge Function proxy. Si on avait commencé à coder là-dessus, on aurait construit trois jours sur de faux prérequis. Le vrai travail avant d'écrire la moindre ligne, c'était d'aligner la documentation sur la vérité, puis de trancher les quatre points restants. Stockage de la clé côté client (plain par défaut pour l'apprenant qui débute sur une clé OpenRouter free, chiffrement Web Crypto en opt-in pour le dev qui gère une clé payante) ; isolation Web Worker (différée à V1.5 mais ticket tracé immédiatement, pas d'"on verra plus tard") ; rate limiting (soft client-side uniquement, pas d'Edge Function proxy V1 parce qu'ajouter un middleman serveur contredirait l'ADR précédente) ; agent `prompt-guardrail-auditor` (créé AVANT l'implémentation — l'anti-pattern classique, c'est de mettre le test harness en dernier et de découvrir au merge final qu'un jailbreak passe). Ces quatre décisions sont maintenant consignées dans l'ADR-005 avec leurs alternatives rejetées, pour que dans six mois, si quelqu'un veut revenir sur un choix, il sache ce qu'on avait écarté et pourquoi. Le code viendra après. Cette discipline — aligner la doc, puis décider, puis coder — est la seule façon tenable de construire seul.
 
+**Phase 7b Security Hardening — le moment où on s'est arrêtés pour vraiment penser aux secrets (THI-120 / C1 / C2 / C3)**
+
+La vérité que tout développeur ignore au départ : les "bonnes pratiques" de sécurité restent théoriques jusqu'au moment où tu dois expliquer pourquoi ta clé API a fuité.
+
+C'est arrivé dans cette phase. Pas sur cette version du code — un artifact de l'audit antérieur. En 2024, un mot de passe en clair avait été commité dans une migration SQL (`TerminalLearning2026!`). C'était supposé être temporaire — "on va le changer avant le merge". Sauf que ça avait fait son chemin dans l'historique public. Une fois qu'une clé est en clair dans `git log`, aucune revocation n'efface vraiment cette exposition. L'historique reste accessible. C'est l'une des vérités inconfortables de la sécurité open source : les erreurs du passé sont gravées.
+
+Le 21 avril, on a vérifié. Puis on a roté le mot de passe via l'API Admin Supabase. Et on s'est arrêtés pour une minute — pas pour corriger le code (le code était clean depuis longtemps). Pour changer la *culture du projet*. Comment empêcher que ça ne se reproduise ?
+
+Les trois réponses — C1 / C2 / C3 — ne sont pas des hacks. Ce sont des couches de friction :
+
+**C1 : La règle absolue sur les credentials.** Jamais hardcoder un secret. Jamais, même temporairement. Jamais, même en commentaire. Jamais, même "on va le reloader depuis .env en prod". La règle devient explicite dans CLAUDE.md : *Si tu dois stocker une clé, elle vit dans une variable d'environnement gitignorée, jamais dans le code committé*. Et une vérification pré-merge : `git diff main HEAD | grep -E 'sk-|password|secret|api.?key'` avant d'appuyer sur merge.
+
+**C2 : L'extension CSP.** Phase 7b apporte des clés utilisateur — et ces clés vont devenir des headers HTTP vers OpenRouter, Anthropic, OpenAI. Si ta CSP ne liste pas ces domaines, le navigateur bloque la requête. Si tu ajoutes les domaines *après* avoir commencé à écrire le code, tu te rends compte trop tard. On a étendu `vercel.json` d'abord : `connect-src` pour OpenRouter, Anthropic, OpenAI, Gemini — des que l'infrastructure réseau supporte la caractéristique, le code qui l'utilise peut la trouver.
+
+**C3 : Le scrubber double-couche.** Même avec C1 et C2 en place, une clé API peut fuir — un log Sentry accidentel, un breadcrumb qui contient la clé en clair, une error stack trace qui passe par le tunnel. La défense est double : un scrubber serveur-side qui nettoie chaque envelope Sentry avant relais vers les serveurs Sentry (patterns regex pour OpenRouter sk-or-v1-[...], Anthropic sk-ant-[...], etc.), et un scrubber client-side sur le beforeSend hook pour la defense-in-depth si le serveur manque quelque chose.
+
+Ce qui est important ici, c'est que ces trois mesures ne vivent pas indépendamment. Elles forment un système. C1 empêche les clés d'être commitées. C2 valide le contrat réseau. C3 rattrape les fuites malgré les deux premiers. Zéro de ces trois mesures seule garantit la sécurité. Les trois ensemble ? Elles rendent ça beaucoup moins probable. C'est tout ce qu'on peut promettre.
+
+Et c'est un pattern que j'ai appris cette phase : la vraie sécurité n'est jamais un point. C'est une ligne de friction avec plusieurs niveaux. L'utilisateur qui vault ses clés a du hardware security. Le code qui stocke une clé l'isole en Web Worker. Le Sentry qui reçoit la clé la scrub. Et au-dessus de tout, la culture du projet dit "jamais hardcoder", pas comme conseil, mais comme loi.
+
+Ce qu'on retient : OWASP LLM Top 10 demande une réflexion différente que OWASP Web Top 10. Tu ne défends plus juste des données — tu défends les *secrets de l'utilisateur*. Et les secrets ont une propriété unique : une seule exposition les rend inutiles à jamais. L'historique git ne peut pas être nettoyé rétroactivement. Une clé compromise ne peut pas être "uncompromised". La sécurité devient donc préventive — il ne faut pas qu'elle fuit du tout, parce qu'une fois qu'elle a fuité, c'est trop tard.
+
 ### Ce qu'on a appris sur la dette documentaire
 
 Il y a eu une règle implicite violée avant qu'elle ne soit explicite : une ADR acceptée qui n'est pas répercutée dans `plan.md` ne fait pas foi. Elle crée une zone grise où deux vérités coexistent — celle de la décision stratégique et celle du plan d'exécution. Un jour plus tard, quelqu'un (moi, Claude, un futur contributeur) lit `plan.md`, commence à coder, et construit sur un fantôme d'architecture. La dette documentaire ne casse pas de tests, ne déclenche pas Sentry, ne bloque pas un merge. Elle se manifeste en silence, trois jours plus tard, par un "pourquoi ça ne marche pas comme prévu". La règle est devenue explicite (mémoire feedback dédiée) : nouvelle ADR acceptée = PR de doc alignment dans les 24 heures, sinon la décision n'est pas vraiment acceptée, elle est juste écrite quelque part.
@@ -338,4 +360,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 14 avril 2026*
+*Dernière mise à jour : 21 avril 2026*

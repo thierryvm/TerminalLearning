@@ -15,6 +15,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **Toujours créer une PR** avant de merger dans `main`
 - **CI doit passer** (type-check + lint + test + build) avant tout merge
 - Format commit : `feat|fix|refactor|test|docs|chore|security(scope): description`
+- **JAMAIS hardcoder de passwords, API keys, tokens en clair** — même dans les migrations SQL, même "temporairement", même en commentaires. Utiliser toujours `${{ secrets.VAR }}` ou variables d'environnement gitignorées. Les git histories publiques ne permettent pas la revocation de credentials exposés — ils demeurent exploitables à jamais.
 
 ## Stack
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
@@ -36,12 +37,21 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 
 ## Sécurité
 - Stale chunk errors filtrées dans `src/lib/sentry.ts` `beforeSend` — self-healed par le guard dans `main.tsx`
-- Zéro `dangerouslySetInnerHTML` dans le codebase
+- Zéro injection HTML dans le codebase
 - Zéro secret côté client
 - Zéro `any` TypeScript
 - CSP configuré dans `vercel.json` — mettre à jour si nouveaux domaines externes ajoutés
 - HSTS activé : `max-age=63072000; includeSubDomains; preload`
 - Avatars OAuth (GitHub/Google) : couverts par `img-src 'self' data: https:`
+
+### Protection des credentials — RÈGLE ABSOLUE
+- **JAMAIS** de password/API key/token en clair dans code/migrations/scripts/commentaires
+- Utiliser `.env.local` (gitignorée) ou `${{ secrets.XXX }}` pour test credentials
+- **L'historique git est permanent** — un credential committé = exposé à vie. Aucune revocation possible.
+- **Avant tout merge** : `git diff main HEAD` scan pour `password`, `secret`, `token`, `key`, `sk-` → zéro hits requis
+- **Si exposure post-merge** : Revert immédiat + rota ALL clés exposées + document dans SECURITY.md + envisager `git filter-repo`
+
+**Incident 006 (21 avril 2026)**: `TerminalLearning2026!` exposé puis retiré. Historique contaminé. 5 test users rotés via Supabase Admin API. Risque résiduel accepté mais documenté.
 
 ## Phases
 - Phase 0 ✅ Vercel live

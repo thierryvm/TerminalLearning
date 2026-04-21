@@ -5,6 +5,40 @@
 
 ---
 
+## Phase 7b Security Hardening — Credential Protection + Sentry Scrubber (THI-120)
+*21 avril 2026 · Phase 7b · OWASP LLM Top 10 mitigations*
+
+**Le défi :** Phase 7b (AI Tutor V1, ADR-005) apporte un risque nouveau : les utilisateurs fourniront leurs propres API keys (OpenRouter, Anthropic, OpenAI) stockées côté client. Une seule fuite — un log Sentry accidentel, un crash avec breadcrumb contenant la clé en clair — et l'API key est compromise à jamais. Parallèlement, l'audit de sécurité antérieur (Opus) avait déjà signalé une exposure de credential en git history (mot de passe dans une migration SQL, jamais chanté jusqu'à la rotation le 21 avril).
+
+**La méthode :** Trois remediations systématiques (C1/C2/C3) validées par l'agent `security-auditor` :
+- **C1** : Renforcer les règles de protection contre le hardcoding de credentials — documentation d'incident + règle absolue dans CLAUDE.md + vérification pré-merge
+- **C2** : Étendre CSP `connect-src` pour supporter les providers IA (OpenRouter, Anthropic, OpenAI, Gemini) — nécessaire avant THI-111
+- **C3** : Implémenter scrubber Sentry double-couche (server-side + client-side) — gate bloquant avant THI-111
+
+**Ce qui a été livré :**
+- **C1 — Protection des credentials (CLAUDE.md)** : Nouvelle section "Protection des credentials — RÈGLE ABSOLUE" avec interdiction explicite de hardcoder passwords/keys/tokens même temporairement, même en commentaires, même en SQL. Documentation incident 006 (mot de passe 'TerminalLearning2026!' en clair avant rotation 21 avril via Supabase Admin API). Vérification pré-merge obligatoire : `git diff main HEAD | grep -E 'sk-|password|secret|api.?key'`. **AMÉLIORÉ** : Pre-commit hook bash (`.husky/pre-commit` + `.git/hooks/pre-commit`) avec scanner patterns API keys + passwords sur fichiers staged — plus robuste que vérif manuelle pré-merge.
+- **C2 — CSP Extension (vercel.json)** : `connect-src` étendu vers `https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com` — nécessaire pour THI-111 (fetch BYOK vers providers). **VALIDATION** : Endpoint Gemini `https://generativelanguage.googleapis.com/v1beta/` non bloqué par CSP (CSP ne filtre que par host, pas par path).
+- **C3 — Sentry Scrubber (THI-120)** : 
+  - Server-side (`api/sentry-tunnel.ts`) : Scrubber complet avant relais vers Sentry — patterns OpenRouter/Anthropic/OpenAI/Gemini + JWT + email + **pattern générique futurs providers** `/sk-[a-zA-Z0-9_\-]{20,}/gi` (Mistral, Groq, DeepSeek, etc.). Scrub récursif sur `exception.values[].value` + `breadcrumbs[].data` + `extra` + `user.email/username` + `request.data` + **`contexts` + `tags`** (Sentry 10+ custom fields, risque indirect de fuite via metadata dev). Fallback sécurisé : si scrubbing fail, envoyer envelope unmodifié plutôt que perdre l'erreur. Console.log structuré pour Vercel logs.
+  - Client-side (`src/lib/sentry.ts`) : Defense-in-depth — scrub API keys sur `beforeSend` hook, breadcrumbs + extra fields. Patterns OpenRouter/Anthropic/OpenAI (subset du serveur). Complement à la validation serveur.
+
+**Agents améliorés :**
+- **`prompt-guardrail-auditor.md`** : Nouvelle Étape 4b dédiée au Sentry scrubber serveur — vérifie que patterns génériques + contexts/tags scrubbing en place, pattern générique `/sk-[a-zA-Z0-9_\-]{20,}/gi` couvre futurs providers.
+- **`security-auditor.md`** : Section A09 étendue — vérifie api/sentry-tunnel.ts rate limiting + validation DSN + scrubbing fields sensibles inclus contexts/tags, pattern générique present.
+
+**Validation :**
+- Patterns regex validés contre corpus de clés réelles (format OpenRouter sk-or-v1-[A-Za-z0-9]{64}, Anthropic sk-ant-[A-Za-z0-9\-]{40,}, etc.)
+- Sentry tunnel endpoint rate limiting déjà en place (THI-57)
+- CSP extension cohérente avec X-Forwarded-For fix (PR #156, rate limiting)
+- Zéro false positives sur email scrubbing (allowlist example.com + test + terminallearning.dev)
+- Pre-commit hook validé sur patterns connus + patterns futurs avec fallback générique
+
+**Pourquoi c'est important :** La phase 7b commence à collecter des secrets utilisateur. Une seule approche défensive est insuffisante — le scrubber serveur rate-limitée, le scrubber client optimiste, et la culture de no-hardcode ensemble forment une ligne de défense. Aucune garantie absolue qu'une clé ne fuitera jamais, mais trois couches de friction rendront ça beaucoup moins probable.
+
+**Leçon :** OWASP LLM Top 10 demande une réflexion différente de OWASP Web Top 10. Le client trustworthy ne suffit pas si Sentry reçoit la clé. Sentry rate-limitée ne suffit pas si le client log d'abord. Le Git clean ne suffit pas si la clé a déjà été exposée publiquement — l'historique reste. La défense en profondeur est le seul modèle viable.
+
+---
+
 ## AI Tutor BYOK — architecture V1 gelée (ADR-005)
 *18 avril 2026 · Phase 7b · doc alignment + décisions V1*
 
@@ -85,6 +119,35 @@
 **Pourquoi c'est important :** L'accessibilité n'est pas un bonus — c'est la condition pour que l'app soit utilisable par les publics qu'elle cible réellement. Une plateforme pédagogique qui n'accueille pas correctement les utilisateurs d'iPhone d'entrée de gamme, les personnes clavier-first, ou les utilisateurs photosensibles, exclut silencieusement une partie de son audience. Dans un contexte scolaire belge où les établissements ont des parcs hétérogènes (Chromebooks 2018, iPads prêtés, PC fixes 4:3), chaque détail compte.
 
 **Leçon :** Les standards web 2026 ne sont pas une checklist à cocher en fin de projet — ils sont un ensemble de règles qui, appliquées tôt, rendent le code plus simple, pas plus complexe. `dvh` est plus court que `height: 100vh; @supports (dvh)`. `env(safe-area-inset-bottom)` est plus court qu'un hack JS de détection du notch. `focus-visible` est un pseudo-classe natif. L'accessibilité bien faite coûte zéro ligne de plus que l'accessibilité bâclée.
+
+---
+
+## Agents sécurité — orchestration multi-layer Phase 7b
+*21 avril 2026 · ADR-005 gate 0*
+
+**Le défi :** Phase 7b apporte 5 nouvelles couches de risque : OWASP LLM Top 10 (prompt injection, jailbreak, prompt leak), gestion de secrets côté client (keyManager.ts + API keys storage), sanitization HTML (AiTutorPanel markdown rendering), Sentry scrubbing (breadcrumbs + extra), et CSP pour les nouveaux providers. Aucun agent existant ne couvrait tout ça. Il fallait une orchestration explicite : quels agents invoquer, à quel moment, sur quelles règles.
+
+**La méthode :** Consolidation des agents sécurité en protocole de session oblig obligatoire dans CLAUDE.md :
+- `security-auditor` — invoqué AVANT toute PR touchant auth/RBAC/RLS/API/crypto (mandatory gate)
+- `prompt-guardrail-auditor` — invoqué AVANT toute PR touchant `src/lib/ai/*` ou `src/app/components/ai/*` (mandatory gate)
+- `ui-auditor` — invoqué AVANT toute PR touchant des composants UI (mandatory gate)
+- Nouvelles règles de session (non-négociables) : pas de hardcoding credentials, CSP validation per provider, Sentry pattern audit
+
+**Ce qui a été livré :**
+- **CLAUDE.md — Protocole de session renforcé** : Section "Avant toute PR touchant auth/RBAC/RLS/API/crypto" — `security-auditor` obligatoire, rapports archivés dans PR comments, CRITICAL/HIGH bloquent merge. Agents existants (ui-auditor, prompt-guardrail-auditor) intégrés. Nouvelles règles (no hardcoding, CSP validation, Sentry audit).
+- **Agents instructions améliorées** (si applicables) :
+  - `security-auditor` : ajouter patterns Sentry scrubbing + code templates pour remediations courantes
+  - `prompt-guardrail-auditor` : ajouter validations client-side sanitization (DOMPurify patterns)
+  - `ui-auditor` : confirmer scope inclut CSP header validation (non applicable ici, mais scope clarified)
+
+**Validation :**
+- Tous les agents sont des fichiers `.claude/agents/*.md` versionnés en git
+- Protocole CLAUDE.md aligné avec memory `security_new_session_rules.md`
+- Linear issues THI-121 → THI-126 créées (tracking obligatoire pour Phase 7b)
+
+**Pourquoi c'est important :** Les agents deviennent des contrôles techniques obligatoires, pas optionnels. Phase 7b n'aurait jamais dû commencer sans que `prompt-guardrail-auditor` soit disponible — c'est exactement ce qu'ADR-005 décision D1 spécifie. La consolidation du protocole empêche le dérive où "j'ai oublié d'invoquer l'agent" devient excuse.
+
+**Leçon :** Quand un projet touche plusieurs domaines de risque (LLM + crypto + data + UI), les agents doivent être orchestrés comme des gates de pipeline. Chaque gate = une PR category (ai features, security, ui changes). Le protocole de session énumère explicitement qui invoquer quand.
 
 ---
 
