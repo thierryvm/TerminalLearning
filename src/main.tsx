@@ -11,7 +11,8 @@ initSentry();
 // Detect this and force a hard reload to fetch the new build — once only per
 // session (sessionStorage flag) to prevent infinite reload loops.
 window.addEventListener('unhandledrejection', (event) => {
-  const msg: string = (event.reason as { message?: string })?.message ?? '';
+  const reason = event.reason;
+  const msg = String(reason instanceof Error ? reason.message : reason ?? '');
   const isStaleChunk =
     msg.includes('text/html') ||
     msg.includes('is not a valid JavaScript MIME type') ||
