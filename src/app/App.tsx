@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Sentry } from '../lib/sentry';
+import { useCspNonce } from '../lib/hooks/useCspNonce';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
@@ -29,6 +30,8 @@ function FallbackUI() {
 }
 
 export default function App() {
+  // Initialize CSP nonce from meta tag injected by Edge Function
+  useCspNonce();
   return (
     <HelmetProvider>
     <Sentry.ErrorBoundary fallback={<FallbackUI />}>
