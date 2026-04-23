@@ -13,7 +13,7 @@ import { Button } from './components/ui/button';
 
 function FallbackUI() {
   return (
-    <div className="min-h-dvh bg-[#0d1117] flex items-center justify-center text-[#e6edf3] font-mono">
+    <div className="min-h-dvh bg-[var(--github-bg)] flex items-center justify-center text-[var(--github-text-primary)] font-mono">
       <div className="text-center space-y-4">
         <p className="text-[#f85149] text-lg">Une erreur inattendue s'est produite.</p>
         <Button

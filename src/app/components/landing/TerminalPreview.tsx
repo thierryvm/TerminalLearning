@@ -76,9 +76,9 @@ function PromptSpan({ env }: { env: SelectedEnvironment }) {
     return (
       <>
         <span className="text-emerald-400">user@terminal</span>
-        <span className="text-[#8b949e]">:</span>
+        <span className="text-[var(--github-text-secondary)]">:</span>
         <span className="text-blue-400">~</span>
-        <span className="text-[#8b949e]">$ </span>
+        <span className="text-[var(--github-text-secondary)]">$ </span>
       </>
     );
   }
@@ -86,7 +86,7 @@ function PromptSpan({ env }: { env: SelectedEnvironment }) {
     return (
       <>
         <span className="text-violet-400">➜</span>
-        <span className="text-[#8b949e]"> ~ </span>
+        <span className="text-[var(--github-text-secondary)]"> ~ </span>
         <span className="text-violet-300">% </span>
       </>
     );
@@ -95,7 +95,7 @@ function PromptSpan({ env }: { env: SelectedEnvironment }) {
   return (
     <>
       <span className="text-sky-400">PS </span>
-      <span className="text-[#e6edf3]">C:\Users\user</span>
+      <span className="text-[var(--github-text-primary)]">C:\Users\user</span>
       <span className="text-sky-400">&gt; </span>
     </>
   );
@@ -191,12 +191,12 @@ export function TerminalPreview() {
 
   return (
     <div
-      className="animate-fade-in-up w-full max-w-2xl mx-auto rounded-xl border border-[#30363d] bg-[#161b22] overflow-hidden shadow-2xl shadow-emerald-500/10"
+      className="animate-fade-in-up w-full max-w-2xl mx-auto rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] overflow-hidden shadow-2xl shadow-emerald-500/10"
       style={{ animationDelay: '350ms' }}
       data-testid="terminal-preview"
     >
       {/* Title bar */}
-      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]">
+      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--github-border-primary)] bg-[var(--github-bg)]">
         <div className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
         <div className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
         <div className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
@@ -215,10 +215,10 @@ export function TerminalPreview() {
             {line.type === 'prompt' ? (
               <div>
                 <PromptSpan env={selectedEnv} />
-                <span className="text-[#e6edf3]">{line.text}</span>
+                <span className="text-[var(--github-text-primary)]">{line.text}</span>
               </div>
             ) : (
-              <div className="text-[#8b949e] pl-1">{line.text}</div>
+              <div className="text-[var(--github-text-secondary)] pl-1">{line.text}</div>
             )}
           </div>
         ))}
@@ -226,7 +226,7 @@ export function TerminalPreview() {
         {/* Active typing line */}
         <div className="leading-relaxed">
           <PromptSpan env={selectedEnv} />
-          <span className="text-[#e6edf3]">{typingText}</span>
+          <span className="text-[var(--github-text-primary)]">{typingText}</span>
           <span
             className="inline-block w-[7px] h-[14px] bg-[#e6edf3] align-middle ml-px"
             style={{ opacity: showCursor ? 1 : 0 }}

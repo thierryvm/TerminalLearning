@@ -685,7 +685,7 @@ export function CommandReference() {
   const envMeta = ENV_LABELS[selectedEnv] ?? ENV_LABELS.linux;
 
   return (
-    <div className="min-h-full bg-[#0d1117] text-[#e6edf3] p-6 lg:p-8">
+    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -693,25 +693,25 @@ export function CommandReference() {
             <Terminal size={22} className="text-blue-400" />
           </div>
           <div>
-            <h1 className="text-[#e6edf3]">Référence des commandes</h1>
+            <h1 className="text-[var(--github-text-primary)]">Référence des commandes</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className={`text-xs px-2 py-0.5 rounded-full border ${envMeta.color}`}>
                 {envMeta.label}
               </span>
-              <p className="text-[#8b949e] text-sm">{filtered.length} commandes</p>
+              <p className="text-[var(--github-text-secondary)] text-sm">{filtered.length} commandes</p>
             </div>
           </div>
         </div>
 
         {/* Search */}
         <div className="relative mt-4">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e]" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--github-text-secondary)]" />
           <Input
             type="text"
             placeholder="Rechercher une commande..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#161b22] border border-[#30363d] rounded-xl pl-9 pr-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#8b949e] outline-none focus:border-[#58a6ff] transition-colors font-mono"
+            className="w-full bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl pl-9 pr-4 py-2.5 text-sm text-[var(--github-text-primary)] placeholder-[#8b949e] outline-none focus:border-[#58a6ff] transition-colors font-mono"
           />
         </div>
       </div>
@@ -739,7 +739,7 @@ export function CommandReference() {
             <span className={`text-xs px-2.5 py-1 rounded-full border ${categoryColors[category] ?? 'text-gray-400 bg-gray-500/10 border-gray-500/20'}`}>
               {category}
             </span>
-            <span className="text-xs text-[#8b949e]">{cmds.length}</span>
+            <span className="text-xs text-[var(--github-text-secondary)]">{cmds.length}</span>
           </div>
 
           <div className="space-y-2">
@@ -754,51 +754,51 @@ export function CommandReference() {
               return (
                 <div
                   key={key}
-                  className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 transition-colors cursor-pointer"
+                  className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 transition-colors cursor-pointer"
                   onClick={() => setExpanded(isOpen ? null : key)}
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
                     <code className="text-emerald-400 font-mono text-sm shrink-0 w-24 truncate">{displayCmd}</code>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[#c9d1d9] text-sm truncate">{displayDesc}</p>
+                      <p className="text-[var(--github-text-primary)] text-sm truncate">{displayDesc}</p>
                       {!isOpen && (
-                        <p className="text-[#8b949e] text-xs font-mono truncate mt-0.5">{displaySyntax}</p>
+                        <p className="text-[var(--github-text-secondary)] text-xs font-mono truncate mt-0.5">{displaySyntax}</p>
                       )}
                     </div>
                     {isOpen ? (
-                      <ChevronDown size={16} className="text-[#8b949e] shrink-0" />
+                      <ChevronDown size={16} className="text-[var(--github-text-secondary)] shrink-0" />
                     ) : (
-                      <ChevronRight size={16} className="text-[#8b949e] shrink-0" />
+                      <ChevronRight size={16} className="text-[var(--github-text-secondary)] shrink-0" />
                     )}
                   </div>
 
                   {isOpen && (
-                    <div className="border-t border-[#30363d] px-4 py-3 space-y-3">
+                    <div className="border-t border-[var(--github-border-primary)] px-4 py-3 space-y-3">
                       <div>
-                        <p className="text-xs text-[#8b949e] mb-1">Syntaxe</p>
+                        <p className="text-xs text-[var(--github-text-secondary)] mb-1">Syntaxe</p>
                         <code className="text-blue-300 font-mono text-sm">{displaySyntax}</code>
                       </div>
                       <div>
-                        <p className="text-xs text-[#8b949e] mb-1">Description</p>
-                        <p className="text-[#c9d1d9] text-sm">{displayDesc}</p>
+                        <p className="text-xs text-[var(--github-text-secondary)] mb-1">Description</p>
+                        <p className="text-[var(--github-text-primary)] text-sm">{displayDesc}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#8b949e] mb-1">Exemple</p>
-                        <pre className="bg-[#0d1117] rounded-lg p-3 overflow-x-auto text-sm max-w-full">
+                        <p className="text-xs text-[var(--github-text-secondary)] mb-1">Exemple</p>
+                        <pre className="bg-[var(--github-bg)] rounded-lg p-3 overflow-x-auto text-sm max-w-full">
                           {displayExample.split('\n').map((line, i) => (
                             <div key={i}>
                               {line.startsWith('$') ? (
                                 <>
                                   <span className="text-emerald-400">$</span>
-                                  <span className="text-[#e6edf3]">{line.slice(1)}</span>
+                                  <span className="text-[var(--github-text-primary)]">{line.slice(1)}</span>
                                 </>
                               ) : line.startsWith('PS>') ? (
                                 <>
                                   <span className="text-cyan-400">PS&gt;</span>
-                                  <span className="text-[#e6edf3]">{line.slice(3)}</span>
+                                  <span className="text-[var(--github-text-primary)]">{line.slice(3)}</span>
                                 </>
                               ) : line.startsWith('#') ? (
-                                <span className="text-[#8b949e]">{line}</span>
+                                <span className="text-[var(--github-text-secondary)]">{line}</span>
                               ) : (
                                 <span className="text-[#a5d6ff]">{line}</span>
                               )}
@@ -816,7 +816,7 @@ export function CommandReference() {
       ))}
 
       {filtered.length === 0 && (
-        <div className="text-center py-16 text-[#8b949e]">
+        <div className="text-center py-16 text-[var(--github-text-secondary)]">
           <Search size={32} className="mx-auto mb-3 opacity-30" />
           <p>Aucune commande trouvée pour &ldquo;{search}&rdquo;</p>
         </div>

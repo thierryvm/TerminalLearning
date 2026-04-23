@@ -27,7 +27,7 @@ const badgeVariants = cva(
         "pill-purple":
           "rounded-full border-purple-500/30 bg-purple-500/10 text-purple-400 gap-1.5 px-3 py-1.5",
         "pill-muted":
-          "rounded-full border-[#30363d] text-[#8b949e] gap-1.5 px-3 py-1.5 font-medium",
+          "rounded-full border-[var(--github-border-primary)] text-[var(--github-text-secondary)] gap-1.5 px-3 py-1.5 font-medium",
       },
     },
     defaultVariants: {

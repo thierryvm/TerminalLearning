@@ -221,11 +221,11 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
   return (
     <div
-      className={`flex flex-col bg-[#0d1117] rounded-xl overflow-hidden border border-[#30363d] ${className}`}
+      className={`flex flex-col bg-[var(--github-bg)] rounded-xl overflow-hidden border border-[var(--github-border-primary)] ${className}`}
       onClick={focusInput}
     >
       {/* Title bar */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#161b22] border-b border-[#30363d] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 bg-[var(--github-border-secondary)] border-b border-[var(--github-border-primary)] shrink-0">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
           <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -234,7 +234,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         <span className={`ml-2 text-xs font-mono ${ENV_PROMPT_COLOR[environment]}`}>
           {ENV_TITLE_LABEL[environment]}
         </span>
-        <span className="text-[#8b949e] text-xs font-mono">
+        <span className="text-[var(--github-text-secondary)] text-xs font-mono">
           — {activeState.user}@{activeState.hostname}
         </span>
       </div>
@@ -246,7 +246,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
             {line.type === 'prompt' ? (
               <div className="flex items-start gap-1 flex-wrap">
                 <span className={`${promptColor} shrink-0`}>{line.prompt}</span>
-                <span className="text-[#e6edf3] break-all">{line.text}</span>
+                <span className="text-[var(--github-text-primary)] break-all">{line.text}</span>
               </div>
             ) : line.type === 'error' ? (
               <div className="text-[#f85149]">{line.text}</div>
@@ -255,7 +255,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
             ) : line.type === 'info' ? (
               <div className="text-[#58a6ff]">{line.text}</div>
             ) : (
-              <div className="text-[#e6edf3]">{line.text}</div>
+              <div className="text-[var(--github-text-primary)]">{line.text}</div>
             )}
           </div>
         ))}
@@ -269,7 +269,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
             onChange={(e) => setInput(sanitiseInput(e.target.value))}
             maxLength={MAX_INPUT_LENGTH}
             onKeyDown={handleKeyDown}
-            className={`flex-1 bg-transparent text-[#e6edf3] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
+            className={`flex-1 bg-transparent text-[var(--github-text-primary)] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
             autoFocus
             aria-label="Commande terminal"
             autoComplete="off"

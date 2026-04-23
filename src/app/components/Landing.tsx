@@ -27,8 +27,8 @@ import {
 
 function EnvIcon({ envId, size = 14 }: { envId: SelectedEnvironment; size?: number }) {
   if (envId === 'linux') return <Terminal size={size} aria-hidden="true" />;
-  if (envId === 'macos') return <span className="text-[13px] leading-none select-none" aria-hidden="true"></span>;
-  return <span className="text-[11px] leading-none select-none" aria-hidden="true">⊞</span>;
+  if (envId === 'macos') return <span className="text-sm leading-none select-none" aria-hidden="true"></span>;
+  return <span className="text-xs leading-none select-none" aria-hidden="true">⊞</span>;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -68,23 +68,23 @@ export function Landing() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#0d1117] text-[#e6edf3]" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-dvh bg-[var(--github-bg)] text-[var(--github-text-primary)]" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
-      <nav className="border-b border-[#30363d]/50 px-4 sm:px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+      <nav className="border-b border-[var(--github-border-primary)]/50 px-4 sm:px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <div className="flex items-center gap-2 shrink-0">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             <Terminal size={18} className="text-emerald-400" aria-hidden="true" />
           </div>
-          <span className="font-mono text-[#e6edf3] text-sm hidden sm:block whitespace-nowrap">Terminal Learning</span>
+          <span className="font-mono text-[var(--github-text-primary)] text-sm hidden sm:block whitespace-nowrap">Terminal Learning</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="https://github.com/thierryvm/TerminalLearning"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors shrink-0"
+            className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors shrink-0"
             aria-label="Voir le projet sur GitHub"
           >
             <Github size={18} aria-hidden="true" />
@@ -129,23 +129,23 @@ export function Landing() {
             Gratuit · Open Source · Pour débutants
           </span>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-[#e6edf3] leading-tight mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-[var(--github-text-primary)] leading-tight mb-4">
             Maîtrise le terminal{' '}
             <span className="text-emerald-400">pas à pas</span>
           </h1>
 
-          <p className="text-[#8b949e] text-lg md:text-xl max-w-2xl mx-auto mb-6 leading-relaxed">
+          <p className="text-[var(--github-text-secondary)] text-lg md:text-xl max-w-2xl mx-auto mb-6 leading-relaxed">
             {TOTAL_LESSONS} leçons interactives, {TOTAL_COMMANDS}+ commandes documentées.
             Pratique réelle dans un terminal simulé — progression sauvegardée, aucune inscription requise.
           </p>
 
           {/* ── Environment selector ─────────────────────────────── */}
           <div className="mb-8">
-            <p className="text-[#8b949e] text-xs font-mono mb-3 uppercase tracking-widest">
+            <p className="text-[var(--github-text-secondary)] text-xs font-mono mb-3 uppercase tracking-widest">
               Choisissez votre environnement
             </p>
             <div className="flex justify-center">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1 rounded-xl bg-[#161b22] border border-[#30363d]">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1 rounded-xl bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)]">
               {(['linux', 'macos', 'windows'] as SelectedEnvironment[]).map((envId) => {
                 const meta = ENV_META[envId];
                 const active = selectedEnv === envId;
@@ -157,7 +157,7 @@ export function Landing() {
                     className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                       active
                         ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
-                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] border border-transparent'
+                        : 'text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] hover:bg-[#21262d] border border-transparent'
                     }`}
                     aria-pressed={active}
                   >
@@ -174,7 +174,7 @@ export function Landing() {
               >
                 <Monitor size={14} aria-hidden="true" />
                 WSL
-                <span className="text-[10px] font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e] hidden sm:inline">bientôt</span>
+                <span className="text-xs font-mono bg-[#21262d] px-1.5 py-0.5 rounded text-[var(--github-text-secondary)] hidden sm:inline">bientôt</span>
               </span>
             </div>
             </div>
@@ -190,17 +190,17 @@ export function Landing() {
                   className={`${lvl.bg} border ${lvl.border} rounded-xl p-4`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${lvl.border} ${lvl.color} bg-black/20`}>
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${lvl.border} ${lvl.color} bg-black/20`}>
                       Niveau {lvl.level}
                     </span>
                   </div>
                   <div className={`text-sm font-semibold ${lvl.color} mb-1`}>{lvl.label}</div>
-                  <div className="text-[#8b949e] text-xs mb-3 leading-relaxed">{lvl.description}</div>
+                  <div className="text-[var(--github-text-secondary)] text-xs mb-3 leading-relaxed">{lvl.description}</div>
                   <div className="flex flex-wrap gap-1">
                     {lvl.commands.map((cmd) => (
                       <code
                         key={cmd}
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/30 text-[#e6edf3] border border-[#30363d]"
+                        className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/30 text-[var(--github-text-primary)] border border-[var(--github-border-primary)]"
                       >
                         {cmd}
                       </code>
@@ -313,15 +313,15 @@ export function Landing() {
       </section>
 
       {/* ── STATS BAR ───────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-6 border-t border-[#30363d]/50">
+      <section className="max-w-6xl mx-auto px-6 py-6 border-t border-[var(--github-border-primary)]/50">
         <FadeIn className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {STATS.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="flex flex-col items-center gap-1 p-4 rounded-xl border border-[#30363d] bg-[#161b22]">
+              <div key={stat.label} className="flex flex-col items-center gap-1 p-4 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
                 <Icon size={16} className="text-emerald-400 mb-1" aria-hidden="true" />
-                <span className="text-2xl font-bold text-[#e6edf3] font-mono">{stat.value}</span>
-                <span className="text-[#8b949e] text-xs">{stat.label}</span>
+                <span className="text-2xl font-bold text-[var(--github-text-primary)] font-mono">{stat.value}</span>
+                <span className="text-[var(--github-text-secondary)] text-xs">{stat.label}</span>
               </div>
             );
           })}
@@ -329,12 +329,12 @@ export function Landing() {
       </section>
 
       {/* ── MODULE PREVIEW ──────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
         <FadeIn direction="none">
-          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">
+          <h2 className="text-2xl font-bold text-center text-[var(--github-text-primary)] mb-2">
             {MODULE_PREVIEWS.length} modules progressifs
           </h2>
-          <p className="text-[#8b949e] text-center mb-10">
+          <p className="text-[var(--github-text-secondary)] text-center mb-10">
             Du système de fichiers à la redirection de flux — deux niveaux, sans prérequis pour commencer.
           </p>
 
@@ -347,23 +347,23 @@ export function Landing() {
                   <Link
                     to={`/app/learn/${mod.id}/${mod.firstLessonId}`}
                     aria-label={`Accéder au module ${mod.title} : ${mod.description}`}
-                    className="block h-full p-5 rounded-xl border border-[#30363d] bg-[#161b22] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                    className="block h-full p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-[#0d1117]/80 border border-[#30363d]">
+                        <div className="p-2 rounded-lg bg-[var(--github-bg)]/80 border border-[var(--github-border-primary)]">
                           <Icon size={16} style={{ color: mod.color }} aria-hidden="true" />
                         </div>
-                        <span className="text-[#8b949e] text-xs font-mono">Module {i + 1}</span>
+                        <span className="text-[var(--github-text-secondary)] text-xs font-mono">Module {i + 1}</span>
                       </div>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full border font-mono ${levelBadge.text} ${levelBadge.border} ${levelBadge.bg}`}
+                        className={`text-xs px-2 py-0.5 rounded-full border font-mono ${levelBadge.text} ${levelBadge.border} ${levelBadge.bg}`}
                       >
                         {levelBadge.label}
                       </span>
                     </div>
-                    <h3 className="text-[#e6edf3] font-semibold text-sm mb-1">{mod.title}</h3>
-                    <p className="text-[#8b949e] text-xs leading-relaxed">{mod.description}</p>
+                    <h3 className="text-[var(--github-text-primary)] font-semibold text-sm mb-1">{mod.title}</h3>
+                    <p className="text-[var(--github-text-secondary)] text-xs leading-relaxed">{mod.description}</p>
                     <div className="mt-3 flex items-center gap-1.5">
                       <CheckCircle2 size={11} className="text-emerald-400" aria-hidden="true" />
                       <span className="text-emerald-400 text-xs">{mod.lessonCount} leçons disponibles</span>
@@ -374,17 +374,17 @@ export function Landing() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-[#8b949e] text-sm">
+          <p className="mt-8 text-center text-[var(--github-text-secondary)] text-sm">
             11 modules inclus — aucun compte requis.
           </p>
         </FadeIn>
       </section>
 
       {/* ── FEATURES ────────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
         <FadeIn direction="none">
-          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">Pourquoi Terminal Learning ?</h2>
-          <p className="text-[#8b949e] text-center mb-10">Conçu pour les débutants qui veulent apprendre en faisant.</p>
+          <h2 className="text-2xl font-bold text-center text-[var(--github-text-primary)] mb-2">Pourquoi Terminal Learning ?</h2>
+          <p className="text-[var(--github-text-secondary)] text-center mb-10">Conçu pour les débutants qui veulent apprendre en faisant.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {FEATURES.map((f, i) => {
@@ -396,12 +396,12 @@ export function Landing() {
                   className={`p-5 rounded-xl border ${f.border} ${f.bg} backdrop-blur-sm`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg bg-[#0d1117]/60 border ${f.border}`}>
+                    <div className={`p-2 rounded-lg bg-[var(--github-bg)]/60 border ${f.border}`}>
                       <Icon size={18} className={f.color} aria-hidden="true" />
                     </div>
                     <div>
-                      <h3 className="text-[#e6edf3] font-medium mb-1">{f.title}</h3>
-                      <p className="text-[#8b949e] text-sm leading-relaxed">{f.description}</p>
+                      <h3 className="text-[var(--github-text-primary)] font-medium mb-1">{f.title}</h3>
+                      <p className="text-[var(--github-text-secondary)] text-sm leading-relaxed">{f.description}</p>
                     </div>
                   </div>
                 </FadeIn>
@@ -412,10 +412,10 @@ export function Landing() {
       </section>
 
       {/* ── ROADMAP ─────────────────────────────────────────────── */}
-      <section id="roadmap" className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+      <section id="roadmap" className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
         <FadeIn direction="none">
-          <h2 className="text-2xl font-bold text-center text-[#e6edf3] mb-2">Roadmap publique</h2>
-          <p className="text-[#8b949e] text-center mb-10">Ce qui est disponible, ce qu'on construit, et ce qui vient ensuite.</p>
+          <h2 className="text-2xl font-bold text-center text-[var(--github-text-primary)] mb-2">Roadmap publique</h2>
+          <p className="text-[var(--github-text-secondary)] text-center mb-10">Ce qui est disponible, ce qu'on construit, et ce qui vient ensuite.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Available */}
@@ -423,11 +423,11 @@ export function Landing() {
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle2 size={16} className="text-emerald-400" aria-hidden="true" />
                 <span className="text-emerald-400 text-sm font-semibold">Disponible</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">live</span>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">live</span>
               </div>
               <ul className="space-y-2">
                 {ROADMAP_AVAILABLE.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
+                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
                     <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
                     {item}
                   </li>
@@ -442,11 +442,11 @@ export function Landing() {
                   <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
                 </span>
                 <span className="text-blue-400 text-sm font-semibold">En cours</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">beta</span>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">beta</span>
               </div>
               <ul className="space-y-2">
                 {ROADMAP_IN_PROGRESS.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
+                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
                     <Zap size={12} className="text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
                     {item}
                   </li>
@@ -455,15 +455,15 @@ export function Landing() {
             </div>
 
             {/* Planned */}
-            <div className="p-5 rounded-xl border border-[#30363d] bg-[#161b22]">
+            <div className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={16} className="text-amber-400" aria-hidden="true" />
-                <span className="text-[#8b949e] text-sm font-semibold">Plus tard</span>
+                <span className="text-[var(--github-text-secondary)] text-sm font-semibold">Plus tard</span>
               </div>
               <ul className="space-y-2">
                 {ROADMAP_PLANNED.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[#8b949e]">
-                    <span className="w-3 h-3 rounded-full border border-[#30363d] mt-0.5 shrink-0" aria-hidden="true" />
+                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
+                    <span className="w-3 h-3 rounded-full border border-[var(--github-border-primary)] mt-0.5 shrink-0" aria-hidden="true" />
                     {item}
                   </li>
                 ))}
@@ -474,22 +474,22 @@ export function Landing() {
       </section>
 
       {/* ── ABOUT + SUPPORT ─────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
         <FadeIn direction="none" className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Left — About (SEO) */}
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#30363d] text-[#8b949e] text-xs font-mono mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-xs font-mono mb-6">
               <Star size={12} className="text-amber-400" aria-hidden="true" />
               Projet bénévole · Belgique
             </div>
-            <h2 className="text-2xl font-bold text-[#e6edf3] mb-4">À propos du projet</h2>
-            <p className="text-[#8b949e] leading-relaxed mb-4">
+            <h2 className="text-2xl font-bold text-[var(--github-text-primary)] mb-4">À propos du projet</h2>
+            <p className="text-[var(--github-text-secondary)] leading-relaxed mb-4">
               Terminal Learning est un projet open source créé avec passion pour rendre
               l'apprentissage du terminal accessible à tous. L'application restera
-              <strong className="text-[#e6edf3]"> toujours gratuite</strong> — sans publicité,
+              <strong className="text-[var(--github-text-primary)]"> toujours gratuite</strong> — sans publicité,
               sans données vendues, sans friction.
             </p>
-            <p className="text-[#8b949e] leading-relaxed">
+            <p className="text-[var(--github-text-secondary)] leading-relaxed">
               Si l'application t'a été utile, tu peux soutenir le développement. Chaque contribution
               aide à couvrir les frais d'hébergement et de maintenance.
             </p>
@@ -502,26 +502,26 @@ export function Landing() {
               role="group"
               aria-disabled="true"
               aria-label="Ko-fi — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
-              className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
+              className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] opacity-60 cursor-not-allowed"
               title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
             >
               <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">
-                  <Coffee size={16} className="text-[#8b949e]" aria-hidden="true" />
+                <div className="p-2 rounded-lg bg-[var(--github-bg)] border border-[var(--github-border-primary)] shrink-0">
+                  <Coffee size={16} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-[#e6edf3] text-sm font-semibold">Ko-fi — Don ponctuel</p>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[#30363d] text-[#8b949e] font-mono">
+                    <p className="text-[var(--github-text-primary)] text-sm font-semibold">Ko-fi — Don ponctuel</p>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] font-mono">
                       bientôt
                     </span>
                   </div>
-                  <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
+                  <p className="text-[var(--github-text-secondary)] text-xs leading-relaxed mt-0.5">
                     Offre un café. En attente d'accord mutuelle — bientôt disponible.
                   </p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#30363d] text-[#8b949e] text-sm font-medium select-none">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-sm font-medium select-none">
                 <Coffee size={14} aria-hidden="true" />
                 Bientôt disponible
               </span>
@@ -532,26 +532,26 @@ export function Landing() {
               role="group"
               aria-disabled="true"
               aria-label="GitHub Sponsors — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
-              className="p-5 rounded-xl border border-[#30363d] bg-[#161b22] opacity-60 cursor-not-allowed"
+              className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] opacity-60 cursor-not-allowed"
               title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
             >
               <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-[#0d1117] border border-[#30363d] shrink-0">
-                  <Github size={16} className="text-[#8b949e]" aria-hidden="true" />
+                <div className="p-2 rounded-lg bg-[var(--github-bg)] border border-[var(--github-border-primary)] shrink-0">
+                  <Github size={16} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-[#e6edf3] text-sm font-semibold">GitHub Sponsors</p>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[#30363d] text-[#8b949e] font-mono">
+                    <p className="text-[var(--github-text-primary)] text-sm font-semibold">GitHub Sponsors</p>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] font-mono">
                       bientôt
                     </span>
                   </div>
-                  <p className="text-[#8b949e] text-xs leading-relaxed mt-0.5">
+                  <p className="text-[var(--github-text-secondary)] text-xs leading-relaxed mt-0.5">
                     Sponsoring mensuel récurrent — en attente d'accord mutuelle.
                   </p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#30363d] text-[#8b949e] text-sm font-medium select-none">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-sm font-medium select-none">
                 <Github size={14} aria-hidden="true" />
                 Bientôt disponible
               </span>
@@ -562,8 +562,8 @@ export function Landing() {
 
       {/* ── HALL OF FAME ────────────────────────────────────────── */}
       {SUPPORTERS.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[#30363d]/50">
-          <h2 className="text-2xl font-bold text-[#e6edf3] mb-8">Hall of Fame</h2>
+        <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
+          <h2 className="text-2xl font-bold text-[var(--github-text-primary)] mb-8">Hall of Fame</h2>
           <div className="flex flex-wrap gap-2">
             {SUPPORTERS.map((name) => (
               <span key={name} className="px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/5 text-amber-400 text-sm font-mono">
@@ -590,22 +590,22 @@ export function Landing() {
       )}
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <footer className="border-t border-[#30363d]/50 px-6 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <footer className="border-t border-[var(--github-border-primary)]/50 px-6 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-[#8b949e] text-sm font-mono">
+          <div className="flex items-center gap-2 text-[var(--github-text-secondary)] text-sm font-mono">
             <Terminal size={14} className="text-emerald-400" aria-hidden="true" />
             Terminal Learning · MIT License
           </div>
           <nav
             aria-label="Pied de page"
-            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-[#8b949e]"
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-[var(--github-text-secondary)]"
           >
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/app')}>Application</Button>
             <a
               href="https://github.com/thierryvm/TerminalLearning"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center min-h-11 px-2 hover:text-[#e6edf3] transition-colors"
+              className="inline-flex items-center min-h-11 px-2 hover:text-[var(--github-text-primary)] transition-colors"
             >
               GitHub
             </a>
@@ -620,7 +620,7 @@ export function Landing() {
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/story')}>Notre histoire</Button>
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/privacy')}>Confidentialité</Button>
           </nav>
-          <p className="text-[#8b949e] text-xs flex items-center gap-1">
+          <p className="text-[var(--github-text-secondary)] text-xs flex items-center gap-1">
             Fait avec <Heart size={10} className="text-pink-400" aria-hidden="true" /> en Belgique
           </p>
         </div>

@@ -16,7 +16,7 @@ interface UserMenuProps {
 }
 
 const SYNC_CONFIG: Record<UserMenuProps['syncStatus'], { label: string; dot: string; text: string }> = {
-  local:   { label: 'Local',          dot: 'bg-[#8b949e]',               text: 'text-[#8b949e]' },
+  local:   { label: 'Local',          dot: 'bg-[#8b949e]',               text: 'text-[var(--github-text-secondary)]' },
   syncing: { label: 'Sync…',          dot: 'bg-yellow-400 animate-pulse', text: 'text-yellow-400' },
   synced:  { label: 'Synchronisé',    dot: 'bg-emerald-400',              text: 'text-emerald-400' },
   error:   { label: 'Erreur de sync', dot: 'bg-[#f85149]',               text: 'text-[#f85149]' },
@@ -70,14 +70,14 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
   // ── État invité — uniquement affiché en mode card (sidebar) ──────────────────
   if (!user) {
     return (
-      <div className="px-3 py-2.5 rounded-lg bg-[#161b22] border border-[#30363d]">
+      <div className="px-3 py-2.5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)]">
         <div className="flex items-center gap-2.5 mb-2.5">
-          <span className="w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center shrink-0">
-            <User size={14} className="text-[#8b949e]" aria-hidden="true" />
+          <span className="w-8 h-8 rounded-full bg-[#21262d] border border-[var(--github-border-primary)] flex items-center justify-center shrink-0">
+            <User size={14} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#e6edf3] font-medium">Mode invité</p>
-            <p className="text-[10px] text-[#8b949e] font-mono">Progression locale uniquement</p>
+            <p className="text-xs text-[var(--github-text-primary)] font-medium">Mode invité</p>
+            <p className="text-xs text-[var(--github-text-secondary)] font-mono">Progression locale uniquement</p>
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
@@ -109,7 +109,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
   // ── Variant card — sidebar ────────────────────────────────────────────────────
   if (variant === 'card') {
     return (
-      <div className="px-3 py-2.5 rounded-lg bg-[#161b22] border border-[#30363d]">
+      <div className="px-3 py-2.5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)]">
         <div className="flex items-center gap-2.5 mb-2.5">
           <div className="relative shrink-0">
             <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
@@ -119,8 +119,8 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#e6edf3] font-medium truncate">{displayName}</p>
-            <p className={`text-[10px] font-mono truncate ${sync.text}`}>{sync.label}</p>
+            <p className="text-xs text-[var(--github-text-primary)] font-medium truncate">{displayName}</p>
+            <p className={`text-xs font-mono truncate ${sync.text}`}>{sync.label}</p>
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
@@ -159,13 +159,13 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-60 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#30363d]">
+        <div className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--github-border-primary)]">
             <UserAvatar avatarUrl={avatarUrl} initials={initials} size="md" />
             <div className="min-w-0">
-              <p className="text-sm text-[#e6edf3] font-medium truncate">{displayName}</p>
-              <p className="text-xs text-[#8b949e] truncate">{user.email}</p>
-              <span className={`inline-flex items-center gap-1 mt-0.5 text-[10px] font-mono ${sync.text}`}>
+              <p className="text-sm text-[var(--github-text-primary)] font-medium truncate">{displayName}</p>
+              <p className="text-xs text-[var(--github-text-secondary)] truncate">{user.email}</p>
+              <span className={`inline-flex items-center gap-1 mt-0.5 text-xs font-mono ${sync.text}`}>
                 <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${sync.dot}`} />
                 {sync.label}
               </span>

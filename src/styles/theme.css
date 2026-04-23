@@ -39,6 +39,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* GitHub Dark Theme Colors */
+  --github-bg: #0d1117;
+  --github-bg-secondary: #010409;
+  --github-border-primary: #30363d;
+  --github-border-secondary: #21262d;
+  --github-text-primary: #c9d1d9;
+  --github-text-secondary: #8b949e;
+  --github-text-tertiary: #6e7681;
+  --github-subtle: #484f58;
 }
 
 .dark {
@@ -76,6 +85,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  /* GitHub Dark Theme Colors (same as light mode) */
+  --github-bg: #0d1117;
+  --github-bg-secondary: #010409;
+  --github-border-primary: #30363d;
+  --github-border-secondary: #21262d;
+  --github-text-primary: #c9d1d9;
+  --github-text-secondary: #8b949e;
+  --github-text-tertiary: #6e7681;
+  --github-subtle: #484f58;
 }
 
 @theme inline {

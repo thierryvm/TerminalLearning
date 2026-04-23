@@ -23,54 +23,54 @@ const buttonVariants = cva(
         emerald:
           "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-semibold hover:scale-[1.02] active:scale-[0.98]",
         "ghost-gh":
-          "border border-[#30363d] hover:border-emerald-500/40 text-[#8b949e] hover:text-emerald-400 font-medium focus-visible:border-[#30363d] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
+          "border border-[var(--github-border-primary)] hover:border-emerald-500/40 text-[var(--github-text-secondary)] hover:text-emerald-400 font-medium focus-visible:border-[var(--github-border-primary)] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — Landing nav + footer variants (THI-92)
         "emerald-nav":
           "bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] font-medium transition-colors",
         "ghost-gh-neutral":
-          "border border-[#30363d] hover:border-[#8b949e]/40 text-[#8b949e] hover:text-[#e6edf3] font-medium",
+          "border border-[var(--github-border-primary)] hover:border-[#8b949e]/40 text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] font-medium",
         "nav-link":
-          "text-[#8b949e] hover:text-[#e6edf3] transition-colors focus-visible:border-transparent focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
+          "text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors focus-visible:border-transparent focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         floating:
-          "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg",
+          "bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-lg",
         // Terminal Learning — translucent emerald CTA (LessonPage nav, THI-99)
         "emerald-soft":
           "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors focus-visible:border-emerald-500/20 focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — list row (Dashboard recent lessons, THI-95)
         "tl-ghost":
-          "w-full justify-start text-left whitespace-normal text-[#e6edf3] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
+          "w-full justify-start text-left whitespace-normal text-[var(--github-text-primary)] hover:bg-[#21262d] transition-colors focus-visible:ring-inset",
         // Terminal Learning — icon-only ghost action (close X, modal dismiss)
         "tl-icon-ghost":
-          "rounded text-[#8b949e] hover:text-[#e6edf3] transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
+          "rounded text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — tab segmented control (PWAInstallModal tabs)
         "tl-tab":
-          "font-mono transition-colors text-[#8b949e] hover:text-[#e6edf3] rounded-none focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
+          "font-mono transition-colors text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] rounded-none focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         "tl-tab-active":
           "font-mono transition-colors text-emerald-400 border-b-2 border-emerald-400 -mb-px rounded-none focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — CommandReference filter pill
         "tl-filter-pill":
-          "border transition-colors text-[#8b949e] border-[#30363d] hover:border-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
+          "border transition-colors text-[var(--github-text-secondary)] border-[var(--github-border-primary)] hover:border-[#8b949e] hover:text-[var(--github-text-primary)] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         "tl-filter-pill-active":
           "border transition-colors bg-[#e6edf3] text-[#0d1117] border-[#e6edf3] hover:bg-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0",
         // Terminal Learning — Sidebar icon 44px with emerald ring (close, install, NavLink icons)
         "tl-sidebar-icon":
-          "text-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
+          "text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
         // Terminal Learning — Sidebar module row (w-full, left-align)
         "tl-sidebar-row":
-          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#c9d1d9] hover:bg-[#161b22]",
+          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[var(--github-text-primary)] hover:bg-[var(--github-border-secondary)]",
         // Terminal Learning — Locked sidebar row (no hover bg, greyed)
         // disabled:opacity-100 overrides the base disabled:opacity-50 — the grey color + lock icon already signal the disabled state, and halving opacity would drop contrast below WCAG AA on #0d1117.
         "tl-sidebar-row-locked":
-          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] cursor-not-allowed disabled:opacity-100",
+          "w-full justify-start text-left gap-2.5 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[var(--github-text-secondary)] cursor-not-allowed disabled:opacity-100",
         // Terminal Learning — Sidebar lesson subitem
         "tl-sidebar-lesson":
-          "w-full justify-start text-left gap-2 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] group",
+          "w-full justify-start text-left gap-2 transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] hover:bg-[var(--github-border-secondary)] group",
         // Terminal Learning — Env switcher pill base (active state via className override)
         "tl-env-pill":
-          "transition-all focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 font-mono text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22] border border-transparent",
+          "transition-all focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 font-mono text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] hover:bg-[var(--github-border-secondary)] border border-transparent",
         // Terminal Learning — Menu FAB (mobile nav trigger)
         "tl-menu-fab":
-          "bg-[#161b22] border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
+          "bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0 transition-colors",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -104,7 +104,7 @@ const buttonVariants = cva(
         // Terminal Learning — Sidebar lesson subitem
         "tl-sidebar-lesson": "h-auto min-h-10 px-2 py-1.5 text-xs rounded-md",
         // Terminal Learning — Env switcher pill
-        "tl-env-pill": "h-auto flex-1 min-h-9 py-1.5 px-1 text-[10px] gap-1 rounded-md",
+        "tl-env-pill": "h-auto flex-1 min-h-9 py-1.5 px-1 text-xs gap-1 rounded-md",
         // Terminal Learning — LessonPage inline nav (back, reset, mobile toggle, hint, prev)
         "tl-nav-inline": "h-auto min-h-11 rounded px-2 text-sm font-normal gap-1.5",
         // Terminal Learning — LessonPage hint toggle (xs, tighter gap)
