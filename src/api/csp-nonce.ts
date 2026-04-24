@@ -42,7 +42,7 @@ export default async function handler(req: Request) {
         `style-src 'self' https://fonts.googleapis.com https://vercel.live 'nonce-${nonce}'`,
         "img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://vercel.live",
         "font-src 'self' data: https://fonts.gstatic.com https://vercel.live",
-        "connect-src 'self' https://vitals.vercel-insights.com https://jdnukbpkjyyyjpuwgxhv.supabase.co https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://vercel.live",
+        "connect-src 'self' https://vitals.vercel-insights.com https://jdnukbpkjyyyjpuwgxhv.supabase.co https://o1234.ingest.sentry.io https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://vercel.live",
         "frame-src 'self' https://vercel.live",
         "frame-ancestors 'none'",
         "base-uri 'self'",
