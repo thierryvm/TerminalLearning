@@ -72,7 +72,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-full bg-[#0d1117] text-[#e6edf3] p-6 lg:p-8">
+    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
@@ -80,8 +80,8 @@ export function Dashboard() {
             <Terminal size={24} className="text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-[#e6edf3]">Tableau de bord</h1>
-            <p className="text-[#8b949e] text-sm">Votre parcours d'apprentissage du terminal</p>
+            <h1 className="text-[var(--github-text-primary)]">Tableau de bord</h1>
+            <p className="text-[var(--github-text-secondary)] text-sm">Votre parcours d'apprentissage du terminal</p>
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export function Dashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award size={18} className="text-amber-400" />
-                <span className="text-sm text-[#8b949e]">Progression globale</span>
+                <span className="text-sm text-[var(--github-text-secondary)]">Progression globale</span>
               </div>
               <span className="text-emerald-400 font-mono text-sm">{overallProgress}%</span>
             </div>
@@ -102,7 +102,7 @@ export function Dashboard() {
               value={overallProgress}
               aria-label={`Progression globale : ${overallProgress}%`}
             />
-            <div className="mt-3 flex items-center justify-between text-xs text-[#8b949e]">
+            <div className="mt-3 flex items-center justify-between text-xs text-[var(--github-text-secondary)]">
               <span>{totalCompleted} leçons complétées</span>
               <span>{totalLessons - totalCompleted} restantes</span>
             </div>
@@ -114,18 +114,18 @@ export function Dashboard() {
       <div className="grid grid-cols-3 gap-4 mb-8">
         <Card variant="tl-stat">
           <BookOpen size={20} className="text-blue-400 mb-2" />
-          <div className="text-xl text-[#e6edf3] font-mono">{totalLessons}</div>
-          <div className="text-xs text-[#8b949e] text-center">Leçons au total</div>
+          <div className="text-xl text-[var(--github-text-primary)] font-mono">{totalLessons}</div>
+          <div className="text-xs text-[var(--github-text-secondary)] text-center">Leçons au total</div>
         </Card>
         <Card variant="tl-stat">
           <CheckCircle2 size={20} className="text-emerald-400 mb-2" />
-          <div className="text-xl text-[#e6edf3] font-mono">{totalCompleted}</div>
-          <div className="text-xs text-[#8b949e] text-center">Complétées</div>
+          <div className="text-xl text-[var(--github-text-primary)] font-mono">{totalCompleted}</div>
+          <div className="text-xs text-[var(--github-text-secondary)] text-center">Complétées</div>
         </Card>
         <Card variant="tl-stat">
           <Zap size={20} className="text-amber-400 mb-2" />
-          <div className="text-xl text-[#e6edf3] font-mono">{curriculum.length}</div>
-          <div className="text-xs text-[#8b949e] text-center">Modules</div>
+          <div className="text-xl text-[var(--github-text-primary)] font-mono">{curriculum.length}</div>
+          <div className="text-xs text-[var(--github-text-secondary)] text-center">Modules</div>
         </Card>
       </div>
 
@@ -143,7 +143,7 @@ export function Dashboard() {
 
       {/* Modules */}
       <div>
-        <h2 className="text-[#e6edf3] mb-4">Modules</h2>
+        <h2 className="text-[var(--github-text-primary)] mb-4">Modules</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
@@ -155,7 +155,7 @@ export function Dashboard() {
               ? 'from-gray-500/10 to-gray-500/5'
               : (MODULE_GRADIENTS[mod.id] ?? 'from-gray-500/20 to-gray-500/5');
             const border = locked
-              ? 'border-[#30363d]'
+              ? 'border-[var(--github-border-primary)]'
               : (MODULE_BORDER[mod.id] ?? 'border-gray-500/30 hover:border-gray-500/60');
 
             const ariaLabel = locked
@@ -185,33 +185,33 @@ export function Dashboard() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-black/20">
                       {locked ? (
-                        <Lock size={18} className="text-[#8b949e]" />
+                        <Lock size={18} className="text-[var(--github-text-secondary)]" />
                       ) : (
                         <span style={{ color: mod.color }}><Icon size={18} /></span>
                       )}
                     </div>
                     <div>
-                      <div className={`text-sm ${locked ? 'text-[#8b949e]' : 'text-[#e6edf3]'}`}>{mod.title}</div>
-                      <div className="text-[#8b949e] text-xs">
+                      <div className={`text-sm ${locked ? 'text-[var(--github-text-secondary)]' : 'text-[var(--github-text-primary)]'}`}>{mod.title}</div>
+                      <div className="text-[var(--github-text-secondary)] text-xs">
                         {locked ? `Niveau ${unlockStatus?.level}` : `${total} leçons`}
                       </div>
                     </div>
                   </div>
                   {locked ? (
-                    <Lock size={16} className="text-[#8b949e] shrink-0 mt-1" />
+                    <Lock size={16} className="text-[var(--github-text-secondary)] shrink-0 mt-1" />
                   ) : completed === total && total > 0 ? (
                     <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-1" />
                   ) : (
-                    <ChevronRight size={16} className="text-[#8b949e] shrink-0 mt-1 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight size={16} className="text-[var(--github-text-secondary)] shrink-0 mt-1 group-hover:translate-x-0.5 transition-transform" />
                   )}
                 </div>
 
                 {locked ? (
-                  <p className="text-[#8b949e] text-xs mb-3 leading-relaxed">
+                  <p className="text-[var(--github-text-secondary)] text-xs mb-3 leading-relaxed">
                     Complétez {unlockStatus?.missingPrerequisiteLabels.join(' & ')} pour débloquer
                   </p>
                 ) : (
-                  <p className="text-[#8b949e] text-xs mb-3 leading-relaxed">{mod.description}</p>
+                  <p className="text-[var(--github-text-secondary)] text-xs mb-3 leading-relaxed">{mod.description}</p>
                 )}
 
                 {/* Progress — only for unlocked modules */}
@@ -225,7 +225,7 @@ export function Dashboard() {
                         style={{ '--tl-progress-color': mod.color } as ModuleProgressStyle}
                         aria-label={`${mod.title} : ${completed} sur ${total} leçons`}
                       />
-                      <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
+                      <span className="text-xs text-[var(--github-text-secondary)] font-mono shrink-0">{completed}/{total}</span>
                     </div>
 
                     {/* Lessons dots — micro decoration, no shadcn equivalent */}
@@ -252,7 +252,7 @@ export function Dashboard() {
       {/* Recent lessons */}
       {totalCompleted > 0 && (
         <div className="mt-8">
-          <h2 className="text-[#e6edf3] mb-4">Leçons récentes</h2>
+          <h2 className="text-[var(--github-text-primary)] mb-4">Leçons récentes</h2>
           <Card variant="tl-surface" className="divide-y divide-[#21262d] overflow-hidden">
             {curriculum
               .flatMap((mod) =>
@@ -274,13 +274,13 @@ export function Dashboard() {
                   >
                     <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#e6edf3] truncate">{lesson.title}</div>
-                      <div className="text-xs text-[#8b949e] flex items-center gap-1">
+                      <div className="text-sm text-[var(--github-text-primary)] truncate">{lesson.title}</div>
+                      <div className="text-xs text-[var(--github-text-secondary)] flex items-center gap-1">
                         <span style={{ color: mod.color }}><Icon size={10} /></span>
                         {mod.title}
                       </div>
                     </div>
-                    <ChevronRight size={14} className="text-[#8b949e] shrink-0" />
+                    <ChevronRight size={14} className="text-[var(--github-text-secondary)] shrink-0" />
                   </Button>
                 );
               })}

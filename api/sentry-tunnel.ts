@@ -79,6 +79,20 @@ interface ScrubStats {
   timestamp: number;
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://terminallearning.dev',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400',
+};
+
+function withCors(response: Response): Response {
+  // Clone response and add CORS headers
+  const newResponse = new Response(response.body, response);
+  Object.entries(corsHeaders).forEach(([k, v]) => newResponse.headers.set(k, v));
+  return newResponse;
+}
+
 function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubStats } {
   const stats: ScrubStats = { patterns_hit: [], timestamp: Date.now() };
   let scrubbed = itemBody;
@@ -200,11 +214,16 @@ function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubSt
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return withCors(new Response(null, { status: 204 }));
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', {
+    return withCors(new Response('Method Not Allowed', {
       status: 405,
-      headers: { Allow: 'POST' },
-    });
+      headers: { Allow: 'POST, OPTIONS' },
+    }));
   }
 
   // Rate limiting — sliding window per IP
@@ -215,46 +234,46 @@ export default async function handler(req: Request): Promise<Response> {
     req.headers.get('cf-connecting-ip') ??
     'unknown';
   if (isRateLimited(ip, now)) {
-    return new Response('Too Many Requests', {
+    return withCors(new Response('Too Many Requests', {
       status: 429,
       headers: { 'Retry-After': '60' },
-    });
+    }));
   }
 
   // Fast-fail on Content-Length before buffering the body.
   const contentLength = req.headers.get('content-length');
   if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
-    return new Response('Payload Too Large', { status: 413 });
+    return withCors(new Response('Payload Too Large', { status: 413 }));
   }
 
   let envelope: string;
   try {
     const buf = await req.arrayBuffer();
     if (buf.byteLength > MAX_BODY_BYTES) {
-      return new Response('Payload Too Large', { status: 413 });
+      return withCors(new Response('Payload Too Large', { status: 413 }));
     }
     envelope = new TextDecoder().decode(buf);
   } catch {
-    return new Response('Bad Request', { status: 400 });
+    return withCors(new Response('Bad Request', { status: 400 }));
   }
 
   // The first line of a Sentry envelope is a JSON header containing the DSN.
   let dsn: URL;
   try {
     const header = JSON.parse(envelope.split('\n')[0]) as { dsn?: string };
-    if (!header.dsn) return new Response('Missing DSN', { status: 400 });
+    if (!header.dsn) return withCors(new Response('Missing DSN', { status: 400 }));
     dsn = new URL(header.dsn);
   } catch {
-    return new Response('Invalid envelope header', { status: 400 });
+    return withCors(new Response('Invalid envelope header', { status: 400 }));
   }
 
   // Reject envelopes targeting any host or project other than our own.
   if (dsn.hostname !== ALLOWED_HOST) {
-    return new Response('Forbidden', { status: 403 });
+    return withCors(new Response('Forbidden', { status: 403 }));
   }
   const projectId = dsn.pathname.replace(/^\//, '');
   if (projectId !== ALLOWED_PROJECT_ID) {
-    return new Response('Forbidden', { status: 403 });
+    return withCors(new Response('Forbidden', { status: 403 }));
   }
 
   // ─── THI-120: Scrub the envelope before relaying to Sentry ───────────────
@@ -318,5 +337,5 @@ export default async function handler(req: Request): Promise<Response> {
     },
   );
 
-  return new Response(null, { status: upstream.status });
+  return withCors(new Response(null, { status: upstream.status }));
 }

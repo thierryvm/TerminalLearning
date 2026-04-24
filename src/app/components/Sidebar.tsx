@@ -50,18 +50,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[#0d1117] border-r border-[#30363d] flex flex-col transition-transform duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[var(--github-bg)] border-r border-[var(--github-border-primary)] flex flex-col transition-transform duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Logo */}
-        <div className="shrink-0 flex items-center justify-between px-4 py-4 border-b border-[#30363d]">
+        <div className="shrink-0 flex items-center justify-between px-4 py-4 border-b border-[var(--github-border-primary)]">
           <NavLink to="/app" className="flex items-center gap-2.5" onClick={onClose}>
             <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <Terminal size={18} className="text-emerald-400" />
             </div>
             <div>
-              <div className="text-sm text-[#e6edf3] font-mono">Terminal</div>
+              <div className="text-sm text-[var(--github-text-primary)] font-mono">Terminal</div>
               <div className="text-xs text-emerald-400 font-mono">Master</div>
             </div>
           </NavLink>
@@ -78,9 +78,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Progress bar */}
-        <div className="shrink-0 px-4 py-3 border-b border-[#30363d]">
+        <div className="shrink-0 px-4 py-3 border-b border-[var(--github-border-primary)]">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-[#8b949e]">Progression</span>
+            <span className="text-xs text-[var(--github-text-secondary)]">Progression</span>
             <span className="text-xs text-emerald-400 font-mono">{overallProgress}%</span>
           </div>
           <div className="h-1.5 bg-[#21262d] rounded-full overflow-hidden">
@@ -92,7 +92,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Nav */}
-        <nav className="shrink-0 p-2 border-b border-[#30363d] space-y-0.5">
+        <nav className="shrink-0 p-2 border-b border-[var(--github-border-primary)] space-y-0.5">
           <NavLink
             to="/app"
             end
@@ -100,8 +100,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             className={({ isActive }) =>
               `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                 isActive
-                  ? 'bg-[#21262d] text-[#e6edf3]'
-                  : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]'
+                  ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                  : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
               }`
             }
           >
@@ -114,8 +114,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             className={({ isActive }) =>
               `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                 isActive
-                  ? 'bg-[#21262d] text-[#e6edf3]'
-                  : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]'
+                  ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                  : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
               }`
             }
           >
@@ -126,7 +126,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Modules */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          <p className="text-[10px] text-[#8b949e] uppercase tracking-widest px-3 py-2">Modules</p>
+          <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest px-3 py-2">Modules</p>
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
@@ -149,20 +149,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   title={locked ? `Prérequis : ${unlockStatus?.missingPrerequisiteLabels.join(', ')}` : undefined}
                 >
                   {locked ? (
-                    <Lock size={15} className="size-[15px] text-[#8b949e] shrink-0" />
+                    <Lock size={15} className="size-[15px] text-[var(--github-text-secondary)] shrink-0" />
                   ) : (
                     <span style={{ color: mod.color }}><Icon size={15} className="size-[15px]" /></span>
                   )}
                   <span className="flex-1 text-left truncate">{mod.title}</span>
                   {locked ? (
-                    <span className="text-[10px] text-[#8b949e] font-mono shrink-0">Niv. {unlockStatus?.level}</span>
+                    <span className="text-xs text-[var(--github-text-secondary)] font-mono shrink-0">Niv. {unlockStatus?.level}</span>
                   ) : (
                     <>
-                      <span className="text-xs text-[#8b949e] font-mono shrink-0">{completed}/{total}</span>
+                      <span className="text-xs text-[var(--github-text-secondary)] font-mono shrink-0">{completed}/{total}</span>
                       {isExpanded ? (
-                        <ChevronDown size={14} className="size-[14px] text-[#8b949e] shrink-0" />
+                        <ChevronDown size={14} className="size-[14px] text-[var(--github-text-secondary)] shrink-0" />
                       ) : (
-                        <ChevronRight size={14} className="size-[14px] text-[#8b949e] shrink-0" />
+                        <ChevronRight size={14} className="size-[14px] text-[var(--github-text-secondary)] shrink-0" />
                       )}
                     </>
                   )}
@@ -170,14 +170,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                 {/* Locked hint */}
                 {locked && (
-                  <div className="ml-8 px-2 py-1 text-[10px] text-[#8b949e] leading-tight">
+                  <div className="ml-8 px-2 py-1 text-xs text-[var(--github-text-secondary)] leading-tight">
                     Complétez {unlockStatus?.missingPrerequisiteLabels.join(' & ')} pour débloquer
                   </div>
                 )}
 
                 {/* Lessons — only for unlocked modules */}
                 {!locked && isExpanded && (
-                  <div className="ml-3 pl-3 border-l border-[#21262d] space-y-0.5 mt-0.5 mb-1">
+                  <div className="ml-3 pl-3 border-l border-[var(--github-border-secondary)] space-y-0.5 mt-0.5 mb-1">
                     {mod.lessons.map((lesson) => {
                       const done = isLessonCompleted(mod.id, lesson.id);
                       return (
@@ -189,7 +189,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           {done ? (
                             <CheckCircle2 size={12} className="size-[12px] text-emerald-400 shrink-0" />
                           ) : (
-                            <Circle size={12} className="size-[12px] text-[#30363d] shrink-0 group-hover:text-[#8b949e]" />
+                            <Circle size={12} className="size-[12px] text-[#30363d] shrink-0 group-hover:text-[var(--github-text-secondary)]" />
                           )}
                           <span className="truncate">{lesson.title}</span>
                         </SidebarLessonButton>
@@ -203,10 +203,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[#30363d] px-3 py-4 space-y-3">
+        <div className="shrink-0 border-t border-[var(--github-border-primary)] px-3 py-4 space-y-3">
           {/* Environment switcher */}
           <div className="px-1">
-            <p className="text-[9px] text-[#8b949e] uppercase tracking-widest font-mono mb-1.5 px-1">
+            <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono mb-1.5 px-1">
               Environnement
             </p>
             <div className="flex gap-1">
@@ -225,16 +225,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {envId === 'linux' ? (
                       <Terminal size={10} className="size-[10px]" aria-hidden="true" />
                     ) : envId === 'macos' ? (
-                      <span className="text-[10px] leading-none select-none" aria-hidden="true"></span>
+                      <span className="text-xs leading-none select-none" aria-hidden="true"></span>
                     ) : (
-                      <span className="text-[9px] leading-none select-none" aria-hidden="true">⊞</span>
+                      <span className="text-xs leading-none select-none" aria-hidden="true">⊞</span>
                     )}
                     {meta.label}
                   </EnvPill>
                 );
               })}
             </div>
-            <p className="text-[9px] text-[#8b949e] font-mono mt-1.5 px-1 truncate">
+            <p className="text-xs text-[var(--github-text-secondary)] font-mono mt-1.5 px-1 truncate">
               {ENV_META[selectedEnv].promptPreview}
             </p>
           </div>

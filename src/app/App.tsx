@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Sentry } from '../lib/sentry';
+import { useCspNonce } from '../lib/hooks/useCspNonce';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
@@ -13,7 +14,7 @@ import { Button } from './components/ui/button';
 
 function FallbackUI() {
   return (
-    <div className="min-h-dvh bg-[#0d1117] flex items-center justify-center text-[#e6edf3] font-mono">
+    <div className="min-h-dvh bg-[var(--github-bg)] flex items-center justify-center text-[var(--github-text-primary)] font-mono">
       <div className="text-center space-y-4">
         <p className="text-[#f85149] text-lg">Une erreur inattendue s'est produite.</p>
         <Button
@@ -29,6 +30,8 @@ function FallbackUI() {
 }
 
 export default function App() {
+  // Initialize CSP nonce from meta tag injected by Edge Function
+  useCspNonce();
   return (
     <HelmetProvider>
     <Sentry.ErrorBoundary fallback={<FallbackUI />}>

@@ -26,7 +26,7 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
     const parts = text.split(/(`[^`]+`)/g);
     return parts.map((part, i) =>
       part.startsWith('`') && part.endsWith('`') ? (
-        <code key={i} className="px-1.5 py-0.5 bg-[#21262d] text-emerald-400 rounded text-sm font-mono border border-[#30363d]">
+        <code key={i} className="px-1.5 py-0.5 bg-[#21262d] text-emerald-400 rounded text-sm font-mono border border-[var(--github-border-primary)]">
           {part.slice(1, -1)}
         </code>
       ) : (
@@ -38,31 +38,31 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
   switch (block.type) {
     case 'text':
       return (
-        <p className="text-[#c9d1d9] leading-relaxed text-sm">{renderText(content)}</p>
+        <p className="text-[var(--github-text-primary)] leading-relaxed text-sm">{renderText(content)}</p>
       );
 
     case 'code':
       return (
-        <div className="rounded-lg overflow-hidden border border-[#30363d]">
+        <div className="rounded-lg overflow-hidden border border-[var(--github-border-primary)]">
           {label && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#161b22] border-b border-[#30363d]">
-              <Code2 size={12} className="text-[#8b949e]" />
-              <span className="text-[#8b949e] text-xs">{label}</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--github-border-secondary)] border-b border-[var(--github-border-primary)]">
+              <Code2 size={12} className="text-[var(--github-text-secondary)]" />
+              <span className="text-[var(--github-text-secondary)] text-xs">{label}</span>
             </div>
           )}
-          <pre className="bg-[#0d1117] p-4 overflow-x-auto text-sm font-mono leading-relaxed max-w-full">
+          <pre className="bg-[var(--github-bg)] p-4 overflow-x-auto text-sm font-mono leading-relaxed max-w-full">
             {content.split('\n').map((line, i) => {
               if (line.startsWith('$') || line.startsWith('PS>')) {
                 const promptEnd = line.startsWith('PS>') ? 3 : 1;
                 return (
                   <div key={i}>
                     <span className="text-emerald-400">{line.slice(0, promptEnd)}</span>
-                    <span className="text-[#e6edf3]">{line.slice(promptEnd)}</span>
+                    <span className="text-[var(--github-text-primary)]">{line.slice(promptEnd)}</span>
                   </div>
                 );
               }
               if (line.startsWith('#')) {
-                return <div key={i} className="text-[#8b949e]">{line}</div>;
+                return <div key={i} className="text-[var(--github-text-secondary)]">{line}</div>;
               }
               return <div key={i} className="text-[#a5d6ff]">{line}</div>;
             })}
@@ -74,7 +74,7 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
       return (
         <div className="flex gap-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3">
           <Lightbulb size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
+          <p className="text-[var(--github-text-primary)] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -82,7 +82,7 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
       return (
         <div className="flex gap-3 bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
           <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
+          <p className="text-[var(--github-text-primary)] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -90,7 +90,7 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
       return (
         <div className="flex gap-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
           <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-          <p className="text-[#c9d1d9] text-sm leading-relaxed">{renderText(content)}</p>
+          <p className="text-[var(--github-text-primary)] text-sm leading-relaxed">{renderText(content)}</p>
         </div>
       );
 
@@ -167,9 +167,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
 
   return (
-    <div className="h-full flex flex-col bg-[#0d1117] text-[#e6edf3] overflow-hidden">
+    <div className="h-full flex flex-col bg-[var(--github-bg)] text-[var(--github-text-primary)] overflow-hidden">
       {/* Top bar */}
-      <div className="shrink-0 border-b border-[#30363d] bg-[#161b22] px-4 py-3 flex items-center gap-3">
+      <div className="shrink-0 border-b border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] px-4 py-3 flex items-center gap-3">
         <Button
           type="button"
           variant="nav-link"
@@ -183,11 +183,11 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
         </Button>
 
         <div className="text-[#30363d]">/</div>
-        <span className="text-[#8b949e] text-sm hidden sm:inline">{mod.title}</span>
+        <span className="text-[var(--github-text-secondary)] text-sm hidden sm:inline">{mod.title}</span>
         <div className="text-[#30363d] hidden sm:block">/</div>
-        <span className="text-[#e6edf3] text-sm truncate flex-1">{lesson.title}</span>
+        <span className="text-[var(--github-text-primary)] text-sm truncate flex-1">{lesson.title}</span>
 
-        <span className="text-[#8b949e] text-xs font-mono shrink-0">
+        <span className="text-[var(--github-text-secondary)] text-xs font-mono shrink-0">
           {lessonIndex + 1}/{mod.lessons.length}
         </span>
 
@@ -211,16 +211,16 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
       {/* Main split */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Lesson content */}
-        <div className={`${showTerminal ? 'hidden' : 'flex'} lg:flex flex-col w-full lg:w-[44%] xl:w-[42%] border-r border-[#30363d] overflow-y-auto`}>
+        <div className={`${showTerminal ? 'hidden' : 'flex'} lg:flex flex-col w-full lg:w-[44%] xl:w-[42%] border-r border-[var(--github-border-primary)] overflow-y-auto`}>
           <div className="p-5 lg:p-6 flex-1">
             {/* Lesson header */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: mod.color }} />
-                <span className="text-xs text-[#8b949e]">{mod.title}</span>
+                <span className="text-xs text-[var(--github-text-secondary)]">{mod.title}</span>
               </div>
-              <h1 className="text-[#e6edf3] mb-2">{lesson.title}</h1>
-              <p className="text-[#8b949e] text-sm leading-relaxed">{lesson.description}</p>
+              <h1 className="text-[var(--github-text-primary)] mb-2">{lesson.title}</h1>
+              <p className="text-[var(--github-text-secondary)] text-sm leading-relaxed">{lesson.description}</p>
             </div>
 
             {/* Content blocks */}
@@ -232,14 +232,14 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 
             {/* Exercise */}
             {lesson.exercise && (
-              <div className={`mt-6 rounded-xl border p-4 transition-colors ${exerciseCompleted ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-[#30363d] bg-[#161b22]'}`}>
+              <div className={`mt-6 rounded-xl border p-4 transition-colors ${exerciseCompleted ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]'}`}>
                 <div className="flex items-center gap-2 mb-3">
                   {exerciseCompleted ? (
                     <CheckCircle2 size={16} className="text-emerald-400" />
                   ) : (
-                    <Terminal size={16} className="text-[#8b949e]" />
+                    <Terminal size={16} className="text-[var(--github-text-secondary)]" />
                   )}
-                  <span className="text-sm text-[#e6edf3]">
+                  <span className="text-sm text-[var(--github-text-primary)]">
                     {exerciseCompleted ? 'Exercice complété !' : 'Exercice pratique'}
                   </span>
                 </div>
@@ -247,7 +247,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                 {exerciseMessage ? (
                   <p className="text-emerald-400 text-sm">{exerciseMessage}</p>
                 ) : (
-                  <p className="text-[#c9d1d9] text-sm">
+                  <p className="text-[var(--github-text-primary)] text-sm">
                     {lesson.exercise.instructionByEnv?.[selectedEnv] ?? lesson.exercise.instruction}
                   </p>
                 )}
@@ -289,7 +289,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           </div>
 
           {/* Navigation */}
-          <div className="shrink-0 border-t border-[#30363d] px-5 py-4 flex items-center justify-between">
+          <div className="shrink-0 border-t border-[var(--github-border-primary)] px-5 py-4 flex items-center justify-between">
             <Button
               type="button"
               variant="nav-link"
@@ -333,7 +333,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           <div className="flex items-center justify-between mb-3 shrink-0">
             <div className="flex items-center gap-2">
               <Terminal size={14} className="text-emerald-400" />
-              <span className="text-sm text-[#8b949e]">Terminal interactif</span>
+              <span className="text-sm text-[var(--github-text-secondary)]">Terminal interactif</span>
             </div>
             <Button
               type="button"
@@ -376,7 +376,7 @@ export function LessonPage() {
 
   if (!mod || !lesson) {
     return (
-      <div className="min-h-full bg-[#0d1117] flex items-center justify-center text-[#8b949e]">
+      <div className="min-h-full bg-[var(--github-bg)] flex items-center justify-center text-[var(--github-text-secondary)]">
         <div className="text-center">
           <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
           <p>Leçon introuvable</p>
@@ -396,7 +396,7 @@ export function LessonPage() {
 
   if (!isModuleUnlocked(moduleId)) {
     return (
-      <div className="min-h-full bg-[#0d1117] flex items-center justify-center text-[#8b949e]">
+      <div className="min-h-full bg-[var(--github-bg)] flex items-center justify-center text-[var(--github-text-secondary)]">
         <div className="text-center">
           <Lock size={48} className="mx-auto mb-4 opacity-30" />
           <p>Ce module est verrouillé</p>

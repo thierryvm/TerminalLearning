@@ -51,12 +51,12 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
         <div
-          className="bg-[#161b22] border border-[#30363d] rounded-xl p-8 max-w-sm w-full text-center shadow-2xl"
+          className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-8 max-w-sm w-full text-center shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-[#e6edf3] mb-2">Déjà installée !</h2>
-          <p className="text-sm text-[#8b949e] mb-6">Terminal Learning est déjà installée sur cet appareil.</p>
+          <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-2">Déjà installée !</h2>
+          <p className="text-sm text-[var(--github-text-secondary)] mb-6">Terminal Learning est déjà installée sur cet appareil.</p>
           <Button
             variant="emerald-soft"
             size="cta-pill-sm"
@@ -72,16 +72,16 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md shadow-2xl"
+        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl w-full max-w-md shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--github-border-primary)]">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <Smartphone size={16} className="text-emerald-400" />
             </div>
-            <h2 className="text-sm font-semibold text-[#e6edf3]">Installer l'application</h2>
+            <h2 className="text-sm font-semibold text-[var(--github-text-primary)]">Installer l'application</h2>
           </div>
           <Button
             variant="tl-icon-ghost"
@@ -94,7 +94,7 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[#30363d]">
+        <div className="flex border-b border-[var(--github-border-primary)]">
           {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => (
             <Button
               key={tab}
@@ -123,7 +123,7 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
             <>
               {canPrompt ? (
                 <div className="text-center space-y-3 py-2">
-                  <p className="text-sm text-[#8b949e]">Ton navigateur supporte l'installation directe.</p>
+                  <p className="text-sm text-[var(--github-text-secondary)]">Ton navigateur supporte l'installation directe.</p>
                   <Button
                     variant="emerald"
                     size="tl-install-cta"
@@ -144,7 +144,7 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
             <>
               {canPrompt ? (
                 <div className="text-center space-y-3 py-2">
-                  <p className="text-sm text-[#8b949e]">Installation disponible pour Chrome et Edge.</p>
+                  <p className="text-sm text-[var(--github-text-secondary)]">Installation disponible pour Chrome et Edge.</p>
                   <Button
                     variant="emerald"
                     size="tl-install-cta"
@@ -163,8 +163,8 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#30363d]">
-          <p className="text-[10px] text-[#8b949e] text-center">
+        <div className="px-5 py-3 border-t border-[var(--github-border-primary)]">
+          <p className="text-xs text-[var(--github-text-secondary)] text-center">
             L'app fonctionne hors ligne une fois installée. Aucune donnée supplémentaire collectée.
           </p>
         </div>
@@ -178,10 +178,10 @@ function Steps({ steps }: { steps: { icon: React.ComponentType<{ size?: number; 
     <ol className="space-y-3">
       {steps.map((step, i) => (
         <li key={i} className="flex items-start gap-3">
-          <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[10px] text-emerald-400 font-mono mt-0.5">
+          <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xs text-emerald-400 font-mono mt-0.5">
             {i + 1}
           </span>
-          <p className="text-sm text-[#c9d1d9] leading-relaxed">{step.text}</p>
+          <p className="text-sm text-[var(--github-text-primary)] leading-relaxed">{step.text}</p>
         </li>
       ))}
     </ol>

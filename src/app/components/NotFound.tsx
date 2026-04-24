@@ -63,7 +63,7 @@ function TerminalLine({ prompt, command, error, highlight, startTyping }: {
       <span className={
         error ? 'text-red-400' :
         highlight ? 'text-blue-400' :
-        'text-[#e6edf3]'
+        'text-[var(--github-text-primary)]'
       }>
         {displayed}
         {displayed.length < command.length && (
@@ -88,7 +88,7 @@ export function NotFound() {
 
   return (
     <div
-      className="min-h-dvh bg-[#0d1117] text-[#e6edf3] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      className="min-h-dvh bg-[var(--github-bg)] text-[var(--github-text-primary)] flex flex-col items-center justify-center p-6 relative overflow-hidden"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       {/* Background glow — top center */}
@@ -104,14 +104,14 @@ export function NotFound() {
 
         {/* Terminal mock */}
         <div
-          className="animate-fade-in-up bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden mb-8 shadow-xl shadow-black/40"
+          className="animate-fade-in-up bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden mb-8 shadow-xl shadow-black/40"
         >
           {/* Window chrome */}
-          <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[#30363d] bg-[#0d1117]/50">
+          <div className="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--github-border-primary)] bg-[var(--github-bg)]/50">
             <span className="w-3 h-3 rounded-full bg-[#ff5f57]" aria-hidden="true" />
             <span className="w-3 h-3 rounded-full bg-[#febc2e]" aria-hidden="true" />
             <span className="w-3 h-3 rounded-full bg-[#28c840]" aria-hidden="true" />
-            <span className="flex-1 text-center text-[10px] text-[#484f58] font-mono">terminal — zsh</span>
+            <span className="flex-1 text-center text-xs text-[#484f58] font-mono">terminal — zsh</span>
           </div>
 
           {/* Terminal content */}
@@ -134,10 +134,10 @@ export function NotFound() {
           className="animate-fade-in-up text-center mb-8"
           style={{ animationDelay: '200ms' }}
         >
-          <div className="text-[clamp(3rem,10vw,3.75rem)] font-bold text-[#e6edf3] mb-2 tracking-tight leading-none">
+          <div className="text-[clamp(3rem,10vw,3.75rem)] font-bold text-[var(--github-text-primary)] mb-2 tracking-tight leading-none">
             4<span className="text-emerald-400">0</span>4
           </div>
-          <p className="text-[#8b949e] text-base">
+          <p className="text-[var(--github-text-secondary)] text-base">
             Cette page n'existe pas — mais le terminal, lui, t'attend.
           </p>
         </div>
@@ -176,7 +176,7 @@ export function NotFound() {
           className="animate-fade-in-up mt-8"
           style={{ animationDelay: '650ms' }}
         >
-          <h2 className="text-center text-[#8b949e] text-xs font-mono mb-4 uppercase tracking-wider">
+          <h2 className="text-center text-[var(--github-text-secondary)] text-xs font-mono mb-4 uppercase tracking-wider">
             Pages utiles
           </h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 list-none p-0 m-0">
@@ -184,12 +184,12 @@ export function NotFound() {
               <li key={to}>
                 <Link
                   to={to}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-[#30363d] bg-[#161b22]/50 hover:border-emerald-500/40 hover:bg-[#161b22] transition-all"
+                  className="flex items-start gap-3 p-3 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]/50 hover:border-emerald-500/40 hover:bg-[var(--github-border-secondary)] transition-all"
                 >
                   <Icon size={16} aria-hidden="true" className="size-[16px] text-emerald-400 shrink-0 mt-0.5" />
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[#e6edf3] text-sm font-medium">{label}</span>
-                    <span className="block text-[#8b949e] text-xs mt-0.5">{desc}</span>
+                    <span className="block text-[var(--github-text-primary)] text-sm font-medium">{label}</span>
+                    <span className="block text-[var(--github-text-secondary)] text-xs mt-0.5">{desc}</span>
                   </span>
                 </Link>
               </li>
@@ -206,7 +206,7 @@ export function NotFound() {
             href="https://github.com/thierryvm/TerminalLearning"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] text-xs font-mono transition-colors"
+            className="inline-flex items-center gap-1.5 text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] text-xs font-mono transition-colors"
           >
             <Github size={12} aria-hidden="true" />
             open source · 100% gratuit · pour débutants

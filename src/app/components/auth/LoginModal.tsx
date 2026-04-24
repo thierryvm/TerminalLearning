@@ -92,9 +92,9 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl">
+      <div className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-[#e6edf3] font-mono">
+          <h2 className="text-lg font-semibold text-[var(--github-text-primary)] font-mono">
             {mode === 'login' ? 'Connexion' : 'Créer un compte'}
           </h2>
           <Button
@@ -125,7 +125,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 size="tl-install-cta"
                 onClick={() => handleOAuth('github')}
                 disabled={loadingOAuth !== null}
-                className="bg-[#0d1117] text-[#e6edf3] hover:text-[#e6edf3] hover:border-emerald-500/50 focus-visible:border-[#30363d] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[var(--github-bg)] text-[var(--github-text-primary)] hover:text-[var(--github-text-primary)] hover:border-emerald-500/50 focus-visible:border-[var(--github-border-primary)] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loadingOAuth === 'github' ? (
                   <span className="w-4 h-4 border-2 border-[#e6edf3]/30 border-t-[#e6edf3] rounded-full animate-spin" />
@@ -140,7 +140,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 size="tl-install-cta"
                 onClick={() => handleOAuth('google')}
                 disabled={loadingOAuth !== null}
-                className="bg-[#0d1117] text-[#e6edf3] hover:text-[#e6edf3] hover:border-emerald-500/50 focus-visible:border-[#30363d] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[var(--github-bg)] text-[var(--github-text-primary)] hover:text-[var(--github-text-primary)] hover:border-emerald-500/50 focus-visible:border-[var(--github-border-primary)] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loadingOAuth === 'google' ? (
                   <span className="w-4 h-4 border-2 border-[#e6edf3]/30 border-t-[#e6edf3] rounded-full animate-spin" />
@@ -153,10 +153,10 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#30363d]" />
+                <div className="w-full border-t border-[var(--github-border-primary)]" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[#161b22] px-2 text-xs text-[#8b949e] font-mono">ou par email</span>
+                <span className="bg-[var(--github-border-secondary)] px-2 text-xs text-[var(--github-text-secondary)] font-mono">ou par email</span>
               </div>
             </div>
 
@@ -173,7 +173,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 placeholder="email@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg)] text-[var(--github-text-primary)] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
               <Input
@@ -183,7 +183,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 placeholder="Mot de passe (8 car. min.)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
+                className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg)] text-[var(--github-text-primary)] text-sm font-mono placeholder-[#8b949e] focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
                 required
               />
 
@@ -202,7 +202,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               </Button>
             </form>
 
-            <p className="mt-4 text-center text-xs text-[#8b949e] font-mono">
+            <p className="mt-4 text-center text-xs text-[var(--github-text-secondary)] font-mono">
               {mode === 'login' ? "Pas encore de compte ? " : 'Déjà un compte ? '}
               <Button
                 type="button"

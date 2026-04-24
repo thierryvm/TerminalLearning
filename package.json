@@ -25,7 +25,8 @@
     "test:e2e:mobile": "playwright test --project=mobile-iphone-se --project=mobile-galaxy",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:lighthouse": "lhci autorun"
+    "test:lighthouse": "lhci autorun",
+    "export:curriculum": "npx tsx scripts/export-curriculum.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.2.8",
@@ -34,10 +35,12 @@
     "@radix-ui/react-slot": "1.1.2",
     "@sentry/react": "^10.47.0",
     "@supabase/supabase-js": "^2.101.1",
+    "@types/jsonwebtoken": "^9.0.10",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "0.487.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
