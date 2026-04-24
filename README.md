@@ -4,6 +4,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=flat-square&logo=vercel)](https://terminallearning.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald?style=flat-square)](LICENSE)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/thierryvm/TerminalLearning/ci.yml?style=flat-square&logo=github&label=CI)](https://github.com/thierryvm/TerminalLearning/actions)
 [![Built with Vite](https://img.shields.io/badge/Built%20with-Vite%206-646cff?style=flat-square&logo=vite)](https://vitejs.dev)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
@@ -174,8 +175,8 @@ If it helped you or your students, the best way to support it is:
 - ⭐ **Star the repo** — helps visibility on GitHub
 - 🐛 **Report bugs** — [open an issue](https://github.com/thierryvm/TerminalLearning/issues)
 - 🤝 **Contribute** — code, curriculum, translations, feedback
-- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — activated, donations on hold *(pending Solidaris / RIZIV-INAMI authorization)*
-- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — on hold *(pending Solidaris / RIZIV-INAMI authorization)*
+- 💜 **[GitHub Sponsors](https://github.com/sponsors/thierryvm)** — activated *(donations support future development)*
+- ☕ **[Ko-fi](https://ko-fi.com/thierryvm)** — available *(help sustain this project)*
 
 ---
 
