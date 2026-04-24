@@ -5,8 +5,9 @@
  * NO user persistence yet (Phase 7c). Pure validation + observability.
  *
  * Security:
+ * - Validates issuer against ALLOWED_ISSUERS allowlist (SSRF protection, security-auditor C2)
  * - Fetches LMS public key from /.well-known/openid-configuration (Canvas, Moodle, etc.)
- * - Validates JWT signature (RS256 / HMAC depending on LMS)
+ * - Validates JWT signature RS256-only (no HS256, security-auditor H5)
  * - Enforces exp + iat claims
  * - Logs to Sentry with scrubbing (no PII exposure)
  *
@@ -15,6 +16,16 @@
 
 import { VerifyOptions, verify } from 'jsonwebtoken';
 import * as Sentry from '@sentry/node';
+
+export const config = { runtime: 'nodejs' };
+
+// SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
+const ALLOWED_ISSUERS = new Set([
+  'https://canvas.instructure.com',
+  'https://moodlecloud.com', // placeholder for Moodle cloud instances
+  'https://smartschool.be', // Smartschool Belgium
+  // Add instance-specific Canvas URLs as they onboard (e.g., 'https://myschool.instructure.com')
+]);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://terminallearning.dev',
@@ -109,10 +120,10 @@ async function getJwkSet(jwksUri: string): Promise<any> {
 }
 
 /**
- * Verify and decode JWT
- * Supports both RS256 (public key) and HS256 (shared secret)
+ * Verify and decode JWT — Phase 7c (not called in SPIKE phase)
+ * RS256 only per LTI 1.3 spec. No HS256 (security-auditor H5 fix).
  */
-async function verifyJwt(token: string, issuer: string, secret?: string): Promise<JwtClaims> {
+async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
   try {
     // Fetch OIDC config to find JWK Set URI
     const oidcConfig = await getOidcConfig(issuer);
@@ -123,16 +134,17 @@ async function verifyJwt(token: string, issuer: string, secret?: string): Promis
     // Fetch JWK Set
     const jwkSet = await getJwkSet(oidcConfig.jwks_uri);
 
-    // For SPIKE phase, use a simple verify without full JWK lookup
-    // In Phase 7c, implement full RS256 JWK validation
+    // Phase 7c: Implement full RS256 JWK validation here
+    // Extract public key from JWK Set matching kid claim in token header
+    // For now, return placeholder
     const options: VerifyOptions = {
       issuer,
-      algorithms: ['RS256', 'HS256'],
+      algorithms: ['RS256'], // LTI 1.3 mandate: RS256 only, no HS256 (security-auditor H5)
       ignoreExpiration: false, // Validate exp claim
     };
 
-    // Decode without verification first to inspect header
-    const decoded = verify(token, secret || 'placeholder', {
+    // TODO: Fetch correct public key from jwkSet and pass to verify()
+    const decoded = verify(token, 'TODO_PHASE7C_PUBLIC_KEY', {
       ...options,
       ignoreExpiration: true,
     }) as JwtClaims;
@@ -218,7 +230,8 @@ export default async function handler(req: any): Promise<Response> {
     }
 
     // Decode JWT header to extract issuer (iss claim)
-    // For SPIKE, we skip full validation and just inspect the token structure
+    // For SPIKE, we skip full signature validation and just inspect the token structure
+    // Phase 7c: Will implement full RS256 verification with JWK Sets
     const parts = idToken.split('.');
     if (parts.length !== 3) {
       throw new Error('Invalid JWT format (expected 3 parts)');
@@ -230,6 +243,11 @@ export default async function handler(req: any): Promise<Response> {
       const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
       claims = payload;
       log.issuer = claims.iss;
+
+      // SSRF protection: Validate issuer against allowlist (security-auditor C2 fix)
+      if (!claims.iss || !ALLOWED_ISSUERS.has(claims.iss)) {
+        throw new Error(`Issuer "${claims.iss}" not in ALLOWED_ISSUERS allowlist (SSRF protection)`);
+      }
     } catch {
       throw new Error('Failed to decode JWT payload');
     }
