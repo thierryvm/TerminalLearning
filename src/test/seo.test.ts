@@ -30,13 +30,15 @@ function allSrc(): string { return collectSrc(SRC_DIR).map((f) => readFileSync(f
 
 function getCsp(): string {
   const hdrs = readVercel().headers as Array<{ headers: Array<{ key: string; value: string }> }>;
-  for (const b of hdrs) for (const h of b.headers) if (h.key === 'Content-Security-Policy') return h.value;
-  return '';
+  let result = '';
+  for (const b of hdrs) for (const h of b.headers) if (h.key === 'Content-Security-Policy') result = h.value;
+  return result;
 }
 function getHeader(key: string): string {
   const hdrs = readVercel().headers as Array<{ headers: Array<{ key: string; value: string }> }>;
-  for (const b of hdrs) for (const h of b.headers) if (h.key === key) return h.value;
-  return '';
+  let result = '';
+  for (const b of hdrs) for (const h of b.headers) if (h.key === key) result = h.value;
+  return result;
 }
 
 // -- SEO meta tags -----------------------------------------------------------
