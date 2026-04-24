@@ -143,7 +143,7 @@ export function initSentry() {
             if (lower === 'authorization' || lower === 'x-api-key' || lower.includes('token')) {
               return [k, '[REDACTED:header]'];
             }
-            return [k, scrubString(String(v))];
+            return [k, scrubString(String(v)) ?? String(v)];
           })
         );
       }
