@@ -26,8 +26,6 @@ function collectSrc(dir: string): string[] {
   return results;
 }
 
-function allSrc(): string { return collectSrc(SRC_DIR).map((f) => readFileSync(f, 'utf-8')).join('\n'); }
-
 function getCsp(): string {
   const hdrs = readVercel().headers as Array<{ headers: Array<{ key: string; value: string }> }>;
   let result = '';
