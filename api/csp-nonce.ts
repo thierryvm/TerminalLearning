@@ -1,21 +1,31 @@
+import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
 function generateNonce(): string {
-  const buffer = crypto.getRandomValues(new Uint8Array(32));
+  const buffer = randomBytes(32);
   return Array.from(buffer)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+// Cache HTML template at module scope — read once at startup, reuse for all requests
+const indexPath = join(process.cwd(), '.vercel/output/static/index.html');
+let indexHtmlTemplate: string;
+
+try {
+  indexHtmlTemplate = readFileSync(indexPath, 'utf-8');
+} catch (err) {
+  console.error('CSP handler: failed to read index.html template at module load:', err instanceof Error ? err.message : String(err));
+  indexHtmlTemplate = '<!DOCTYPE html><html><head></head><body>Service Unavailable</body></html>';
 }
 
 export default function handler(req: Request) {
   try {
     const nonce = generateNonce();
 
-    // Read the built index.html from the static output directory
-    // Vercel places the build output at .vercel/output/static/
-    const indexPath = join(process.cwd(), '.vercel/output/static/index.html');
-    let html = readFileSync(indexPath, 'utf-8');
+    // Start from the cached template and inject nonce per-request
+    let html = indexHtmlTemplate;
 
     // Inject nonce meta tag before </head>
     html = html.replace(
@@ -54,6 +64,7 @@ export default function handler(req: Request) {
       },
     });
   } catch (error) {
+    console.error('CSP handler: request failed:', error instanceof Error ? error.message : String(error));
     return new Response('Internal Server Error', { status: 500 });
   }
 }
