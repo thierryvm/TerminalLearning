@@ -26,8 +26,6 @@ function collectSrc(dir: string): string[] {
   return results;
 }
 
-function allSrc(): string { return collectSrc(SRC_DIR).map((f) => readFileSync(f, 'utf-8')).join('\n'); }
-
 function getCsp(): string {
   const hdrs = readVercel().headers as Array<{ headers: Array<{ key: string; value: string }> }>;
   let result = '';
@@ -226,7 +224,11 @@ describe('Security -- source code static analysis', () => {
     expect(violations).toEqual([]);
   });
   it('no hardcoded secret key patterns (sk-/AKIA/ghp_)', () => {
-    const src = allSrc();
+    // Exclude test files — they may contain synthetic test credentials for scrubber/scanner validation
+    const src = collectSrc(SRC_DIR)
+      .filter((f) => !f.includes('.test.'))
+      .map((f) => readFileSync(f, 'utf-8'))
+      .join('\n');
     expect(/sk-[a-zA-Z0-9]{20,}/.test(src)).toBe(false);
     expect(/AKIA[A-Z0-9]{16}/.test(src)).toBe(false);
     expect(/ghp_[a-zA-Z0-9]{36}/.test(src)).toBe(false);
