@@ -1,11 +1,14 @@
 import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Load index.html at module scope to avoid per-request filesystem I/O
 const indexHtmlTemplate = (() => {
   try {
-    const htmlPath = join(process.cwd(), 'dist', 'index.html');
+    const htmlPath = join(__dirname, '..', 'dist', 'index.html');
     return readFileSync(htmlPath, 'utf-8');
   } catch {
     return null;
