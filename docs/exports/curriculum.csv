@@ -1,0 +1,65 @@
+module_id,module_title,lesson_id,lesson_title,lesson_description,has_exercise,test_type
+navigation,Navigation,orientation,Comment demander de l'aide,Apprenez à vous repérer dans n'importe quel terminal inconnu,yes,custom
+navigation,Navigation,pwd,pwd — Où suis-je ?,Affichez votre position exacte dans le système de fichiers,yes,custom
+navigation,Navigation,ls,ls — Lister les fichiers,Affichez le contenu d'un répertoire,yes,custom
+navigation,Navigation,ls-la,ls -la — Détails et fichiers cachés,"Affichez tous les détails d'un répertoire, y compris les fichiers cachés",yes,custom
+navigation,Navigation,cd,cd — Se déplacer,Naviguez entre les répertoires du système de fichiers,yes,custom
+fichiers,Fichiers & Dossiers,mkdir,mkdir — Créer des répertoires,Créez de nouveaux dossiers dans le système de fichiers,yes,custom
+fichiers,Fichiers & Dossiers,touch,touch — Créer des fichiers,Créez de nouveaux fichiers vides,yes,custom
+fichiers,Fichiers & Dossiers,cp,cp — Copier,Copiez des fichiers et des répertoires,yes,custom
+fichiers,Fichiers & Dossiers,mv,mv — Déplacer & Renommer,Déplacez ou renommez des fichiers et répertoires,yes,custom
+fichiers,Fichiers & Dossiers,rm,rm — Supprimer,Supprimez des fichiers et des répertoires,yes,custom
+lecture,Lecture de fichiers,cat,cat — Afficher le contenu,Lisez et affichez le contenu d'un fichier,yes,custom
+lecture,Lecture de fichiers,head-tail,head & tail — Début et fin,Affichez le début ou la fin d'un fichier,yes,custom
+lecture,Lecture de fichiers,grep,grep — Rechercher dans les fichiers,Trouvez des mots et patterns dans vos fichiers,yes,custom
+lecture,Lecture de fichiers,wc,wc — Compter le contenu,"Comptez les lignes, mots et caractères d'un fichier",yes,custom
+permissions,Permissions,comprendre-permissions,Comprendre les permissions,Décryptez le système de permissions Unix,yes,custom
+permissions,Permissions,chmod,chmod — Modifier les permissions,Changez les droits d'accès sur vos fichiers,yes,custom
+permissions,Permissions,chown,chown — Propriété des fichiers,Modifiez le propriétaire et le groupe d'un fichier,yes,custom
+permissions,Permissions,sudo,sudo — Élévation de privilèges,Exécutez des commandes avec les droits administrateur,yes,custom
+permissions,Permissions,security-permissions,Sécurité — Bonnes pratiques,Appliquez le principe du moindre privilège à vos fichiers,yes,custom
+processus,Processus,ps,ps — Lister les processus,Affichez les processus en cours d'exécution,yes,custom
+processus,Processus,kill,kill — Arrêter un processus,Terminez des processus par leur identifiant,yes,custom
+processus,Processus,top,top — Monitoring en temps réel,Surveillez la consommation CPU et mémoire en direct,yes,custom
+processus,Processus,background,Processus en arrière-plan,"Gérez plusieurs tâches simultanément avec bg, fg et &",yes,custom
+redirection,Redirection & Pipes,redirection-sortie,> et >> — Redirection de sortie,Redirigez la sortie d'une commande vers un fichier,yes,custom
+redirection,Redirection & Pipes,pipes,| — Les pipes,Chaînez plusieurs commandes pour créer des pipelines puissants,yes,custom
+redirection,Redirection & Pipes,stderr,Redirection des erreurs,Gérez stdout et stderr séparément pour des logs propres,yes,custom
+redirection,Redirection & Pipes,tee,tee — Afficher ET sauvegarder,Divisez la sortie pour l'afficher et la sauvegarder simultanément,yes,custom
+variables,Variables & Scripts,env-vars,Variables d'environnement,Stockez et accédez à des valeurs globales dans votre shell,yes,custom
+variables,Variables & Scripts,path-variable,$PATH — Le chemin des commandes,Comprenez comment le shell trouve vos commandes,yes,custom
+variables,Variables & Scripts,shell-config,Fichiers de configuration shell,Personnalisez votre shell au démarrage avec .bashrc et .zshrc,yes,custom
+variables,Variables & Scripts,dotenv,Fichiers .env — Secrets et configuration,Gérez les variables sensibles de vos projets sans les committer,yes,custom
+variables,Variables & Scripts,scripts,Scripts bash — Automatisez vos tâches,Créez vos premiers scripts exécutables,yes,custom
+variables,Variables & Scripts,cron,cron — Planifier des tâches,Automatisez l'exécution de scripts à intervalles réguliers,yes,custom
+reseau,Réseau & SSH,ping,ping — Tester la connectivité,Vérifiez si un hôte est accessible sur le réseau,yes,custom
+reseau,Réseau & SSH,curl,curl — Requêtes HTTP,Effectuez des requêtes HTTP/HTTPS directement depuis le terminal,yes,custom
+reseau,Réseau & SSH,wget,wget — Télécharger des fichiers,Téléchargez des fichiers depuis le web en ligne de commande,yes,custom
+reseau,Réseau & SSH,dns,DNS — Résoudre les noms de domaine,Comprenez le DNS et diagnostiquez les problèmes de résolution de noms,yes,custom
+reseau,Réseau & SSH,ssh,SSH — Connexion distante sécurisée,Connectez-vous à des serveurs distants et gérez vos clés SSH,yes,custom
+reseau,Réseau & SSH,scp,scp — Copier des fichiers via SSH,Transférez des fichiers entre machines de manière sécurisée,yes,custom
+git,Git Fondamentaux,git-init,git init — Initialiser un dépôt,Créez votre premier dépôt Git et comprenez la structure interne,yes,custom
+git,Git Fondamentaux,git-config,git config — Configurer votre identité,Configurez votre nom et email avant votre premier commit,yes,custom
+git,Git Fondamentaux,git-add-commit,git add & commit — Enregistrer vos modifications,Comprenez la zone de staging et créez vos premiers commits,yes,custom
+git,Git Fondamentaux,git-status-log,git status & log — Surveiller votre dépôt,Inspectez l'état courant et consultez l'historique des commits,yes,custom
+git,Git Fondamentaux,git-diff-gitignore,git diff & .gitignore — Comparer et filtrer,Visualisez les différences et excluez les fichiers non pertinents,yes,custom
+git,Git Fondamentaux,git-branch,git branch — Travailler avec les branches,"Créez, listez et gérez les branches pour isoler vos développements",yes,custom
+git,Git Fondamentaux,git-merge,git merge — Fusionner des branches,Intégrez le travail d'une branche dans une autre et gérez les conflits,yes,custom
+github-collaboration,GitHub & Collaboration,git-remote,git remote — Connecter au dépôt distant,Liez votre dépôt local à GitHub et gérez vos remotes,yes,custom
+github-collaboration,GitHub & Collaboration,git-push-pull,git push & pull — Synchroniser avec GitHub,Envoyez vos commits vers GitHub et récupérez les modifications de votre équipe,yes,custom
+github-collaboration,GitHub & Collaboration,git-fetch-clone,git fetch & clone — Récupérer et cloner,Clonez un dépôt existant et récupérez les mises à jour sans intégration automatique,yes,custom
+github-collaboration,GitHub & Collaboration,pull-requests,Pull Requests — Code Review & Collaboration,"Maîtrisez le workflow Pull Request, pilier de la collaboration professionnelle",yes,custom
+github-collaboration,GitHub & Collaboration,conflicts,Conflits de merge — Les résoudre comme un pro,Comprenez pourquoi les conflits apparaissent et apprenez à les résoudre avec méthode,yes,custom
+github-collaboration,GitHub & Collaboration,github-actions,GitHub Actions — CI/CD automatisé,"Automatisez vos tests, builds et déploiements avec GitHub Actions",yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-intro,"L'IA en 2026 : un outil, pas un oracle",Comprendre ce que l'IA change réellement pour un développeur,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-capacites,Ce que l'IA sait vraiment faire,Inventaire honnête des capacités réelles des IA de code en 2026,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-limites,Ce que l'IA ne sait pas faire,Les limites réelles et les pièges à éviter pour ne pas accumuler de la dette technique,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-prompts-basics,Écrire un bon prompt — les bases,La qualité de la réponse dépend directement de la qualité de la question,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-prompts-avances,Prompts avancés — donner du contexte technique,Maîtrisez les prompts complexes pour des tâches d'architecture et de formation,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-valider,Valider la sortie — ne jamais copier-coller aveuglément,La checklist critique pour évaluer tout code généré par une IA,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-debug,Déboguer avec l'IA — workflow pratique,Transformez l'IA en partenaire de debug efficace avec la bonne méthode,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-securite,Sécurité & IA — ce qu'il ne faut jamais partager,Les règles absolues pour utiliser l'IA sans compromettre votre sécurité,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-claude-cli,Claude Code CLI — l'IA dans le terminal,Découvrez le workflow terminal-first avec un agent IA agentique,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-metiers,L'IA par parcours métier,"Applications concrètes selon votre rôle : DevOps, fullstack, sysadmin, enseignant, étudiant",yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-posture,Posture senior : l'IA comme amplificateur,Ce que l'IA n'apprend pas à votre place — et pourquoi les fondamentaux restent essentiels,yes,custom
+ia-dev,L'IA comme outil dev,ia-dev-workflow,Workflow complet — du brief au déploiement avec l'IA,Synthèse : le cycle de vie complet d'un projet avec l'IA comme partenaire,yes,custom
