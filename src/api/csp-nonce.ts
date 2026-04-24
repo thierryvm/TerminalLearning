@@ -60,7 +60,7 @@ export default async function handler(req: Request) {
     });
 
     return new Response(html, { headers });
-  } catch (error) {
+  } catch (_error) {
     // Fallback: return error response
     return new Response('Internal Server Error', { status: 500 });
   }
