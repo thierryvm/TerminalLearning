@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "rewrites": [
-    { "source": "/((?!api|assets|manifest|favicon).*)", "destination": "/api/csp-nonce" }
+    { "source": "/((?!api|assets|manifest|favicon).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -50,7 +50,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://va.vercel-scripts.com https://vercel.live; style-src 'self' https://fonts.googleapis.com https://vercel.live; img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://vercel.live; font-src 'self' data: https://fonts.gstatic.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://jdnukbpkjyyyjpuwgxhv.supabase.co https://o1234.ingest.sentry.io https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://vercel.live; frame-src 'self' https://vercel.live; frame-ancestors https://*.instructure.com https://*.moodlecloud.com https://*.smartschool.be; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' https://va.vercel-scripts.com https://vercel.live; style-src 'self' https://fonts.googleapis.com https://vercel.live; img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://vercel.live; font-src 'self' data: https://fonts.gstatic.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://jdnukbpkjyyyjpuwgxhv.supabase.co https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://vercel.live; frame-src 'self' https://vercel.live; frame-ancestors https://*.instructure.com https://*.moodlecloud.com https://*.smartschool.be; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
         },
         {
           "key": "Cache-Control",
@@ -69,10 +69,6 @@
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
         { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://va.vercel-scripts.com https://vercel.live; style-src 'self' https://fonts.googleapis.com https://vercel.live; img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://vercel.live; font-src 'self' data: https://fonts.gstatic.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://jdnukbpkjyyyjpuwgxhv.supabase.co https://o1234.ingest.sentry.io https://openrouter.ai https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://vercel.live; frame-src 'self' https://vercel.live; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
-        },
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- Primary SEO -->
+    <title>Terminal Learning — Apprends le terminal pas à pas</title>
+    <meta name="description" content="Apprends les commandes du terminal gratuitement. 11 modules progressifs (Linux, macOS, Windows), émulateur interactif, progression sauvegardée. Pour débutants, open source." />
+    <meta name="keywords" content="terminal, bash, linux, apprendre, débutant, commandes, shell, open source, gratuit" />
+    <meta name="author" content="Thierry Vanmeeteren" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://terminallearning.dev/" />
+
+    <!-- GEO -->
+    <meta name="geo.region" content="BE" />
+    <meta name="geo.placename" content="Belgium" />
+    <meta name="language" content="French" />
+
+    <!-- Open Graph (Facebook, LinkedIn, Discord, WhatsApp) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://terminallearning.dev/" />
+    <meta property="og:title" content="Terminal Learning — Apprends le terminal pas à pas" />
+    <meta property="og:description" content="Application interactive gratuite pour apprendre les commandes du terminal. 11 modules progressifs (Linux, macOS, Windows), émulateur réel. Pour débutants, 100% open source." />
+    <meta property="og:image" content="https://terminallearning.dev/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Terminal Learning — interface de l'application avec émulateur terminal" />
+    <meta property="og:site_name" content="Terminal Learning" />
+    <meta property="og:locale" content="fr_BE" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Terminal Learning — Apprends le terminal pas à pas" />
+    <meta name="twitter:description" content="Application interactive gratuite pour apprendre les commandes du terminal. 11 modules (Linux, macOS, Windows), émulateur réel, 100% open source." />
+    <meta name="twitter:image" content="https://terminallearning.dev/og-image.png" />
+    <meta name="twitter:creator" content="@thierryvm" />
+
+    <!-- Fonts self-hosted via fontsource — eliminates render-blocking Google CDN round-trip -->
+    <!-- Inter (variable) + JetBrains Mono loaded in src/main.tsx -->
+
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- TODO: replace with a 180×180 PNG once generated (SVG support on iOS is inconsistent) -->
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <!-- manifest injected dynamically in main.tsx — skipped on Vercel preview deployments -->
+
+    <!-- Theme color (browser chrome) -->
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Performance: preconnect to Supabase (auth check fires on first render) -->
+    <link rel="preconnect" href="https://jdnukbpkjyyyjpuwgxhv.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
+
+    <!-- Critical CSS: dark background before React hydrates — eliminates white flash on FCP -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background-color: #0d1117; color: #e6edf3; }
+      #root { min-height: 100dvh; }
+    </style>
+
+    <!-- Structured data — JSON-LD (Schema.org) -->
+    <!-- Helps search engines AND LLM crawlers understand the site semantically -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://terminallearning.dev/#website",
+          "url": "https://terminallearning.dev/",
+          "name": "Terminal Learning",
+          "description": "Application interactive gratuite pour apprendre les commandes du terminal Linux/Unix.",
+          "inLanguage": "fr",
+          "creator": {
+            "@type": "Person",
+            "name": "Thierry Vanmeeteren",
+            "url": "https://github.com/thierryvm"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://terminallearning.dev/#app",
+          "name": "Terminal Learning",
+          "url": "https://terminallearning.dev/",
+          "description": "Apprends les commandes du terminal dans ton navigateur. 11 modules progressifs (Linux, macOS, Windows), émulateur interactif, progression sauvegardée. Gratuit, open source, sans installation.",
+          "applicationCategory": "EducationalApplication",
+          "applicationSubCategory": "Terminal / Shell Learning",
+          "operatingSystem": "Any (Web Browser)",
+          "browserRequirements": "Requires JavaScript",
+          "inLanguage": "fr",
+          "isAccessibleForFree": true,
+          "isFamilyFriendly": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          },
+          "author": {
+            "@type": "Person",
+            "name": "Thierry Vanmeeteren",
+            "url": "https://github.com/thierryvm"
+          },
+          "codeRepository": "https://github.com/thierryvm/TerminalLearning",
+          "keywords": ["terminal", "bash", "linux", "shell", "apprendre", "débutant", "commandes", "open source"],
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "student",
+            "audienceType": "Beginners, students, developers switching to Linux/macOS"
+          }
+        },
+        {
+          "@type": "Course",
+          "@id": "https://terminallearning.dev/#course",
+          "name": "Apprendre le terminal — de zéro à autonome (Linux, macOS, Windows)",
+          "description": "Formation interactive et gratuite aux commandes du terminal. 11 modules progressifs couvrant Linux, macOS et Windows : navigation, fichiers, permissions, processus, redirection, variables, réseau, SSH, Git, GitHub et l'IA comme outil dev.",
+          "url": "https://terminallearning.dev/app",
+          "inLanguage": "fr",
+          "isAccessibleForFree": true,
+          "educationalLevel": "Beginner",
+          "teaches": [
+            "Navigation dans le système de fichiers (pwd, ls, cd)",
+            "Gestion des fichiers et dossiers (mkdir, touch, cp, mv, rm)",
+            "Lecture de fichiers (cat, head, tail, grep, wc)",
+            "Permissions Unix et sécurité (chmod, chown, sudo)",
+            "Gestion des processus (ps, kill, top, jobs)",
+            "Redirection et pipes (>, >>, |, tee)",
+            "Variables d'environnement, $PATH, scripts bash, cron",
+            "Réseau et SSH (ping, curl, wget, nslookup, ssh, scp)",
+            "Git Fondamentaux (git init, add, commit, branch, merge)",
+            "GitHub & Collaboration (push, pull, pull requests, GitHub Actions)",
+            "L'IA comme outil dev (ai-help, prompt engineering, validation de code généré)"
+          ],
+          "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT3H"
+          },
+          "provider": {
+            "@type": "Organization",
+            "name": "Terminal Learning",
+            "url": "https://terminallearning.dev/"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://terminallearning.dev/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Terminal Learning est-il gratuit ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui, Terminal Learning est entièrement gratuit et open source. Aucun abonnement, aucune carte de crédit requise. Tout le contenu est accessible sans inscription."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Faut-il créer un compte pour apprendre le terminal ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Non. La progression est sauvegardée automatiquement dans votre navigateur (localStorage). Un compte optionnel (GitHub ou Google) permet uniquement de synchroniser votre progression entre plusieurs appareils."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Quels systèmes d'exploitation sont couverts ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Linux, macOS et Windows (PowerShell). Chaque leçon présente les variantes spécifiques à chaque système. Vous sélectionnez votre OS une seule fois et tout le curriculum s'adapte."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Combien de commandes et de leçons sont disponibles ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Terminal Learning propose 64 leçons réparties en 11 modules progressifs : navigation, fichiers, lecture, permissions, processus, redirection, variables, réseau/SSH, Git, GitHub et l'IA comme outil dev."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Terminal Learning fonctionne-t-il sur mobile et tablette ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui. L'application est responsive et fonctionne dans n'importe quel navigateur moderne, sur desktop, tablette et mobile — sans installation requise."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Comment est structuré le curriculum ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Le curriculum comporte 11 modules progressifs : Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes, Variables & Scripts, Réseau & SSH, Git Fondamentaux, GitHub & Collaboration, et L'IA comme outil dev. Chaque module débloque le suivant."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    <script type="module" crossorigin src="/assets/index-I3AsFIw1.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-Clid1Nu9.js">
+    <link rel="modulepreload" crossorigin href="/assets/sentry-n0SCWCOB.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-C_0ArjIw.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
