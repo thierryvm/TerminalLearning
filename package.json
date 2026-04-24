@@ -25,7 +25,8 @@
     "test:e2e:mobile": "playwright test --project=mobile-iphone-se --project=mobile-galaxy",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:lighthouse": "lhci autorun"
+    "test:lighthouse": "lhci autorun",
+    "export:curriculum": "npx tsx scripts/export-curriculum.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.2.8",
