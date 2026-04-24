@@ -1,16 +1,21 @@
 import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { join } from 'path';
 
 // Load index.html at module scope to avoid per-request filesystem I/O
 const indexHtmlTemplate = (() => {
   try {
-    const htmlPath = join(__dirname, '..', 'dist', 'index.html');
-    return readFileSync(htmlPath, 'utf-8');
-  } catch {
+    // process.cwd() points to deployment root in Vercel Fluid Compute, not the api/ folder
+    const htmlPath = join(process.cwd(), 'dist', 'index.html');
+    const content = readFileSync(htmlPath, 'utf-8');
+    console.log('[csp-nonce] ✓ Template loaded from:', htmlPath);
+    return content;
+  } catch (error) {
+    // Log the actual error for debugging
+    console.error('[csp-nonce] ✗ Failed to load template:', {
+      cwd: process.cwd(),
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 })();
@@ -39,6 +44,7 @@ export default async function handler(req: Request) {
   }
 
   if (!indexHtmlTemplate) {
+    console.error('[csp-nonce] Template unavailable - returning 503');
     return new Response('Service Unavailable', {
       status: 503,
       headers: {
@@ -61,6 +67,8 @@ export default async function handler(req: Request) {
       '</head>',
       `<meta name="csp-nonce" content="${nonce}" /></head>`
     );
+
+    console.log('[csp-nonce] ✓ Nonce injected:', nonce.slice(0, 8) + '...');
 
     const headers = new Headers({
       'Content-Type': 'text/html; charset=utf-8',
@@ -89,7 +97,8 @@ export default async function handler(req: Request) {
     });
 
     return new Response(html, { headers });
-  } catch {
+  } catch (error) {
+    console.error('[csp-nonce] Failed to inject nonce:', error);
     return new Response('Internal Server Error', {
       status: 500,
       headers: {
