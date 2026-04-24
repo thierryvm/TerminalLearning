@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "rewrites": [
-    { "source": "/((?!api|assets|manifest|favicon).*)", "destination": "/index.html" }
+    { "source": "/((?!api|assets|manifest|favicon).*)", "destination": "/api/csp-nonce" }
   ],
   "headers": [
     {
