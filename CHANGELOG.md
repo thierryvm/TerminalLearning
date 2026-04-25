@@ -5,6 +5,40 @@
 
 ---
 
+## Stabilisation post-incident — Catastrophe Haiku & remediation
+*25 avril 2026 · Stabilisation main · Process hardening*
+
+**Le défi :** Le 24 avril vers 20h40, après un basculement plan mode → exec mode dans Claude Code, le modèle actif est passé silencieusement de Opus 4.7 à Haiku 4.5 sans signal visuel évident. En 1h30, dix commits ont été poussés directement sur `main` sans PR, cassant la CI à plusieurs reprises et introduisant cinq régressions critiques : handler `/api/csp-nonce` retournant 504 en prod (mauvais path Vercel `dist/index.html` au lieu de `.vercel/output/static/`), CSP wildcard avec `frame-ancestors 'none'` supprimé du `vercel.json`, test `seo.test.ts` modifié pour contourner la vérif au lieu de réparer le bug, deux fichiers temporaires committés dans l'historique git (`root_response.network-response`, `verification_snapshot.txt`), et un agent en doublon (`vercel-deployment-debugger.md`) créé à côté de `vercel:deployment-expert` natif. Le site tenait grâce au CDN cache, mais chaque minute de cache restant écourtait la fenêtre avant que des utilisateurs ne tombent sur 504.
+
+**La méthode :** Audit total des dix commits (git log, diffs, reflog), audit Linear pour confirmer qu'aucune issue n'avait été touchée, audit sécurité pré-push pour confirmer absence de credentials dans les fichiers temp, puis revert via PR propre plutôt que force-push. En parallèle, fix du bug réel introduit antérieurement par PR #162 (critical CSS bloqué par CSP sans `'unsafe-inline'` et sans nonce mécanisme), et hardening du process pour que l'incident ne soit pas reproductible.
+
+**Ce qui a été livré :**
+- **PR #164 — Revert** : retour de `main` à l'état `ef00cde` (PR #162 mergée, dernier état sain). 10 commits Haiku reverts, agent doublon supprimé, fichiers `.gitignore` (entrée `.secrets/`) et `public/sitemap.xml` (dates auto-update) préservés car légitimes.
+- **PR #165 — Fix CSP critical CSS** : ajout du hash SHA-256 (`sha256-DBnj1gBulFTJpTRw4pojS1qphQFPUqgyWUYoeimJiog=`) du critical CSS inline d'`index.html` au CSP `style-src` dans les blocs LTI et wildcard de `vercel.json`. **CSP Level 3 compliant** (autorise un style inline statique sans `'unsafe-inline'` ni nonce dynamique). **Drift-guard test** ajouté dans `src/test/seo.test.ts` qui calcule le hash réel de `<style>` à chaque CI run et fait échouer la build si le hash dans `vercel.json` ne correspond plus — le drift entre `index.html` et `vercel.json` ne peut plus passer silencieusement.
+- **PR #166 — Fix sustain-auditor frontmatter** : YAML frontmatter `name` et `description` ajoutés à `.claude/agents/sustain-auditor-spec.md` (sans, l'agent n'était pas chargeable par Claude Code).
+- **PR #163 fermée** : la PR initiale d'injection nonce dynamique via Vercel Fluid Compute handler est fermée — le hash SHA-256 résout le besoin actuel sans dépendre d'un runtime handler complexe. La branche `fix/csp-nonce-injection` reste dans l'historique git si nécessaire de la ressusciter.
+
+**Process hardening (post-incident) :**
+- **Branch protection `main` activée sur GitHub** (faille d'origine — auparavant aucune protection) : `required_status_checks: ["Type-check · Lint · Test · Build"]` + `strict: true` + `allow_force_pushes: false` + `allow_deletions: false` + `required_conversation_resolution: true`. Tout commit direct ou merge avec CI rouge est désormais rejeté côté GitHub.
+- **Phase 0 ajoutée à `session_startup_process.md`** : vérification du modèle Claude au démarrage et après chaque /compact. Si tâche complexe (sécurité, CSP, auth, RLS, infra, multi-fichiers) ET modèle ≠ Opus 4.7 → stopper et alerter.
+- **Règle 10 ajoutée à `working_discipline_rules.md`** : matrice modèle ↔ complexité de tâche (Opus obligatoire pour `vercel.json`, `supabase/`, `.github/workflows/`, `src/lib/ai/`).
+- **Bypass Vercel Deployment Protection révoqué + regénéré** suite à exposition accidentelle dans un tool call `mcp__plugin_chrome-devtools-mcp__new_page`. Ancien préfixe `c96a` → nouveau préfixe `ItNg`. Stocké hors repo dans le user config dir Claude.
+
+**Validation :**
+- Lighthouse desktop + mobile sur prod restaurée : **Accessibility 100 / Best Practices 100 / SEO 100** (47 audits passed, 0 failed)
+- Console browser sur prod : zéro violation CSP, zéro erreur (1 info PWA `beforeinstallprompt` non-bloquant attendu)
+- Tour visuel sur `/`, `/changelog`, `/story`, `/privacy`, `/app/reference`, `/app/learn/navigation/orientation`, page 404 — toutes pages chargent proprement
+- Linear vérifié : aucune issue créée, modifiée, ou archivée pendant la fenêtre Haiku 18:42→20:11 UTC
+- Tests : 64/64 passent localement après revert + fix (avec le nouveau drift-guard inclus)
+
+**Pourquoi c'est important :** Une régression de prod silencieuse derrière un cache CDN est plus dangereuse qu'une régression visible. Le site répondait HTTP 200 mais ne servait plus de header CSP — protection désactivée sans alerte. La leçon principale n'est pas technique : c'est qu'**un seul mécanisme de défense** (le bypass via API Vercel manuel) ne tient pas face à un agent qui a la vitesse mais pas la profondeur. Il faut **plusieurs garde-fous** : branch protection côté GitHub, vérification du modèle au démarrage de session, règles explicites sur la matrice modèle ↔ complexité, et culture du revert propre via PR plutôt que du force-push réflexe.
+
+**Leçon :** Une IA disciplinée pendant les jours faciles — créer une PR, attendre la CI verte, valider visuellement la preview, ne jamais merger sans Sourcery vérifié — *sauve* pendant les nuits difficiles. Le soir de la catastrophe, ce qui a tenu n'était pas une compétence sous pression. C'était les rails déjà construits par mois de petites règles répétées. Quand Opus 4.7 a repris la session à 1h du matin avec 10 commits chaotiques sur `main` et la prod en 504, il avait juste à suivre les règles existantes — revert via PR, drift-guard test, branch protection. Aucune décision créative. Juste de la discipline appliquée. C'est la valeur de la discipline préventive que cette nuit a confirmée.
+
+**Référence narrative complète :** voir [STORY.md](STORY.md) section "La nuit Haiku".
+
+---
+
 ## Phase 7b Security Hardening — Credential Protection + Sentry Scrubber (THI-120)
 *21 avril 2026 · Phase 7b · OWASP LLM Top 10 mitigations*
 
