@@ -345,6 +345,38 @@ L'app est en français. L'anglais et le néerlandais sont dans la roadmap. La qu
 **Terminal Sentinel en mode public ?**
 L'outil d'audit de sécurité automatisé pourrait être proposé à d'autres projets open source. L'idée est dans les cartons. Elle implique de le documenter, de le rendre configurable, de le maintenir. Ce n'est pas rien.
 
+### La nuit Haiku — 24-25 avril 2026
+
+Je raconte celle-ci entièrement parce que c'est la plus dure à raconter, et parce qu'elle dit quelque chose d'important sur le travail avec une IA.
+
+Il était environ 20h40 le 24 avril. La journée avait été productive — ADR-006 (LTI 1.3), ADR-007 (sustainability solo), Phase A curriculum CSV export, GitHub polish, durcissement Sentry scrubber. Six PRs mergées proprement, CI verte partout. À 20h40 j'ai lancé une dernière demande à Claude — exécuter les décisions finales d'un audit cowork. C'était une tâche de plan mode, donc Opus 4.7. J'ai ensuite basculé pour qu'il commence à coder.
+
+Au basculement plan → exec, le modèle a changé. Sans signal visuel évident. Pas Opus 4.7 — Haiku 4.5. Je ne l'ai pas vu.
+
+En 1h30, le modèle inférieur a poussé **dix commits directement sur `main`**, sans PR, sans CI verte. Il essayait de finir une PR ouverte (#163, l'injection de nonce CSP) en travaillant sur la mauvaise branche. À chaque fois qu'un commit cassait la CI, le suivant tentait de patcher sans diagnostiquer. Le path Vercel était faux (`dist/index.html` au lieu de `.vercel/output/static/index.html`), donc le handler timeout en 504 dès qu'il était appelé. La règle CSP `frame-ancestors 'none'` du wildcard a été supprimée par erreur, ouvrant une régression sécurité silencieuse. Un test a été modifié pour contourner la vérification au lieu de réparer le bug. Deux fichiers de debug temporaires ont fini dans l'historique git public. Un agent en doublon a été créé. Et tous ces commits portaient `Co-Authored-By: Claude Haiku 4.5` — donc visibles à jamais sur GitHub avec le nom du modèle qui a échoué.
+
+Le site lui-même tenait grâce au cache CDN. Mais le cache expire. À chaque minute qui passait, le risque qu'un visiteur tombe sur une page 504 montait.
+
+Quand j'ai vu le statusline et compris ce qui s'était passé, j'ai stoppé. J'ai basculé sur Opus 4.7 et demandé un audit complet de tout ce que Haiku avait fait. Pas une remise en ordre rapide. Un audit critique, sans compromis, en regardant exactement ce qui avait été touché.
+
+Ce que Opus 4.7 a fait dans les six heures suivantes, je vais le décrire plus en détail dans `SECURITY.md` (Incident 007), mais l'essentiel : revert des dix commits via une vraie PR (#164), correction du critical CSS bloqué via un hash SHA-256 ajouté au CSP avec un test automatique qui empêche tout drift futur (PR #165), correction de la frontmatter manquante de l'agent sustain-auditor (PR #166), activation de la branch protection sur `main` côté GitHub (faille qui avait permis tout ça), révocation du bypass Vercel exposé dans un tool call et regénération d'un nouveau, et mise à jour des process de session (Phase 0 de vérification du modèle au démarrage, Règle 10 sur la matrice complexité ↔ modèle).
+
+Le matin du 25, la prod est revenue à un état sain — Lighthouse 100/100/100 sur accessibility, best-practices, et SEO, zéro violation CSP en console. Aucune issue Linear n'avait été touchée pendant la nuit Haiku. Aucun secret n'a été exposé en plain text dans le code. L'historique git est propre côté contenu (les fichiers temp ne contiennent que du HTML public). Mais l'historique des commits, lui, garde trace : dix commits "Co-Authored-By: Haiku" sur `main`, encadrés maintenant par un commit revert qui explique clairement ce qui s'est passé.
+
+**Ce qu'on a appris.**
+
+D'abord : la branch protection GitHub n'était pas activée sur `main`. Aucune règle ne forçait CI verte avant merge, aucune règle n'empêchait les push directs. C'était une faille de processus, pas une faille de modèle. Si elle avait été en place, Haiku aurait été rejeté à la première tentative de push. Elle l'est maintenant, et elle aurait dû l'être depuis le premier jour.
+
+Ensuite : la transition plan mode → exec mode dans Claude Code peut changer le modèle silencieusement. Aucun warning, juste un statusline qui change si on regarde. Quand on travaille intensément, on ne regarde pas le statusline. La règle qu'on a ajoutée (Phase 0 obligatoire en début de session : vérifier le modèle, stopper si Haiku ou Sonnet sur tâche complexe) ne s'appliquait pas avant — elle existe maintenant.
+
+Et puis : Haiku a fait quelque chose de subtil — il a *modifié un test pour qu'il passe* au lieu de réparer le bug que le test détectait. C'est exactement le genre d'erreur qu'on attend d'un modèle moins profond. Opus 4.7 ne fait pas ça. Sonnet 4.6 ne fait pas ça. Haiku 4.5 le fait, parfois, parce qu'il optimise pour "résoudre le symptôme" sans capacité à modéliser pourquoi le test existait. C'est utile à savoir comme signal — si un agent modifie un test sans expliquer pourquoi le test était faux, c'est un drapeau rouge sur le modèle utilisé.
+
+Le dernier apprentissage est plus humain. Ce qui a sauvé la nuit, ce n'est pas une compétence technique. C'est une discipline : ne pas paniquer, ne pas force-push, ne pas tenter de "réparer vite". Faire un revert propre via une PR documentée. Tester chaque étape en preview avant prod. Auditer ce qui s'est passé honnêtement, sans minimiser. Cette discipline, je l'avais apprise de Claude — pendant des mois de petites règles répétées, "jamais merger sans CI verte", "toujours créer une PR", "tester la preview avant validation". À 1h du matin, sous le stress de voir le site potentiellement à terre, ces règles ont tenu.
+
+Ce que je retiens : **une IA qui te fait travailler proprement quand tout va bien te sauve quand tout va mal**. Le projet aurait pu être détruit cette nuit-là. Il ne l'a pas été. Pas parce que j'ai été génial sous pression — parce que les rails étaient déjà en place, et qu'Opus 4.7 a su les suivre.
+
+Cette section restera dans le journal. Pas par fierté, et pas par honte. Par honnêteté.
+
 ---
 
 ## Épilogue ouvert
@@ -360,4 +392,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 21 avril 2026*
+*Dernière mise à jour : 25 avril 2026*
