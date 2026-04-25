@@ -22,7 +22,7 @@
 - **Branch protection `main` activée sur GitHub** (faille d'origine — auparavant aucune protection) : `required_status_checks: ["Type-check · Lint · Test · Build"]` + `strict: true` + `allow_force_pushes: false` + `allow_deletions: false` + `required_conversation_resolution: true`. Tout commit direct ou merge avec CI rouge est désormais rejeté côté GitHub.
 - **Phase 0 ajoutée à `session_startup_process.md`** : vérification du modèle Claude au démarrage et après chaque /compact. Si tâche complexe (sécurité, CSP, auth, RLS, infra, multi-fichiers) ET modèle ≠ Opus 4.7 → stopper et alerter.
 - **Règle 10 ajoutée à `working_discipline_rules.md`** : matrice modèle ↔ complexité de tâche (Opus obligatoire pour `vercel.json`, `supabase/`, `.github/workflows/`, `src/lib/ai/`).
-- **Bypass Vercel Deployment Protection révoqué + regénéré** suite à exposition accidentelle dans un tool call `mcp__plugin_chrome-devtools-mcp__new_page`. Ancien préfixe `c96a` → nouveau préfixe `ItNg`. Stocké hors repo dans le user config dir Claude.
+- **Bypass Vercel Deployment Protection révoqué + régénéré** suite à exposition accidentelle dans un tool call `mcp__plugin_chrome-devtools-mcp__new_page`. Ancien préfixe `c96a` → nouveau préfixe `ItNg`. Stocké hors repo dans le user config dir Claude.
 
 **Validation :**
 - Lighthouse desktop + mobile sur prod restaurée : **Accessibility 100 / Best Practices 100 / SEO 100** (47 audits passed, 0 failed)

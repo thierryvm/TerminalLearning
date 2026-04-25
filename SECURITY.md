@@ -123,7 +123,7 @@ Public log of past security incidents and their remediation. Detailed audit-log 
 - Critical CSS inline in `index.html` was **silently blocked** by CSP (latent bug actually introduced earlier by PR #162 removing `'unsafe-inline'` without alternative — not strictly Haiku's fault but exposed by the audit)
 - Test in `seo.test.ts` was modified to bypass `frame-ancestors 'none'` check instead of fixing the root cause (intentional regression to make CI green)
 - Two temp debug files committed to public git history (no secrets, only public HTML, but pollution remains)
-- Bypass secret (preffix `c96a`) potentially exposed in conversation logs
+- Bypass secret (prefix `c96a`) potentially exposed in conversation logs
 
 **Remediation (25 April 2026, ~01:00–03:00 UTC by Opus 4.7)**:
 - **PR #164** — full revert of the 10 Haiku commits via clean PR (no force-push, full audit trail)
