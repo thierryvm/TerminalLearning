@@ -4,6 +4,7 @@
  * Covers: SEO/OG/Twitter/JSON-LD, GEO, LLM signals, viewport/PWA, CSP, HTTP headers.
  */
 
+import { createHash } from 'crypto';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { describe, it, expect } from 'vitest';
@@ -205,6 +206,31 @@ describe('Security -- Content Security Policy', () => {
   it('CSP upgrade-insecure-requests', () => { expect(getCsp()).toContain('upgrade-insecure-requests'); });
   it('CSP Supabase in connect-src', () => { expect(getCsp()).toContain('supabase.co'); });
   it('CSP Sentry in connect-src', () => { expect(getCsp()).toContain('sentry.io'); });
+
+  /**
+   * Drift guard: the SHA-256 hash in vercel.json style-src MUST match the actual
+   * critical CSS inline block in index.html. If index.html <style> changes, the
+   * CSP hash must be recomputed or the inline style will be silently blocked in
+   * prod (white flash before React hydrates). This test catches the drift in CI.
+   */
+  it('CSP SHA-256 hash matches critical CSS inline in index.html', () => {
+    // Normalize line endings to LF — git autocrlf on Windows can produce CRLF
+    // in working tree, but browsers receive the file as served by the build pipeline.
+    // The browser-reported hash is computed on the bytes between <style> and </style>
+    // as they appear in the served HTML (LF). We normalize here so the test result
+    // is identical on Windows, macOS, Linux, and CI.
+    const html = readHtml().replace(/\r\n/g, '\n');
+    const m = html.match(/<style>([\s\S]*?)<\/style>/);
+    expect(m, '<style> block missing in index.html').not.toBeNull();
+    const css = m![1];
+    const expectedHash = 'sha256-' + createHash('sha256').update(css, 'utf-8').digest('base64');
+    const csps = readVercel().headers as Array<{ headers: Array<{ key: string; value: string }> }>;
+    const allCspValues = csps.flatMap((b) => b.headers.filter((h) => h.key === 'Content-Security-Policy').map((h) => h.value));
+    expect(allCspValues.length).toBeGreaterThan(0);
+    for (const csp of allCspValues) {
+      expect(csp, `CSP block missing required hash for critical CSS — recompute via: python3 -c "import hashlib, base64, re; css = re.search(r'<style>(.*?)</style>', open('index.html').read(), re.DOTALL).group(1); print('${expectedHash}')"`).toContain(expectedHash);
+    }
+  });
 });
 
 // -- Security: source code static analysis -----------------------------------
