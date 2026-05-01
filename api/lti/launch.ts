@@ -189,6 +189,22 @@ function mapLtiRoles(ltiRoles: string[]): string[] {
 }
 
 export default async function handler(req: any): Promise<Response> {
+  // THI-133 — Phase 7c gate: LTI endpoint disabled in production until JWT validation is complete.
+  // The current verifyJwt() uses a placeholder public key + ignoreExpiration:true, which would
+  // accept forged JWTs with any roles/sub/iss from ALLOWED_ISSUERS. To enable, set the env
+  // variable LTI_ENABLED=true in the Vercel project settings (Phase 7c only, after RS256 JWK
+  // validation lands). Documented in docs/SECURITY.md.
+  if (process.env.LTI_ENABLED !== 'true') {
+    return new Response('LTI endpoint not available', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        ...corsHeaders,
+      },
+    });
+  }
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {

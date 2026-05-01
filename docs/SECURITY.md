@@ -1,11 +1,14 @@
 # Security — Audit Report & Incident Log
 
-> **Last Updated:** 2026-04-21  
+> **Last Updated:** 2026-05-01  
 > **Audited By:** `security-auditor` agent (OWASP Top 10 2021 + API Security Top 10 2023)
 
 ---
 
-## Current Score: 7.8/10
+## Current Score: 8.1/10
+
+> Score updated 2026-05-01 after PR #168 (post-Haiku cleanup) and fresh `security-auditor` run.
+> 0 CRITICAL · 3 HIGH · 6 MEDIUM · 7 LOW.
 
 ### Critical Issues (Blocking)
 1. **[C1] Git History Credential Exposure**
@@ -50,10 +53,24 @@
 
 ---
 
+## Environment Variables / Feature Flags
+
+Sensitive endpoints can be gated via Vercel environment variables. They default to **disabled** to minimize attack surface.
+
+| Variable | Default | Endpoint | Effect when not set / != value |
+|----------|---------|----------|---------------------------------|
+| `LTI_ENABLED` | `(unset)` | `/api/lti/launch` | Returns **503 Service Unavailable**. Required: `LTI_ENABLED=true` (Phase 7c, after RS256 JWK validation). Until then the placeholder JWT verifier (`TODO_PHASE7C_PUBLIC_KEY` + `ignoreExpiration:true`) cannot be exploited for forged-token Sentry pollution or role spoofing. — THI-133 |
+
+**To enable a flag in production**: Vercel project → Settings → Environment Variables → add the variable scoped to `Production`. Trigger a redeploy. **Never** commit these values to `.env*` files.
+
+---
+
 ## Roadmap
 
 | Phase | Item | Owner | Status |
 |-------|------|-------|--------|
+| THI-133 | [H1] LTI launch endpoint forged-JWT gate | Security | ✅ 2026-05-01 (feature flag) |
+| Phase 7c | [H1 follow-up] Implement RS256 JWK validation in `verifyJwt()` then enable `LTI_ENABLED` | AI | 🔜 |
 | Phase 9 | [H1] Verify RLS policy state + create migration 012 if needed | Backend | 🔜 |
 | Phase 9 | [H1] Branch protection + code owner review (Vector 1) | Infra | 🔜 |
 | Phase 9 | [H1] Signed commits enforcement (Vector 2) | Infra | 🔜 |
