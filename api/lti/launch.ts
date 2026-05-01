@@ -120,10 +120,13 @@ async function getJwkSet(jwksUri: string): Promise<any> {
 }
 
 /**
- * Verify and decode JWT — Phase 7c (not called in SPIKE phase)
+ * Verify and decode JWT — Phase 7c (not called in SPIKE phase, see THI-133 feature flag)
  * RS256 only per LTI 1.3 spec. No HS256 (security-auditor H5 fix).
+ *
+ * Exported so TypeScript noUnusedLocals does not flag it; consumers pass through the
+ * handler in Phase 7c once `verifyJwt()` actually validates RS256 signatures via JWK Set.
  */
-async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
+export async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
   try {
     // Fetch OIDC config to find JWK Set URI
     const oidcConfig = await getOidcConfig(issuer);
@@ -131,8 +134,9 @@ async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
       throw new Error('OIDC config missing jwks_uri');
     }
 
-    // Fetch JWK Set
-    const jwkSet = await getJwkSet(oidcConfig.jwks_uri);
+    // Fetch JWK Set — Phase 7c will pass this to verify() to extract the RS256 public key
+    // matching the kid claim in the token header.
+    void (await getJwkSet(oidcConfig.jwks_uri));
 
     // Phase 7c: Implement full RS256 JWK validation here
     // Extract public key from JWK Set matching kid claim in token header
@@ -189,6 +193,22 @@ function mapLtiRoles(ltiRoles: string[]): string[] {
 }
 
 export default async function handler(req: any): Promise<Response> {
+  // THI-133 — Phase 7c gate: LTI endpoint disabled in production until JWT validation is complete.
+  // The current verifyJwt() uses a placeholder public key + ignoreExpiration:true, which would
+  // accept forged JWTs with any roles/sub/iss from ALLOWED_ISSUERS. To enable, set the env
+  // variable LTI_ENABLED=true in the Vercel project settings (Phase 7c only, after RS256 JWK
+  // validation lands). Documented in docs/SECURITY.md.
+  if (process.env.LTI_ENABLED !== 'true') {
+    return new Response('LTI endpoint not available', {
+      status: 503,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        ...corsHeaders,
+      },
+    });
+  }
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -269,7 +289,7 @@ export default async function handler(req: any): Promise<Response> {
       level: 'info',
       tags: { component: 'lti_launch', phase: 'spike' },
       contexts: {
-        lti_launch: log,
+        lti_launch: { ...log } as Record<string, unknown>,
       },
     });
 
@@ -299,7 +319,7 @@ export default async function handler(req: any): Promise<Response> {
 
     Sentry.captureException(err, {
       tags: { component: 'lti_launch', phase: 'spike' },
-      contexts: { lti_launch: log },
+      contexts: { lti_launch: { ...log } as Record<string, unknown> },
     });
 
     return new Response(
