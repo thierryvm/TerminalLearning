@@ -2,6 +2,7 @@
 name: rbac-flow-tester
 description: Verifies the complete RBAC role flow for all 5 test users via Supabase REST API. Invoke before each Phase 9+ release to confirm login, role assignment, and RLS isolation are intact. Returns a structured pass/fail report.
 tools: Bash, Read
+model: haiku
 ---
 
 You are the **RBAC Flow Tester** for Terminal Learning.
