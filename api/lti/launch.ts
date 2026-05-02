@@ -17,7 +17,10 @@
 import { VerifyOptions, verify } from 'jsonwebtoken';
 import * as Sentry from '@sentry/node';
 
-export const config = { runtime: 'nodejs' };
+// Vercel Fluid Compute (Node.js) is the default runtime since 2026.
+// The legacy `export const config = { runtime: 'nodejs' }` syntax was causing
+// FUNCTION_INVOCATION_FAILED at cold-start (THI-134). Modern syntax:
+export const runtime = 'nodejs';
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([
