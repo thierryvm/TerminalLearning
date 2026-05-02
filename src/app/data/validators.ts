@@ -258,7 +258,14 @@ export const validatePullRequests: ValidateFn = (cmd) => {
 
 export const validateConflicts: ValidateFn = (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase());
 
-export const validateMergeStrategies: ValidateFn = (cmd) => /^git\s+merge\s+--no-ff\s+\S+/.test(cmd.trim().toLowerCase());
+export const validateMergeStrategies: ValidateFn = (cmd) => {
+  const c = cmd.trim().toLowerCase();
+  if (!/^git\s+merge\b/.test(c)) return false;
+  const tokens = c.split(/\s+/).slice(2);
+  if (!tokens.includes('--no-ff')) return false;
+  if (tokens.some((t) => t === '--squash' || t === '--ff-only' || t === '--ff')) return false;
+  return tokens.some((t) => !t.startsWith('-'));
+};
 
 export const validateGithubActions: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
 

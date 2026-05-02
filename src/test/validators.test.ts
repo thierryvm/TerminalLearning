@@ -439,12 +439,24 @@ describe('validateMergeStrategies', () => {
     expect(validateMergeStrategies('git merge --no-ff feature/ma-feature')).toBe(true));
   it('accepts "git merge --no-ff bugfix/123"', () =>
     expect(validateMergeStrategies('git merge --no-ff bugfix/123')).toBe(true));
+  it('accepts flag-after-branch "git merge feature/ma-feature --no-ff"', () =>
+    expect(validateMergeStrategies('git merge feature/ma-feature --no-ff')).toBe(true));
+  it('accepts "git merge --no-ff feature/ma-feature -m \"msg\""', () =>
+    expect(validateMergeStrategies('git merge --no-ff feature/ma-feature -m "msg"')).toBe(true));
+  it('accepts "git merge --no-ff --no-edit feature/x" (extra harmless flag)', () =>
+    expect(validateMergeStrategies('git merge --no-ff --no-edit feature/x')).toBe(true));
   it('rejects plain "git merge feature/ma-feature" (no --no-ff)', () =>
     expect(validateMergeStrategies('git merge feature/ma-feature')).toBe(false));
   it('rejects "git merge --squash feature/ma-feature"', () =>
     expect(validateMergeStrategies('git merge --squash feature/ma-feature')).toBe(false));
-  it('rejects bare "git merge --no-ff"', () =>
+  it('rejects "git merge --no-ff --squash feature/x" (conflicting strategies)', () =>
+    expect(validateMergeStrategies('git merge --no-ff --squash feature/x')).toBe(false));
+  it('rejects "git merge --no-ff --ff-only feature/x" (conflicting strategies)', () =>
+    expect(validateMergeStrategies('git merge --no-ff --ff-only feature/x')).toBe(false));
+  it('rejects bare "git merge --no-ff" (no branch arg)', () =>
     expect(validateMergeStrategies('git merge --no-ff')).toBe(false));
+  it('rejects "git mergeit --no-ff feature/x" (typo on subcommand)', () =>
+    expect(validateMergeStrategies('git mergeit --no-ff feature/x')).toBe(false));
 });
 
 describe('validateConflicts', () => {
