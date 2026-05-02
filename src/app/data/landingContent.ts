@@ -66,22 +66,26 @@ export const ROADMAP_AVAILABLE = [
   'Parcours guidé par niveaux',
   'Partage natif (Web Share API)',
   'Accessibilité mobile & clavier (WCAG 2.2 AAA, safe-area iOS, focus-visible)',
+  'Sécurité durcie — endpoints LTI gated, rate limiting partagé, CSP SHA-256 (THI-133/134/135)',
+  'Audit sécurité fresh — score 8.1/10, 0 critique (1 mai 2026)',
 ];
 
 export const ROADMAP_IN_PROGRESS = [
   "Extension du curriculum — nouveaux modules & exercices",
   "Plus d'exercices pratiques & quiz par section",
   'Guide d\'installation PWA (iOS / Android / Desktop)',
-  'Agent IA tuteur (BYOK)',
+  'Agent IA tuteur (BYOK OpenRouter — Phase 7b)',
   'Terminal Sentinel — audit sécurité automatisé',
+  'LTI 1.3 — Phase 7c (RS256 JWK validation, persistence Supabase, grade passback)',
 ];
 
 export const ROADMAP_PLANNED = [
   'Mode histoire narratif',
-  'Multilingue (EN / NL / FR)',
-  'Badges et défis',
+  'Multilingue (FR / NL / EN / DE) — Belgique tri-lingue',
+  'Badges & Open Badges 3.0 (CEFR + EQF)',
   'Révisions intelligentes',
-  'Parcours avancés (Docker, scripting, IA)',
+  'Dashboards par rôle — étudiant / professeur / formateur / institution / super-admin',
+  'Parcours avancés (Docker, scripting, IA augmentée)',
 ];
 
 // ── Supporters (Hall of Fame) ─────────────────────────────────────────────────
@@ -100,7 +104,7 @@ export const TRUST_BADGES = [
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
-  { icon: CheckCircle2, label: '901 tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
+  { icon: CheckCircle2, label: '1000+ tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
 ] as const;
 
 // ── Module icons map ──────────────────────────────────────────────────────────
