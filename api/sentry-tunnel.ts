@@ -13,50 +13,16 @@
 
 export const config = { runtime: 'edge' };
 
+import { extractClientIp, isRateLimited, maybeCleanup, DEFAULT_RATE_POLICY } from './_rate-limit';
+
 const ALLOWED_HOST = 'o4511149685080064.ingest.de.sentry.io';
 const ALLOWED_PROJECT_ID = '4511149719552080';
 
 /** 1 MB — well above any real Sentry envelope; guards against DoS via large payloads. */
 const MAX_BODY_BYTES = 1 * 1024 * 1024;
 
-// ─── Rate limiting (sliding window, per IP) ───────────────────────────────────
-// Module-level state persists within a single Edge isolate instance.
-// Not globally shared across all edge nodes, but provides meaningful protection
-// against single-IP burst abuse on the same warm instance.
-const RATE_LIMIT_MAX = 50; // requests
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-
-interface RateEntry {
-  timestamps: number[];
-}
-const rateLimitMap = new Map<string, RateEntry>();
-
-function isRateLimited(ip: string, now: number): boolean {
-  const entry = rateLimitMap.get(ip) ?? { timestamps: [] };
-  // Evict timestamps outside the sliding window
-  entry.timestamps = entry.timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  if (entry.timestamps.length >= RATE_LIMIT_MAX) {
-    rateLimitMap.set(ip, entry);
-    return true;
-  }
-  entry.timestamps.push(now);
-  rateLimitMap.set(ip, entry);
-  return false;
-}
-
-// Prevent unbounded Map growth: evict all stale entries every 5 minutes.
-// Edge isolates are short-lived, so this is a safety net rather than a
-// long-running maintenance task.
-let lastCleanup = Date.now();
-function maybeCleanup(now: number): void {
-  if (now - lastCleanup < 5 * 60_000) return;
-  lastCleanup = now;
-  for (const [ip, entry] of rateLimitMap) {
-    if (entry.timestamps.every((t) => now - t >= RATE_LIMIT_WINDOW_MS)) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}
+// Rate limiting now lives in api/_lib/rateLimit.ts — shared across endpoints
+// (sentry-tunnel + lti/launch). Same sliding window, same per-IP isolation.
 
 // ─── Scrubber patterns (THI-120) ───────────────────────────────────────────
 // OWASP: API key leakage, token exposure, PII exfiltration.
@@ -226,14 +192,11 @@ export default async function handler(req: Request): Promise<Response> {
     }));
   }
 
-  // Rate limiting — sliding window per IP
+  // Rate limiting — sliding window per IP (shared module, see api/_lib/rateLimit.ts)
   const now = Date.now();
   maybeCleanup(now);
-  const ip =
-    req.headers.get('x-vercel-forwarded-for')?.split(',')[0].trim() ??
-    req.headers.get('cf-connecting-ip') ??
-    'unknown';
-  if (isRateLimited(ip, now)) {
+  const ip = extractClientIp(req.headers);
+  if (isRateLimited(ip, now, DEFAULT_RATE_POLICY)) {
     return withCors(new Response('Too Many Requests', {
       status: 429,
       headers: { 'Retry-After': '60' },
