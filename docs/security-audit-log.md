@@ -3,7 +3,7 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
-## Audit: Vercel posture forensic (2 mai 2026 PM)
+## Audit: Vercel posture — forensic review (2 mai 2026 PM)
 
 **Date**: 2 mai 2026 ~18:30 UTC (20:30 CEST)  
 **Auditor**: CC Terminal Learning (Opus 4.7) — forensic during session shutdown  

@@ -309,9 +309,9 @@ WARNING si des actions utilisent des tags mutables sans SHA pin.
 
 ## Vercel posture audit (ajouté 2 mai 2026 — incident bypass forensic)
 
-**Contexte** : le 2 mai 2026, un event Vercel `project-automation-bypass` est apparu à 16:53 UTC sans action explicite de Thierry. Investigation a révélé 8+ tokens "An MCP client" actifs/révoqués sur le compte ces derniers jours, sans tracabilité claire. Hypothèse retenue : MCP Vercel client (autre session Claude ou Cowork) génère des tokens éphémères qui peuvent toucher au bypass via side-effect d'autres opérations.
+**Contexte** : le 2 mai 2026, un event Vercel `project-automation-bypass` est apparu à 16:53 UTC sans action explicite de Thierry. L'investigation a révélé 8+ tokens "An MCP client" actifs/révoqués sur le compte ces derniers jours, sans traçabilité claire. Hypothèse retenue : un MCP Vercel client (autre session Claude ou Cowork) génère des tokens éphémères qui peuvent toucher au bypass via side-effect d'autres opérations.
 
-### Audit a effectuer (necessite VERCEL_TOKEN en variable d'environnement de session)
+### Audit à effectuer (nécessite VERCEL_TOKEN en variable d'environnement de session)
 
 ```bash
 TOKEN="$VERCEL_TOKEN"  # provided by user, never hardcoded
@@ -319,32 +319,32 @@ PROJECT_ID="prj_mfBbwmor5DhN57SEasB1RtYAFE5m"
 ```
 
 ### Tokens actifs sur le compte
-- `GET /v3/user/tokens` → liste complete des access tokens
-- Pour chaque token : verifier `name`, `createdAt`, `activeAt`, `lastUsedAt`
-- WARNING si > 3 tokens "An MCP client" actifs simultanement
-- WARNING si un token "Never expires" n'a pas de label clair (ex: "Vercel Dashboard from X" est legitime, mais un token sans nom = drift)
-- CRITICAL si un token ancien > 30 jours est encore actif sans usage tracable
+- `GET /v3/user/tokens` → liste complète des access tokens
+- Pour chaque token : vérifier `name`, `createdAt`, `activeAt`, `lastUsedAt`
+- WARNING si > 3 tokens "An MCP client" actifs simultanément
+- WARNING si un token "Never expires" n'a pas de label clair (ex: "Vercel Dashboard from X" est légitime, mais un token sans nom = drift)
+- CRITICAL si un token ancien > 30 jours est encore actif sans usage traçable
 
 ### Project events
 - `GET /v3/events?projectId=$PROJECT_ID&limit=30` → audit log
 - Filtrer sur `type=project-automation-bypass`, `type=token-created`, `type=token-revoked`
-- WARNING si un event `project-automation-bypass` n'est pas correle a une session Claude tracee (memoire `reference_vercel_bypass.md`)
+- WARNING si un event `project-automation-bypass` n'est pas corrélé à une session Claude tracée (mémoire `reference_vercel_bypass.md`)
 
 ### Bypass Deployment Protection
 - `GET /v9/projects/$PROJECT_ID` → champ `protectionBypass`
-- WARNING si > 1 entree active simultanement (rotation incomplete)
-- WARNING si l'entree active n'est pas la meme que celle stockee dans `.secrets/vercel-bypass.txt`
-- CRITICAL si le secret stocke en local fait HTTP 401 alors que la liste API montre une entree active (drift confirme)
+- WARNING si > 1 entrée active simultanément (rotation incomplète)
+- WARNING si l'entrée active n'est pas la même que celle stockée dans `.secrets/vercel-bypass.txt`
+- CRITICAL si le secret stocké en local fait HTTP 401 alors que la liste API montre une entrée active (drift confirmé)
 
-### Procedure stricte navigation Chrome DevTools (memoire `reference_vercel_bypass.md`)
+### Procédure stricte navigation Chrome DevTools (mémoire `reference_vercel_bypass.md`)
 - Toute navigation Chrome MCP avec `?x-vercel-protection-bypass=` = max 1 par session par hostname
-- Tout token API Vercel cree via UI Web (Chrome MCP) = consider "potentiellement expose" (capture DOM dans accessibility tree) → 2eme rotation manuelle a planifier
+- Tout token API Vercel créé via UI Web (Chrome MCP) = considérer comme "potentiellement exposé" (capture DOM dans l'accessibility tree) → 2ème rotation manuelle à planifier
 - WARNING si la session courante a fait > 1 navigation avec query param bypass
-- INFO si un token a ete cree via UI Web pendant la session sans 2eme rotation programmee
+- INFO si un token a été créé via UI Web pendant la session sans 2ème rotation programmée
 
 ### Recommendations
-- [R1] Routine `schedule` hebdomadaire : regeneration du bypass via API REST (seulement si on identifie un mecanisme propre — aujourd'hui le secret reste expose en URL au moins une fois)
-- [R2] Audit MCP clients : si plus de 5 tokens "An MCP client" sur 30j → investiguer quelle integration les genere (probablement plugin Vercel MCP officiel)
+- [R1] Routine `schedule` hebdomadaire : régénération du bypass via API REST (seulement si on identifie un mécanisme propre — aujourd'hui le secret reste exposé en URL au moins une fois)
+- [R2] Audit MCP clients : si plus de 5 tokens "An MCP client" sur 30j → investiguer quelle intégration les génère (probablement plugin Vercel MCP officiel)
 - [R3] Renommer `.secrets/vercel-bypass.txt` (qui contient l'access token) en `.secrets/vercel-token.txt` pour distinguer du bypass Deployment Protection
 
 ---
