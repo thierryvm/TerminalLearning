@@ -111,6 +111,13 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 2. `git status` + `git log --oneline -5` → état de la branche courante
 3. Lire l'issue Linear active avant d'écrire la moindre ligne
 
+### Fin de chaque session — récap obligatoire avant "stop"
+1. ✅ `git status` clean (rien d'uncommit ou stagé sans raison documentée)
+2. ✅ `gh pr list --state open` → **lister TOUTES les PRs ouvertes**, pas seulement celles de la session
+3. Pour chaque PR ouverte > 7 jours : la mentionner explicitement avec date + statut CI/Sourcery/Vercel + action attendue (validation utilisateur, merge, etc.)
+4. Distinguer dans le récap : "PRs livrées cette session" / "PRs externes en attente" / "Branches orphelines"
+5. **Mot interdit** : "rien d'orphelin" sans `gh pr list` au préalable. Le scope d'un récap shutdown est le **projet entier**, pas la session courante. (Incident 2 mai 2026 — #149/#150 oubliées 14 jours, leçon documentée dans `memory/feedback_pr_inventory_blind_spot.md`.)
+
 ### Avant toute modification de `curriculum.ts`
 - Invoquer l'agent **`curriculum-validator`** → analyser le rapport, corriger les CRITICAL avant de continuer
 
