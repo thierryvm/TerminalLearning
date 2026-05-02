@@ -37,22 +37,29 @@
 
 ### Medium Issues — Active (security-auditor 2026-05-01 findings)
 
-| # | Finding | Phase / Issue |
-|---|---------|---------------|
-| M1 | CSP `script-src` may need SHA-256 hashes for Vite inline scripts | Audit needed |
-| M2 | `vercel.live` in CSP applies to prod (preview-only intended) | Split CSP preview vs prod |
-| M3 | CORS LTI launch fixed to `terminallearning.dev` — verify against real LTI 1.3 flow | Phase 7c |
-| M4 | `keyManager.ts` defaults to plain localStorage (`encrypt: false`) | THI-112 (BYOK AiKeySetup) |
-| M5 | Migration 010 `institutions: select by role` — drift risk if 010→011→012 not applied in order | Phase 9 multi-tenancy |
-| M6 | Sentry scrubber only covers `type === 'event'` — `transaction`/`profile`/`check_in` ignored | THI-120 follow-up |
+Each finding has a dedicated Linear issue for tracking; click the issue ID to follow remediation status, attached PRs, and acceptance criteria.
 
-> Full raw report archived in session memory + Linear THI-133/THI-134 issues. Re-run `security-auditor` agent for fresh findings before any release.
+| # | Finding | Tracking issue |
+|---|---------|----------------|
+| M1 | CSP `script-src` may need SHA-256 hashes for Vite inline scripts | [THI-136](https://linear.app/thierryvm/issue/THI-136) |
+| M2 | `vercel.live` in CSP applies to prod (preview-only intended) | [THI-137](https://linear.app/thierryvm/issue/THI-137) |
+| M3 | CORS LTI launch fixed to `terminallearning.dev` — verify against real LTI 1.3 flow | [THI-138](https://linear.app/thierryvm/issue/THI-138) |
+| M4 | `keyManager.ts` defaults to plain localStorage (`encrypt: false`) | [THI-112](https://linear.app/thierryvm/issue/THI-112) (BYOK AiKeySetup) |
+| M5 | Migration 010 `institutions: select by role` — drift risk if 010→011→012 not applied in order | [THI-139](https://linear.app/thierryvm/issue/THI-139) |
+| M6 | Sentry scrubber only covers `type === 'event'` — `transaction`/`profile`/`check_in` ignored | [THI-140](https://linear.app/thierryvm/issue/THI-140) |
+
+> **Where the raw audit report lives:** the full `security-auditor` raw output is appended to [`docs/security-audit-log.md`](security-audit-log.md) with its run date, the score, and the per-finding details (file:line, severity, recommendation). That file is the persistent location — re-run the `security-auditor` agent before any release and append the new section there. Each Linear issue above also embeds the relevant slice of the raw report in its description for self-contained tracking.
 
 ---
 
 ## Incident Log
 
-Public incident log lives in [`/SECURITY.md`](../SECURITY.md#incident-log) (Incidents 006 password exposure + 007 wrong-model session catastrophe). No duplication here to avoid drift.
+Public incident log lives in [`/SECURITY.md`](../SECURITY.md#incident-log). Two incidents are recorded there with their canonical labels:
+
+- **Incident 006 — Hardcoded password in SQL migration** (21 April 2026)
+- **Incident 007 — Wrong-model session catastrophe** (24-25 April 2026)
+
+No duplication here to avoid drift; this section only points to the canonical entries.
 
 ---
 
