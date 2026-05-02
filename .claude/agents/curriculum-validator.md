@@ -33,7 +33,7 @@ Analyse `src/app/data/curriculum.ts`, `src/app/data/validators.ts`, `src/test/te
 
 ## Méthodes de détection
 
-- **Prérequis chain** : extraire tous les `id:` de modules, puis pour chaque `prerequisites: [...]` vérifier que chaque entrée est dans ce Set.
+- **Chaîne de prérequis** : extraire tous les `id:` des modules, puis pour chaque `prerequisites: [...]` vérifier que chaque entrée est dans ce Set.
 - **Import/export sync** : `grep -E "validate:\s*validate\w+" curriculum.ts` → liste des validators référencés ; `grep -E "^export const validate\w+" validators.ts` → liste des validators exportés ; `grep -E "^\s*validate\w+," curriculum.ts` (dans le bloc import du haut) → liste des validators importés. Recouper les 3 ensembles.
 - **Orphan validators** : `exported \ (referenced ∩ imported)`.
 

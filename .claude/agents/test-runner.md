@@ -66,10 +66,16 @@ Extrait uniquement :
 Détecter les `.only(` et `.skip(` **commités** dans les fichiers de tests — ils font passer la CI avec un sous-ensemble silencieusement.
 
 ```bash
-grep -rnE "\.(only|skip)\(" src/test/ e2e/ 2>/dev/null
+# Match only test runner calls (it/describe/test/suite), then filter out comment lines
+grep -rnE "\b(it|describe|test|suite)\.(only|skip)\(" src/test/ e2e/ 2>/dev/null \
+  | grep -vE ":\s*(//|/\*|\*\s|\*$)"
 ```
 
-Toute occurrence = CRITICAL (hors commentaires). Rapport : `file:line — .only/.skip leaked, test suite biased`.
+Filtres :
+- Pattern précis `(it|describe|test|suite)\.(only|skip)\(` → évite les faux positifs sur des strings comme `"using .only("` ou des références hors test (`Object.skip`).
+- Post-filter `grep -v` exclut les lignes dont le contenu commence par un commentaire JS (`//`, `/*`, ` *`).
+
+Toute occurrence restante = CRITICAL. Rapport : `file:line — .only/.skip leaked, test suite biased`.
 
 ## Étape 5 — Couverture commandes (WARNING)
 
@@ -87,11 +93,15 @@ Comparer avec les `describe('validateX'` dans `validators.test.ts`.
 
 ## Étape 7 — Delta code/tests (WARNING)
 
-Comparer le volume de code applicatif modifié vs le volume de tests ajoutés sur la branche actuelle (depuis `main`).
+Comparer le volume de code applicatif modifié vs le volume de tests ajoutés sur la branche actuelle (depuis le tronc).
 
 ```bash
-git diff --stat main...HEAD -- 'src/app/**/*.ts' 'src/app/**/*.tsx' ':!src/app/**/*.test.ts'
-git diff --stat main...HEAD -- 'src/test/**/*.ts' 'e2e/**/*.ts'
+# Use origin/main as base (refresh first) so branches not rebased on local main are still correctly compared.
+# Override with BASE_BRANCH env var if your trunk is different (e.g. BASE_BRANCH=origin/develop).
+git fetch origin --quiet
+BASE="${BASE_BRANCH:-origin/main}"
+git diff --stat "$BASE"...HEAD -- 'src/app/**/*.ts' 'src/app/**/*.tsx' ':!src/app/**/*.test.ts'
+git diff --stat "$BASE"...HEAD -- 'src/test/**/*.ts' 'e2e/**/*.ts'
 ```
 
 - Si > 50 lignes de code applicatif ajoutées **et** 0 ligne de test ajoutée → WARNING "code added without tests".
