@@ -37,3 +37,6 @@ test-results/
 playwright-report/
 .playwright-mcp/
 .secrets/
+
+# Internal Claude planning drafts (per-issue tactical plans, not project doc)
+.claude/plans/
