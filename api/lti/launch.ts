@@ -1,26 +1,24 @@
 /**
- * LTI 1.3 Launch Handler — SPIKE Phase (THI-127)
+ * LTI 1.3 Launch Handler — SPIKE Phase (THI-127, THI-133, THI-134)
  *
- * Receives LMS launch JWT, validates signature, logs claims to Sentry for inspection.
- * NO user persistence yet (Phase 7c). Pure validation + observability.
+ * Receives LMS launch JWT and inspects claims structure. NO user persistence
+ * yet (Phase 7c). Pure validation, gated by `LTI_ENABLED` env flag.
  *
  * Security:
+ * - THI-133: Gated by `process.env.LTI_ENABLED === 'true'` (returns 503 otherwise)
  * - Validates issuer against ALLOWED_ISSUERS allowlist (SSRF protection, security-auditor C2)
- * - Fetches LMS public key from /.well-known/openid-configuration (Canvas, Moodle, etc.)
- * - Validates JWT signature RS256-only (no HS256, security-auditor H5)
- * - Enforces exp + iat claims
- * - Logs to Sentry with scrubbing (no PII exposure)
+ * - Phase 7c will add full RS256 JWK validation (security-auditor H5)
  *
- * Node.js runtime — allows JWT validation libs + Sentry client.
+ * Vercel Node.js Function — uses Express-style `(req, res)` signature with
+ * `@vercel/node` types. The Web `Request -> Response` pattern is NOT supported
+ * on Vercel Node.js runtime (it works only on Edge runtime, e.g. sentry-tunnel.ts).
+ * This was the THI-134 root cause: previous handler returned a Web `Response`
+ * which Vercel Node.js silently waited for `res.send()` -> 504 timeout.
  */
 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { VerifyOptions, verify } from 'jsonwebtoken';
 import * as Sentry from '@sentry/node';
-
-// Vercel Fluid Compute (Node.js) is the default runtime since 2026.
-// The legacy `export const config = { runtime: 'nodejs' }` syntax was causing
-// FUNCTION_INVOCATION_FAILED at cold-start (THI-134). Modern syntax:
-export const runtime = 'nodejs';
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([
@@ -30,12 +28,7 @@ const ALLOWED_ISSUERS = new Set([
   // Add instance-specific Canvas URLs as they onboard (e.g., 'https://myschool.instructure.com')
 ]);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://terminallearning.dev',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGIN = 'https://terminallearning.dev';
 
 interface LtiLaunchRequest {
   id_token?: string;
@@ -69,6 +62,13 @@ interface LtiLaunchLog {
   error?: string;
 }
 
+function setCorsHeaders(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
+
 /**
  * Fetch OIDC configuration from LMS to get public key
  * Caches result for 24h to avoid repeated fetches
@@ -81,45 +81,30 @@ async function getOidcConfig(issuer: string): Promise<any> {
     return cached.config;
   }
 
-  try {
-    const configUrl = `${issuer}/.well-known/openid-configuration`;
-    const response = await fetch(configUrl, { method: 'GET' });
-    if (!response.ok) {
-      throw new Error(`OIDC config fetch failed: ${response.status}`);
-    }
-    const config = await response.json();
-
-    // Cache for 24h
-    oidcConfigCache.set(issuer, {
-      config,
-      expires: Date.now() + 24 * 60 * 60 * 1000,
-    });
-
-    return config;
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { component: 'lti_launch', phase: 'oidc_config_fetch' },
-    });
-    throw err;
+  const configUrl = `${issuer}/.well-known/openid-configuration`;
+  const response = await fetch(configUrl, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error(`OIDC config fetch failed: ${response.status}`);
   }
+  const config = await response.json();
+
+  oidcConfigCache.set(issuer, {
+    config,
+    expires: Date.now() + 24 * 60 * 60 * 1000,
+  });
+
+  return config;
 }
 
 /**
  * Fetch JWK Set from LMS OIDC provider
  */
 async function getJwkSet(jwksUri: string): Promise<any> {
-  try {
-    const response = await fetch(jwksUri, { method: 'GET' });
-    if (!response.ok) {
-      throw new Error(`JWKS fetch failed: ${response.status}`);
-    }
-    return await response.json();
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { component: 'lti_launch', phase: 'jwks_fetch' },
-    });
-    throw err;
+  const response = await fetch(jwksUri, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error(`JWKS fetch failed: ${response.status}`);
   }
+  return await response.json();
 }
 
 /**
@@ -130,54 +115,26 @@ async function getJwkSet(jwksUri: string): Promise<any> {
  * handler in Phase 7c once `verifyJwt()` actually validates RS256 signatures via JWK Set.
  */
 export async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
-  try {
-    // Fetch OIDC config to find JWK Set URI
-    const oidcConfig = await getOidcConfig(issuer);
-    if (!oidcConfig.jwks_uri) {
-      throw new Error('OIDC config missing jwks_uri');
-    }
-
-    // Fetch JWK Set — Phase 7c will pass this to verify() to extract the RS256 public key
-    // matching the kid claim in the token header.
-    void (await getJwkSet(oidcConfig.jwks_uri));
-
-    // Phase 7c: Implement full RS256 JWK validation here
-    // Extract public key from JWK Set matching kid claim in token header
-    // For now, return placeholder
-    const options: VerifyOptions = {
-      issuer,
-      algorithms: ['RS256'], // LTI 1.3 mandate: RS256 only, no HS256 (security-auditor H5)
-      ignoreExpiration: false, // Validate exp claim
-    };
-
-    // TODO: Fetch correct public key from jwkSet and pass to verify()
-    const decoded = verify(token, 'TODO_PHASE7C_PUBLIC_KEY', {
-      ...options,
-      ignoreExpiration: true,
-    }) as JwtClaims;
-
-    // SPIKE: Log the claims for inspection
-    Sentry.captureMessage('LTI SPIKE: JWT decoded successfully', {
-      level: 'info',
-      tags: { component: 'lti_launch', phase: 'spike' },
-      contexts: {
-        jwt_claims: {
-          sub: decoded.sub,
-          iss: decoded.iss,
-          aud: decoded.aud,
-          roles: decoded['https://purl.imsglobal.org/spec/lti/claim/roles'],
-          context_id: decoded['https://purl.imsglobal.org/spec/lti/claim/context']?.id,
-        },
-      },
-    });
-
-    return decoded;
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { component: 'lti_launch', phase: 'jwt_verify' },
-    });
-    throw err;
+  const oidcConfig = await getOidcConfig(issuer);
+  if (!oidcConfig.jwks_uri) {
+    throw new Error('OIDC config missing jwks_uri');
   }
+
+  // Phase 7c will pass jwkSet to verify() to extract the RS256 public key
+  // matching the kid claim in the token header.
+  void (await getJwkSet(oidcConfig.jwks_uri));
+
+  const options: VerifyOptions = {
+    issuer,
+    algorithms: ['RS256'], // LTI 1.3 mandate: RS256 only, no HS256 (security-auditor H5)
+    ignoreExpiration: false,
+  };
+
+  // TODO Phase 7c: Fetch correct public key from jwkSet and pass to verify()
+  return verify(token, 'TODO_PHASE7C_PUBLIC_KEY', {
+    ...options,
+    ignoreExpiration: true,
+  }) as JwtClaims;
 }
 
 /**
@@ -192,42 +149,32 @@ function mapLtiRoles(ltiRoles: string[]): string[] {
 
   return ltiRoles
     .map((ltiRole) => roleMap[ltiRole] || 'student')
-    .filter((role, index, arr) => arr.indexOf(role) === index); // dedup
+    .filter((role, index, arr) => arr.indexOf(role) === index);
 }
 
-export default async function handler(req: any): Promise<Response> {
-  // THI-133 — Phase 7c gate: LTI endpoint disabled in production until JWT validation is complete.
-  // The current verifyJwt() uses a placeholder public key + ignoreExpiration:true, which would
-  // accept forged JWTs with any roles/sub/iss from ALLOWED_ISSUERS. To enable, set the env
-  // variable LTI_ENABLED=true in the Vercel project settings (Phase 7c only, after RS256 JWK
-  // validation lands). Documented in docs/SECURITY.md.
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  setCorsHeaders(res);
+
+  // THI-133 — Phase 7c gate: LTI endpoint disabled until JWT validation is complete.
+  // The current verifyJwt() uses a placeholder public key + ignoreExpiration:true, which
+  // would accept forged JWTs with any roles/sub/iss from ALLOWED_ISSUERS. To enable, set
+  // env LTI_ENABLED=true in the Vercel project settings (Phase 7c only). See docs/SECURITY.md.
   if (process.env.LTI_ENABLED !== 'true') {
-    return new Response('LTI endpoint not available', {
-      status: 503,
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-store',
-        ...corsHeaders,
-      },
-    });
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(503).send('LTI endpoint not available');
+    return;
   }
 
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
-    });
+    res.status(204).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', {
-      status: 405,
-      headers: {
-        Allow: 'POST, OPTIONS',
-        ...corsHeaders,
-      },
-    });
+    res.setHeader('Allow', 'POST, OPTIONS');
+    res.status(405).send('Method Not Allowed');
+    return;
   }
 
   const log: LtiLaunchLog = {
@@ -236,25 +183,12 @@ export default async function handler(req: any): Promise<Response> {
   };
 
   try {
-    // Parse POST body
-    let body: LtiLaunchRequest = {};
-    if (req.headers['content-type']?.includes('application/x-www-form-urlencoded')) {
-      // LTI typically sends form-encoded
-      const text = await req.text();
-      const params = new URLSearchParams(text);
-      body = Object.fromEntries(params);
-    } else if (req.headers['content-type']?.includes('application/json')) {
-      body = await req.json();
-    }
-
+    const body = (req.body as LtiLaunchRequest) ?? {};
     const idToken = body.id_token;
     if (!idToken) {
       throw new Error('Missing id_token in request body');
     }
 
-    // Decode JWT header to extract issuer (iss claim)
-    // For SPIKE, we skip full signature validation and just inspect the token structure
-    // Phase 7c: Will implement full RS256 verification with JWK Sets
     const parts = idToken.split('.');
     if (parts.length !== 3) {
       throw new Error('Invalid JWT format (expected 3 parts)');
@@ -262,12 +196,10 @@ export default async function handler(req: any): Promise<Response> {
 
     let claims: JwtClaims;
     try {
-      // Decode without verification first (SPIKE phase)
       const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
       claims = payload;
       log.issuer = claims.iss;
 
-      // SSRF protection: Validate issuer against allowlist (security-auditor C2 fix)
       if (!claims.iss || !ALLOWED_ISSUERS.has(claims.iss)) {
         throw new Error(`Issuer "${claims.iss}" not in ALLOWED_ISSUERS allowlist (SSRF protection)`);
       }
@@ -275,32 +207,27 @@ export default async function handler(req: any): Promise<Response> {
       throw new Error('Failed to decode JWT payload');
     }
 
-    // Extract LTI roles
     const ltiRoles = claims['https://purl.imsglobal.org/spec/lti/claim/roles'] || [];
     const mappedRoles = mapLtiRoles(ltiRoles);
     log.roles = mappedRoles;
 
-    // Extract context ID (course/class)
     const contextId = claims['https://purl.imsglobal.org/spec/lti/claim/context']?.id;
     if (contextId) {
       log.context_id = contextId;
     }
 
-    // Log successful launch
     log.event = 'lti_launch_valid';
     Sentry.captureMessage('LTI SPIKE: Launch validated', {
       level: 'info',
       tags: { component: 'lti_launch', phase: 'spike' },
-      contexts: {
-        lti_launch: { ...log } as Record<string, unknown>,
-      },
+      contexts: { lti_launch: { ...log } as Record<string, unknown> },
     });
 
-    // SPIKE phase: Just acknowledge the launch (no persistence)
-    return new Response(
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send(
       JSON.stringify({
         status: 'ok',
-        message: 'LTI launch received. Validation logged to Sentry. Phase 7c: Supabase persistence + grade passback will be implemented.',
+        message: 'LTI launch received. Phase 7c: Supabase persistence + grade passback will be implemented.',
         claims: {
           sub: claims.sub,
           issuer: claims.iss,
@@ -308,13 +235,6 @@ export default async function handler(req: any): Promise<Response> {
           context_id: contextId,
         },
       }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
     );
   } catch (err) {
     log.event = 'lti_launch_error';
@@ -325,18 +245,12 @@ export default async function handler(req: any): Promise<Response> {
       contexts: { lti_launch: { ...log } as Record<string, unknown> },
     });
 
-    return new Response(
+    res.setHeader('Content-Type', 'application/json');
+    res.status(400).send(
       JSON.stringify({
         status: 'error',
         message: err instanceof Error ? err.message : 'Unknown error',
       }),
-      {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
     );
   }
 }
