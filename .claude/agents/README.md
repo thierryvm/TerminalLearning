@@ -58,7 +58,7 @@ route-attack-auditor
 rbac-flow-tester  # Si Phase 9+ activée
 ```
 
-### 4. Trimestriellement (santé du projet long-terme)
+### 4. Trimestriellement (santé du projet long terme)
 
 ```bash
 # ⚠️ NOTE: sustain-auditor est actuellement une spec (sustain-auditor-spec.md),
