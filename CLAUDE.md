@@ -104,6 +104,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`ui-auditor`** — détecte composants custom qui devraient utiliser shadcn/ui, deps fantômes, composants installés mais jamais importés, couleurs/tailles en dur. **Obligatoire avant toute PR touchant des composants UI.** CRITICAL = bloque le merge. (THI-86)
 - **`vercel-firewall-auditor`** — lit la config Vercel Firewall active (WAF, managed rules, custom rules) et exécute une batterie de tests HTTP live contre `terminallearning.dev` pour confirmer que les rules bloquent bien les patterns d'attaque et laissent passer les users légitimes. Nécessite `$VERCEL_TOKEN` en session. Lancer avant chaque release majeure ou après toute modification firewall. Détails : `docs/vercel-firewall.md`.
 - **`prompt-guardrail-auditor`** — audit sécurité LLM (OWASP LLM Top 10) du Tuteur IA (BYOK OpenRouter — ADR-002 + ADR-005) : prompt injection, jailbreaks, prompt leaks, role enforcement, bypass sanitizer, XSS sur rendu réponse, fuite clé API. **Obligatoire avant toute PR touchant `src/lib/ai/*` ou `src/app/components/ai/*`.** CRITICAL = bloque le merge. Créé AVANT implémentation (THI-109, gate zéro ADR-005) pour éviter la surprise en fin de chantier.
+- **`route-attack-auditor`** — audit HTTP-level black-hat des endpoints `api/*` : status code fingerprinting, verb tampering, cache poisoning via 503, slowloris, side-channel timing, header smuggling, CORS edge cases, body guards, rate limit bypass, info disclosure. Tests live via `curl`. **Obligatoire avant toute PR touchant `api/*` ou après création d'un nouvel endpoint.** Complémentaire à `security-auditor` (qui couvre l'app layer) et `vercel-firewall-auditor` (qui couvre WAF). Créé suite au sprint sécurité 1-2 mai (lacune route-level identifiée).
 
 ### Début de chaque session
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
@@ -135,6 +136,12 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Scope: modifications à `api/`, `supabase/migrations/`, `src/lib/ai/`, `src/lib/supabase.ts`, JWT handling, rate limiting, CSP, secrets
 - Résumé pré-merge: type des changements sécurité (auth, RLS, encryption, API protection, etc.)
 - Le rapport security-auditor devient obligatoire pour l'approbation de PR — archiver le résultat dans le commentaire PR
+
+### Avant toute PR touchant un endpoint `api/*` (HTTP-level)
+- **Obligatoire** : invoquer l'agent **`route-attack-auditor`** → tests `curl` live contre la preview Vercel
+- Vérifie : status fingerprinting, verb tampering, cache poisoning, slowloris, CORS edge cases, info disclosure, rate limit bypass
+- Complémentaire à `security-auditor` (app-layer) et `vercel-firewall-auditor` (WAF)
+- Verdict release-ready obligatoire avant merge (✅ ship / ⚠️ ship avec mitigations / 🔴 bloque)
 
 ### Vercel Firewall — modifications
 - Toute modification firewall passe par l'**API REST Vercel** (pas par `vercel.json`)
