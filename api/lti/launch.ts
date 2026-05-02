@@ -20,6 +20,12 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import {
+  extractClientIp,
+  isRateLimited,
+  maybeCleanup,
+  DEFAULT_RATE_POLICY,
+} from '../_lib/rateLimit';
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([
@@ -151,6 +157,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
     res.status(503).send('LTI endpoint not available');
+    return;
+  }
+
+  // THI-135 — Rate limit per IP (50 req/min, shared module with sentry-tunnel).
+  // Applied AFTER the feature flag so the 503 path stays cheap. Even when LTI_ENABLED=true,
+  // this caps brute-force/DDoS attempts on the JWT verification + OIDC config fetch logic.
+  const now = Date.now();
+  maybeCleanup(now);
+  const ip = extractClientIp(req.headers);
+  if (isRateLimited(ip, now, DEFAULT_RATE_POLICY)) {
+    res.setHeader('Retry-After', '60');
+    res.status(429).send('Too Many Requests');
     return;
   }
 
