@@ -3,6 +3,78 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+## Audit: Vercel posture forensic (2 mai 2026 PM)
+
+**Date**: 2 mai 2026 ~18:30 UTC (20:30 CEST)  
+**Auditor**: CC Terminal Learning (Opus 4.7) — forensic during session shutdown  
+**Trigger**: Bypass token exposed in Chrome DevTools MCP URL during preview validation of PR #149 → discipline review prompted by Thierry  
+**Outcome**: ✅ No data leak, no production impact, 1 access token rotated, 1 agent reinforced
+
+### Findings
+
+| # | Severity | Subject | Status |
+|---|---|---|---|
+| F1 | LOW | Vercel event `project-automation-bypass` at 16:53 UTC without user action | Hypothesis: MCP Vercel client from concurrent Claude session (Cowork/Ankora/SynapseHub) |
+| F2 | INFO | 8+ "An MCP client" tokens active/revoked on account over 4 days | Most auto-revoked; tracking added to `security-auditor` |
+| F3 | LOW | Old bypass `ItNg…LW4Q` exposed in MCP navigate_page URLs | HTTP 401 confirmed (already revoked at audit time) |
+| F4 | LOW | New token `vcp_3zDw…oq2` captured in accessibility tree during "Token Created" dialog | 2nd rotation scheduled for next session |
+
+### Actions shipped same session
+
+- **PR #182** — `security-auditor` agent reinforced with "Vercel posture audit" section: tokens listing, project events scan, bypass entries inspection, "MCP client" pattern detection, navigation discipline check
+- **Bypass file resync** — `.secrets/vercel-bypass.txt` updated with active value (retrieved via API GET, never printed)
+- **Access token rotated** — old `vcp_5BbF…xllu` revoked via API DELETE (HTTP 200), new `vcp_3zDw…oq2` active
+- **Memory updates** — `reference_vercel_bypass.md` (strict navigation procedure) + `reference_vercel_token_24apr.md` (current token + incident timeline)
+
+### Recommendations (queued for next session)
+
+- [R1] Manual 2nd token rotation via Vercel UI **without** Claude/MCP active on the page
+- [R2] Investigate which Vercel integration generates "An MCP client" tokens (likely official Vercel MCP plugin)
+- [R3] Rename `.secrets/vercel-bypass.txt` (which actually contains the access token) to `.secrets/vercel-token.txt` for clarity vs. the bypass secret in `~/.claude/projects/.../.secrets/`
+
+### Public reference
+
+[SECURITY.md Incident 008](../SECURITY.md) + [STORY.md "L'après-midi du 2 mai"](../STORY.md)
+
+---
+
+## Audit: Sprint sécurité 1-2 mai 2026
+
+**Date**: 1-2 mai 2026 (24-hour sprint)  
+**Auditor**: CC Terminal Learning (Opus 4.7) + `security-auditor` agent + Sourcery on each PR  
+**Score evolution**: 8.1/10 → ~8.6/10 post-sprint  
+**PRs delivered**: 11 (#168 to #178)
+
+### Issues resolved
+
+| Linear | Severity | Subject | PR |
+|---|---|---|---|
+| THI-133 | HIGH (H1) | LTI feature flag `LTI_ENABLED` env-gated | #169 |
+| THI-134 | HIGH (cold-start) | LTI 500 FUNCTION_INVOCATION_FAILED — Express-style + lazy-load fix | #170 |
+| THI-135 | HIGH (H2) | Rate limiter LTI shared module + Edge runtime | #173 |
+| THI-137 | MEDIUM (M2) | `vercel.live` removed from CSP `script-src` | #178 |
+| THI-140 | MEDIUM (M6) | Sentry scrubber extended to `transaction`/`profile`/`check_in` envelopes | #177 |
+
+### Process improvements
+
+- New agent `route-attack-auditor` (PR #176) — covers HTTP-level black-hat audit zone (status fingerprinting, verb tampering, cache poisoning, slowloris, CORS edge cases)
+- Discipline "Tu es sûr ?" applied throughout — three isolation tests for THI-134 cold-start before any speculative fix
+- Validation autonome via Brave/Lighthouse on each PR — Thierry not interrupted for visual checks except strategic decisions
+- Documentation rigueur: `docs/security-audit-log.md` receives each audit report with date, score, Linear refs (this entry being one of them, retroactively)
+
+### Backlog (4 mediums tracked)
+
+- THI-136 (M1) — Vite hash drift guard
+- THI-138 (M3) — CORS LTI flow real (blocked by Phase 7c launch)
+- THI-139 (M5) — RLS migration order test
+- THI-112 (M4) — keyManager `encrypt: true` default coupled to Phase 7b finalization
+
+### Public reference
+
+[CHANGELOG.md "Sprint sécurité — clôture des HIGH"](../CHANGELOG.md) + [STORY.md "Le 2 mai — clôture méthodique du sprint sécurité"](../STORY.md)
+
+---
+
 ## Audit: Opus 4.7 Cowork Review (21 avril 2026)
 
 **Date**: 21 avril 2026  
