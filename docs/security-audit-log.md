@@ -170,3 +170,50 @@ This log is updated after each security audit and serves as institutional memory
 
 **Last Updated**: 25 avril 2026
 **Next Review**: Post-Phase 7b (post-THI-113) OR after any future incident
+
+---
+
+## Audit: Fresh `security-auditor` run (1 mai 2026)
+
+**Date**: 1 mai 2026
+**Auditor**: `security-auditor` agent (Opus 4.7), full repo scan post-cleanup PR #168
+**Scope**: OWASP Top 10 (2021), OWASP API Security (2023), CSP Level 3, HTTP headers, RLS, auth flow, supply chain, GDPR, terminal injection, 2026 norms
+**Score**: **8.1 / 10** — 0 CRITICAL · 3 HIGH · 6 MEDIUM · 7 LOW
+
+### High findings — remediation status
+
+| # | Finding | Status |
+|---|---------|--------|
+| H1 | LTI launch endpoint accepts forged JWTs (`TODO_PHASE7C_PUBLIC_KEY` placeholder + `ignoreExpiration:true`) | ✅ Mitigated by [THI-133](https://linear.app/thierryvm/issue/THI-133) feature flag `LTI_ENABLED` (PR #169, 1 mai) |
+| H2 | LTI launch endpoint has no rate limiting | ✅ Resolved by [THI-135](https://linear.app/thierryvm/issue/THI-135) — sliding-window 50 req/min per IP (PR #173, 2 mai) |
+| H3 | Git history credential `TerminalLearning2026!` | 🔄 Accepted residual risk — test users rotated via Supabase Admin API. `git filter-repo` requires force-push and is deferred to a maintenance window |
+
+### Medium findings — Linear-tracked
+
+Each medium finding has a dedicated Linear issue (M4 routes to the existing THI-112). See [`docs/SECURITY.md`](SECURITY.md) Medium Issues table for the canonical list.
+
+| # | Finding | Issue |
+|---|---------|-------|
+| M1 | CSP `script-src` SHA-256 hashes for Vite inline scripts | [THI-136](https://linear.app/thierryvm/issue/THI-136) |
+| M2 | Split CSP preview vs prod (`vercel.live` only in preview) | [THI-137](https://linear.app/thierryvm/issue/THI-137) |
+| M3 | Validate LTI launch CORS against real LTI 1.3 flow | [THI-138](https://linear.app/thierryvm/issue/THI-138) |
+| M4 | Key manager default encryption mode | [THI-112](https://linear.app/thierryvm/issue/THI-112) (Phase 7b BYOK) |
+| M5 | RLS migration order 010→011→012 + integration test | [THI-139](https://linear.app/thierryvm/issue/THI-139) |
+| M6 | Sentry scrubber covers only `event` items (transaction/profile/check_in skipped) | [THI-140](https://linear.app/thierryvm/issue/THI-140) |
+
+### Side discoveries during remediation
+
+- **THI-134** — LTI handler returned `500 FUNCTION_INVOCATION_FAILED` at cold-start (independent of H1). Root cause: top-level `@sentry/node` + `jsonwebtoken` imports, plus Web `Request → Response` pattern incompatible with Vercel Node.js runtime. Fix: Express-style handler signature + lazy-load heavy deps after the LTI_ENABLED gate. Resolved in PR #170 (1-2 mai).
+- **THI-135 bundling caveat** — Vercel Node.js Functions does not reliably follow imports to other `.ts` files (verified via 3 isolation tests). Workaround: rate-limit logic inlined in `api/lti/launch.ts` with documentation pointing to the shared module `api/_rate-limit.ts` as the single source of truth (used by Edge `sentry-tunnel` + tested by `src/test/rateLimit.test.ts`).
+
+### Process improvements (1-2 mai)
+
+- Use Context7 MCP for Vercel docs before tâtonnement on Vercel-specific behaviour.
+- Always run Brave + Lighthouse autonome before merge — not via user click.
+- Linear issue created BEFORE branch creation (M1–M6 → THI-136 to THI-140 + THI-112 for M4).
+- Single source of truth for raw audit reports = this file (`docs/security-audit-log.md`), referenced from `docs/SECURITY.md`.
+
+---
+
+**Last Updated**: 2 mai 2026
+**Next Review**: Full re-audit before THI-111 ship (Phase 7b AI Tutor) OR Phase 7c LTI activation, whichever comes first.
