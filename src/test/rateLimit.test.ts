@@ -5,7 +5,7 @@ import {
   extractClientIp,
   DEFAULT_RATE_POLICY,
   __resetForTests,
-} from '../../lib/rateLimit';
+} from '../../api/_rate-limit';
 
 describe('rateLimit — sliding window per IP (THI-135)', () => {
   beforeEach(() => __resetForTests());

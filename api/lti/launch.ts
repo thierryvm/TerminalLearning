@@ -25,7 +25,7 @@ import {
   isRateLimited,
   maybeCleanup,
   DEFAULT_RATE_POLICY,
-} from '../../lib/rateLimit';
+} from '../_rate-limit';
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([

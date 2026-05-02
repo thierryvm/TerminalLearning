@@ -13,7 +13,7 @@
 
 export const config = { runtime: 'edge' };
 
-import { extractClientIp, isRateLimited, maybeCleanup, DEFAULT_RATE_POLICY } from '../lib/rateLimit';
+import { extractClientIp, isRateLimited, maybeCleanup, DEFAULT_RATE_POLICY } from './_rate-limit';
 
 const ALLOWED_HOST = 'o4511149685080064.ingest.de.sentry.io';
 const ALLOWED_PROJECT_ID = '4511149719552080';
