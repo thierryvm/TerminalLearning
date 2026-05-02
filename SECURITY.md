@@ -113,6 +113,36 @@ Automated security auditing specifically for LLM-based AI Tutor V1:
 
 Public log of past security incidents and their remediation. Detailed audit-log entries (timestamps, regression vectors, fix PRs) are in [`docs/security-audit-log.md`](docs/security-audit-log.md).
 
+### Incident 008 — Vercel bypass + access token rotation forensic (2 May 2026 PM)
+
+**Severity**: LOW — Investigative discovery, no production impact, no data leak  
+**Component**: Vercel account — Deployment Protection bypass + access tokens  
+**Reporter**: CC Terminal Learning (forensic audit during session shutdown)
+
+**Discovery**: During session-end audit, an unexplained Vercel event `project-automation-bypass` was detected at 16:53 UTC on 2 May 2026, without explicit user action. Investigation via Vercel API surfaced:
+- Old bypass `ItNg…LW4Q` (active since 25 April) was silently revoked and replaced by new `ICuS…p4bO`
+- Account showed 8+ "An MCP client" tokens created/revoked over the prior 4 days
+- Most MCP tokens correctly revoked themselves after use; only short-lived account-level activity
+
+**Hypothesis (retained)**: A Vercel MCP client active in another Claude Code session (likely Cowork desktop, Ankora project, or SynapseHub project — all working concurrently the same day) generated ephemeral tokens that touched the bypass setting as a side-effect of project read operations.
+
+**Actions taken (same session)**:
+1. **Bypass local file resync** — `.secrets/vercel-bypass.txt` updated with active value `ICuS…p4bO` (retrieved via authenticated API GET, never printed verbatim in conversation)
+2. **Old bypass HTTP probe** — `ItNg…LW4Q` confirmed HTTP 401 (revoked), no longer exploitable even though it leaked into MCP URLs during preview validation earlier in the session
+3. **Access token rotation** — old `vcp_5BbF…xllu` deleted via `DELETE /v3/user/tokens/{id}` (HTTP 200 confirmed), replaced by new `vcp_3zDw…oq2` created via Vercel Dashboard UI
+
+**Residual risk acknowledged**:
+- New token `vcp_3zDw…oq2` appeared in clear in the Chrome DevTools accessibility tree snapshot during the "Token Created" dialog capture, therefore present in this conversation's logs. **Second rotation manually scheduled** for the next session without any Claude/MCP active on the page.
+
+**Process improvements shipped same session**:
+- `security-auditor` agent reinforced (PR #182) with new "Vercel posture audit" section covering: tokens listing, project events log, bypass entries inspection, "MCP client" pattern detection, navigation discipline check
+- Memory `reference_vercel_bypass.md` strengthened with strict procedure: max 1 navigation with bypass query param per session per hostname
+- Memory `reference_vercel_token_24apr.md` updated with current token prefix and incident timeline
+
+**Public reference**: [STORY.md "L'après-midi du 2 mai — la dette Sourcery de 14 jours" section](STORY.md) for context.
+
+---
+
 ### Incident 007 — Wrong-model session catastrophe (24-25 April 2026)
 
 **Scope**: Production CSP regression + git history pollution + bypass secret exposure during a session where Claude Haiku 4.5 was silently activated instead of Opus 4.7 after a plan→exec mode switch.

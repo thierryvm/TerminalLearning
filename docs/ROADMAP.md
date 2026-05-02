@@ -91,7 +91,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [ ] **CSS moderne 2026** — container queries, `@property`, `color-mix()` where it simplifies the codebase
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
-Full-stack developer path — 11 modules ✅ (64 lessons, 900 unit tests)
+Full-stack developer path — 11 modules ✅ (65 lessons, 1035 unit tests)
 
 ### Modules 1–7 ✅ (Phases 1–4)
 - [x] Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes (Modules 1–6)
