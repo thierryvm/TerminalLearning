@@ -1,6 +1,6 @@
 # Documentation Index — Terminal Learning
 
-> Last updated: 21 April 2026  
+> Last updated: 2 May 2026  
 > This directory contains active project documentation. For historical/stale docs, see `.archive/`.
 
 ---
@@ -93,10 +93,10 @@ These files remain in `.archive/` for historical reference. Current session prot
 |----------|-------------|--------|
 | ROADMAP.md | 21 April 2026 | 🟢 Active |
 | ARCHITECTURE.md | 14 April 2026 | 🟢 Active |
-| SECURITY.md | 21 April 2026 | 🟢 Active |
+| SECURITY.md | 1 May 2026 | 🟢 Active |
 | CONVENTIONS.md | 13 April 2026 | 🟢 Active |
-| plan.md | 21 April 2026 | 🟢 Active |
-| security-audit-log.md | 21 April 2026 | 🟢 Active |
+| plan.md | 2 May 2026 | 🟢 Active |
+| security-audit-log.md | 21 April 2026 | 🟡 Stable (audit run 1 May) |
 | GUIDELINES.md | 11 April 2026 | 🟡 Stable |
 | vercel-firewall.md | 14 April 2026 | 🟢 Active |
 | ATTRIBUTIONS.md | 2 April 2026 | 🟡 Stable |

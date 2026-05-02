@@ -5,6 +5,40 @@
 
 ---
 
+## Sprint sécurité — résolution H1 LTI + cleanup post-Haiku résiduel
+*1-2 mai 2026 · Sécurité · CSP & API gating*
+
+**Le défi :** Une semaine après la stabilisation post-Haiku (PR #167), un audit `security-auditor` frais a remonté un score 8.1/10 mais surtout un finding **HIGH critique** : l'endpoint `POST /api/lti/launch` était déployé en production avec un `verifyJwt()` utilisant la clé placeholder `TODO_PHASE7C_PUBLIC_KEY` et `ignoreExpiration: true`. N'importe qui pouvait envoyer un JWT forgé avec rôles `Instructor`/`Administrator` provenant d'un issuer de l'allowlist (Canvas, Moodle, Smartschool) et polluer Sentry avec des claims arbitraires. En Phase 7c (avec persistence DB), l'impact serait passé de pollution à usurpation d'identité institution_admin. Deux résidus de la catastrophe Haiku traînaient également dans `vercel.json` : une réécriture morte `/ → /api/csp-nonce` (le fichier était dans le mauvais dossier — la prod tenait par chance grâce au cache CDN) et un endpoint Sentry placeholder `o1234.ingest.sentry.io` qui n'avait jamais été un vrai endpoint.
+
+**La méthode :** Le 1er mai, après lecture du rapport `security-auditor` complet (3 HIGH, 6 MEDIUM, 7 LOW), Claude a séquencé les actions par sévérité avec discipline : (1) PR #168 cleanup propre des résidus Haiku — rewrite morte supprimée, fichier orphelin `src/api/csp-nonce.ts` retiré, vrai endpoint `o4511149685080064.ingest.de.sentry.io` rétabli en CSP `connect-src` (defense-in-depth pour le tunnel Sentry) ; (2) Issue Linear THI-133 créée en Urgent avec acceptance criteria explicites avant de coder ; (3) PR #169 livrant le feature flag `LTI_ENABLED=true` avec early-return 503 et 5 tests unitaires couvrant unset/`"false"`/`"TRUE"`/`"true"`/CORS headers ; (4) `docs/SECURITY.md` enrichi d'une section dédiée "Environment Variables / Feature Flags" pour standardiser le pattern de gating sensible. La validation a été 100% autonome : Brave MCP avec extension Claude Code authentifiée Vercel pour preview reviews, Lighthouse 100/100/100 desktop + mobile sur la prod après merge, vérification Sourcery commentaires, merge admin après green CI. Pendant la validation Brave, découverte d'un bug pré-existant : `POST /api/lti/launch` retournait `500 FUNCTION_INVOCATION_FAILED` (cold-start crash, indépendant du flag) — issue THI-134 créée en High pour suivi. Le 500 actuel sert involontairement de défense couche 1 (le module ne charge pas, donc aucun JWT n'est traité), avec le flag THI-133 comme couche 2 documentée et testée.
+
+**Ce qui a été livré :**
+- Cleanup post-Haiku : rewrite morte retirée, orphan file supprimé, endpoint Sentry corrigé (PR #168)
+- Feature flag `LTI_ENABLED` env var avec early-return 503 + CORS headers (PR #169)
+- 5 nouveaux tests unitaires LTI (1002 tests pass au total)
+- `docs/SECURITY.md` : section env vars + score actualisé 7.8 → 8.1, roadmap mise à jour
+- Audit favicon hash : risque très faible confirmé (SVG custom, pas de fallback ICO, headers OK)
+- 2 nouvelles mémoires Claude : "challenger ma certitude" + "sprint sécurité mai 2026"
+
+**Process hardening :**
+- Validation autonome via Brave MCP (extension Claude Code) : navigation preview, console, network, fetch endpoint, Lighthouse — sans demander à Thierry de cliquer
+- Issue Linear créée AVANT branche (THI-133, THI-134), statut In Progress → Done à chaque étape
+- Sourcery commentaires lus systématiquement avant merge (boilerplate français = pas de suggestion = OK)
+- security-auditor agent ré-exécuté à fresh pour éviter de travailler sur une liste obsolète
+
+**Validation :**
+- 1002 tests Vitest pass (5 nouveaux LTI), 0 fail, 20 skipped
+- Lighthouse prod desktop : 100 a11y / 100 BP / 100 SEO
+- Lighthouse prod mobile : 100 / 100 / 100
+- CI verte sur PRs #168 + #169 (Type-check · Lint · Test · Build)
+- Sourcery green sur les 2 PRs
+- Vercel preview deploy SUCCESS
+- Console prod terminallearning.dev : 0 erreur
+
+**Leçon :** Quand un agent comme `security-auditor` retourne un score à plusieurs décimales, ce n'est pas le score qui compte — c'est la séquence d'attaque sur les findings ordonnée par sévérité, sans saut, avec issue Linear avant code et PR-par-finding. Et surtout : à 2h48 du matin, quand Claude propose un fix sur une hypothèse non vérifiée ("retirer @sentry/node"), Thierry a raison de challenger ("tu es sûr ?"). La discipline du diagnostic > la vitesse du fix. Test isolé minimal > fix spéculatif rapide. Cette leçon est désormais en mémoire `feedback_challenge_certainty.md`.
+
+---
+
 ## Stabilisation post-incident — Catastrophe Haiku & remediation
 *25 avril 2026 · Stabilisation main · Process hardening*
 
