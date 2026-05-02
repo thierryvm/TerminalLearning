@@ -1,6 +1,9 @@
-# Security — Audit Report & Incident Log
+# Security — Audit Report & Internal Roadmap
 
-> **Last Updated:** 2026-05-01  
+> **Internal working doc** — fresh audit findings (`security-auditor` agent), feature-flag inventory, and remediation tracking with Linear issue refs (THI-XXX).
+> For the **public-facing security policy** (vulnerability disclosure process, supported versions, full threat model, public Incident Log including Incidents 006 + 007), see [`SECURITY.md`](../SECURITY.md) at the repo root.
+>
+> **Last Updated:** 2026-05-02
 > **Audited By:** `security-auditor` agent (OWASP Top 10 2021 + API Security Top 10 2023)
 
 ---
@@ -20,36 +23,36 @@
 
 ---
 
-### High Issues (Phase 9 Gates)
-1. **[H1] RLS Policy Drift**
-   - **Root Cause:** Migrations 010 and 011 both modify `institutions` SELECT policy
-   - **Migration 010:** `authenticated to select any institution`
-   - **Migration 011:** `role-based filtering (super_admin sees all, others see own)`
-   - **Issue:** If both policies coexist, 010 takes precedence (permissive), defeating 011's security
-   - **Resolution:** Query `pg_policies` on production to confirm current state; create migration 012 if both policies present
-   - **Phase:** Phase 9 (multi-tenancy hardening)
+### High Issues — Active
 
-2. **[H2-H6]** Other high-severity findings documented in security-auditor raw report
+1. **[H1] LTI launch endpoint accepts forged JWTs in prod** — ✅ Mitigated 2026-05-01 via `LTI_ENABLED` feature flag (THI-133, PR #169). Phase 7c will add the actual RS256 JWK validation and lift the gate.
+2. **[H2] LTI launch endpoint has no rate limiting** — 🔄 Backlog (extract sliding window from `api/sentry-tunnel.ts` to shared `api/_lib/rateLimit.ts`, apply to both endpoints).
+3. **[H3] Git history credential exposure** (`TerminalLearning2026!`) — 🔄 Accepted residual risk; `git filter-repo` requires force-push validation. Test users rotated via Supabase Admin API. See Incident-006 in [`/SECURITY.md`](../SECURITY.md).
 
----
+### High Issues — Resolved
 
-### Medium Issues (Phase 9 Backlog)
-- Key manager default encryption mode (use encrypted by default for THI-112)
-- CSP `connect-src` coverage for Sentry tunnel rate limiting
-- Session token storage validation
-- SSRF prevention on Sentry tunnel (already mitigated in THI-120)
+- **[H-RLS] RLS Policy Drift on `institutions` SELECT** — ✅ Resolved by migration 012 (drop permissive policy 010, keep restrictive 011). Verified on production.
 
 ---
 
-## Incident-006: Password Exposure in RBAC Test Kit
+### Medium Issues — Active (security-auditor 2026-05-01 findings)
 
-**Date:** 2026-04-21  
-**Discovered By:** security-auditor agent  
-**Impact:** Test users only (no production data)  
-**Response:**
-1. ✅ Rotated 5 test user passwords via Supabase Admin API
-2. ✅ Pre-commit hook strengthened (word boundary regex for password/secret patterns)
-3. 🔜 Git filter-repo (low priority — repo is public, exposure was test credentials)
+| # | Finding | Phase / Issue |
+|---|---------|---------------|
+| M1 | CSP `script-src` may need SHA-256 hashes for Vite inline scripts | Audit needed |
+| M2 | `vercel.live` in CSP applies to prod (preview-only intended) | Split CSP preview vs prod |
+| M3 | CORS LTI launch fixed to `terminallearning.dev` — verify against real LTI 1.3 flow | Phase 7c |
+| M4 | `keyManager.ts` defaults to plain localStorage (`encrypt: false`) | THI-112 (BYOK AiKeySetup) |
+| M5 | Migration 010 `institutions: select by role` — drift risk if 010→011→012 not applied in order | Phase 9 multi-tenancy |
+| M6 | Sentry scrubber only covers `type === 'event'` — `transaction`/`profile`/`check_in` ignored | THI-120 follow-up |
+
+> Full raw report archived in session memory + Linear THI-133/THI-134 issues. Re-run `security-auditor` agent for fresh findings before any release.
+
+---
+
+## Incident Log
+
+Public incident log lives in [`/SECURITY.md`](../SECURITY.md#incident-log) (Incidents 006 password exposure + 007 wrong-model session catastrophe). No duplication here to avoid drift.
 
 ---
 
@@ -67,15 +70,17 @@ Sensitive endpoints can be gated via Vercel environment variables. They default 
 
 ## Roadmap
 
-| Phase | Item | Owner | Status |
-|-------|------|-------|--------|
-| THI-133 | [H1] LTI launch endpoint forged-JWT gate | Security | ✅ 2026-05-01 (feature flag) |
-| Phase 7c | [H1 follow-up] Implement RS256 JWK validation in `verifyJwt()` then enable `LTI_ENABLED` | AI | 🔜 |
-| Phase 9 | [H1] Verify RLS policy state + create migration 012 if needed | Backend | 🔜 |
-| Phase 9 | [H1] Branch protection + code owner review (Vector 1) | Infra | 🔜 |
-| Phase 9 | [H1] Signed commits enforcement (Vector 2) | Infra | 🔜 |
-| THI-112 | [H2] Key manager encryption default (BYOK AiKeySetup) | AI | 🔜 |
-| THI-120 | [H5] Rate limiting test + Vercel KV migration | Infra | ✅ Phase 7b |
+| Phase | Item | Status |
+|-------|------|--------|
+| THI-133 | [H1] LTI forged-JWT gate (`LTI_ENABLED` feature flag) | ✅ 2026-05-01 (PR #169) |
+| THI-134 | LTI handler 500 cold-start fix (unblocks the 503 from the flag) | 🔄 In Progress (PR #170) |
+| Phase 7c | [H1 follow-up] RS256 JWK validation in `verifyJwt()` then enable `LTI_ENABLED` | 🔜 |
+| Backlog H2 | LTI launch endpoint rate limiting (shared module) | 🔜 |
+| Backlog H3 | Git history credential `git filter-repo` (force-push, accepted residual risk for now) | 🔜 |
+| Backlog M1-M6 | 6 medium findings (see table above) | 🔜 |
+| THI-112 | Key manager default encryption (`encrypt: true`) for AiKeySetup | 🔜 |
+| Phase 9 | Branch protection + code owner review + signed commits | 🔜 |
+| THI-120 | Sentry scrubber double-layer (server + client) | ✅ Phase 7b |
 
 ---
 

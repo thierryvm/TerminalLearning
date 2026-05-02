@@ -1,5 +1,8 @@
 # Security Policy
 
+> **Public security policy** — vulnerability disclosure process and threat model for external researchers and users.
+> For internal audit reports, fresh `security-auditor` findings, and developer-facing remediation roadmap, see [`docs/SECURITY.md`](docs/SECURITY.md).
+
 ## Supported Versions
 
 | Version | Supported |
