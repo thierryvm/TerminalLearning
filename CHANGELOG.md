@@ -5,6 +5,41 @@
 
 ---
 
+## Réparation dette Sourcery 14 jours + leçon merge-strategies + prépa Tuteur IA
+*2 mai 2026 après-midi · Curriculum + Tech debt + Sécurité IA gate-zero*
+
+**Le défi :** Deux PRs ouvertes depuis le 18 avril traînaient avec des feedbacks Sourcery non traités — #149 (THI-108 leçon `merge-strategies`) et #150 (agents-depth `curriculum-validator` + `test-runner`). 14 jours de silence pour des suggestions concrètes : regex `validateMergeStrategies` trop stricte, détection `.only/.skip` qui catchait les commentaires, `main` au lieu de `origin/main` pour les delta checks, typo doc FR. Plus une nouvelle règle process imposée le matin par PR #180 : `gh pr list --state open` obligatoire à chaque shutdown, précisément pour ne plus laisser pourrir des PRs comme celles-là.
+
+**Ce qui a été livré :**
+- **PR #180** — règle CLAUDE.md `gh pr list` shutdown obligatoire (mot interdit "rien d'orphelin" sans la vérification)
+- **PR #149 (THI-108)** — leçon `merge-strategies` dans le module GitHub & Collaboration, entre `pull-requests` et `conflicts`. 3 démos côte à côte (`--no-ff` / `--squash` / `--rebase`) + tableau de décision + tip GitHub settings + warning rebase branche partagée. Validator réécrit en token-based (regex monstre → fonction lisible) acceptant ordre flag/branche flexible et flags harmless (`-m "msg"`, `--no-edit`), rejetant les combinaisons conflictuelles (`--no-ff --squash`). +6 tests unitaires.
+- **PR #150** — `curriculum-validator` et `test-runner` agents : pattern `.only/.skip` resserré sur `(it|describe|test|suite)\.` + post-filter commentaires JS, base branch `origin/main` avec override `BASE_BRANCH`, doc FR corrigée.
+
+**Validation autonome :**
+- CI verte sur les 3 PRs · Sourcery `skipped` (rate limit hebdo, acceptable selon CLAUDE.md)
+- Validation visuelle Chrome DevTools MCP : navigation /app → module GitHub → leçon merge-strategies → exercice `git merge --no-ff feature/ma-feature` validé fonctionnellement (auto-nav vers leçon suivante, progression `0/7 → 1/7`)
+- Lighthouse preview a11y/BP 100, SEO 66 (`X-Robots-Tag: noindex` automatique Vercel — confirmé via curl)
+- Lighthouse **prod** desktop + mobile : a11y/BP/SEO **100/100/100**, 47 passed / 0 failed
+- Performance trace : LCP 1101 ms (good), TTFB 31 ms, CLS 0.00, pas de render-blocking critique
+
+**Bonus session — gate-zero THI-111 :**
+- Agent `prompt-guardrail-auditor` lancé en pre-implementation sur l'infra existante (THI-110 keyManager + THI-120/140 Sentry scrubber + CSP + rate-limit) → ✅ CLEAN, 0 CRITICAL, score 9/10
+- Plan détaillé THI-111 écrit dans `.claude/plans/thi-111-aitutorpanel.md` (377 lignes, 10 sections : Scope IN/OUT, architecture, contrats TS, ordre d'implémentation, plan tests, risques + mitigations, checklist pré-merge)
+- 4 décisions stratégiques actées avec Thierry : feature flag `VITE_AI_TUTOR_ENABLED=false` par défaut, modèle OpenRouter `meta-llama/llama-3.3-70b-instruct:free`, trigger UX icône bas-droit + `Ctrl+I` + guide utilisateur dédié pour public novice, ton refus socratique avec mode adaptatif anti-frustration
+
+**Validation :**
+- 1029 → 1035 tests unitaires pass (+6 sur `validateMergeStrategies`) / 0 fail / 20 RBAC skipped
+- TypeScript strict + ESLint clean
+- 0 PR ouverte en fin de session (règle THI-180 respectée)
+- Linear THI-108 → Done, gh pr list = empty
+
+**Process :**
+- Discipline préserver design existant : aucune modif hors-scope, séparation stricte fixup Sourcery / scope original
+- Validation autonome via Chrome DevTools MCP (mémoire `feedback_preview_validation_brave.md`) — Thierry pas dérangé pour cliquer
+- Audit gate-zero AVANT implémentation pour éviter blocker surprise en fin de chantier (pattern `executing-plans` superpowers + ADR-005 § 4)
+
+---
+
 ## Sprint sécurité — clôture des HIGH + 2 MEDIUM résolus + agent route-attack-auditor
 *2 mai 2026 · Sécurité · Couverture défensive complète*
 

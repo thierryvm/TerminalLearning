@@ -95,7 +95,7 @@ These files remain in `.archive/` for historical reference. Current session prot
 | ARCHITECTURE.md | 14 April 2026 | 🟢 Active |
 | SECURITY.md | 1 May 2026 | 🟢 Active |
 | CONVENTIONS.md | 13 April 2026 | 🟢 Active |
-| plan.md | 2 May 2026 (sprint sécurité clos) | 🟢 Active |
+| plan.md | 2 May 2026 (sprint sécurité clos + session PM cleanup THI-108 + gate-zero THI-111) | 🟢 Active |
 | security-audit-log.md | 2 May 2026 (audit run 1 May logged) | 🟢 Active |
 | GUIDELINES.md | 11 April 2026 | 🟡 Stable |
 | vercel-firewall.md | 14 April 2026 | 🟢 Active |
