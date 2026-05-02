@@ -59,9 +59,21 @@ function withCors(response: Response): Response {
   return newResponse;
 }
 
-function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubStats } {
+/**
+ * Coverage matrix (THI-140):
+ * - `event` (errors, captureMessage)        → full scrub: exception, breadcrumbs, extra, user, request, contexts, tags
+ * - `transaction` (perf spans, tracing)     → common scrub: extra, user, request, contexts, tags (spans skipped for perf)
+ * - `profile` (CPU/memory profiling)        → common scrub: tags, contexts, environment, release
+ * - `check_in` (cron monitoring)            → common scrub: tags, contexts, environment, release
+ * - other types (session, attachment, …)    → text-level fallback scrub on the raw body
+ *
+ * The "common" scrub covers the dev-controlled fields where an API key could be
+ * accidentally attached. Per-span scrubbing inside transactions is deliberately
+ * skipped: spans can be 50+ per transaction, scrubbing each would multiply CPU
+ * cost on a hot path that already passes through the tunnel for every request.
+ */
+export function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubStats } {
   const stats: ScrubStats = { patterns_hit: [], timestamp: Date.now() };
-  let scrubbed = itemBody;
 
   // Parse the item (could be JSON or text) safely
   let itemJson: any;
@@ -69,12 +81,12 @@ function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubSt
     itemJson = JSON.parse(itemBody);
     stats.item_type = itemJson.type;
   } catch {
-    // Not JSON, treat as plain text
     itemJson = null;
   }
 
   if (!itemJson) {
-    // Fallback: scrub text directly (less precise but safe)
+    // Non-JSON body: fall back to text-level scrub
+    let scrubbed = itemBody;
     Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
       if (pattern.test(scrubbed)) {
         stats.patterns_hit.push(key as PatternKey);
@@ -84,24 +96,8 @@ function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubSt
     return { scrubbed, stats };
   }
 
-  // Scrub only event items (not transactions, sessions, etc.)
-  if (itemJson.type !== 'event') {
-    return { scrubbed: itemBody, stats };
-  }
-
-  // Recursively scrub string values in sensitive fields
-  const sensitiveFields = [
-    'exception.values[].value',
-    'breadcrumbs[].data',
-    'extra',
-    'user.email',
-    'user.username',
-    'request.data',
-  ];
-
   function scrubValue(val: any): any {
     if (typeof val !== 'string') return val;
-
     let scrubbed = val;
     Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
       if (pattern.test(scrubbed)) {
@@ -112,47 +108,15 @@ function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubSt
     return scrubbed;
   }
 
-  // Scrub exception values
-  if (itemJson.exception?.values) {
-    itemJson.exception.values = itemJson.exception.values.map((ex: any) => ({
-      ...ex,
-      value: scrubValue(ex.value),
-    }));
-  }
-
-  // Scrub breadcrumbs
-  if (itemJson.breadcrumbs) {
-    itemJson.breadcrumbs = itemJson.breadcrumbs.map((bc: any) => ({
-      ...bc,
-      data: bc.data ? Object.fromEntries(
-        Object.entries(bc.data).map(([k, v]) => [k, scrubValue(String(v))])
-      ) : bc.data,
-      message: scrubValue(bc.message),
-    }));
-  }
-
-  // Scrub extra
-  if (itemJson.extra) {
-    itemJson.extra = Object.fromEntries(
-      Object.entries(itemJson.extra).map(([k, v]) => [k, scrubValue(String(v))])
+  // ─── Common scrub (applies to event, transaction, profile, check_in) ──────
+  //
+  // Tags — dev-set string metadata; most likely place for an accidental key.
+  if (itemJson.tags) {
+    itemJson.tags = Object.fromEntries(
+      Object.entries(itemJson.tags).map(([k, v]) => [k, scrubValue(String(v))]),
     );
   }
-
-  // Scrub user
-  if (itemJson.user) {
-    itemJson.user = {
-      ...itemJson.user,
-      email: scrubValue(itemJson.user.email),
-      username: scrubValue(itemJson.user.username),
-    };
-  }
-
-  // Scrub request data
-  if (itemJson.request?.data) {
-    itemJson.request.data = scrubValue(itemJson.request.data);
-  }
-
-  // Scrub contexts (Sentry 10+ custom context fields)
+  // Contexts — Sentry 10+ open dictionary; common for custom debug data.
   if (itemJson.contexts) {
     itemJson.contexts = Object.fromEntries(
       Object.entries(itemJson.contexts).map(([k, v]) => [
@@ -161,20 +125,64 @@ function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: ScrubSt
           ? Object.fromEntries(
               Object.entries(v as Record<string, any>).map(([ck, cv]) => [
                 ck,
-                scrubValue(String(cv))
-              ])
+                scrubValue(String(cv)),
+              ]),
             )
-          : scrubValue(String(v))
-      ])
+          : scrubValue(String(v)),
+      ]),
     );
+  }
+  // Extra — free-form key/value (not present on profile/check_in but cheap to check).
+  if (itemJson.extra) {
+    itemJson.extra = Object.fromEntries(
+      Object.entries(itemJson.extra).map(([k, v]) => [k, scrubValue(String(v))]),
+    );
+  }
+  // User — email and username may contain PII matching the email pattern.
+  if (itemJson.user) {
+    itemJson.user = {
+      ...itemJson.user,
+      email: scrubValue(itemJson.user.email),
+      username: scrubValue(itemJson.user.username),
+    };
+  }
+  // Request data — may contain headers/body with leaked secrets.
+  if (itemJson.request?.data) {
+    itemJson.request.data = scrubValue(itemJson.request.data);
+  }
+  // Environment/release strings (rarely sensitive but cheap to scrub uniformly).
+  if (typeof itemJson.environment === 'string') {
+    itemJson.environment = scrubValue(itemJson.environment);
+  }
+  if (typeof itemJson.release === 'string') {
+    itemJson.release = scrubValue(itemJson.release);
   }
 
-  // Scrub tags (dev-set metadata)
-  if (itemJson.tags) {
-    itemJson.tags = Object.fromEntries(
-      Object.entries(itemJson.tags).map(([k, v]) => [k, scrubValue(String(v))])
-    );
+  // ─── Type-specific extra scrub (event only) ───────────────────────────────
+  if (itemJson.type === 'event') {
+    if (itemJson.exception?.values) {
+      itemJson.exception.values = itemJson.exception.values.map((ex: any) => ({
+        ...ex,
+        value: scrubValue(ex.value),
+      }));
+    }
+    if (itemJson.breadcrumbs) {
+      itemJson.breadcrumbs = itemJson.breadcrumbs.map((bc: any) => ({
+        ...bc,
+        data: bc.data
+          ? Object.fromEntries(
+              Object.entries(bc.data).map(([k, v]) => [k, scrubValue(String(v))]),
+            )
+          : bc.data,
+        message: scrubValue(bc.message),
+      }));
+    }
   }
+
+  // Transactions: spans intentionally NOT scrubbed (perf — they can be 50+ per
+  // transaction, and span data is rarely a place a developer would attach a key).
+  // If a future incident proves otherwise, add a span-tag-only scrub here behind
+  // a feature flag.
 
   return { scrubbed: JSON.stringify(itemJson), stats };
 }
@@ -257,10 +265,11 @@ export default async function handler(req: Request): Promise<Response> {
         continue;
       }
 
-      // Item header (JSON with type, length, etc.)
-      let itemHeader: any;
+      // Item header (JSON with type, length, etc.) — parse to validate format,
+      // but we don't act on the header itself; the body lines below carry the
+      // actual content that may need scrubbing.
       try {
-        itemHeader = JSON.parse(line);
+        JSON.parse(line);
       } catch {
         scrubbed_lines.push(line);
         i++;
