@@ -1,11 +1,9 @@
 /**
- * THI-135 — Diagnose if importing rateLimit module crashes Node.js cold-start.
+ * THI-135 — Test sans import externe (uniquement type @vercel/node).
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { extractClientIp } from '../../lib/rateLimit';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  const ip = extractClientIp(req.headers);
-  res.status(200).json({ ok: true, ip });
+export default function handler(_req: VercelRequest, res: VercelResponse) {
+  res.status(200).json({ ok: true, mode: 'no-external-import' });
 }
