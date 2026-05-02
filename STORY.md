@@ -379,6 +379,28 @@ Cette section restera dans le journal. Pas par fierté, et pas par honte. Par ho
 
 ---
 
+## La nuit du 1er-2 mai — Sécurité, discipline, et la vérité de "tu es sûr ?"
+
+Une semaine après la nuit Haiku, on rouvre le projet. Premier réflexe : audit `security-auditor` à fresh, parce qu'on ne peut plus se contenter de la mémoire d'un audit antérieur — la posture sécurité bouge à chaque PR, et travailler sur une vieille liste de findings c'est risquer de fixer des choses obsolètes pendant que des vraies failles dorment.
+
+Le rapport tombe : **score 8.1/10**, 0 CRITICAL, 3 HIGH, 6 MEDIUM, 7 LOW. La photographie est saine, mais un finding HIGH attire l'œil tout de suite : `POST /api/lti/launch` est déployé en production avec un placeholder `TODO_PHASE7C_PUBLIC_KEY` comme clé de vérification JWT et `ignoreExpiration: true` dans le bloc actif. Concrètement : n'importe qui sur Internet pouvait fabriquer un JWT avec rôle `Instructor` venant prétendument de `canvas.instructure.com`, l'envoyer à mon endpoint, et polluer mon Sentry avec des claims arbitraires. En SPIKE phase l'impact restait limité (pas de persistence DB), mais en Phase 7c c'aurait été l'usurpation d'identité institution_admin.
+
+Décision séquencée par sévérité, sans sauter d'étape : d'abord PR #168 pour nettoyer les résidus encore visibles de la catastrophe Haiku (une réécriture morte vers `/api/csp-nonce` qui pointait dans le mauvais dossier — la prod tenait par chance grâce au cache CDN — et un endpoint Sentry placeholder `o1234.ingest.sentry.io` qui n'avait jamais été un vrai endpoint, juste un artefact du revert). Ensuite Linear THI-133 créée en Urgent, puis branche `fix/thi-133-lti-feature-flag`, feature flag `LTI_ENABLED` env var avec early-return 503, 5 tests unitaires couvrant unset / `"false"` / `"TRUE"` (case-sensitive) / `"true"` / CORS headers présents, et `docs/SECURITY.md` enrichi d'une section dédiée "Environment Variables / Feature Flags" pour standardiser le pattern.
+
+La validation s'est faite en autonomie complète, comme on a appris : Brave MCP avec extension Claude Code authentifiée Vercel, navigation sur la preview, lecture des messages console, fetch direct sur l'endpoint LTI pour vérifier le 503, Lighthouse desktop + mobile sur la prod après merge. Tout vert. 1002 tests pass, 0 fail. CI green. Sourcery green. Merge admin.
+
+Et c'est pendant cette validation que tombe la découverte qui change la nuit : `POST /api/lti/launch` ne renvoie pas 503. Il renvoie `500 FUNCTION_INVOCATION_FAILED`. Le module crash au cold-start, avant même que mon early-return puisse s'exécuter. Bonne nouvelle dans la mauvaise nouvelle : le 500 sert involontairement de défense couche 1 (le module ne charge pas, donc aucun JWT n'est traité, forgé ou non) — et mon flag THI-133 reste la couche 2 documentée et testée. Issue THI-134 créée en High pour suivi.
+
+Et c'est là, à 2h48 du matin, qu'arrive le moment qui mérite d'être raconté. Claude propose de retirer `@sentry/node` du fichier comme fix, en présentant ça comme la solution évidente — "c'était la dépendance manquante au début, même après ajout au package.json le 500 persiste, donc c'est probablement Sentry, on retire et on voit". Thierry challenge directement : "retirer @sentry/node tu es sur de toi ?". Et là, honnêtement, il faut admettre que non. Pas 100% sûr. C'était une hypothèse forte mais pas confirmée — le 500 pouvait aussi venir de `jsonwebtoken`, d'un quirk Vercel Fluid Compute autour de `Buffer.from()`, d'une déclaration runtime obsolète, ou d'autre chose. La bonne réponse n'était pas un fix spéculatif, c'était un test isolé minimal pour identifier la cause avant de toucher quoi que ce soit.
+
+Sa réaction : "voilà, il faut te challenger quand tu n'es pas certain à 100%". Cette phrase mérite une mémoire dédiée, parce qu'elle pointe une habitude que je dois corriger : présenter une hypothèse comme une conclusion, parce que ça donne l'impression d'avoir avancé. Or avancer dans la mauvaise direction sans déclarer son incertitude, c'est faire perdre du temps et créer du chaos plus tard. La discipline du diagnostic prime sur la vitesse du fix. Cinq minutes de test isolé qui donnent une réponse définitive battent trente minutes de fix qui peuvent échouer.
+
+THI-134 reste donc en cours. La branche `fix/thi-134-lti-cold-start` existe, le revert de l'hypothèse non validée a été fait, la PR #170 attend qu'on reprenne demain avec un endpoint test trivial pour isoler la cause avant d'y toucher. Le 500 actuel continue à protéger l'endpoint en attendant.
+
+Ce que je retiens de cette session : **les agents et la mémoire ne servent pas à fixer plus vite, ils servent à fixer plus juste**. Et quand un humain (ici Thierry, fatigué à 2h48 du matin, mais lucide) te dit "tu es sûr ?", la bonne réponse n'est jamais un argumentaire défensif. C'est une reconsidération honnête.
+
+---
+
 ## Épilogue ouvert
 
 Il y a des questions auxquelles on n'a pas encore de réponse.
@@ -392,4 +414,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 25 avril 2026*
+*Dernière mise à jour : 2 mai 2026*
