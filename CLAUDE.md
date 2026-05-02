@@ -96,6 +96,9 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ## Protocole de session — OBLIGATOIRE
 
 ### Agents disponibles (`.claude/agents/`)
+
+> 📖 **Index complet + matrice d'usage + fiches détaillées** : voir [`.claude/agents/README.md`](.claude/agents/README.md). Le présent CLAUDE.md liste seulement les bullets condensés.
+
 - **`linear-sync`** — vérifie PRs GitHub vs statuts Linear, détecte incohérences
 - **`curriculum-validator`** — valide structure de `curriculum.ts` avant toute modification
 - **`test-runner`** — lance vitest, retourne uniquement failures + commandes sans test
