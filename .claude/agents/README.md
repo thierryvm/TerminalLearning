@@ -2,6 +2,7 @@
 
 > Index et guide d'usage des agents internes du projet.
 > **Dernière mise à jour** : 2 mai 2026
+> ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 
 Cet index liste les **11 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
@@ -22,8 +23,8 @@ Cet index liste les **11 agents** spécialisés du projet, **quand les invoquer*
 | [`prompt-guardrail-auditor`](prompt-guardrail-auditor.md) | Haiku | ❌ | Avant PR `src/lib/ai/*` ou `src/app/components/ai/*` | ✅ CRITICAL |
 | [`route-attack-auditor`](route-attack-auditor.md) | Sonnet | ❌ | Avant PR `api/*` ou nouvel endpoint | ✅ verdict release-ready |
 | [`vercel-firewall-auditor`](vercel-firewall-auditor.md) | Sonnet | ❌ | Avant release majeure ou modif firewall | ⚠️ WARN si rules cassées |
-| [`rbac-flow-tester`](rbac-flow-tester.md) | (default) | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
-| [`sustain-auditor-spec`](sustain-auditor-spec.md) | (spec) | ❌ scheduled trimestriel | À la demande | ⚠️ score 1-10 |
+| [`rbac-flow-tester`](rbac-flow-tester.md) | Haiku | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
+| [`sustain-auditor-spec`](sustain-auditor-spec.md) | Haiku (spec, non instanciée) | ❌ scheduled trimestriel (à instancier) | À la demande (manuel) | ⚠️ score 1-10 |
 
 ---
 
@@ -60,7 +61,10 @@ rbac-flow-tester  # Si Phase 9+ activée
 ### 4. Trimestriellement (santé du projet long-terme)
 
 ```bash
-sustain-auditor  # Manuel ou scheduled — voir spec
+# ⚠️ NOTE: sustain-auditor est actuellement une spec (sustain-auditor-spec.md),
+# pas un agent invocable. Voir fiche détaillée plus bas pour le statut.
+# Tant que pas instancié → audit manuel par lecture de la spec.
+sustain-auditor  # Quand l'agent sera instancié à partir de la spec
 ```
 
 ---
@@ -89,7 +93,7 @@ sustain-auditor  # Manuel ou scheduled — voir spec
 ### `content-auditor` — Audit pédagogique global
 
 **Modèle** : Haiku
-**Créé** : avril 2026 (THI-45) — coverage env, cohérence curriculum↔terminalEngine↔tests, validité liens externes (WebFetch), cohérence prérequis, qualité `validate()`. Long à exécuter (~5 min).
+**Créé** : avril 2026 (THI-45) — coverage env, cohérence curriculum↔terminalEngine↔tests, validité des liens externes (WebFetch), cohérence prérequis, qualité `validate()`. Long à exécuter (~5 min).
 **Quand l'invoquer** : avant releases majeures uniquement, pas à chaque PR.
 
 ### `security-auditor` — OWASP black-hat
@@ -125,8 +129,8 @@ sustain-auditor  # Manuel ou scheduled — voir spec
 
 ### `rbac-flow-tester` — Vérification flow RBAC
 
-**Modèle** : (default — non spécifié)
-**Créé** : avril 2026 — vérifie le flow complet RBAC pour les 5 test users via Supabase REST API. Invoke avant chaque release Phase 9+. Confirme login + role assignment + RLS isolation intacts.
+**Modèle** : Haiku (pass/fail structuré, pas de judgment — frontmatter complété PR #186)
+**Créé** : avril 2026 — vérifie le flow complet RBAC pour les 5 test users via Supabase REST API. À invoquer avant chaque release Phase 9+. Confirme login + role assignment + RLS isolation intacts.
 **Lié** : THI-37 (RBAC complet, PR #92).
 
 ### `sustain-auditor-spec` — Santé du mainteneur solo
@@ -153,6 +157,7 @@ sustain-auditor  # Manuel ou scheduled — voir spec
 3. **Ajouter une fiche détaillée** dans la section "Fiches détaillées" (modèle, créé, contexte, lié)
 4. Si auto-trigger : mettre à jour `CLAUDE.md` projet section "Protocole de session"
 5. Si bloquant merge : mettre à jour `feedback_session_protocol.md` (mémoire) section "Avant toute PR ..."
+6. **Bumper le champ "Dernière mise à jour"** au tout début de ce README (ligne 4) avec la date du jour (format `JJ mois AAAA`)
 
 ## Convention — modèle Haiku vs Sonnet
 
