@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 vi.mock('@sentry/node', () => ({
   captureMessage: vi.fn(),
@@ -8,37 +9,61 @@ vi.mock('@sentry/node', () => ({
 import handler from '../../api/lti/launch';
 
 // Minimal mocks for VercelRequest / VercelResponse used by the handler.
-function createReq(opts: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) {
+// Use `unknown` then cast at the call site rather than `any`, to keep ESLint happy.
+type MockReq = {
+  method: string;
+  body: unknown;
+  headers: Record<string, string>;
+  query: Record<string, string>;
+  cookies: Record<string, string>;
+};
+
+type MockRes = {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: unknown;
+  ended: boolean;
+  status: (code: number) => MockRes;
+  setHeader: (k: string, v: string) => MockRes;
+  send: (b: unknown) => MockRes;
+  end: () => MockRes;
+};
+
+function createReq(opts: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): MockReq {
   return {
     method: opts.method ?? 'POST',
     body: opts.body,
     headers: opts.headers ?? {},
     query: {},
     cookies: {},
-  } as any;
+  };
 }
 
-function createRes() {
-  const res: any = {
+function createRes(): MockRes {
+  const res: MockRes = {
     statusCode: 200,
-    headers: {} as Record<string, string>,
-    body: undefined as unknown,
+    headers: {},
+    body: undefined,
     ended: false,
+    status: () => res,
+    setHeader: () => res,
+    send: () => res,
+    end: () => res,
   };
-  res.status = vi.fn((code: number) => {
+  res.status = vi.fn((code: number): MockRes => {
     res.statusCode = code;
     return res;
   });
-  res.setHeader = vi.fn((k: string, v: string) => {
+  res.setHeader = vi.fn((k: string, v: string): MockRes => {
     res.headers[k.toLowerCase()] = v;
     return res;
   });
-  res.send = vi.fn((b: unknown) => {
+  res.send = vi.fn((b: unknown): MockRes => {
     res.body = b;
     res.ended = true;
     return res;
   });
-  res.end = vi.fn(() => {
+  res.end = vi.fn((): MockRes => {
     res.ended = true;
     return res;
   });
@@ -60,7 +85,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     delete process.env.LTI_ENABLED;
     const req = createReq();
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.statusCode).toBe(503);
     expect(res.body).toBe('LTI endpoint not available');
   });
@@ -69,7 +94,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     process.env.LTI_ENABLED = 'false';
     const req = createReq();
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.statusCode).toBe(503);
   });
 
@@ -77,7 +102,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     process.env.LTI_ENABLED = 'TRUE';
     const req = createReq();
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.statusCode).toBe(503);
   });
 
@@ -85,7 +110,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     process.env.LTI_ENABLED = 'true';
     const req = createReq({ method: 'OPTIONS' });
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.statusCode).toBe(204);
   });
 
@@ -93,7 +118,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     delete process.env.LTI_ENABLED;
     const req = createReq();
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.headers['access-control-allow-origin']).toBe('https://terminallearning.dev');
     expect(res.headers['cache-control']).toBe('no-store');
     expect(res.headers['content-type']).toBe('text/plain; charset=utf-8');
@@ -103,7 +128,7 @@ describe('LTI launch endpoint — feature flag (THI-133) + Express-style handler
     process.env.LTI_ENABLED = 'true';
     const req = createReq({ method: 'GET' });
     const res = createRes();
-    await handler(req, res);
+    await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.statusCode).toBe(405);
     expect(res.headers['allow']).toBe('POST, OPTIONS');
   });
