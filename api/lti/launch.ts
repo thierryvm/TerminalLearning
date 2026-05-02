@@ -12,20 +12,20 @@
  * Vercel Node.js Function — uses Express-style `(req, res)` signature with
  * `@vercel/node` types. The Web `Request -> Response` pattern is NOT supported
  * on Vercel Node.js runtime (it works only on Edge runtime, e.g. sentry-tunnel.ts).
- * This was the THI-134 root cause: previous handler returned a Web `Response`
- * which Vercel Node.js silently waited for `res.send()` -> 504 timeout.
+ *
+ * THI-134 root cause: top-level imports of `@sentry/node` + `jsonwebtoken` crash
+ * the Vercel Node.js cold-start with FUNCTION_INVOCATION_FAILED. They are now
+ * lazy-loaded AFTER the feature-flag early-return, so the 503 path stays
+ * lightweight and the heavy deps are only loaded when LTI_ENABLED=true (Phase 7c).
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { VerifyOptions, verify } from 'jsonwebtoken';
-import * as Sentry from '@sentry/node';
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([
   'https://canvas.instructure.com',
-  'https://moodlecloud.com', // placeholder for Moodle cloud instances
-  'https://smartschool.be', // Smartschool Belgium
-  // Add instance-specific Canvas URLs as they onboard (e.g., 'https://myschool.instructure.com')
+  'https://moodlecloud.com',
+  'https://smartschool.be',
 ]);
 
 const ALLOWED_ORIGIN = 'https://terminallearning.dev';
@@ -33,7 +33,7 @@ const ALLOWED_ORIGIN = 'https://terminallearning.dev';
 interface LtiLaunchRequest {
   id_token?: string;
   lti_message_hint?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface JwtClaims {
@@ -50,7 +50,7 @@ interface JwtClaims {
     label?: string;
     title?: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LtiLaunchLog {
@@ -73,9 +73,9 @@ function setCorsHeaders(res: VercelResponse): void {
  * Fetch OIDC configuration from LMS to get public key
  * Caches result for 24h to avoid repeated fetches
  */
-const oidcConfigCache = new Map<string, { config: any; expires: number }>();
+const oidcConfigCache = new Map<string, { config: Record<string, unknown>; expires: number }>();
 
-async function getOidcConfig(issuer: string): Promise<any> {
+async function getOidcConfig(issuer: string): Promise<Record<string, unknown>> {
   const cached = oidcConfigCache.get(issuer);
   if (cached && cached.expires > Date.now()) {
     return cached.config;
@@ -86,7 +86,7 @@ async function getOidcConfig(issuer: string): Promise<any> {
   if (!response.ok) {
     throw new Error(`OIDC config fetch failed: ${response.status}`);
   }
-  const config = await response.json();
+  const config = (await response.json()) as Record<string, unknown>;
 
   oidcConfigCache.set(issuer, {
     config,
@@ -96,10 +96,7 @@ async function getOidcConfig(issuer: string): Promise<any> {
   return config;
 }
 
-/**
- * Fetch JWK Set from LMS OIDC provider
- */
-async function getJwkSet(jwksUri: string): Promise<any> {
+async function getJwkSet(jwksUri: string): Promise<unknown> {
   const response = await fetch(jwksUri, { method: 'GET' });
   if (!response.ok) {
     throw new Error(`JWKS fetch failed: ${response.status}`);
@@ -111,8 +108,9 @@ async function getJwkSet(jwksUri: string): Promise<any> {
  * Verify and decode JWT — Phase 7c (not called in SPIKE phase, see THI-133 feature flag)
  * RS256 only per LTI 1.3 spec. No HS256 (security-auditor H5 fix).
  *
- * Exported so TypeScript noUnusedLocals does not flag it; consumers pass through the
- * handler in Phase 7c once `verifyJwt()` actually validates RS256 signatures via JWK Set.
+ * Lazy-loads `jsonwebtoken` to keep the cold-start lightweight when LTI_ENABLED=false
+ * (THI-134). Exported so noUnusedLocals does not flag it; consumers will pass through
+ * the handler in Phase 7c once `verifyJwt()` actually validates RS256 signatures.
  */
 export async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
   const oidcConfig = await getOidcConfig(issuer);
@@ -120,26 +118,19 @@ export async function verifyJwt(token: string, issuer: string): Promise<JwtClaim
     throw new Error('OIDC config missing jwks_uri');
   }
 
-  // Phase 7c will pass jwkSet to verify() to extract the RS256 public key
-  // matching the kid claim in the token header.
-  void (await getJwkSet(oidcConfig.jwks_uri));
+  void (await getJwkSet(oidcConfig.jwks_uri as string));
 
-  const options: VerifyOptions = {
-    issuer,
-    algorithms: ['RS256'], // LTI 1.3 mandate: RS256 only, no HS256 (security-auditor H5)
-    ignoreExpiration: false,
-  };
+  // Lazy-load jsonwebtoken (heavy import, can crash Node.js cold-start on Vercel)
+  const { verify } = await import('jsonwebtoken');
 
-  // TODO Phase 7c: Fetch correct public key from jwkSet and pass to verify()
+  // TODO Phase 7c: extract correct public key from jwkSet matching kid claim
   return verify(token, 'TODO_PHASE7C_PUBLIC_KEY', {
-    ...options,
-    ignoreExpiration: true,
+    issuer,
+    algorithms: ['RS256'], // LTI 1.3 mandate
+    ignoreExpiration: true, // SPIKE only — Phase 7c will set false
   }) as JwtClaims;
 }
 
-/**
- * Extract role mapping from LTI claim
- */
 function mapLtiRoles(ltiRoles: string[]): string[] {
   const roleMap: { [key: string]: string } = {
     'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor': 'teacher',
@@ -155,10 +146,7 @@ function mapLtiRoles(ltiRoles: string[]): string[] {
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   setCorsHeaders(res);
 
-  // THI-133 — Phase 7c gate: LTI endpoint disabled until JWT validation is complete.
-  // The current verifyJwt() uses a placeholder public key + ignoreExpiration:true, which
-  // would accept forged JWTs with any roles/sub/iss from ALLOWED_ISSUERS. To enable, set
-  // env LTI_ENABLED=true in the Vercel project settings (Phase 7c only). See docs/SECURITY.md.
+  // THI-133 — feature flag gate: returns 503 unless LTI_ENABLED=true
   if (process.env.LTI_ENABLED !== 'true') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
@@ -176,6 +164,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(405).send('Method Not Allowed');
     return;
   }
+
+  // THI-134 — Lazy-load Sentry only when the flag is on. Top-level imports of
+  // @sentry/node crash the Vercel Node.js cold-start with FUNCTION_INVOCATION_FAILED.
+  const Sentry = await import('@sentry/node');
 
   const log: LtiLaunchLog = {
     event: 'lti_launch_received',
@@ -196,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     let claims: JwtClaims;
     try {
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8')) as JwtClaims;
       claims = payload;
       log.issuer = claims.iss;
 
@@ -207,13 +199,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       throw new Error('Failed to decode JWT payload');
     }
 
-    const ltiRoles = claims['https://purl.imsglobal.org/spec/lti/claim/roles'] || [];
+    const ltiRoles = (claims['https://purl.imsglobal.org/spec/lti/claim/roles'] as string[]) || [];
     const mappedRoles = mapLtiRoles(ltiRoles);
     log.roles = mappedRoles;
 
-    const contextId = claims['https://purl.imsglobal.org/spec/lti/claim/context']?.id;
-    if (contextId) {
-      log.context_id = contextId;
+    const contextValue = claims['https://purl.imsglobal.org/spec/lti/claim/context'] as { id?: string } | undefined;
+    if (contextValue?.id) {
+      log.context_id = contextValue.id;
     }
 
     log.event = 'lti_launch_valid';
@@ -232,7 +224,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           sub: claims.sub,
           issuer: claims.iss,
           roles: mappedRoles,
-          context_id: contextId,
+          context_id: log.context_id,
         },
       }),
     );
