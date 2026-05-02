@@ -5,6 +5,49 @@
 
 ---
 
+## Sprint sécurité — clôture des HIGH + 2 MEDIUM résolus + agent route-attack-auditor
+*2 mai 2026 · Sécurité · Couverture défensive complète*
+
+**Le défi :** La veille (1er-2 mai nuit), le sprint avait livré la mitigation H1 (THI-133 feature flag LTI) en s'arrêtant sur l'incertitude THI-134 — Claude proposait de retirer `@sentry/node` comme fix mais Thierry challengeait à raison : "tu es sûr ?". La session reprend le 2 mai avec deux objectifs : (1) finaliser THI-134 en mode rigoureux (test isolé avant tout fix), (2) avancer méthodiquement sur les MEDIUM tracés en Linear sans sacrifier la qualité — Thierry a explicitement écarté toute logique de rush "deadline 10 mai", préférant prolonger plutôt que dégrader le code. Le projet est sa vitrine pro — chaque commit visible publiquement compte autant que la fonction qu'il livre.
+
+**La méthode :** La journée a séquencé 11 PRs en respectant à chaque fois l'ordre Linear → branche → fix → tests → push → CI/Sourcery → preview Brave → Lighthouse → merge autonome. THI-134 a livré son enseignement le plus structurant : trois isolation tests successifs (endpoint sans imports → endpoint Express-style → endpoint avec imports lourds) ont identifié la vraie cause du `500 FUNCTION_INVOCATION_FAILED` — pas la syntax `runtime`, pas le nommage de fichier, mais la **combinaison Web `Request → Response` pattern + top-level imports lourds** sur Vercel Node.js. Le fix : Express-style `(req, res)` avec `@vercel/node` types, et lazy-load de `@sentry/node` + `jsonwebtoken` après le gate du feature flag. THI-135 a ensuite découvert un autre quirk : Vercel Node.js Functions ne suit pas fiablement les imports cross-fichiers (`api/_rate-limit.ts` import depuis `api/lti/launch.ts` crashait, alors que le même import depuis `api/sentry-tunnel.ts` Edge runtime fonctionnait). Décision pragmatique : copie inline des 50 lignes dans `launch.ts` avec TODO documenté + garde du module partagé pour Edge + tests centralisés. THI-140 a étendu le scrubber Sentry aux types `transaction`/`profile`/`check_in` (M6 résolu, +12 tests). THI-137 a retiré `vercel.live` de la CSP (M2 résolu) — le drop Lighthouse 100→92 BP en preview est intentionnel : c'est l'indicateur que la nouvelle CSP bloque correctement le script tier injecté automatiquement par Vercel ; la prod reste 100/100/100.
+
+**Ce qui a été livré (11 PRs) :**
+- PR #168 — cleanup résidus post-Haiku (rewrite morte, fichier orphelin, endpoint Sentry placeholder corrigé)
+- PR #169 — THI-133 feature flag `LTI_ENABLED` (HIGH H1) + 5 tests unitaires
+- PR #170 — THI-134 LTI cold-start fix (Express-style + lazy-load) + 6 tests
+- PR #171 — docs shutdown nuit 1-2 mai
+- PR #172 — clarification dual SECURITY.md (public policy vs internal audit) + cross-links
+- PR #173 — THI-135 rate limiter LTI (HIGH H2) + 14 tests + module partagé pour Edge
+- PR #174 — Sourcery follow-up (refs Linear concrets THI-136 à 140, lien vers `docs/security-audit-log.md` comme emplacement pérenne, terminologie incident alignée)
+- PR #175 — ROADMAP publique synchronisée (landing + `docs/ROADMAP.md`)
+- PR #176 — agent `route-attack-auditor` (couvre la lacune HTTP-level entre `security-auditor` et `vercel-firewall-auditor`)
+- PR #177 — THI-140 scrubber Sentry étendu aux 4 types d'envelopes (M6) + 12 tests
+- PR #178 — THI-137 retrait `vercel.live` de la CSP (M2)
+
+**Issues Linear** : 5 Done aujourd'hui (THI-133, 134, 135, 137, 140) ; 5 backlog ciblé (THI-136 M1 hashes Vite, THI-138 M3 CORS LTI flow réel bloqué Phase 7c, THI-139 M5 RLS migration order test, THI-112 M4 keyManager couplé Phase 7b, plus H3 git filter-repo accepté résiduel).
+
+**Process hardening :**
+- Discipline "Tu es sûr ?" appliquée — chaque hypothèse non vérifiée est explicitement déclarée comme telle, suivie d'un plan de diagnostic isolé avant tout fix (mémoire `feedback_challenge_certainty.md`)
+- Context7 MCP utilisé pour la doc Vercel à jour avant tâtonnement (réflexe avant fix Vercel-spécifique)
+- Validation autonome via Brave + Lighthouse à chaque PR — Thierry n'est pas dérangé pour cliquer, sauf décisions stratégiques
+- Agent `route-attack-auditor` créé pour combler la zone non couverte entre app-layer (`security-auditor`) et WAF (`vercel-firewall-auditor`)
+- Documentation rigoureuse : `docs/security-audit-log.md` reçoit chaque rapport audit avec date, score, refs Linear
+
+**Validation :**
+- 1029 tests pass / 0 fail / 20 skipped (12 nouveaux pour scrubber, 14 pour rate limiter, 6 pour LTI launch)
+- TypeScript strict + ESLint clean partout
+- Lighthouse prod desktop : 100/100/100 (47/0)
+- Lighthouse prod mobile : 100/100/100 (47/0)
+- Console prod : 0 erreur
+- `/api/lti/launch` prod : 503 en 294ms ✅ (defense-in-depth feature flag + rate limit)
+- `/api/sentry-tunnel` prod : OPTIONS 204 en ~150ms ✅ (rate limit toujours actif)
+- Score sécurité estimé post-sprint : ~8.6/10 (vs 8.1/10 audit du 1er mai — 0 HIGH actif, 4 MEDIUM ciblés en backlog)
+
+**Leçon :** La discipline du diagnostic prime systématiquement sur la vitesse du fix. Trois isolation tests successifs ont coûté 30 minutes mais ont évité un fix spéculatif qui aurait masqué la vraie cause sans la résoudre. Et Thierry l'a verbalisé clairement : "Même si je dois mettre 3 mois de plus, on respecte notre plan etc. Sans sacrifier la qualité, la scalabilité, les performances." — la deadline 10 mai n'est plus un facteur. Le projet avance dans l'ordre du plan.md, pas dans l'ordre de la pression. Cette posture est désormais ancrée comme principe directeur du sprint.
+
+---
+
 ## Sprint sécurité — résolution H1 LTI + cleanup post-Haiku résiduel
 *1-2 mai 2026 · Sécurité · CSP & API gating*
 

@@ -401,6 +401,28 @@ Ce que je retiens de cette session : **les agents et la mémoire ne servent pas 
 
 ---
 
+## Le 2 mai — clôture méthodique du sprint sécurité
+
+La journée du 2 mai a commencé par la suite directe de la veille. THI-134 attendait : le `500 FUNCTION_INVOCATION_FAILED` sur `/api/lti/launch` que Claude avait imaginé fixer en retirant `@sentry/node` sans avoir vraiment vérifié. La nuit avait servi de filtre : on reprend en mode rigoureux ou on ne reprend pas.
+
+Trois isolation tests successifs ont changé la trajectoire. Le premier — endpoint zero import — a confirmé que Vercel servait bien les routes sous `api/lti/`. Le deuxième — Express-style avec types `@vercel/node` — a montré la vraie cause : Vercel Node.js Functions ne supporte pas le pattern Web `Request → Response`, il attend `(req, res) => void` à la Express. Le troisième — Express-style + imports lourds top-level — a confirmé que `@sentry/node` et `jsonwebtoken` au top-level crashent le cold-start. Donc la solution finale est double : pattern Express **et** lazy-load après le feature flag. Le fix a tenu, le 503 prod est sorti, THI-134 est passé à Done.
+
+Une heure plus tard, THI-135 (rate limiter LTI) a livré son propre piège — Vercel Node.js Functions ne suit pas fiablement les imports vers d'autres fichiers `.ts` du projet, même dans le dossier `api/`. Le module `_rate-limit.ts` qui marchait pour `sentry-tunnel.ts` (Edge runtime) crashait pour `lti/launch.ts` (Node.js runtime). Trois renamings (cross-fichier, sous-dossier `_lib/`, hors `api/`) ont tous échoué. Décision pragmatique : copie inline des 50 lignes dans `launch.ts` avec un TODO documenté pointant vers le module partagé comme single source of truth pour les tests + l'endpoint Edge. La duplication temporaire est plus saine qu'une migration vercel.ts faite dans la précipitation.
+
+Sourcery a laissé une review structurante sur la PR #172 (cleanup dual SECURITY.md) : trois commentaires de fond — "tu mélanges identifiants Linear concrets et placeholders génériques", "le pointer 'session memory' est ambigu opérationnellement", "vérifie l'orthographe exacte de l'incident pour éviter le drift de terminologie". Une PR follow-up (#174) a créé cinq issues Linear THI-136 à THI-140 pour les findings medium qui étaient juste "M1, M2..." dans le doc, déplacé le pointer vers `docs/security-audit-log.md` (emplacement pérenne plutôt que ma mémoire de session privée), et aligné le wording d'Incident 007 avec le titre canonique du `/SECURITY.md` racine. Ces trois remarques sont exactement le genre de corrections qui distinguent une doc qui vieillit bien d'une doc qui dérive en trois mois.
+
+Et puis Thierry a posé une question importante : "Comment ce LTI ce synchronise avec mon application, faut-il tout réadapter ? Et notre sécurité est-elle performante assez pour éviter les attaques par liens pour récupérer les JWT ?". La réponse a été l'occasion de clarifier que LTI n'est pas une refonte du contenu — les 11 modules restent identiques, LTI ajoute juste auto-login + assignment + grade passback. Et la sécurité JWT en Phase 7c devra livrer la triple validation **RS256 + nonce anti-replay + claim `aud`** avant qu'`LTI_ENABLED=true` puisse être activé en prod. Sans ces trois, on n'active pas. Cette ligne rouge est désormais documentée.
+
+L'autre moment notable de la journée : Thierry a tracé une décision stratégique mature. Devant la question "8 jours avant le 10 mai et baisse de capacité du forfait, on rush ?", il a répondu : "Même si je dois mettre 3 mois de plus, on respecte notre plan etc. Sans sacrifier la qualité, la scalabilité, les performances. Ce projet c'est celui qui pourrait me permettre de me faire connaître aussi. La story.md raconte une histoire et une évolution que l'on doit respecter sans dévier dans tout les sens". Cette phrase est une boussole. Elle remplace n'importe quelle pression deadline par un critère plus exigeant : que chaque PR tienne la route trois mois plus tard quand quelqu'un cliquera dessus depuis un profil GitHub public.
+
+Le sprint sécurité se clôt sur 11 PRs livrées en 24 heures, tous les HIGH résolus (le résiduel git history est accepté et documenté), deux MEDIUM résolus aussi (M2 vercel.live retiré, M6 scrubber étendu), et un nouvel agent `route-attack-auditor` qui couvre la zone HTTP-level qu'aucun agent existant ne traitait. Score estimé post-sprint : 8.6/10 contre 8.1/10 à l'entrée. Et surtout : la prod tient, les tests passent, Lighthouse 100/100/100, console clean. Pas de raccourci, pas de dette accumulée, pas de fix spéculatif.
+
+La suite, c'est Phase 7b AI Tutor V1 — THI-111 AiTutorPanel. C'est un gros chantier qui mérite une session fraîche. Pas tout de suite. Demain.
+
+Ce que je retiens de cette journée : **la discipline du diagnostic prime systématiquement sur la vitesse du fix**. Trois isolation tests valent mieux qu'un fix spéculatif. Une copie inline documentée vaut mieux qu'une migration faite sous pression. Une review Sourcery prise au sérieux vaut mieux qu'un merge rapide. Et un humain qui dit "on prend notre temps, on respecte la qualité" est le meilleur garde-fou qu'un projet puisse avoir.
+
+---
+
 ## Épilogue ouvert
 
 Il y a des questions auxquelles on n'a pas encore de réponse.
@@ -414,4 +436,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 2 mai 2026*
+*Dernière mise à jour : 2 mai 2026 (clôture sprint sécurité)*
