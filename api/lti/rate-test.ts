@@ -3,7 +3,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { extractClientIp } from '../_lib/rateLimit';
+import { extractClientIp } from '../../lib/rateLimit';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   const ip = extractClientIp(req.headers);
