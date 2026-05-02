@@ -31,7 +31,7 @@ No account required. No setup. Just open it and start learning.
 
 - 🖥️ **Interactive terminal** — type real commands, get real feedback (not just theory)
 - 🌍 **Multi-environment** — learn on Linux, macOS, or Windows — the interface adapts
-- 🔒 **Progressive curriculum** — 11 modules, 64 lessons, 900 unit tests
+- 🔒 **Progressive curriculum** — 11 modules, 64 lessons, 1000+ unit tests
 - 🤖 **AI as a dev tool** — dedicated module on using AI professionally (prompts, validation, limits)
 - 💾 **Progress saved automatically** — locally, or synced to the cloud with a free account
 - 📖 **Contextual help** — `help <command>` returns usage and examples for your environment
@@ -83,15 +83,19 @@ Full architecture, data flow diagrams, and database schema are documented in [do
 
 ## 🔒 Security
 
-Security is built in from day one:
+Security is built in from day one — current `security-auditor` score: **~8.6/10** (post 1-2 May 2026 sprint, 0 active HIGH).
 
-- **Strict CSP** — no `unsafe-eval`, enforced via `vercel.json`
+- **Strict CSP** — no `unsafe-eval`, no `unsafe-inline`, SHA-256 hash for critical CSS, no third-party `vercel.live` in prod
 - **Auth** — Supabase Auth with PKCE flow, JWT rotation, built-in rate limiting
 - **Database** — Row Level Security on all tables, anon key only client-side
+- **API** — sliding-window rate limiter (50 req/min per IP, non-spoofable `x-vercel-forwarded-for`) on `/api/sentry-tunnel` and `/api/lti/launch`
+- **LTI endpoint** — gated behind `LTI_ENABLED` env flag (returns 503 by default until Phase 7c RS256 JWK validation lands)
+- **Sentry tunnel** — server-side scrubber redacts API keys / JWTs / PII from envelopes before forwarding (covers `event`, `transaction`, `profile`, `check_in` types)
 - **GDPR** — cookieless analytics, privacy page at `/privacy`, no PII in logs
 - **CI** — `npm audit` + GitHub Dependabot on every push
+- **Specialized auditing agents** — `security-auditor` (app-layer), `route-attack-auditor` (HTTP-level), `vercel-firewall-auditor` (WAF), `prompt-guardrail-auditor` (LLM)
 
-Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
+Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md). Internal audit log: [docs/security-audit-log.md](docs/security-audit-log.md).
 
 ---
 
@@ -104,7 +108,7 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md)
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 900 unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 1000+ unit tests + 176 E2E |
 | **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
 | **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
 | **THI-29** | ✅ Done | Module 11 — AI as a dev tool (12 lessons, `ai-help` command) |

@@ -3,15 +3,16 @@
 > **Internal working doc** — fresh audit findings (`security-auditor` agent), feature-flag inventory, and remediation tracking with Linear issue refs (THI-XXX).
 > For the **public-facing security policy** (vulnerability disclosure process, supported versions, full threat model, public Incident Log including Incidents 006 + 007), see [`SECURITY.md`](../SECURITY.md) at the repo root.
 >
-> **Last Updated:** 2026-05-02
+> **Last Updated:** 2026-05-02 (sprint sécurité clos)
 > **Audited By:** `security-auditor` agent (OWASP Top 10 2021 + API Security Top 10 2023)
 
 ---
 
-## Current Score: 8.1/10
+## Current Score: ~8.6/10
 
-> Score updated 2026-05-01 after PR #168 (post-Haiku cleanup) and fresh `security-auditor` run.
-> 0 CRITICAL · 3 HIGH · 6 MEDIUM · 7 LOW.
+> Estimated post-sprint 1-2 May 2026 (initial audit 8.1/10 → after 5 issues Done).
+> 0 CRITICAL · 0 active HIGH (3 résolus / accepté résiduel) · 4 MEDIUM ciblés en backlog · 7 LOW.
+> Re-run `security-auditor` agent before THI-111 ship for an updated official score.
 
 ### Critical Issues (Blocking)
 1. **[C1] Git History Credential Exposure**
