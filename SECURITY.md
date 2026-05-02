@@ -113,7 +113,7 @@ Automated security auditing specifically for LLM-based AI Tutor V1:
 
 Public log of past security incidents and their remediation. Detailed audit-log entries (timestamps, regression vectors, fix PRs) are in [`docs/security-audit-log.md`](docs/security-audit-log.md).
 
-### Incident 008 — Vercel bypass + access token rotation forensic (2 May 2026 PM)
+### Incident 008 — Vercel bypass + access token rotation (forensic review, 2 May 2026 PM)
 
 **Severity**: LOW — Investigative discovery, no production impact, no data leak  
 **Component**: Vercel account — Deployment Protection bypass + access tokens  
@@ -132,7 +132,7 @@ Public log of past security incidents and their remediation. Detailed audit-log 
 3. **Access token rotation** — old `vcp_5BbF…xllu` deleted via `DELETE /v3/user/tokens/{id}` (HTTP 200 confirmed), replaced by new `vcp_3zDw…oq2` created via Vercel Dashboard UI
 
 **Residual risk acknowledged**:
-- New token `vcp_3zDw…oq2` appeared in clear in the Chrome DevTools accessibility tree snapshot during the "Token Created" dialog capture, therefore present in this conversation's logs. **Second rotation manually scheduled** for the next session without any Claude/MCP active on the page.
+- New token `vcp_3zDw…oq2` appeared in the clear in the Chrome DevTools accessibility tree snapshot during the "Token Created" dialog capture, therefore present in this conversation's logs. **Second rotation manually scheduled** for the next session without any Claude/MCP active on the page.
 
 **Process improvements shipped same session**:
 - `security-auditor` agent reinforced (PR #182) with new "Vercel posture audit" section covering: tokens listing, project events log, bypass entries inspection, "MCP client" pattern detection, navigation discipline check
