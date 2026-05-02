@@ -20,12 +20,61 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import {
-  extractClientIp,
-  isRateLimited,
-  maybeCleanup,
-  DEFAULT_RATE_POLICY,
-} from '../_rate-limit';
+
+// ─── Rate limiting (sliding window per IP) ────────────────────────────────────
+// IMPORTANT: this logic is duplicated from api/_rate-limit.ts (which serves
+// api/sentry-tunnel.ts on the Edge runtime). Inline copy here is intentional:
+// Vercel Node.js Functions bundling does not reliably follow imports to other
+// .ts files in the project at the time of THI-135 (May 2026). Importing the
+// shared module reproducibly causes FUNCTION_INVOCATION_FAILED at cold-start.
+//
+// The shared module remains the single source of truth for unit tests
+// (src/test/rateLimit.test.ts) and the Edge sentry-tunnel consumer. This inline
+// copy must stay byte-equivalent in behaviour; the test suite covers the shared
+// module, and any drift between the two would cost us the duplication's only
+// safety net.
+// TODO: revisit when migrating to vercel.ts config or when Vercel resolves
+// Node.js bundle resolution for cross-file .ts imports.
+
+const RATE_POLICY = { max: 50, windowMs: 60_000 };
+const CLEANUP_INTERVAL_MS = 5 * 60_000;
+const rateLimitMap = new Map<string, { timestamps: number[] }>();
+let lastCleanup = Date.now();
+
+function isRateLimited(ip: string, now: number): boolean {
+  const entry = rateLimitMap.get(ip) ?? { timestamps: [] };
+  entry.timestamps = entry.timestamps.filter((t) => now - t < RATE_POLICY.windowMs);
+  if (entry.timestamps.length >= RATE_POLICY.max) {
+    rateLimitMap.set(ip, entry);
+    return true;
+  }
+  entry.timestamps.push(now);
+  rateLimitMap.set(ip, entry);
+  return false;
+}
+
+function maybeCleanup(now: number): void {
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  lastCleanup = now;
+  for (const [ip, entry] of rateLimitMap) {
+    if (entry.timestamps.every((t) => now - t >= RATE_POLICY.windowMs)) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
+function extractClientIp(headers: Record<string, string | string[] | undefined>): string {
+  const get = (name: string): string | null => {
+    const v = headers[name];
+    if (Array.isArray(v)) return v[0] ?? null;
+    return v ?? null;
+  };
+  const xvff = get('x-vercel-forwarded-for');
+  if (xvff) return xvff.split(',')[0].trim();
+  const cf = get('cf-connecting-ip');
+  if (cf) return cf;
+  return 'unknown';
+}
 
 // SSRF protection: allowlist of trusted LMS issuers (security-auditor C2 fix)
 const ALLOWED_ISSUERS = new Set([
@@ -160,13 +209,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  // THI-135 — Rate limit per IP (50 req/min, shared module with sentry-tunnel).
-  // Applied AFTER the feature flag so the 503 path stays cheap. Even when LTI_ENABLED=true,
-  // this caps brute-force/DDoS attempts on the JWT verification + OIDC config fetch logic.
+  // THI-135 — Rate limit per IP (50 req/min, same policy as sentry-tunnel).
+  // Applied AFTER the feature flag so the 503 path stays cheap. Even when
+  // LTI_ENABLED=true, this caps brute-force/DDoS attempts on the JWT verification
+  // and OIDC config fetch logic.
   const now = Date.now();
   maybeCleanup(now);
   const ip = extractClientIp(req.headers);
-  if (isRateLimited(ip, now, DEFAULT_RATE_POLICY)) {
+  if (isRateLimited(ip, now)) {
     res.setHeader('Retry-After', '60');
     res.status(429).send('Too Many Requests');
     return;
