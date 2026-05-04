@@ -583,7 +583,7 @@ export function Landing() {
           size="icon-round"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Retour en haut"
-          className="fixed bottom-6 right-6 z-50"
+          className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 z-50"
         >
           <ArrowUp size={18} />
         </Button>
