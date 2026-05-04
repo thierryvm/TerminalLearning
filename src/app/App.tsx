@@ -41,6 +41,13 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <RouterProvider router={router} />
             </Suspense>
+            {/*
+              AI tutor panel is mounted per-route (LessonPage with full
+              lessonContext, Dashboard + CommandReference without) rather
+              than globally — see THI-111. The panel is intentionally
+              absent on the landing, /changelog, /story and /admin
+              because there is no learning context to ground it.
+            */}
             <Analytics />
             <SpeedInsights />
           </ProgressProvider>

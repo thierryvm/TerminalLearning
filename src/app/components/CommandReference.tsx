@@ -5,6 +5,7 @@ import type { EnvId } from '../data/curriculum';
 import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { AiTutorPanel } from './ai/AiTutorPanel';
 
 interface CommandEntry {
   /** Command name shown — can be overridden per env */
@@ -685,7 +686,11 @@ export function CommandReference() {
   const envMeta = ENV_LABELS[selectedEnv] ?? ENV_LABELS.linux;
 
   return (
-    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8">
+    // md:pr-32 reserves the FAB clear zone (cf. Dashboard).
+    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
+      {/* AI tutor panel — surfaced on the command reference too because it's
+          a natural place to ask "how does X compare to Y?" follow-up questions. */}
+      <AiTutorPanel lang="fr" />
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
