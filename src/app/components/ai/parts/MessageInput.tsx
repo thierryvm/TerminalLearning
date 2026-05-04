@@ -44,6 +44,8 @@ export function MessageInput({ onSend, disabled }: Props) {
     <div className="flex flex-col gap-2 border-t border-[var(--github-border-primary)] p-3">
       <textarea
         ref={ref}
+        name="ai-tutor-question"
+        id="ai-tutor-question"
         value={text}
         onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS + 100))}
         onKeyDown={onKey}

@@ -17,6 +17,7 @@
  *    form-fillers / extensions don't see it
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Sparkles } from 'lucide-react';
 
 import {
   detectProvider,
@@ -148,21 +149,9 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
         aria-label="Ouvrir le tuteur IA (Ctrl+I)"
         aria-expanded={open}
         aria-controls="ai-tutor-panel"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg transition hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="fixed bottom-4 right-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg transition hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 2 L13.5 7 L19 8 L15 12 L16 18 L12 15 L8 18 L9 12 L5 8 L10.5 7 Z" />
-        </svg>
+        <Sparkles size={24} strokeWidth={2} aria-hidden="true" />
       </button>
 
       {open && (
@@ -375,6 +364,8 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
       </p>
       <input
         type="password"
+        name="ai-tutor-api-key"
+        id="ai-tutor-api-key"
         autoComplete="off"
         spellCheck={false}
         value={value}
