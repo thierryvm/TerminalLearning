@@ -9,6 +9,7 @@ import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Progress } from './ui/progress';
+import { AiTutorPanel } from './ai/AiTutorPanel';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -73,6 +74,9 @@ export function Dashboard() {
 
   return (
     <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8">
+      {/* AI tutor panel — no lessonContext on the dashboard, the user can still
+          ask "what should I learn next?" style questions. */}
+      <AiTutorPanel lang="fr" />
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">

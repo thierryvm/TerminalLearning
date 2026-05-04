@@ -68,13 +68,14 @@ export const ROADMAP_AVAILABLE = [
   'Accessibilité mobile & clavier (WCAG 2.2 AAA, safe-area iOS, focus-visible)',
   'Sécurité durcie — endpoints LTI gated, rate limiting partagé, CSP SHA-256 (THI-133/134/135)',
   'Audit sécurité fresh — score 8.1/10, 0 critique (1 mai 2026)',
+  'Tuteur IA V1 (BYOK OpenRouter / Anthropic / Gemini, sanitizer + 287 tests, derrière feature flag) — THI-111',
 ];
 
 export const ROADMAP_IN_PROGRESS = [
   "Extension du curriculum — nouveaux modules & exercices",
   "Plus d'exercices pratiques & quiz par section",
   'Guide d\'installation PWA (iOS / Android / Desktop)',
-  'Agent IA tuteur (BYOK OpenRouter — Phase 7b)',
+  'Tuteur IA V1.5 — picker modèle (allow-list curated) + onboarding clé chiffrée + AiKeySetup tutoriel — THI-112',
   'Terminal Sentinel — audit sécurité automatisé',
   'LTI 1.3 — Phase 7c (RS256 JWK validation, persistence Supabase, grade passback)',
 ];

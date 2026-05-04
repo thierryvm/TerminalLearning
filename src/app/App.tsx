@@ -11,7 +11,6 @@ import { ProgressProvider } from './context/ProgressContext';
 import { EnvironmentProvider } from './context/EnvironmentContext';
 import { PageLoader } from './components/PageLoader';
 import { Button } from './components/ui/button';
-import { AiTutorPanel } from './components/ai/AiTutorPanel';
 
 function FallbackUI() {
   return (
@@ -42,7 +41,13 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <RouterProvider router={router} />
             </Suspense>
-            <AiTutorPanel />
+            {/*
+              AI tutor panel is mounted per-route (LessonPage with full
+              lessonContext, Dashboard + CommandReference without) rather
+              than globally — see THI-111. The panel is intentionally
+              absent on the landing, /changelog, /story and /admin
+              because there is no learning context to ground it.
+            */}
             <Analytics />
             <SpeedInsights />
           </ProgressProvider>

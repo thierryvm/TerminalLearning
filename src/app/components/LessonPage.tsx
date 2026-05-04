@@ -16,6 +16,7 @@ import { toUnixUsername } from '../../lib/username';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
+import { AiTutorPanel } from './ai/AiTutorPanel';
 
 function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: EnvId }) {
   // Resolve env-specific content/label, falling back to defaults
@@ -370,6 +371,7 @@ export function LessonPage() {
   const { moduleId = '', lessonId = '' } = useParams();
   const navigate = useNavigate();
   const { isModuleUnlocked } = useProgress();
+  const { selectedEnv } = useEnvironment();
 
   const mod = getModuleById(moduleId);
   const lesson = getLessonById(moduleId, lessonId);
@@ -416,12 +418,25 @@ export function LessonPage() {
   }
 
   return (
-    <LessonContent
-      key={`${moduleId}-${lessonId}`}
-      mod={mod}
-      lesson={lesson}
-      moduleId={moduleId}
-      lessonId={lessonId}
-    />
+    <>
+      <LessonContent
+        key={`${moduleId}-${lessonId}`}
+        mod={mod}
+        lesson={lesson}
+        moduleId={moduleId}
+        lessonId={lessonId}
+      />
+      <AiTutorPanel
+        lang="fr"
+        lessonContext={{
+          moduleSlug: moduleId,
+          lessonSlug: lessonId,
+          env: selectedEnv,
+          // Lesson titles are the closest to a "goal" the curriculum exposes
+          // today. If a richer `objective` field is added later, swap here.
+          goal: lesson.title,
+        }}
+      />
+    </>
   );
 }
