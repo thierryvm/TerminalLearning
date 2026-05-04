@@ -170,7 +170,13 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
             aria-modal="true"
             aria-labelledby="ai-tutor-title"
             id="ai-tutor-panel"
-            className="fixed inset-0 z-[70] flex flex-col bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl"
+            // Mobile: full-screen drawer with safe-area padding (iOS notch + home bar).
+            // Desktop (md+): floating bottom-right card.
+            style={{
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
+            className="fixed inset-0 z-[70] flex flex-col bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl md:!p-0"
           >
             <header className="flex items-center justify-between border-b border-[var(--github-border-primary)] px-3 py-2">
               <h2
@@ -248,7 +254,9 @@ function ProviderPicker({ value, onChange }: PickerProps) {
     <div
       role="radiogroup"
       aria-label="Provider IA"
-      className="flex gap-1 border-b border-[var(--github-border-primary)] px-3 py-2"
+      // Horizontal scroll on tight viewports (≤320px) so the four pills never wrap
+      // or clip; the inner row keeps a consistent flex layout.
+      className="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-[var(--github-border-primary)] px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {providers.map((p) => (
         <button
@@ -257,7 +265,9 @@ function ProviderPicker({ value, onChange }: PickerProps) {
           role="radio"
           aria-checked={value === p}
           onClick={() => onChange(p)}
-          className={`rounded px-2 py-1 text-xs ${
+          // min-h-9 keeps tap targets ≥36px on mobile (closer to WCAG 44×44 in
+          // combination with the row padding).
+          className={`min-h-9 rounded px-3 py-1 text-xs ${
             value === p
               ? 'bg-[var(--github-accent)] text-white'
               : 'bg-[var(--github-bg-secondary)] text-[var(--github-text-secondary)] hover:bg-[var(--github-bg-tertiary)]'

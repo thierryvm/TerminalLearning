@@ -20,7 +20,14 @@ export function MessageInput({ onSend, disabled }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    ref.current?.focus();
+    // Skip auto-focus on touch devices: focusing a textarea pops the on-screen
+    // keyboard immediately, which is intrusive when the user is still reading
+    // the onboarding text. The user taps the textarea explicitly when ready.
+    const isTouch =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (!isTouch) ref.current?.focus();
   }, []);
 
   const submit = async () => {
