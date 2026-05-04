@@ -2,12 +2,24 @@ import * as Sentry from '@sentry/react';
 
 const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 
-// Exported for testing — these are the scrubber's core patterns and logic
+// Exported for testing — these are the scrubber's core patterns and logic.
+//
+// Provider-specific patterns mirror the ones in src/lib/ai/sanitizer.ts so a
+// real OpenRouter / Anthropic / OpenAI key (which contains internal dashes
+// and underscores, and varies in length) is caught here too — not only by
+// the generic_api_key fallback. Any divergence between the sanitizer and
+// the Sentry scrubber would create silent gaps that are hard to audit
+// (security-auditor M1, 2026-05-04).
 export const SCRUB_PATTERNS = [
-  { pattern: /sk-or-v1-[a-zA-Z0-9]{64}/gi, label: 'openrouter' },
-  { pattern: /sk-ant-[a-zA-Z0-9\-]{40,}/gi, label: 'anthropic' },
-  { pattern: /sk-(?!or-|ant-)[a-zA-Z0-9]{48}/gi, label: 'openai' },
-  { pattern: /AIza[a-zA-Z0-9_\-]{35}/gi, label: 'gemini' },
+  { pattern: /sk-or-v1-[A-Za-z0-9_-]{16,}/gi, label: 'openrouter' },
+  { pattern: /sk-ant-(?:api\d{2}-)?[A-Za-z0-9_-]{16,}/gi, label: 'anthropic' },
+  // OpenAI modern keys (sub-prefix proj-/svcacct-/admin-) and OpenAI legacy
+  // keys (exactly 48 alphanum chars after `sk-`, no dash/underscore) are
+  // labelled separately so unrelated providers using `sk-` (Groq `sk-gsk*`,
+  // Mistral) fall through to `generic_api_key` instead of being mislabelled.
+  { pattern: /sk-(?:proj-|svcacct-|admin-)[A-Za-z0-9_-]{16,}/gi, label: 'openai' },
+  { pattern: /sk-[A-Za-z0-9]{48}(?![A-Za-z0-9_-])/g, label: 'openai' },
+  { pattern: /AIza[A-Za-z0-9_-]{20,}/gi, label: 'gemini' },
   { pattern: /[a-zA-Z0-9._%+\-]+@(?!localhost|terminallearning\.dev)[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/gi, label: 'email' },
   { pattern: /eyJ[A-Za-z0-9_\-]{50,}/gi, label: 'jwt' },
   { pattern: /sk-[a-zA-Z0-9_\-]{20,}/gi, label: 'generic_api_key' },

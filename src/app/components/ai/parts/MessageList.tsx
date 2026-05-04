@@ -46,8 +46,11 @@ function userBubbleText(content: string): string {
   // The hook wraps user input in <lesson_context> + <user_question> tags so
   // the LLM sees a structured prompt. The UI shows only the question portion
   // so the bubble looks like "the thing the learner typed".
+  // If the regex fails (unexpected format), we return an empty string rather
+  // than the raw content — otherwise the user would see XML scaffolding
+  // leak into their own bubble. (security-auditor L2, 2026-05-04.)
   const m = content.match(/<user_question>\s*([\s\S]*?)\s*<\/user_question>/);
-  return m ? (m[1] ?? '') : content;
+  return m ? (m[1] ?? '') : '';
 }
 
 export function MessageList({ messages, isStreaming }: Props) {

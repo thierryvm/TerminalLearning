@@ -134,6 +134,13 @@ function readMode(fallback: TutorMode): TutorMode {
   return fallback;
 }
 
+// TRUST BOUNDARY: lessonContext fields are internal curriculum data only —
+// never user input. They are sourced from `src/app/data/curriculum.ts` and
+// passed by `LessonPage` as a prop. If a future feature ever lets the user
+// influence `goal` or `moduleSlug` (custom lessons, user-named modules),
+// these fields MUST be passed through `escapeDelimiters` first to prevent
+// indirect prompt injection via the <lesson_context> block.
+// (security-auditor M2 finding, 2026-05-04.)
 function formatLessonContext(ctx: LessonContext): string {
   return `<lesson_context>\nModule: ${ctx.moduleSlug} / Lesson: ${ctx.lessonSlug} / Env: ${ctx.env}\nGoal: ${ctx.goal}\n</lesson_context>\n\n`;
 }
