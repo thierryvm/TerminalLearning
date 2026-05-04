@@ -181,6 +181,13 @@
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    /* max-width: 100vw added (THI-149 hot fix, Ankora PR #111 pattern) — */
+    /* on Safari iOS WebKit, fixed-positioned drawer layout shifts during   */
+    /* SSE streaming can transiently push the viewport > 100vw even with    */
+    /* overflow-x: hidden alone. Combining `overflow-x: hidden` + `max-     */
+    /* width: 100vw` is the proven WebKit guard. Desktop unaffected (lg/xl  */
+    /* containers are already capped by `max-w-*`).                         */
+    max-width: 100vw;
   }
 
   /**
@@ -191,6 +198,7 @@
   html {
     font-size: var(--font-size);
     overflow-x: hidden;
+    max-width: 100vw;
   }
 
   h1 {
