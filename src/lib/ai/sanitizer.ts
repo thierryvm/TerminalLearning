@@ -33,14 +33,19 @@ const BIDI_RX =
 
 // Prompt-injection patterns. Each requires a structural anchor (whole phrase
 // or literal token) so common words like "ignore" or "act" alone do not fire.
+//
+// The qualifier list in the override-instruction pattern includes both
+// retrospective ("previous", "above", "earlier") and prospective ("following",
+// "next", "subsequent", "coming", "incoming", "future") forms — both are real
+// jailbreak vectors, the second was missed in the initial pass.
 const INJECTION_PATTERNS: readonly RegExp[] = [
-  /\b(?:ignore|disregard|forget|override)\s+(?:all\s+|the\s+|prior\s+|previous\s+|preceding\s+|earlier\s+|above\s+)+(?:instructions?|prompts?|messages?|context|directives?|rules?|commands?)\b/i,
+  /\b(?:ignore|disregard|forget|override|cancel)\s+(?:(?:all|any|the|prior|previous|preceding|earlier|above|following|next|subsequent|coming|incoming|future)\s+)+(?:instructions?|prompts?|messages?|context|directives?|rules?|commands?)\b/i,
   /\[\/?INST\]/,
   /<\|im_start\|>|<\|im_end\|>|<\|system\|>/,
   /###\s+(?:Instruction|System)\b/i,
   /\byou\s+are\s+now\b/i,
-  /\bact\s+as\s+(?:a|an|the)?\b/i,
-  /\bpretend\s+you\s+are\b/i,
+  /\b(?:act|acting|behave|behaving)\s+as\s+(?:a|an|the)?\b/i,
+  /\bpretend\s+(?:you\s+are|to\s+be)\b/i,
   /\bdo\s+anything\s+now\b/i,
 ];
 
