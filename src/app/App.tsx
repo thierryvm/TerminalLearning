@@ -11,6 +11,7 @@ import { ProgressProvider } from './context/ProgressContext';
 import { EnvironmentProvider } from './context/EnvironmentContext';
 import { PageLoader } from './components/PageLoader';
 import { Button } from './components/ui/button';
+import { AiTutorPanel } from './components/ai/AiTutorPanel';
 
 function FallbackUI() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <RouterProvider router={router} />
             </Suspense>
+            <AiTutorPanel />
             <Analytics />
             <SpeedInsights />
           </ProgressProvider>
