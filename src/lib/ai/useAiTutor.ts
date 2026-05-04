@@ -377,6 +377,12 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
         // pre-send state so the user's input is not stranded next to an empty
         // assistant bubble.
         setMessages(prevMessages);
+        // Refund the soft rate-limit slot since the request did not actually
+        // consume a successful turn — without this the badge would degrade
+        // (e.g. 28/30) on consecutive provider rate_limited / invalid_key
+        // errors that the user can fix and retry.
+        setRate(currentRate);
+        writeRate(currentRate);
         if (!(err instanceof ChatError && err.code === 'aborted')) {
           const code = chatErrorToCode(err);
           setError({ code, safeMessage: safeMessageFor(code) });
