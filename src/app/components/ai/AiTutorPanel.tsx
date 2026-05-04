@@ -156,8 +156,11 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
 
       {open && (
         <>
+          {/* Overlay z-[60] so it covers all other fixed bottom-right widgets
+              (scroll-to-top z-50, trigger button z-40). Modal etiquette: while
+              the panel is open, nothing else competes for the corner. */}
           <div
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
@@ -167,7 +170,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
             aria-modal="true"
             aria-labelledby="ai-tutor-title"
             id="ai-tutor-panel"
-            className="fixed inset-0 z-50 flex flex-col bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl"
+            className="fixed inset-0 z-[70] flex flex-col bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl"
           >
             <header className="flex items-center justify-between border-b border-[var(--github-border-primary)] px-3 py-2">
               <h2
