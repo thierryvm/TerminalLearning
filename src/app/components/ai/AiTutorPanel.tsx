@@ -149,9 +149,9 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
         aria-label="Ouvrir le tuteur IA (Ctrl+I)"
         aria-expanded={open}
         aria-controls="ai-tutor-panel"
-        className="fixed bottom-4 right-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg transition hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="fixed bottom-4 right-20 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white opacity-80 shadow-md ring-1 ring-black/30 transition hover:opacity-100 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:h-12 md:w-12"
       >
-        <Sparkles size={24} strokeWidth={2} aria-hidden="true" />
+        <Sparkles size={20} strokeWidth={2} aria-hidden="true" />
       </button>
 
       {open && (

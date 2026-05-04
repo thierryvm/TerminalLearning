@@ -73,7 +73,11 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8">
+    // md:pr-32 reserves 128px on the right edge so the AI tutor FAB
+    // (right-20 + 48px width = needs a 128px clear zone) never overlaps
+    // card grids or content. Mobile drawer is full-screen anyway so no
+    // padding tax there.
+    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
       {/* AI tutor panel — no lessonContext on the dashboard, the user can still
           ask "what should I learn next?" style questions. */}
       <AiTutorPanel lang="fr" />
