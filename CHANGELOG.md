@@ -5,6 +5,27 @@
 
 ---
 
+## Fix safe-area iPhone PWA — trigger AI tutor + scroll-to-top landing
+*4 mai 2026 soir · Mobile · THI-147 · mini-PR follow-up THI-111*
+
+**Le défi :** Test post-merge THI-111 sur iPhone PWA standalone : le trigger ✨ AI tutor n'est pas accessible. Hypothèse initiale @cowork : « parent overflow-y-auto + transform brisant fixed ». Diagnostic Chrome DevTools MCP a réfuté empiriquement (`breakingAncestorsCount: 0`, aucun ancêtre avec `transform`/`filter`/`contain`/`will-change`). Vraie cause confirmée : `bottom-4` (16px) passe sous le home indicator iPhone (~34px `safe-area-inset-bottom` en PWA standalone) — pattern WebKit classique documenté Apple HIG.
+
+**Ce qui a été livré :**
+- `src/app/components/ai/AiTutorPanel.tsx` — trigger FAB : `bottom-4` → `bottom-[max(1rem,env(safe-area-inset-bottom))]`
+- `src/app/components/Landing.tsx` — bouton scroll-to-top de la landing : même incohérence avec `MarkdownPage` et `PrivacyPolicy` qui avaient déjà le pattern correct → fixé en bonus de cohérence (`bottom-6` → `bottom-[max(1.5rem,env(safe-area-inset-bottom))]`)
+
+**Le `max()` garantit aucune régression :** desktop, Android, Safari mobile non-PWA → 1rem/1.5rem identique au comportement actuel. iPhone PWA standalone → 34px au-dessus du home indicator. Mode landscape Dynamic Island → safe-area-inset-bottom adapté automatiquement.
+
+**Validation :**
+- 1268/1268 tests verts (1 nouveau test `resetRateCounter` post-PR #188)
+- Type-check + lint clean
+- Risque très faible (1 ligne CSS modifiée par fichier, max() préserve comportement existant)
+- Validation empirique @thierry post-merge : réinstaller PWA iPhone → vérifier trigger ✨ visible au-dessus du home indicator
+
+**Convergence cross-projet :** pattern identique au sprint Mobile Recovery Ankora (mêmes patterns iOS WebKit). Audit transversal validé par @cowork.
+
+---
+
 ## Tuteur IA V1 (BYOK) — 4 providers + sanitizer + panel + 287 tests + validation live 3/4
 *4 mai 2026 · Phase 7b · ADR-002 + ADR-005 · PR #188*
 
