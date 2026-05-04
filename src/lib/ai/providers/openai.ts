@@ -1,32 +1,22 @@
 /**
- * OpenRouter provider — THI-111 step 3/8 (Tier 1, default V1).
+ * OpenAI provider — THI-111 step 4/8 (Tier 3).
  *
- * Streams chat completions from `https://openrouter.ai/api/v1/chat/completions`
- * over Server-Sent Events. The hook (`useAiTutor`, step 5/8) iterates the
- * stream chunk-by-chunk through `sanitizeModelChunk`.
- *
- * The default model is selected for French quality + pedagogical reasoning
- * over raw latency (cf. plan §10.2). The user can override via the picker.
- *
- * Security invariants:
- *  - Authorization header is the ONLY place the API key appears.
- *  - `credentials: 'omit'` — cookies are never sent.
- *  - Errors raised here never embed the key body in the message string.
- *  - `HTTP-Referer` and `X-Title` identify the app to OpenRouter so the
- *    free-tier quota attribution is correct.
+ * Streams chat completions from `https://api.openai.com/v1/chat/completions`.
+ * Wire format is identical to OpenRouter (in fact OpenRouter is OpenAI-
+ * compatible by design), so the request body, the SSE payload shape, and
+ * the `[DONE]` sentinel are reused. Differences vs OpenRouter:
+ *  - no `HTTP-Referer` / `X-Title` headers (OpenAI quota is per-key only)
+ *  - 402 → quota_exceeded (insufficient_quota in OpenAI parlance)
  */
 
 import { ChatError, type ChatErrorCode, type ChatParams, type ChatStream } from './types';
 import { safeCancel, streamSseEvents } from './_sse';
 
-export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-export const OPENROUTER_DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
-
-const APP_TITLE = 'Terminal Learning Tutor';
-const APP_REFERER = 'https://terminallearning.dev';
+export const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+export const OPENAI_DEFAULT_MODEL = 'gpt-4o-mini';
 
 interface DeltaFrame {
-  choices?: Array<{ delta?: { content?: string; role?: string } }>;
+  choices?: Array<{ delta?: { content?: string } }>;
 }
 
 function isAbortError(err: unknown): boolean {
@@ -42,12 +32,7 @@ function statusToCode(status: number): ChatErrorCode {
   return 'unknown';
 }
 
-/**
- * Parses an OpenAI-style SSE stream into content deltas. Stops on the
- * `[DONE]` sentinel; skips frames whose JSON does not carry a
- * `choices[0].delta.content` string.
- */
-async function* parseOpenAiStream(
+async function* parseStream(
   reader: ReadableStreamDefaultReader<Uint8Array>,
 ): AsyncGenerator<string> {
   for await (const frame of streamSseEvents(reader)) {
@@ -60,7 +45,7 @@ async function* parseOpenAiStream(
       const content = json.choices?.[0]?.delta?.content;
       if (typeof content === 'string' && content.length > 0) yield content;
     } catch {
-      // Malformed JSON — skip this frame, continue the stream.
+      /* malformed frame — skip */
     }
   }
 }
@@ -77,7 +62,7 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
 
   let res: Response;
   try {
-    res = await fetch(OPENROUTER_URL, {
+    res = await fetch(OPENAI_URL, {
       method: 'POST',
       credentials: 'omit',
       signal: params.signal,
@@ -85,8 +70,6 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
         Authorization: `Bearer ${params.apiKey}`,
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-        'HTTP-Referer': APP_REFERER,
-        'X-Title': APP_TITLE,
       },
       body,
     });
@@ -98,9 +81,6 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
   }
 
   if (!res.ok) {
-    // Drain & discard the body to avoid keeping the socket open. Body is
-    // intentionally not surfaced to the UI — provider error messages can
-    // contain account / key context.
     try {
       await res.text();
     } catch {
@@ -108,11 +88,8 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
     }
     throw new ChatError(statusToCode(res.status), 'Provider returned an error.', res.status);
   }
-
   if (!res.body) {
     throw new ChatError('server_error', 'Provider returned an empty body.', res.status);
   }
-
-  const reader = res.body.getReader();
-  return parseOpenAiStream(reader);
+  return parseStream(res.body.getReader());
 }
