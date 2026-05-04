@@ -38,8 +38,19 @@ const BIDI_RX =
 // retrospective ("previous", "above", "earlier") and prospective ("following",
 // "next", "subsequent", "coming", "incoming", "future") forms — both are real
 // jailbreak vectors, the second was missed in the initial pass.
+//
+// Multilingual coverage (THI-111 step 7/8): the FR / NL / DE override patterns
+// catch the Belgian audience's native phrasings of "ignore previous
+// instructions". The English pattern stays first so the common case short-
+// circuits early.
 const INJECTION_PATTERNS: readonly RegExp[] = [
   /\b(?:ignore|disregard|forget|override|cancel)\s+(?:(?:all|any|the|prior|previous|preceding|earlier|above|following|next|subsequent|coming|incoming|future)\s+)+(?:instructions?|prompts?|messages?|context|directives?|rules?|commands?)\b/i,
+  // FR: "ignore les instructions précédentes", "annule toutes les consignes"
+  /\b(?:ignore|ignorez|oublie|oubliez|annule|annulez)\s+(?:tout(?:es?|s)?\s+)?(?:les\s+|la\s+|mes\s+|tes\s+|toutes\s+les\s+|tous\s+les\s+)?(?:instructions?|consignes?|directives?|prompts?|messages?|règles?|commandes?)\b/i,
+  // NL: "negeer alle vorige instructies"
+  /\b(?:negeer|vergeet|annuleer)\s+(?:alle\s+|de\s+|alle\s+vorige\s+|alle\s+voorgaande\s+|mijn\s+)?(?:instructies?|opdrachten?|berichten?|prompts?|regels?|commando['']?s?)\b/i,
+  // DE: "ignoriere alle vorherigen Anweisungen"
+  /\b(?:ignoriere|vergiss|annulliere|verwerfe)\s+(?:alle\s+|die\s+|alle\s+vorherigen\s+|alle\s+bisherigen\s+|alle\s+meine\s+)?(?:Anweisungen?|Aufforderungen?|Befehle?|Instruktionen?|Regeln|Nachrichten?|Prompts?)\b/i,
   /\[\/?INST\]/,
   /<\|im_start\|>|<\|im_end\|>|<\|system\|>/,
   /###\s+(?:Instruction|System)\b/i,
