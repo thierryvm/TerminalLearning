@@ -63,19 +63,35 @@ describe('AiTutorPanel — onboarding flow', () => {
     vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
   });
 
+  /** Helper: click trigger, tick consent checkbox, click Accept button. */
+  async function passConsent(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    await user.click(await screen.findByText(/J'ai lu et compris/i));
+    await user.click(screen.getByRole('button', { name: /Accepter et utiliser/i }));
+  }
+
   it('opens the dialog when the trigger is clicked and shows the consent block first', async () => {
     const user = userEvent.setup();
     render(<AiTutorPanel />);
     await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/J'ai lu et j'accepte/i)).toBeInTheDocument();
+    expect(screen.getByText(/J'ai lu et compris/i)).toBeInTheDocument();
+  });
+
+  it('keeps the Accept button disabled until the consent checkbox is ticked', async () => {
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    const acceptBtn = await screen.findByRole('button', { name: /Accepter et utiliser/i });
+    expect(acceptBtn).toBeDisabled();
+    await user.click(screen.getByText(/J'ai lu et compris/i));
+    expect(acceptBtn).toBeEnabled();
   });
 
   it('after consent and no key, shows the key entry block with the provider prefix hint', async () => {
     const user = userEvent.setup();
     render(<AiTutorPanel />);
-    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
-    await user.click(screen.getByText(/J'ai lu et j'accepte/i));
+    await passConsent(user);
     expect(await screen.findByLabelText(/Clé API/i)).toBeInTheDocument();
     // Default provider is OpenRouter — its prefix should appear.
     expect(screen.getByText(/sk-or-v1-/)).toBeInTheDocument();
@@ -84,8 +100,7 @@ describe('AiTutorPanel — onboarding flow', () => {
   it('rejects a key whose prefix does not match the selected provider', async () => {
     const user = userEvent.setup();
     render(<AiTutorPanel />);
-    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
-    await user.click(screen.getByText(/J'ai lu et j'accepte/i));
+    await passConsent(user);
 
     const input = await screen.findByLabelText(/Clé API/i);
     // OpenRouter is selected by default — paste an Anthropic key.
@@ -97,8 +112,7 @@ describe('AiTutorPanel — onboarding flow', () => {
   it('persists a valid key and switches to the conversation view', async () => {
     const user = userEvent.setup();
     render(<AiTutorPanel />);
-    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
-    await user.click(screen.getByText(/J'ai lu et j'accepte/i));
+    await passConsent(user);
 
     const input = await screen.findByLabelText(/Clé API/i);
     await user.type(input, FAKE_OPENROUTER);

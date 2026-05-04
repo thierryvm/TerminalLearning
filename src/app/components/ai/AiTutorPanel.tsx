@@ -285,6 +285,7 @@ interface ConsentProps {
 }
 
 function ConsentBlock({ onAccept }: ConsentProps) {
+  const [checked, setChecked] = useState(false);
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 text-sm text-[var(--github-text-primary)]">
       <p>
@@ -305,12 +306,25 @@ function ConsentBlock({ onAccept }: ConsentProps) {
           Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé ».
         </li>
       </ul>
+      <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-3">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
+          className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--github-accent)]"
+          aria-describedby="ai-consent-summary"
+        />
+        <span id="ai-consent-summary" className="text-[var(--github-text-primary)]">
+          <strong>J'ai lu et compris</strong> les trois points ci-dessus.
+        </span>
+      </label>
       <button
         type="button"
         onClick={onAccept}
-        className="mt-2 self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2"
+        disabled={!checked}
+        className="mt-2 self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        J'ai lu et j'accepte
+        Accepter et utiliser le tuteur IA
       </button>
     </div>
   );
@@ -336,6 +350,23 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
         return 'sk-…';
       case 'gemini':
         return 'AIza…';
+    }
+  }, [provider]);
+
+  // Short novice-friendly description per provider, surfaced above the key
+  // input so the learner understands what they are about to use. Verbose
+  // comparison lives in docs/guides/ai-tutor-quickstart.md (linked from the
+  // ConsentBlock).
+  const providerHint = useMemo(() => {
+    switch (provider) {
+      case 'openrouter':
+        return '🔄 Hub multi-providers — modèles :free gratuits (Llama 3.3 70B par défaut, GPT-OSS 20B…). Recommandé pour débuter.';
+      case 'anthropic':
+        return '🧠 Claude (Anthropic) — raisonnement haute qualité, excellent en code. Crédit Anthropic requis.';
+      case 'openai':
+        return '⚠️ OpenAI direct refuse les requêtes navigateur (CORS). Préfère OpenRouter pour accéder à GPT-4o-mini & co.';
+      case 'gemini':
+        return '✨ Gemini (Google) — quota gratuit généreux (Gemini 2.0 Flash). Crédit Google AI Studio requis.';
     }
   }, [provider]);
 
@@ -377,6 +408,9 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
       onSubmit={onSubmit}
       className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 text-sm text-[var(--github-text-primary)]"
     >
+      <p className="rounded-md bg-[var(--github-bg-secondary)] p-2 text-xs text-[var(--github-text-secondary)]">
+        {providerHint}
+      </p>
       <p>
         Colle ta clé <strong>{PROVIDER_LABELS[provider]}</strong> ci-dessous.
         Préfixe attendu : <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5 text-xs">{expectedPrefix}</code>
