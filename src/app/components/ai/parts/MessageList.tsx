@@ -56,9 +56,15 @@ export function MessageList({ messages, isStreaming }: Props) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // jsdom does not implement scrollTo — fall back to direct prop assignment.
+    // Honour prefers-reduced-motion (vestibular accessibility). Also fall
+    // back to direct prop assignment in jsdom, which does not implement
+    // scrollTo on HTMLElement.
+    const reduce =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (typeof el.scrollTo === 'function') {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      el.scrollTo({ top: el.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
     } else {
       el.scrollTop = el.scrollHeight;
     }
