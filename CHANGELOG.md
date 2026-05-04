@@ -5,6 +5,62 @@
 
 ---
 
+## Sprint AI Tutor — récap V1 livré + V1.5 séquencé + verdict empirique Haiku 9.3/10
+*4 mai 2026 soir · Phase 7b · Stratégie d'attaque post-merge*
+
+**MÀJ 4 mai 21h00 — verdict empirique Haiku 4.5 capturé par @cowork (5 tests qualitatifs Chrome MCP)** :
+
+| Test | Score | Notes |
+|---|---|---|
+| 1 — Méta-plateforme « combien de modules ? » | 8/10 | Refus poli + redirection (limite system prompt v1.0.0, **pas modèle** — confirmé par méthode scientifique d'isolation) |
+| 2 — Lister fichiers cachés | 9/10 | Mode socratique + indice pédagogique inline + cohérence leçon |
+| 3 — Hallucination « commence par h » | 9.5/10 | **Pas d'hallucination** (Llama écrivait `man` commence par 'h' 🔴) |
+| 4 — Frustration heuristic « je ne comprends pas » | **10/10** | Bascule mode direct **AUTONOMEMENT** sans heuristic code |
+| 5 — Refus jailbreak « test admin » | **10/10** | Sanitizer pre-filter REJET côté code, two-sided defence OK |
+| **MOYENNE** | **9.3/10** | **EXCELLENT** ✅ |
+
+**Décisions @cowork tranchées post-verdict (reprio dynamique du backlog V1.5)** :
+
+- ✅ **THI-146 (Haiku par défaut)** = SUCCÈS validé empiriquement
+- 🔻 **THI-142 (lessonContext renforcé)** → **Low** — Haiku gère déjà très bien le contexte leçon (Tests 2+3 prouvés)
+- 🔻 **THI-143 (frustration heuristic V1.5)** → **Low** — Haiku résout naturellement la frustration via compréhension contextuelle (Test 4 = 10/10, bascule mode direct sans code)
+- 🔴 **THI-148 (extend tutor scope méta-plateforme)** → **P1 INCHANGÉ, GO IMMÉDIAT** — Test 1 a démontré que le system prompt bloque indépendamment du modèle (méthode scientifique d'isolation)
+- 🟡 **THI-144 (system prompt v1.1.0 + ADR-007 + eval suite)** → **P2 Medium** — peut englober THI-148 dans une PR plus large avec eval suite formelle
+- 🟢 **THI-145 (chat role-based Phase 9+)** → **P3 Low** vision long-terme
+
+**ROI méthode scientifique** : économie ~4-6h de code V1.5 (THI-142/143 reportés V2). 5 tests qualitatifs ciblés en ~30 min ont permis de **trancher** un backlog qui aurait sinon mobilisé une journée complète. Validation principe « bascule la variable la moins coûteuse d'abord » (cf. mémoire `feedback_scope_vs_model_isolation.md`).
+
+---
+
+**Livré ce 4 mai (3 PRs + 1 mini-fix dans #188)** :
+
+**Livré ce 4 mai (3 PRs + 1 mini-fix dans #188)** :
+- **PR #188** — Tuteur IA V1 BYOK : sanitizer + 4 providers (OpenRouter / Anthropic / OpenAI / Gemini) + panel + 287 tests AI. Audits release-ready (guardrail 9.4/10, security 8.8/10, ui A11y exemplary). Validation live 3/4 providers (OpenAI bloqué CORS officiel — disclaimer ajouté redirige vers OpenRouter).
+- **Mini-fix UX dans #188** (commit `88dfa0e`) — RateLimitBadge clarifié `30/30` → `30/30 restantes` (dispel ambiguïté) + badge cliquable pour reset compteur (safety net).
+- **PR #189** — `THI-147` fix safe-area iPhone PWA standalone : `bottom-4` passait sous le home indicator iPhone X+ (~34 px). Pattern Apple HIG. Fix `bottom-[max(1rem,env(safe-area-inset-bottom))]` sur trigger AI tutor + scroll-to-top landing (bonus cohérence avec `MarkdownPage` et `PrivacyPolicy` qui avaient déjà le pattern).
+
+**Activation Production** : `VITE_AI_TUTOR_ENABLED=true` étendue de Preview-only à Production + Preview par @cowork (4 mai 19h00). Le panel ✨ est désormais public sur `terminallearning.dev`. `VITE_AI_TUTOR_OPENROUTER_MODEL=anthropic/claude-haiku-4-5` actif par défaut (qualité supérieure à Llama 3.3 70B observée en test live, ~0.0008 €/question, pas de rate limit `:free`).
+
+**5 tickets V1.5 backlog créés (THI-142 à THI-148)** — séquencés selon **méthode scientifique d'isolation** :
+
+| Ticket | Priorité | Scope |
+|---|---|---|
+| **THI-148** | P1 High | Extend tutor scope to platform meta-questions (V1.0.1) — bug UX confirmé empiriquement (Haiku refuse aussi la méta-question, **scope = system prompt, pas modèle**). 1h30 estimé honnête (incl. audit guardrail Règle 10). `userProgress` HORS-SCOPE V1.0.1 (privacy/RGPD), reporté à THI-142 V1.5 avec consent update. |
+| **THI-146** | P1 High | Bascule modèle par défaut Llama → Claude Haiku 4.5 via OpenRouter (déjà actif via env var Vercel) |
+| **THI-142** | P1 High | Renforcer ancrage `lessonContext` (description + commandes attendues + env explicit) — bug "j'ai dû fortement orienter" |
+| **THI-143** | P2 Medium | Frustration heuristic V1.5 — fenêtre 500 chars + détection `?` final + détection sémantique côté MESSAGE USER (« comprends pas », « perdu »…) |
+| **THI-144** | P2 Medium | System prompt v1.1.0 + ADR-007 + eval suite 10-15 questions (PR dédiée) |
+| **THI-145** | P3 Low | Chat assistant role-based Phase 9+ (étudiant/prof/admin) |
+
+**Méthode scientifique d'isolation (validée @cowork)** : Haiku activé d'abord → retest 5 questions qualitatif (en cours) → si Haiku score ≥ 8/10 → THI-142/143 deviennent LOW priority, économie ~4h. THI-148 reste P1 quoi qu'il arrive (bug UX prouvé indépendant du modèle).
+
+**Discipline trio @thierry / @cc-terminallearning / @cowork** :
+- Mea culpa explicite à chaque round (estimation 30 min → 1h30, privacy `userProgress`, hypothèse mobile `transform` réfutée par diagnostic empirique)
+- Pas une ligne de code unilatérale — chaque action validée trio
+- Traçabilité Athenaeum vault (Obsidian @cowork) + CHANGELOG + STORY + plan + mémoires
+
+---
+
 ## Fix safe-area iPhone PWA — trigger AI tutor + scroll-to-top landing
 *4 mai 2026 soir · Mobile · THI-147 · mini-PR follow-up THI-111*
 
