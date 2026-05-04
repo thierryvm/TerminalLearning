@@ -339,6 +339,12 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
     }
   }, [provider]);
 
+  // OpenAI does not allow direct browser fetches without a backend proxy
+  // (CORS policy on api.openai.com). Confirmed during live validation
+  // 2026-05-04 against http://localhost:5173. The other three providers
+  // (OpenRouter, Anthropic with opt-in header, Gemini) are all fine.
+  const openaiNeedsProxy = provider === 'openai';
+
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = value.trim();
@@ -375,6 +381,20 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
         Colle ta clé <strong>{PROVIDER_LABELS[provider]}</strong> ci-dessous.
         Préfixe attendu : <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5 text-xs">{expectedPrefix}</code>
       </p>
+      {openaiNeedsProxy && (
+        <div
+          role="alert"
+          className="rounded border border-yellow-500/30 bg-yellow-500/10 p-2 text-xs text-yellow-300"
+        >
+          ⚠️ <strong>OpenAI</strong> bloque les appels directs depuis le
+          navigateur (politique CORS officielle d'OpenAI, pour décourager le
+          BYOK client-side). Ta clé sera enregistrée mais l'envoi échouera
+          avec une erreur réseau. <strong>Solution V1</strong> : utilise{' '}
+          <strong>OpenRouter</strong> à la place — il propose les mêmes
+          modèles GPT (`openai/gpt-4o-mini`, `openai/gpt-oss-20b:free`, etc.)
+          sans cette limitation. Le proxy OpenAI direct arrivera en V2.
+        </div>
+      )}
       <input
         type="password"
         name="ai-tutor-api-key"
