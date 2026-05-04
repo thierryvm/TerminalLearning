@@ -87,6 +87,8 @@ export interface UseAiTutorState {
   revokeConsent: () => void;
   setMode: (mode: TutorMode) => void;
   dismissDirectModeOffer: () => void;
+  /** Manual safety net: clears the soft client rate counter back to a fresh window. */
+  resetRateCounter: () => void;
 }
 
 interface RateState {
@@ -254,6 +256,15 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
     setShouldOfferDirectMode(false);
   }, []);
 
+  // Manual safety net (THI-111 follow-up after a "compteur 30/30 ambigu"
+  // misreading): the user can reset the soft counter to a fresh window
+  // without clearing localStorage by hand.
+  const resetRateCounter = useCallback(() => {
+    const fresh: RateState = { count: 0, windowStart: Date.now() };
+    setRate(fresh);
+    writeRate(fresh);
+  }, []);
+
   const abort = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -414,5 +425,6 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
     revokeConsent,
     setMode,
     dismissDirectModeOffer,
+    resetRateCounter,
   };
 }

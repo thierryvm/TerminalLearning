@@ -204,7 +204,10 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                 Tuteur IA — {PROVIDER_LABELS[provider]}
               </h2>
               <div className="flex items-center gap-2">
-                <RateLimitBadge remaining={tutor.remainingRequests} />
+                <RateLimitBadge
+                  remaining={tutor.remainingRequests}
+                  onReset={tutor.resetRateCounter}
+                />
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

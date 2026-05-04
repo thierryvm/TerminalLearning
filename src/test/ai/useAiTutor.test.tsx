@@ -325,4 +325,22 @@ describe('useAiTutor — abort + forgetKey', () => {
     });
     expect(localStorage.getItem('ai_key_openrouter')).toBeNull();
   });
+
+  it('resetRateCounter restores remaining to RATE_LIMIT_MAX and rewrites sessionStorage', async () => {
+    // Simulate a session that has consumed 12 of 30 slots already.
+    sessionStorage.setItem(
+      'ai_rate_v1',
+      JSON.stringify({ count: 12, windowStart: Date.now() - 60_000 }),
+    );
+    const { result } = renderHook(() => useAiTutor(baseOpts));
+    expect(result.current.remainingRequests).toBe(RATE_LIMIT_MAX - 12);
+
+    act(() => result.current.resetRateCounter());
+
+    expect(result.current.remainingRequests).toBe(RATE_LIMIT_MAX);
+    const stored = JSON.parse(sessionStorage.getItem('ai_rate_v1') ?? '{}') as {
+      count?: number;
+    };
+    expect(stored.count).toBe(0);
+  });
 });
