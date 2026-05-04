@@ -75,9 +75,27 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  // Allow each provider's default model to be overridden at deploy time via
+  // a Vercel env var, e.g. `VITE_AI_TUTOR_OPENROUTER_MODEL=meta-llama/llama-
+  // 3.3-70b-instruct` to escape the `:free` rate-limit pool. Falls back to
+  // DEFAULT_MODELS when the var is unset. The full picker UI lands in
+  // THI-112 V1.5 — this is the V1 escape hatch.
+  const envOverride = useMemo<string | undefined>(() => {
+    switch (provider) {
+      case 'openrouter':
+        return import.meta.env.VITE_AI_TUTOR_OPENROUTER_MODEL as string | undefined;
+      case 'anthropic':
+        return import.meta.env.VITE_AI_TUTOR_ANTHROPIC_MODEL as string | undefined;
+      case 'openai':
+        return import.meta.env.VITE_AI_TUTOR_OPENAI_MODEL as string | undefined;
+      case 'gemini':
+        return import.meta.env.VITE_AI_TUTOR_GEMINI_MODEL as string | undefined;
+    }
+  }, [provider]);
+
   const tutor = useAiTutor({
     provider,
-    model: DEFAULT_MODELS[provider],
+    model: envOverride && envOverride.length > 0 ? envOverride : DEFAULT_MODELS[provider],
     lang,
     lessonContext,
   });
