@@ -21,26 +21,36 @@ Une **clé API** marche pareil. C'est un long code secret qui dit au fournisseur
 
 ---
 
-## 2. Comment obtenir une clé OpenRouter gratuite
+## 2. Quel provider choisir ?
 
-OpenRouter regroupe plusieurs fournisseurs d'IA derrière une seule clé, et offre des modèles **gratuits** parfaits pour démarrer.
+| Provider | Format clé | Coût | Quota gratuit | Cas d'usage V1 | CORS browser |
+|---|---|---|---|---|---|
+| **OpenRouter** | `sk-or-v1-…` | ~0 €/mois si modèles `:free`, sinon ~0.10–0.50 €/M tokens | Modèles `:free` illimités **mais 1 $ de crédit minimum requis depuis février 2025** (politique anti-abus) | **Recommandé pour débuter.** Hub multi-providers, choix entre Llama 3.3 70B, GPT-OSS 20B, plusieurs Mistral, etc. | ✅ Ouvert |
+| **Anthropic** | `sk-ant-…` | ~3 €/M tokens (Claude Haiku 4.5) | 5 $ de crédit offerts à la création du compte | Qualité haute en raisonnement et en code. Idéal si tu utilises déjà Claude. | ✅ Ouvert (avec opt-in) |
+| **Gemini** | `AIza…` | Gratuit jusqu'à un quota généreux (Gemini 2.0 Flash) | ~1500 requêtes / jour gratuit | Quota gratuit le plus généreux du marché. Bon fallback. | ✅ Ouvert |
+| **OpenAI** | `sk-proj-…`, `sk-svcacct-…`, `sk-…` | ~0.15 €/M tokens (GPT-4o-mini) | Pas de quota gratuit (paiement à l'usage) | ⚠️ **Bloqué en V1** — politique CORS d'OpenAI refuse le BYOK direct depuis le navigateur. Utilise OpenRouter pour accéder aux modèles GPT (`openai/gpt-4o-mini` & co.). | ❌ Fermé |
+
+**Mon conseil pour la première fois** : OpenRouter avec 1 $ de crédit ajouté → débloque les modèles `:free` (Llama 3.3 70B par défaut), tu paies réellement 0 €.
+
+## 3. Comment obtenir une clé OpenRouter
+
+OpenRouter regroupe plusieurs fournisseurs d'IA derrière une seule clé, et permet d'accéder à des modèles `:free` (Llama, Mistral, GPT-OSS) qui ne facturent rien.
 
 1. Va sur [openrouter.ai/keys](https://openrouter.ai/keys).
 2. Crée un compte (mail + mot de passe, ou Google/GitHub).
-3. Une fois connecté·e, clique sur **"Create Key"**.
-4. Donne-lui un nom (par ex. `terminal-learning`).
-5. **Pas besoin** de mettre de crédit — les modèles avec le suffixe `:free` (`llama-3.3-70b-instruct:free`, `gpt-oss-20b:free`, etc.) marchent à zéro euro.
+3. **Important — depuis février 2025** : ajoute au moins **1 $ de crédit** sur [openrouter.ai/credits](https://openrouter.ai/credits) **avant** de créer ta clé. Sans ce crédit minimum, les modèles `:free` retournent une erreur `quota_exceeded` (politique anti-abus mise en place par OpenRouter). **Le crédit ne sera pas consommé** tant que tu utilises uniquement les modèles `:free` — c'est juste un "gage" de bonne foi.
+4. Une fois connecté·e, clique sur **"Create Key"**.
+5. Donne-lui un nom (par ex. `terminal-learning`).
 6. Copie la clé (elle commence par `sk-or-v1-…`). **Tu ne pourras plus la revoir après**, donc stocke-la quelque part en attendant de la coller dans Terminal Learning.
 
 > Tu préfères une autre IA ?
 > Anthropic ([console.anthropic.com](https://console.anthropic.com/)) → clé `sk-ant-…`
-> OpenAI ([platform.openai.com](https://platform.openai.com/api-keys)) → clé `sk-…`
 > Gemini ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) → clé `AIza…`
-> Toutes les quatre marchent — choisis celle dont tu as déjà un compte.
+> OpenAI direct n'est **pas supporté en V1** (CORS) — passe par OpenRouter qui expose `openai/gpt-4o-mini` & co.
 
 ---
 
-## 3. Premier exemple
+## 4. Premier exemple
 
 1. Sur [terminallearning.dev](https://terminallearning.dev/), clique l'icône **✨ Sparkles** en bas à droite (ou `Ctrl+I` / `Cmd+I`).
 2. Lis le bloc de consentement, puis clique **"J'ai lu et j'accepte"**.
@@ -55,7 +65,7 @@ Le tuteur va te répondre par 1 ou 2 questions guidantes plutôt que la réponse
 
 ---
 
-## 4. Que faire si l'IA me répond mal ?
+## 5. Que faire si l'IA me répond mal ?
 
 ### Elle me pose toujours des questions, je veux juste la réponse !
 
@@ -86,7 +96,7 @@ Ta clé est rejetée par le provider. Vérifie :
 
 ---
 
-## 5. Sécurité de ma clé
+## 6. Sécurité de ma clé
 
 ### Où est stockée ma clé ?
 

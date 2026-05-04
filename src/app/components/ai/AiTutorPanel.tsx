@@ -306,6 +306,17 @@ function ConsentBlock({ onAccept }: ConsentProps) {
           Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé ».
         </li>
       </ul>
+      <p className="text-xs text-[var(--github-text-secondary)]">
+        Pas sûr·e du provider à choisir ?{' '}
+        <a
+          href="https://github.com/thierryvm/TerminalLearning/blob/main/docs/guides/ai-tutor-quickstart.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--github-accent)] underline hover:text-[var(--github-accent-hover)]"
+        >
+          Lire le guide démarrage (5 min) →
+        </a>
+      </p>
       <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-3">
         <input
           type="checkbox"

@@ -181,7 +181,11 @@ function safeMessageFor(code: UseAiTutorErrorCode): string {
     case 'rate_limited':
       return 'The provider is rate-limiting requests. Try again shortly.';
     case 'quota_exceeded':
-      return 'The provider quota is exhausted on this key.';
+      // Actionable hint: since Feb 2025 OpenRouter requires a $10 credit
+      // top-up to unlock the `:free` model tiers (anti-abuse). Surface that
+      // explicitly so the learner knows what to do, instead of dead-ending
+      // on a generic "quota exhausted".
+      return 'Quota épuisé sur cette clé. Pour OpenRouter `:free`, vérifie qu\'au moins 1 $ de crédit est ajouté sur openrouter.ai/credits (politique anti-abus). Sinon, essaie Anthropic ou Gemini.';
     case 'model_unavailable':
       return 'The selected model is unavailable.';
     case 'network':
