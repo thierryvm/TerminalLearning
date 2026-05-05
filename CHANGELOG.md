@@ -10,7 +10,7 @@
 
 Huitième mini-PR. **P1 cosmétique a11y, pas un bug bloquant** — cohérence design system + WCAG 2.1 AA keyboard navigation.
 
-**Voie safe @cowork** : aucune modification de `ui/button.tsx` variants ni de `ui/input.tsx` shadcn (patterns `--ring` CSS var préservés). Aucune nouvelle variant. 8 fixes purement Tailwind sur `<button>` natifs et `<textarea>` natives — zéro impact sur les consumers shadcn.
+**Voie safe @cowork** : aucune modification de `ui/button.tsx` variants ni de `ui/input.tsx` shadcn (patterns `--ring` CSS var préservés). Aucune nouvelle variante. 8 fixes purement Tailwind sur `<button>` natifs et `<textarea>` natives — zéro impact sur les consumers shadcn.
 
 ### Pattern canonique TL identifié (déjà majoritaire codebase)
 
