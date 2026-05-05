@@ -102,7 +102,11 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      // THI-152 brick 7/9: py/px env(safe-area-inset-*) on the fullscreen
+      // backdrop ensures the centered modal does not get clipped by iOS
+      // status bar / home indicator / notch in PWA standalone mode. The
+      // flex centering remains, but happens inside the safe-area inset.
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
