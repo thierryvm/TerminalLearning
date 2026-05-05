@@ -1,6 +1,6 @@
 # Documentation Index — Terminal Learning
 
-> Last updated: 2 May 2026  
+> Last updated: 5 May 2026  
 > This directory contains active project documentation. For historical/stale docs, see `.archive/`.
 
 ---
@@ -91,17 +91,18 @@ These files remain in `.archive/` for historical reference. Current session prot
 
 | Document | Last Updated | Status |
 |----------|-------------|--------|
-| ROADMAP.md | 21 April 2026 | 🟢 Active |
+| ROADMAP.md | 5 May 2026 (Sprint Mobile Recovery TL THI-152 🏁 COMPLETE — 9 mini-PRs + hotfix 7bis) | 🟢 Active |
 | ARCHITECTURE.md | 14 April 2026 | 🟢 Active |
 | SECURITY.md | 1 May 2026 | 🟢 Active |
 | CONVENTIONS.md | 13 April 2026 | 🟢 Active |
-| plan.md | 2 May 2026 (sprint sécurité clos + session PM cleanup THI-108 + gate-zero THI-111) | 🟢 Active |
+| plan.md | 5 May 2026 (Sprint Mobile Recovery TL clos + lien narration v1.5) | 🟢 Active |
 | security-audit-log.md | 2 May 2026 (audit run 1 May logged) | 🟢 Active |
 | GUIDELINES.md | 11 April 2026 | 🟡 Stable |
 | vercel-firewall.md | 14 April 2026 | 🟢 Active |
 | ATTRIBUTIONS.md | 2 April 2026 | 🟡 Stable |
 | adr/ | 18 April 2026 | 🟢 Active |
 | guides/ | 15 April 2026 | 🟢 Active |
+| story/v1-5-mobile-recovery-narrative.md | 5 May 2026 (NEW — narration thématique sprint THI-152) | 🟢 Active |
 
 ---
 
