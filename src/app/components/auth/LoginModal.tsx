@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase';
+import { useFocusTrap } from '../../../lib/hooks/useFocusTrap';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
@@ -22,6 +23,18 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false);
   const [loadingOAuth, setLoadingOAuth] = useState<'github' | 'google' | null>(null);
   const [success, setSuccess] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(open, dialogRef);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -92,9 +105,15 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
+        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl"
+      >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-[var(--github-text-primary)] font-mono">
+          <h2 id="login-modal-title" className="text-lg font-semibold text-[var(--github-text-primary)] font-mono">
             {mode === 'login' ? 'Connexion' : 'Créer un compte'}
           </h2>
           <Button

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { LogOut, LogIn, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useFocusTrap } from '../../../lib/hooks/useFocusTrap';
 import { Button } from '../ui/button';
 
 interface UserMenuProps {
@@ -40,6 +41,10 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Trap focus inside the dropdown popover (compact variant only)
+  useFocusTrap(open && variant === 'compact', popoverRef);
 
   // Fermeture Escape / clic extérieur (compact uniquement)
   useEffect(() => {
@@ -159,7 +164,13 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-hidden">
+        <div
+          ref={popoverRef}
+          role="menu"
+          aria-orientation="vertical"
+          aria-label={`Menu utilisateur ${displayName}`}
+          className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-hidden"
+        >
           <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--github-border-primary)]">
             <UserAvatar avatarUrl={avatarUrl} initials={initials} size="md" />
             <div className="min-w-0">
@@ -171,10 +182,11 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
               </span>
             </div>
           </div>
-          <div className="py-1">
+          <div className="py-1" role="none">
             <Button
               variant="ghost"
               size="link-inline"
+              role="menuitem"
               onClick={handleSignOut}
               disabled={signingOut}
               className="w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[#f85149] font-mono hover:bg-[#f85149]/10 hover:text-[#f85149] rounded-none transition-colors focus-visible:ring-[#f85149]/60 focus-visible:ring-2 focus-visible:ring-offset-0"
