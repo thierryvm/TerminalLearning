@@ -5,6 +5,82 @@
 
 ---
 
+## PWA iOS — apple-touch-icon PNG 180×180 + standalone meta tags
+*5 mai 2026 · Phase 7c · THI-152 brick 4/9*
+
+Quatrième mini-PR. Ferme audit #1 **FINDING-03 ios-critical** (apple-touch-icon SVG → PNG) + **FINDING-04 ios-high** (apple-mobile-web-app-capable meta absent).
+
+### Bug iOS PWA Add-to-Home-Screen
+
+Avant cette PR :
+- Le `<link rel="apple-touch-icon">` pointait vers `/favicon.svg`. iOS ne supporte pas SVG fiablement pour les icônes home-screen → fallback Safari rendait un screenshot blurry de la page au lieu de l'icône brand.
+- `<meta name="apple-mobile-web-app-capable">` absent → après "Add to Home Screen" l'app se lançait dans Safari avec sa chrome (URL bar + bottom toolbar visibles), pas en mode standalone PWA.
+
+Le `// TODO: replace with a 180×180 PNG once generated` dans `index.html` reconnaissait déjà la dette.
+
+### Fix appliqué
+
+**1. Génération du PNG via tooling existant**
+
+Réutilisation de `@resvg/resvg-js` (déjà installé pour `generate-og-image.mjs`). Pattern identique :
+- `public/apple-touch-icon-source.svg` (180×180, design favicon scalé ×5.625, fond `#0d1117` fully opaque per Apple HIG — iOS auto-applique sa propre rounded-corner mask donc transparency ferait apparaître le wallpaper).
+- `scripts/generate-apple-touch-icon.mjs` (Resvg renderer, pas de fonts loading vu que l'icône est glyph-free).
+- npm script `icons:apple` pour régénérer.
+- Output `public/apple-touch-icon.png` : **180×180, 1.6 KB** (très loin des 50 KB max).
+
+**2. Update `index.html`**
+
+```diff
+-<link rel="apple-touch-icon" href="/favicon.svg" />
++<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
++<meta name="apple-mobile-web-app-capable" content="yes" />
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
++<meta name="apple-mobile-web-app-title" content="Terminal Learning" />
+```
+
+`black-translucent` cohérent avec le theme dark TL (status bar overlays le bg `#0d1117`, pas de strip blanc en haut).
+
+### Spec régression
+
+`e2e/desktop/pwa-compliance.chromium.spec.ts` (5 tests × 2 viewports = **10 tests**) :
+- `<link apple-touch-icon>` pointe vers un `.png` (catche un futur retour SVG)
+- `sizes="180x180"` déclaré
+- Le PNG est reachable HTTP 200 + `content-type: image/png`
+- `apple-mobile-web-app-capable` = `yes`
+- `apple-mobile-web-app-status-bar-style` = `black-translucent`
+- `apple-mobile-web-app-title` = `Terminal Learning`
+
+Tests sur Chromium uniquement (les meta tags sont parsés au load HTML, comportement identique cross-browser ; la vraie validation iOS Add-to-Home-Screen est empirique @thierry).
+
+### Quality gates
+
+- type-check ✅, lint ✅
+- 1268/1268 vitest
+- **42/42 e2e:mobile** WebKit (20.3s, inchangé — pas de spec mobile ajoutée)
+- **42/42 e2e:desktop** Chromium (11.9s, 32 + 10 nouveaux tests PWA)
+
+### Diff scope strict
+
+```
+public/apple-touch-icon-source.svg            (NEW, 13 lines)
+public/apple-touch-icon.png                   (NEW, 1.6 KB)
+scripts/generate-apple-touch-icon.mjs         (NEW, 60 lines)
+package.json                                  (+1 npm script)
+index.html                                    (+5 -2)
+e2e/desktop/pwa-compliance.chromium.spec.ts   (NEW, 65 lines)
+CHANGELOG.md                                  (+entry)
+```
+
+Aucune nouvelle dépendance npm (Resvg déjà installé). Aucun changement composant React. Aucun changement desktop visuel.
+
+### Hors scope (= mini-PRs futures + backlog)
+
+- ❌ Theme-color light/dark media queries (= mini-PR 9/9)
+- ❌ msapplication-* metas Windows tiles (backlog low priority, non-bloquant)
+- ❌ Touch targets ≥44×44 boutons restants (= mini-PR 5/9)
+
+---
+
 ## FAB Sparkles — taille + opacité + position propre + feedback tactile
 *5 mai 2026 · Phase 7c · THI-152 brick 3/9*
 

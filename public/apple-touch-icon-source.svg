@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- Background — fully opaque per Apple HIG: iOS applies its own rounded
+       corner mask on home-screen icons, so a transparent background would
+       show the underlying wallpaper through the corners. -->
+  <rect width="180" height="180" fill="#0d1117" />
+
+  <!-- Chevron + caret line — same emerald as favicon, scaled from
+       the 32×32 viewBox to 180×180 (×5.625). Stroke width 2.5 → 14
+       to keep the proportional line weight. -->
+  <path
+    d="M 33.75 61.875 L 73.125 90 L 33.75 118.125"
+    stroke="#10b981"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <rect x="84.375" y="104.0625" width="56.25" height="11.25" rx="5.625" fill="#10b981" />
+</svg>
