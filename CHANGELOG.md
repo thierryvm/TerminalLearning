@@ -5,6 +5,40 @@
 
 ---
 
+## Forms font-size ≥ 16px — anti-zoom Safari iOS
+*5 mai 2026 · Phase 7c · THI-152 brick 2/9*
+
+Deuxième mini-PR de la série THI-152. Ferme les findings P0 d'audit #1 FINDING-09 et d'audit #2 FIND-002 + FIND-006 sur l'auto-zoom Safari iOS.
+
+**Bug WebKit baked-in** : tout `<input>` / `<textarea>` / `<select>` avec `font-size < 16px` déclenche un auto-zoom forcé du viewport au focus. L'utilisateur doit pinch out pour revenir, perd le contexte. Comportement non désactivable autrement que par `font-size ≥ 16px` sur l'élément focusé.
+
+**Pattern fix** : `text-base md:text-sm` (Tailwind responsive variant) sur les 5 inputs ciblés :
+- mobile (<768px) → `text-base` = 16px → pas d'auto-zoom
+- desktop (≥768px) → `text-sm` = 14px → densité originale préservée
+
+**Inputs fixés** :
+- `auth/LoginModal.tsx` — email + password (×2)
+- `CommandReference.tsx` — search input
+- `ai/AiTutorPanel.tsx` — input clé API BYOK
+- `ai/parts/MessageInput.tsx` — textarea question tuteur
+
+**Décision Tailwind ciblé vs CSS global** : 5 inputs identifiés via grep exhaustif → Tailwind ciblé (pas de règle CSS globale qui aurait pu casser des composants exotiques type date picker). Le composant shadcn `Input` de base utilisait déjà `text-base md:text-sm` correctement ; le bug venait des overrides `text-sm` dans les composants consumers.
+
+**Inputs déjà OK (audités, pas touchés)** :
+- `TerminalEmulator.tsx:265,272` — déjà `text-base md:text-sm` (correct)
+- `ui/input.tsx` base — déjà `text-base md:text-sm` (correct)
+- `AiTutorPanel.tsx:345` — input checkbox (non concerné par auto-zoom)
+
+**Specs régression ajoutés** :
+- `e2e/mobile/forms-anti-zoom.webkit.spec.ts` — 3 tests : computed `font-size ≥ 16px` sur LoginModal email + password + CommandReference search (3 viewports WebKit = 9 tests)
+- `e2e/desktop/forms-density-preserve.chromium.spec.ts` — 2 tests : computed `font-size ≈ 14px` sur LoginModal email + CommandReference search (2 viewports = 4 tests)
+
+**Quality gates** : type-check ✅, lint ✅, 1268/1268 vitest, **39/39 e2e:mobile** (30+9 nouveaux, 25.9s), **24/24 e2e:desktop** (20+4 nouveaux, 13.7s). Aucune régression.
+
+**Diff scope strict** : 4 composants touchés (1 ligne chacun) + 2 nouveaux specs. Aucun nouveau dépendance. Aucun changement visuel desktop.
+
+---
+
 ## Focus traps + Escape + ARIA modaux (a11y)
 *5 mai 2026 · Phase 7c · THI-152 brick 1/9*
 
