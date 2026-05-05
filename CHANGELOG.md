@@ -5,6 +5,15 @@
 
 ---
 
+## STORY — section *Le matin du 5 mai* ajoutée
+*5 mai 2026 · narratif*
+
+Nouvelle section dans `STORY.md` qui raconte la matinée du 5 mai 2026 — test long 8 tours sur Redirection/Pipes, cross-validation ChatGPT (pratique méta validée), upgrade THI-144 P2 → P1, bypass admin merge PR #190, cleanup Linear THI-149 en 3 sub-tickets.
+
+Détails complets dans `STORY.md`. Préservation intégrale des sections existantes.
+
+---
+
 ## Agent `mobile-responsive-auditor` — gate WebKit iOS + Desktop preserve
 *5 mai 2026 · Phase 7c · THI-150 (ex-brick 3a de THI-149 epic)*
 
