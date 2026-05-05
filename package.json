@@ -12,6 +12,7 @@
     "generate-demo:terminal": "node scripts/generate-demo-terminal-gif.cjs",
     "generate-demo:all": "node scripts/generate-demo-gif.cjs && node scripts/generate-demo-terminal-gif.cjs",
     "generate-og": "node scripts/generate-og-image.mjs",
+    "icons:apple": "node scripts/generate-apple-touch-icon.mjs",
     "generate-sitemap": "node scripts/generate-sitemap.mjs",
     "dev": "vite",
     "type-check": "tsc --noEmit",
