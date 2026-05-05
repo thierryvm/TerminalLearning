@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import {
   Terminal, LayoutDashboard, BookOpen,
@@ -38,6 +38,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
   };
 
+  // Escape closes the mobile drawer (no-op on lg+ where the sidebar is static).
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -48,8 +58,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — on mobile (≤ lg) acts as a modal drawer when isOpen.
+          On desktop the sidebar is static (always visible) and is just a
+          regular <aside> nav, NOT a dialog. The dialog ARIA only applies
+          to the mobile drawer state, otherwise screen readers would
+          announce the static desktop nav as a modal incorrectly. */}
       <aside
+        role={isOpen ? 'dialog' : undefined}
+        aria-modal={isOpen ? 'true' : undefined}
+        aria-label="Navigation des modules"
         className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[var(--github-bg)] border-r border-[var(--github-border-primary)] flex flex-col transition-transform duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
