@@ -5,6 +5,62 @@
 
 ---
 
+## Touch targets ≥44×44 mobile + ≤40 desktop preserve (a11y)
+*5 mai 2026 · Phase 7c · THI-152 brick 5/9*
+
+Cinquième mini-PR. Ferme audit #1 FINDING-09 + audit #2 sur les touch targets sub-44 mobile.
+
+**Voie safe** : aucune modification de `ui/button.tsx` (variants shadcn intactes), aucune nouvelle variant créée. Les 3 fixes ciblent uniquement des `<button>` natifs HTML (pas des `<Button>` shadcn) → zéro impact sur les autres consumers `<Button variant="icon-lg">` du codebase.
+
+### 3 boutons critiques fixés
+
+| Composant | Avant | Après | Pattern |
+|---|---|---|---|
+| `AiTutorPanel.tsx` close drawer (ligne 233) | `rounded p-1` (~22 px) | `min-h-11 min-w-11 ... md:min-h-9 md:min-w-9` | 44 mobile / 36 desktop |
+| `AiTutorPanel.tsx` ProviderPicker pills (ligne 309) | `min-h-9` (36 px) | `min-h-11 ... md:min-h-9` | 44 mobile / 36 desktop |
+| `MessageInput.tsx` "Envoyer" (ligne 77) | `px-3 py-1.5 text-sm` (~32 px) | + `min-h-11 ... md:min-h-9` | 44 mobile / 36 desktop |
+
+### Empirical override mini-PR 3/9 — FAB Sparkles mobile recalibration (Option D)
+
+@thierry a relevé empiriquement sur la preview que le FAB à 48 px (h-12) sur mobile (393 px viewport) paraissait visuellement énorme. Décision @cowork **Option D** retenue : revenir au floor Apple HIG mobile (44 px), **garder le 56 px desktop inchangé** (empirical validation @thierry confirmée bien proportionnée).
+
+| Surface | mini-PR 3/9 | mini-PR 5/9 Option D |
+|---|---|---|
+| FAB mobile | `h-12 w-12` (48 px) | `h-11 w-11` (44 px) |
+| FAB desktop | `md:h-14 md:w-14` (56 px) | `md:h-14 md:w-14` **inchangé** |
+| Sparkles icon | `size={22}` | `size={20}` |
+
+**Asymétrie 44/56 intentionnelle et documentée** dans le JSDoc inline. Le FAB est l'unique bouton desktop exempt de la règle "compact ≤40 px" car il est *primary action anchor* (Material 3 + Apple HIG).
+
+### Specs régression
+
+**Étendu** `e2e/mobile/touch-targets.webkit.spec.ts` — 3 tests × 3 viewports = 9 tests (3 skip Send post-consent) :
+- Drawer close ≥ 44×44 mobile ✅
+- ProviderPicker pills height ≥ 44 mobile ✅
+- "Envoyer" height ≥ 44 mobile (skip pre-consent) ✅
+- FAB mobile = 44×44 exact (mise à jour de l'assert 48 → 44 post-Option D)
+
+**Nouveau** `e2e/desktop/touch-targets-preserve.chromium.spec.ts` — 4 tests × 2 viewports = 8 tests (2 skip Send) :
+- Drawer close ≤ 40 desktop ✅
+- ProviderPicker pills ≤ 40 desktop ✅
+- "Envoyer" ≤ 40 desktop (skip pre-consent) ✅
+- **FAB desktop ≥ 56 ET ≤ 60** (exemption *primary action* documentée)
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- **48/51 e2e:mobile** (3 skip Send) WebKit en 23.9s
+- **48/50 e2e:desktop** (2 skip Send) Chromium en 12.8s
+
+### Hors scope (= mini-PRs futures)
+
+- Chat bubble word-break drawer overflow (= 6/9)
+- Focus rings emerald harmonization (= 7/9)
+- Safe-area top bar + autoFocus terminal (= 8/9)
+- Theme-color media + tap-highlight + W3C `mobile-web-app-capable` (= 9/9)
+
+---
+
 ## PWA iOS — apple-touch-icon PNG 180×180 + standalone meta tags
 *5 mai 2026 · Phase 7c · THI-152 brick 4/9*
 
