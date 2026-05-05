@@ -54,6 +54,13 @@
          status-bar overlays the app background instead of leaving a white
          strip at the top. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- W3C `mobile-web-app-capable` (THI-152 brick 9/9): replaces the
+         deprecated Apple-only `apple-mobile-web-app-capable`. We keep
+         BOTH for now: the W3C version silences the Chrome DevTools
+         deprecation warning while iOS Safari still reads the legacy
+         Apple meta. Removing the legacy meta would break PWA
+         standalone on existing iOS installs. -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Terminal Learning" />
 

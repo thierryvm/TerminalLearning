@@ -143,4 +143,35 @@ test.describe('PWA safe-area insets — Safari iOS WebKit (THI-152 brick 7/9)', 
     // caught even if env() collapses to 0 anyway.
     expect(padding!.className, 'nav className uses pt-[max(...,env(safe-area-inset-top))]').toMatch(/pt-\[max\(.*safe-area-inset-top.*\)\]/);
   });
+
+  /**
+   * THI-152 brick 9/9 — Sidebar landscape iPhone safe-area-inset-left.
+   *
+   * In landscape orientation, iPhone X+ rotates the notch onto one side
+   * of the screen. With our Sidebar `fixed inset-y-0 left-0 w-72`, the
+   * notch overlaid the leftmost icons of the sidebar in PWA standalone
+   * landscape. Adding `pl-[max(0px,env(safe-area-inset-left))]` shifts
+   * the sidebar content inward by the notch width without affecting
+   * portrait or desktop layouts.
+   */
+  test('Sidebar aside has max(0px, env(safe-area-inset-left)) padding-left', async ({ page }) => {
+    await page.goto('/app');
+    // Open the mobile sidebar so the aside is in-view.
+    await page.getByRole('button', { name: /Ouvrir le menu/i }).click();
+    const padding = await page.evaluate(() => {
+      const aside = document.querySelector('aside[aria-label="Navigation des modules"]');
+      if (!aside) return null;
+      const s = getComputedStyle(aside);
+      return {
+        paddingLeft: s.paddingLeft,
+        className: aside.className,
+      };
+    });
+    expect(padding, 'Sidebar aside located').not.toBeNull();
+    // env(safe-area-inset-left) = 0 in headless WebKit → max(0, 0) = 0.
+    // We assert the property is APPLIED (computed = '0px', not 'auto')
+    // and the className contains the safe-area-inset-left pattern.
+    expect(padding!.paddingLeft).toMatch(/^\d+(\.\d+)?px$/);
+    expect(padding!.className, 'Sidebar className uses pl-[max(...,env(safe-area-inset-left))]').toMatch(/pl-\[max\(.*safe-area-inset-left.*\)\]/);
+  });
 });

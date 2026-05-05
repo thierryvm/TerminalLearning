@@ -177,6 +177,19 @@
   }
 }
 
+/* ── Mobile tap-highlight (THI-152 brick 9/9) ──────────────────────────────
+   Safari / Chrome iOS show a translucent grey rectangle by default when
+   a user taps a link/button. The TL design system uses :active states
+   (active:scale-95 on the FAB, hover:bg-* fallbacks elsewhere) for tap
+   feedback that is brand-coherent — the iOS grey overlay clashes with
+   the dark GitHub-themed palette. Setting the tap highlight to fully
+   transparent lets our :active styles speak alone. The * selector
+   covers everything; individual components can opt back in via their
+   own CSS if they ever need the system feedback. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
