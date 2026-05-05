@@ -8,17 +8,17 @@
 ## Focus traps + Escape + ARIA modaux (a11y)
 *5 mai 2026 · Phase 7c · THI-152 brick 1/9*
 
-Première mini-PR de la série THI-152 (mini-PRs fix séquentielles selon matrice unifiée). Couvre les 3 findings P0 du audit #2 sur les modaux a11y :
+Première mini-PR de la série THI-152 (mini-PRs fix séquentielles selon matrice unifiée). Couvre les 3 findings P0 de l'audit #2 sur les modaux a11y :
 
 - **LoginModal** (`auth/LoginModal.tsx`) — ajout `role="dialog"` + `aria-modal="true"` + `aria-labelledby="login-modal-title"` + `Escape` handler + focus trap. Avant : modal raw `<div>` sans aucune sémantique modale, Tab walks document, Escape ne fait rien. Après : ARIA correcte, focus auto sur premier champ, Tab cycle, Escape ferme + restore focus précédent.
 - **UserMenu** (`auth/UserMenu.tsx`) — variant compact dropdown popover obtient `role="menu"` + `aria-orientation="vertical"` + `aria-label` ; bouton "Se déconnecter" obtient `role="menuitem"` ; focus trap actif quand le menu est ouvert (cycle Tab interne).
-- **Sidebar** (`Sidebar.tsx`) — ajout conditional `role="dialog"` + `aria-modal="true"` + `aria-label="Navigation des modules"` **uniquement quand mobile drawer ouvert** (sur desktop `lg:static`, c'est une nav permanente, pas un dialog). `Escape` ferme le drawer.
+- **Sidebar** (`Sidebar.tsx`) — ajout conditionnel `role="dialog"` + `aria-modal="true"` + `aria-label="Navigation des modules"` **uniquement quand mobile drawer ouvert** (sur desktop `lg:static`, c'est une nav permanente, pas un dialog). `Escape` ferme le drawer. Focus trap actif tant que le drawer est ouvert pour que `Tab` ne s'évade pas vers le contenu derrière.
 
 Hook réutilisable `src/lib/hooks/useFocusTrap.ts` créé pour partager la logique entre les 3 composants. Contract : sauvegarde l'élément focused avant ouverture, auto-focus le premier focusable inside au activate, cycle Tab/Shift+Tab entre first et last, restore focus au deactivate. Pas d'Escape handler (chaque caller wire son propre close).
 
 **Diff scope strict** : 4 fichiers, 1 nouveau hook, ~64 lignes nettes. Aucune nouvelle dépendance npm. Aucun changement de design visuel.
 
-**Quality gates** : type-check ✅, lint ✅, 1268/1268 vitest, 30/30 e2e:mobile WebKit, 20/20 e2e:desktop Chromium. Le test e2e `drawer-overflow.webkit.spec.ts:52` (`drawer can be closed via Escape key — focus trap contract`) sert d'anti-régression implicite du contract Escape sur les modaux.
+**Quality gates** : type-check ✅, lint ✅, 1268/1268 vitest, 30/30 e2e:mobile WebKit, 20/20 e2e:desktop Chromium. Le test e2e `drawer-overflow.webkit.spec.ts:52` (`drawer can be closed via Escape key — focus trap contract`) sert d'anti-régression implicite du contrat Escape sur les modaux.
 
 **Hors scope** (= mini-PRs suivantes) : forms anti-zoom (#2), FAB Sparkles size + opacity (#3), PWA apple-touch-icon (#4), touch targets (#5), chat bubble word-break (#6), focus rings emerald harmonization (#7), safe-area top bar + autoFocus terminal (#8), theme-color media + tap-highlight + font-display (#9).
 

@@ -14,6 +14,10 @@ import { useEffect } from 'react';
  *
  * The hook does NOT add an Escape handler — callers wire that
  * themselves so they can choose what "close" means.
+ *
+ * For the empty-container fallback (no focusables yet, e.g. async
+ * content) to work, the container element must have `tabIndex={-1}`
+ * so it is programmatically focusable.
  */
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -32,9 +36,15 @@ export function useFocusTrap(active: boolean, containerRef: React.RefObject<HTML
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
-    // Auto-focus the first focusable inside the container.
+    // Auto-focus the first focusable inside the container; fall back to
+    // the container itself (requires tabIndex={-1}) so focus never
+    // escapes to background content while the modal is open.
     const focusables = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-    focusables[0]?.focus();
+    if (focusables.length > 0) {
+      focusables[0].focus();
+    } else {
+      container.focus?.();
+    }
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
