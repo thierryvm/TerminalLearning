@@ -5,6 +5,53 @@
 
 ---
 
+## Drawer overflow word-break + header truncation (mobile)
+*5 mai 2026 · Phase 7c · THI-152 brick 6/9*
+
+Sixième mini-PR. Élimine définitivement l'overflow horizontal du drawer AI tutor sur mobile.
+
+**Bug empirique @thierry** (Safari iPhone 14 réel) : page horizontalement fixe drawer fermé, devient déplaçable horizontalement DÈS que le drawer est ouvert. 100% reproductible.
+
+**Voie safe** : aucune modification de `ui/button.tsx`, aucune nouvelle variant. 3 fixes purement structurels via classes Tailwind sur des `<div>` / `<header>` / `<h2>` natifs.
+
+### 3 fixes ciblés
+
+| Fichier | Ligne | Pattern ajouté | Rôle |
+|---|---|---|---|
+| `MessageList.tsx` | 101 | `break-words` sur la bubble | Long URL / no-space string wrappent à l'intérieur de la bulle (max-w-[85%]) au lieu de l'élargir |
+| `AiTutorPanel.tsx` | 228-235 | `gap-2` sur `<header>` + `min-w-0 truncate` sur h2 + `shrink-0` sur right cluster | Header reste dans la largeur du drawer même quand `PROVIDER_LABELS[provider]` est long sur iPhone SE |
+| `AiTutorPanel.tsx` | 226 | `overflow-x-hidden max-w-full` sur le drawer container | Belt-and-suspenders : aucun descendant ne peut élargir le drawer au-delà du viewport |
+
+### Specs régression
+
+**Étendu** `e2e/mobile/drawer-overflow.webkit.spec.ts` — describe THI-152 brick 6/9 ajouté (5 specs × 3 viewports = 15 tests) :
+- baseline drawer fermé : `documentElement.scrollWidth ≤ clientWidth` ✅
+- drawer ouvert + vide : pas d'overflow ✅
+- injection synthétique long URL 200 chars : pas d'overflow ✅
+- injection synthétique long no-space 300 chars : pas d'overflow ✅
+- injection `<pre>` 500 chars : scroll interne, parent stable ✅
+
+**Nouveau** `e2e/desktop/drawer-overflow-preserve.chromium.spec.ts` — 5 specs × 2 viewports = 10 tests preserve : drawer card reste à `md:w-[420px]` même avec injections de contenu long (≤ 440 px tolérance).
+
+**Stratégie injection** : `page.evaluate()` insère du DOM directement (strategy B per @cowork) — zéro mock OpenRouter, zéro coût LLM. Le fix étant structurel (Tailwind), la classe rendue est identique au chemin réel des messages.
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- e2e:mobile + e2e:desktop attendus en CI sur la preview Vercel
+
+### Hors scope (= mini-PRs futures)
+
+- Focus rings emerald harmonization (= 7/9)
+- Safe-area top bar + autoFocus terminal (= 8/9)
+- Theme-color media + tap-highlight + W3C `mobile-web-app-capable` (= 9/9)
+
+### Validation
+
+@thierry valide empiriquement post-merge sur Safari iPhone 14 réel (drawer ouvert → page reste fixe horizontalement, plus déplaçable).
+
+---
+
 ## Touch targets ≥44×44 mobile + ≤40 desktop preserve (a11y)
 *5 mai 2026 · Phase 7c · THI-152 brick 5/9*
 

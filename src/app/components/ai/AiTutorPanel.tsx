@@ -223,16 +223,26 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
               paddingTop: 'env(safe-area-inset-top, 0px)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
-            className="fixed inset-0 z-[70] flex flex-col bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl md:!p-0"
+            // THI-152 brick 6/9: `overflow-x-hidden max-w-full` is a
+            // belt-and-suspenders guard against any descendant that
+            // would otherwise widen the drawer past the viewport on
+            // mobile (a common WebKit pattern when long inline content
+            // appears inside flex children). Pairs with `break-words`
+            // on bubbles and `min-w-0 truncate` on the header h2.
+            className="fixed inset-0 z-[70] flex max-w-full flex-col overflow-x-hidden bg-[var(--github-bg-primary)] md:bottom-4 md:right-4 md:top-auto md:left-auto md:h-[600px] md:w-[420px] md:rounded-lg md:border md:border-[var(--github-border-primary)] md:shadow-xl md:!p-0"
           >
-            <header className="flex items-center justify-between border-b border-[var(--github-border-primary)] px-3 py-2">
+            <header className="flex items-center justify-between gap-2 border-b border-[var(--github-border-primary)] px-3 py-2">
               <h2
                 id="ai-tutor-title"
-                className="text-sm font-semibold text-[var(--github-text-primary)]"
+                // THI-152 brick 6/9: `min-w-0 truncate` lets the title
+                // shrink and clip on narrow viewports (iPhone SE) when
+                // the provider label is long, instead of pushing the
+                // close button off-screen.
+                className="min-w-0 truncate text-sm font-semibold text-[var(--github-text-primary)]"
               >
                 Tuteur IA — {PROVIDER_LABELS[provider]}
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <RateLimitBadge
                   remaining={tutor.remainingRequests}
                   onReset={tutor.resetRateCounter}

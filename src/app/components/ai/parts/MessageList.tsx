@@ -98,7 +98,12 @@ export function MessageList({ messages, isStreaming }: Props) {
             className={`mb-3 flex ${isUser ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+              // THI-152 brick 6/9: `break-words` (overflow-wrap: anywhere)
+              // forces long URLs / no-space strings to wrap inside the
+              // bubble instead of widening the drawer past viewport
+              // width — root cause of the empirical horizontal overflow
+              // when the AI tutor drawer was open on Safari iPhone 14.
+              className={`max-w-[85%] break-words rounded-lg px-3 py-2 text-sm ${
                 isUser
                   ? 'bg-[var(--github-accent)] text-white'
                   : 'bg-[var(--github-bg-secondary)] text-[var(--github-text-primary)]'
