@@ -716,7 +716,7 @@ export function CommandReference() {
             placeholder="Rechercher une commande..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl pl-9 pr-4 py-2.5 text-sm text-[var(--github-text-primary)] placeholder-[#8b949e] outline-none focus:border-[#58a6ff] transition-colors font-mono"
+            className="w-full bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl pl-9 pr-4 py-2.5 text-base md:text-sm text-[var(--github-text-primary)] placeholder-[#8b949e] outline-none focus:border-[#58a6ff] transition-colors font-mono"
           />
         </div>
       </div>

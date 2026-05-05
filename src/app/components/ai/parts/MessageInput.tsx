@@ -61,7 +61,7 @@ export function MessageInput({ onSend, disabled }: Props) {
         disabled={disabled}
         placeholder="Pose ta question sur la commande…"
         aria-label="Question pour le tuteur IA"
-        className="w-full resize-none rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-sm text-[var(--github-text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--github-accent)] disabled:opacity-60"
+        className="w-full resize-none rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-base md:text-sm text-[var(--github-text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--github-accent)] disabled:opacity-60"
       />
       <div className="flex items-center justify-between">
         <span

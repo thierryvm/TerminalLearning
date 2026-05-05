@@ -474,7 +474,7 @@ function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
         onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
         aria-label="Clé API"
         placeholder={expectedPrefix}
-        className="w-full rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-sm focus-visible:outline-2 focus-visible:outline-[var(--github-accent)]"
+        className="w-full rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-base md:text-sm focus-visible:outline-2 focus-visible:outline-[var(--github-accent)]"
       />
       {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
       <button
