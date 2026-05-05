@@ -39,15 +39,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* GitHub Dark Theme Colors */
-  --github-bg: #0d1117;
-  --github-bg-secondary: #010409;
-  --github-border-primary: #30363d;
-  --github-border-secondary: #21262d;
-  --github-text-primary: #c9d1d9;
-  --github-text-secondary: #8b949e;
-  --github-text-tertiary: #6e7681;
-  --github-subtle: #484f58;
 }
 
 .dark {
@@ -85,15 +76,28 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
-  /* GitHub Dark Theme Colors (same as light mode) */
+}
+
+/* GitHub Dark Theme Colors — shared by :root and .dark (TL uses the
+ * same dark-canonical palette in both modes; centralized here to
+ * prevent drift between the two scopes).
+ * --github-bg-primary is aliased to --github-bg so a future bump of
+ * the canonical bg value propagates automatically (Sourcery review
+ * on PR #194). */
+:root,
+.dark {
   --github-bg: #0d1117;
+  --github-bg-primary: var(--github-bg);
   --github-bg-secondary: #010409;
+  --github-bg-tertiary: #161b22;
   --github-border-primary: #30363d;
   --github-border-secondary: #21262d;
   --github-text-primary: #c9d1d9;
   --github-text-secondary: #8b949e;
   --github-text-tertiary: #6e7681;
   --github-subtle: #484f58;
+  --github-accent: #238636;
+  --github-accent-hover: #2ea043;
 }
 
 @theme inline {
