@@ -5,6 +5,71 @@
 
 ---
 
+## Focus rings emerald harmonization (a11y desktop + keyboard)
+*5 mai 2026 soirée · Phase 7c · THI-152 brick 8/9*
+
+Huitième mini-PR. **P1 cosmétique a11y, pas un bug bloquant** — cohérence design system + WCAG 2.1 AA keyboard navigation.
+
+**Voie safe @cowork** : aucune modification de `ui/button.tsx` variants ni de `ui/input.tsx` shadcn (patterns `--ring` CSS var préservés). Aucune nouvelle variant. 8 fixes purement Tailwind sur `<button>` natifs et `<textarea>` natives — zéro impact sur les consumers shadcn.
+
+### Pattern canonique TL identifié (déjà majoritaire codebase)
+
+```
+outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0
+```
+
+Utilisé partout dans `ui/button.tsx` variants TL custom (tl-outlined, tl-ghost-emerald, tl-emerald-soft, tl-icon-ghost, tl-tab-active, etc.), Sidebar items, Landing CTAs, scroll-to-top FABs (MarkdownPage / PrivacyPolicy / Landing), `ui/card.tsx`. Cette mini-PR aligne 8 outliers sur ce pattern.
+
+### 8 occurrences harmonisées (3 fichiers)
+
+| Fichier | Lignes | Avant | Après |
+|---|---|---|---|
+| `AiTutorPanel.tsx` | 199 (FAB), 257 (close), 400 (CTA accept), 517 (textarea API key), 523 (valider) | `focus-visible:outline-2 focus-visible:outline-offset-2` (ou `outline-[var(--github-accent)]`) | Pattern canonique TL |
+| `MessageInput.tsx` | 64 (textarea), 81 (Envoyer) | `focus-visible:outline-2 focus-visible:outline-offset-2` | Pattern canonique TL |
+| `RateLimitBadge.tsx` | 44 | `focus-visible:outline-2 focus-visible:outline-offset-2` | Pattern canonique TL |
+
+### Surfaces FLAGUÉES intentionnellement (NE PAS toucher — voie safe)
+
+- **`ui/button.tsx` default base + variants `--ring` shadcn** : pattern shadcn natif `focus-visible:ring-ring/50 ring-[3px]` préservé
+- **`ui/input.tsx` / `ui/badge.tsx`** : pattern shadcn natif préservé
+- **`LoginModal.tsx` email/password inputs** : pattern hybride border + ring intentionnel (feedback visuel form validation)
+- **`LoginModal.tsx` switch-mode link** : `focus-visible:ring-0` + underline intentionnel (lien texte, underline sémantique)
+- **`UserMenu.tsx` logout button** : `ring-[#f85149]/60` rouge intentionnel (action destructive, sémantique distinct)
+- **`UserMenu.tsx` avatar trigger** : `ring-emerald-500` full opacity intentionnel (bouton image, opacity 100% aide à détacher visuellement de la photo)
+
+### Spec régression desktop
+
+**Nouveau** `e2e/desktop/focus-rings.chromium.spec.ts` — 6 specs × 2 viewports (1280×800 / 1920×1080) = **12 tests** :
+1. Landing CTA "Commencer" expose la classe canonique emerald
+2. AI tutor FAB expose la classe canonique
+3. Drawer close button expose la classe canonique
+4. MessageInput textarea expose la classe canonique (skip si post-consent)
+5. Tab navigation déclenche un box-shadow visible sur le FAB (`:focus-visible`)
+6. Mouse click NE déclenche PAS le ring emerald (comportement `:focus-visible` keyboard-only)
+
+**Stratégie d'assertion hybride** : static className guards (anti-régression silencieuse si quelqu'un strip les classes) + dynamic keyboard interaction (assertion `:focus-visible` heuristic).
+
+### WCAG conformité
+
+`emerald-500/60` sur backgrounds dark (`var(--github-bg)` = #0d1117) et light : contrast ratio empirique > 3:1 ✅ WCAG 2.1 AA pour focus indicator.
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- e2e:mobile + e2e:desktop : exécutés par CI sur la preview Vercel
+
+### Hors scope (= mini-PRs futures)
+
+- 9/9 — Theme-color media + tap-highlight + W3C `mobile-web-app-capable`
+
+### Validation @thierry post-merge
+
+- Desktop : Tab through Landing + `/app` + drawer ouvert → ring emerald cohérent partout
+- Aucun ring blanc/bleu/violet par défaut sur les surfaces harmonisées
+- Click souris : pas de ring (comportement `:focus-visible` keyboard-only respecté)
+
+---
+
 ## Hotfix Landing nav safe-area-inset-top (PWA standalone)
 *5 mai 2026 soirée · Phase 7c · THI-152 brick 7bis*
 

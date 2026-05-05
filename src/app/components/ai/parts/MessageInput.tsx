@@ -61,7 +61,7 @@ export function MessageInput({ onSend, disabled }: Props) {
         disabled={disabled}
         placeholder="Pose ta question sur la commande…"
         aria-label="Question pour le tuteur IA"
-        className="w-full resize-none rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-base md:text-sm text-[var(--github-text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--github-accent)] disabled:opacity-60"
+        className="w-full resize-none rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-base md:text-sm text-[var(--github-text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 disabled:opacity-60"
       />
       <div className="flex items-center justify-between">
         <span
@@ -78,7 +78,7 @@ export function MessageInput({ onSend, disabled }: Props) {
           // critical "Envoyer" action above the Apple HIG floor;
           // md:min-h-9 (36 px) preserves the compact desktop density
           // matching the surrounding character-count meta line.
-          className="rounded-md bg-[var(--github-accent)] px-3 py-1.5 text-sm font-medium text-white transition min-h-11 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-9"
+          className="rounded-md bg-[var(--github-accent)] px-3 py-1.5 text-sm font-medium text-white transition min-h-11 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 md:min-h-9"
         >
           Envoyer
         </button>
