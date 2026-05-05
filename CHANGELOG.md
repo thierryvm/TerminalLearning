@@ -5,6 +5,76 @@
 
 ---
 
+## FAB Sparkles — taille + opacité + position propre + feedback tactile
+*5 mai 2026 · Phase 7c · THI-152 brick 3/9*
+
+Troisième mini-PR. Ferme le finding **P0 ios-critical** d'audit #1 FINDING-02 (FAB opacity-80 + h-11 floor + hover-only affordance) + fixe la dette technique de position héritée de THI-111.
+
+**Avant** :
+```
+fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-20 z-40
+flex h-11 w-11 items-center justify-center rounded-full
+bg-[var(--github-accent)] text-white opacity-80 shadow-md
+ring-1 ring-black/30 transition
+hover:opacity-100 hover:bg-[var(--github-accent-hover)]
+focus-visible:outline-2 focus-visible:outline-offset-2
+md:h-12 md:w-12
+```
+
+**Après** :
+```
+fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-6 z-40
+flex h-12 w-12 items-center justify-center rounded-full
+bg-[var(--github-accent)] text-white shadow-lg
+ring-1 ring-black/30 transition active:scale-95
+hover:bg-[var(--github-accent-hover)]
+focus-visible:outline-2 focus-visible:outline-offset-2
+md:h-14 md:w-14
+```
+
+### Changements
+
+| Aspect | Avant | Après | Pourquoi |
+|---|---|---|---|
+| Position latérale | `right-20` (80px) | `right-6` (24px) | Coin inférieur droit propre. Le `right-20` était une précaution V1 (THI-111) contre un chevauchement avec scroll-to-top FAB qui n'existe sur aucune des pages où l'AI tutor est rendu (Dashboard, LessonPage, CommandReference) |
+| Taille mobile | `h-11 w-11` (44px) | `h-12 w-12` (48px) | Confort tactile au-dessus du floor Apple HIG |
+| Taille desktop | `md:h-12 md:w-12` (48px) | `md:h-14 md:w-14` (56px) | Standard Material/Apple FAB primary |
+| Opacité | `opacity-80 hover:opacity-100` | (default 100%) | Safari iOS n'a pas de hover state — la FAB était permanently 80% transparente, absorbée dans le chrome du panneau Terminal |
+| Shadow | `shadow-md` | `shadow-lg` | Détachement visuel renforcé sur fond sombre |
+| Feedback tactile | (aucun) | `active:scale-95` | Press feedback sur touch devices (compense l'absence de hover) |
+| Icône Sparkles | `size={20}` | `size={22}` | Cohérent avec le bump conteneur 44→48 |
+
+### Dette technique fixée
+
+Le `right-20` legacy est documenté comme dette V1 dans le commentaire JSDoc inline. Ferme la confusion *"pourquoi le FAB n'est pas dans le coin inférieur droit ?"* (question @thierry, validation empirique 5 mai matin).
+
+### Specs régression
+
+**Étendus** (`e2e/mobile/ai-tutor-fab.webkit.spec.ts`) :
+- Hit area mobile **= 48 px exact** (au lieu de juste ≥44, garde-fou anti-régression vers le floor)
+- Opacité **= 1** (catche un futur retour de l'opacity-80)
+
+**Nouveau** (`e2e/desktop/ai-tutor-fab-desktop.chromium.spec.ts`) — 4 tests × 2 viewports = **8 tests** :
+- Width/height = 56 px sur desktop (md:h-14)
+- Background `rgb(35, 134, 54)` préservé (PR #194 regression guard)
+- Position `fixed` préservée
+- Opacité 100% cohérente avec mobile
+
+### Quality gates
+
+- type-check ✅, lint ✅
+- 1268/1268 vitest
+- **42/42 e2e:mobile** (39+3 nouveaux/étendus, 22.5s)
+- **32/32 e2e:desktop** (24+8 nouveaux, 13.9s)
+
+### Hors scope (= mini-PRs futures)
+
+- ❌ Harmoniser scroll-to-top Landing FAB pattern (variant `icon-round` Button) avec AI tutor FAB pattern (Tailwind direct) — *flag backlog issue, non-bloquant*
+- ❌ PWA apple-touch-icon PNG (= mini-PR 4/9)
+- ❌ Touch targets ≥44×44 boutons restants (= mini-PR 5/9)
+
+---
+
 ## Forms font-size ≥ 16px — anti-zoom Safari iOS
 *5 mai 2026 · Phase 7c · THI-152 brick 2/9*
 
