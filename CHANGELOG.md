@@ -5,6 +5,37 @@
 
 ---
 
+## Agent `mobile-responsive-auditor` — gate WebKit iOS + Desktop preserve
+*5 mai 2026 · Phase 7c · THI-150 (ex-brick 3a de THI-149 epic)*
+
+**Contexte** : THI-149 epic-parent (Responsive Mobile Audit 2026, P0 BLOQUANT v0.9 publique) a été marqué Done par GitHub auto-close lors du merge de PR #191 (hot fix `max-width: 100vw` overflow body). L'epic en réalité est un plan en 3 bricks séquentielles. Décision @cowork (5 mai matin, Option 2 Linear) : laisser THI-149 Done (hot fix légitime) + créer 3 sub-tickets `parentId=THI-149` :
+- **THI-150** — feat(qa): create mobile-responsive-auditor agent (cette PR)
+- **THI-151** — qa: run mobile audit + Playwright WebKit + bug matrix
+- **THI-152** — fix: mobile responsive bugs sequential mini-PRs
+
+**Livré** : `.claude/agents/mobile-responsive-auditor.md` — 12ᵉ agent du projet, première gate dédiée **WebKit iOS** (vs `ui-auditor` Chromium-only). 11 sections / ≥48 checkpoints, modèle Sonnet (judgment call sur regression desktop + sévérité WebKit-spécifique).
+
+**Pattern source cross-projet** : `F:/PROJECTS/Apps/ankora/.claude/agents/mobile-ios-auditor.md` (40 checkpoints). Adapté Vite/React/Tailwind v4/Vitest/Playwright (drop Next.js : Server Components, `next/font`, `next/image`, `app/[locale]/...`). Adaptations TL : env switcher pill (Linux/macOS/Windows/WSL), Terminal emulator interactif, AiTutorPanel drawer (Phase 7b).
+
+**Bonus Section 11 — Desktop Preservation** (TL-critical, mandate @cowork) : 5 checkpoints qui garantissent qu'aucun fix mobile ne casse le desktop (LessonPage split 44%/42%, Sidebar `lg:translate-x-0`, container queries fallback, snapshot diff before/after).
+
+**Checkpoints additionnels BUG-FAB-001** (visibility/contrast/taille FAB Sparkles ✨ AI tutor — bug empirique @thierry Safari iPhone 14 post-THI-111) :
+- §3 #14 : FAB tactile target ≥ 44×44 px sur fonds clairs ET sombres
+- §8 #36a : FAB contrast ratio ≥ AAA (7:1) sur tous fonds possibles
+- §8 #36b : FAB visual detachment (shadow + ring + offset positioning)
+
+**Hors scope cette PR** : aucun fix bug (= THI-152), aucun setup Playwright (= THI-151), aucune invocation agent sur pages TL (= THI-151).
+
+**Reprio @cowork séquence V1.5 ajustée** :
+1. ✅ THI-150 (cette PR — agent créé)
+2. ⏳ THI-151 (audit Playwright WebKit + matrice bugs)
+3. ⏳ THI-152 (mini-PRs fix séquentielles, critère ABSOLU "ne pas casser desktop")
+4. ⏳ THI-148 (extend tutor scope méta-plateforme V1.0.1)
+5. ⏳ THI-144 enrichi P1 (system prompt v1.1.0 + 5 micro-frictions ChatGPT cross-validation)
+6. ⏬ THI-142/143 reportés V2 (Haiku 9.3/10 résout 80% naturellement)
+
+---
+
 ## Sprint AI Tutor — récap V1 livré + V1.5 séquencé + verdict empirique Haiku 9.3/10
 *4 mai 2026 soir · Phase 7b · Stratégie d'attaque post-merge*
 
