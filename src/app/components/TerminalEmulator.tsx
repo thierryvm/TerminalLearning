@@ -127,6 +127,29 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
   const focusInput = () => inputRef.current?.focus();
 
+  // THI-152 brick 7/9: replace the previous `autoFocus` HTML attribute
+  // with a controlled mount-time focus that:
+  //   - skips touch devices (pattern matches MessageInput.tsx — opening
+  //     the on-screen keyboard auto on lesson load is intrusive when the
+  //     learner is still reading the briefing; they tap the terminal
+  //     explicitly when ready, the wrapper onClick already delegates
+  //     to focusInput),
+  //   - skips when a modal/drawer is already open on mount (focus trap
+  //     conflict — LoginModal / AiTutorPanel both render role="dialog"
+  //     aria-modal="true" while open).
+  // The HTML `autoFocus` attribute on <input> below is removed so this
+  // is the single source of truth for initial focus.
+  useEffect(() => {
+    const isTouch =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (isTouch) return;
+    const openDialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+    if (openDialog) return;
+    inputRef.current?.focus();
+  }, []);
+
   // Derive active state from the username prop so auth changes (login/logout)
   // are reflected immediately without a setState round-trip.
   const activeState = useMemo<TerminalState>(
@@ -270,7 +293,6 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
             maxLength={MAX_INPUT_LENGTH}
             onKeyDown={handleKeyDown}
             className={`flex-1 bg-transparent text-[var(--github-text-primary)] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
-            autoFocus
             aria-label="Commande terminal"
             autoComplete="off"
             autoCorrect="off"

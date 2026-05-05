@@ -5,6 +5,82 @@
 
 ---
 
+## PWA safe-area top + autoFocus terminal contrôlé (mobile)
+*5 mai 2026 · Phase 7c · THI-152 brick 7/9*
+
+Septième mini-PR. **Promue 7/9 par décision empirique @cowork** (P0 visible vs focus rings P1 cosmétique).
+
+**Bug empirique @thierry** (Safari iPhone 14 réel, mode PWA standalone — Add to Home Screen) : le haut de la page passe SOUS les icônes système (wifi, batterie, signal). 100 % reproductible en standalone, absent en Safari mobile classique.
+
+**Voie safe** : aucune modification de `ui/button.tsx`, aucune nouvelle variant. 3 fixes ciblés via classes Tailwind sur des wrappers existants + 1 rewrite logique focus terminal.
+
+### Root cause confirmée
+
+`index.html` a déjà `viewport-fit=cover` ✅ et `apple-mobile-web-app-status-bar-style: black-translucent` ✅ — les meta tags sont bons. Le problème : le wrapper `<div className="flex-1 flex flex-col ...">` du `Layout.tsx` n'avait pas de `pt-[env(safe-area-inset-top)]`, donc avec `black-translucent` la status bar overlaie la mobile top bar `h-14`.
+
+### 3 fixes structurels
+
+| Fichier | Ligne | Pattern ajouté | Rôle |
+|---|---|---|---|
+| `Layout.tsx` | 12 | `pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]` sur le flex-1 wrapper | Mobile top bar + main shiftent sous status bar en PWA standalone, OK sur desktop (env=0) |
+| `LoginModal.tsx` | 105 | `pt/pb/pl/pr [env(safe-area-inset-*)]` sur le backdrop fixed | Modal centrée ne se fait plus clip par status bar / home indicator / notch |
+| `TerminalEmulator.tsx` | 130 | `useEffect` mount focus avec guards (touch device + modal ouvert) — `autoFocus` HTML retiré | Desktop : focus auto. Mobile : focus on tap (clavier ne s'ouvre pas auto = pattern MessageInput.tsx) |
+
+### Surfaces déjà conformes (skip — pas de double fix)
+
+- FAB AI tutor : `bottom-[max(1rem,env(safe-area-inset-bottom))]` déjà appliqué THI-147 ✅
+- Drawer AI tutor : `paddingTop: env(safe-area-inset-top)` + `paddingBottom: env(safe-area-inset-bottom)` déjà appliqués ✅
+- Sidebar : `pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]` déjà appliqués ✅
+- Landing scroll-to-top FAB / footer : déjà conformes ✅
+
+### Specs régression
+
+**Nouveau** `e2e/mobile/safe-area-pwa.webkit.spec.ts` — 5 specs × 3 viewports = **15 tests** :
+- viewport meta contains `viewport-fit=cover`
+- `apple-mobile-web-app-status-bar-style` = `black-translucent`
+- Layout flex-1 wrapper a bien des paddings safe-area déclarés (computed style)
+- FAB AI tutor bottom resolves ≥ 16 px (sanity check du pattern max(1rem, env))
+- LoginModal backdrop a bien py/px safe-area déclarés
+
+**Nouveau** `e2e/mobile/terminal-autofocus.webkit.spec.ts` — 2 specs × 3 viewports = **6 tests** :
+- terminal input n'est PAS auto-focused sur mobile (touch device guard)
+- terminal input gagne le focus quand l'utilisateur tape dessus
+
+**Nouveau** `e2e/desktop/safe-area-preserve.chromium.spec.ts` — 3 specs × 2 viewports = **6 tests preserve** :
+- Layout wrapper paddings collapse à 0 sur desktop (env=0)
+- mobile top bar reste cachée (lg:hidden)
+- terminal input EST auto-focused sur lesson page (no modal, no touch)
+
+### Posture senior — décisions documentées
+
+- **autoFocus mobile désactivé** : pattern senior emprunté à `MessageInput.tsx` qui skip déjà touch devices (`window.matchMedia('(hover: none) and (pointer: coarse)')`). Ouvrir le clavier virtuel iOS au mount d'une lesson page interrompt la lecture de l'énoncé. Le wrapper `onClick={focusInput}` reste actif → tap = focus = clavier, sur demande utilisateur.
+- **Guard modal/drawer** : si `[role="dialog"][aria-modal="true"]` est déjà ouvert au mount de TerminalEmulator (cas hypothétique mais robuste), le focus auto est court-circuité pour ne pas voler le focus au focus trap.
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- e2e:mobile + e2e:desktop : exécutés par CI sur la preview Vercel
+
+### Hors scope (= mini-PRs futures)
+
+- 8/9 — Focus rings emerald harmonization (renumérotée depuis 7/9 originel)
+- 9/9 — Theme-color media + tap-highlight + W3C `mobile-web-app-capable`
+
+### Backlog flagué
+
+- `100vh` → `100dvh` migration : aucun usage non-`dvh` détecté dans le scope, mais à vérifier si ajouts futurs (mini-PR future hors sprint Mobile Recovery)
+
+### Validation @thierry post-merge
+
+Sur Safari iPhone 14 réel, mode standalone (Add to Home Screen) :
+- Mobile top bar n'est plus chevauchée par wifi/batterie/signal
+- LoginModal centrée ne se fait pas clip par les insets
+- En landscape, le notch latéral est respecté
+- Mobile classique (Safari non-standalone) : aucune régression visuelle
+- Desktop 1440 px : aucune régression visuelle
+
+---
+
 ## Drawer overflow word-break + header truncation (mobile)
 *5 mai 2026 · Phase 7c · THI-152 brick 6/9*
 
