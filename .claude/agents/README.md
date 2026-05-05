@@ -1,10 +1,10 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 2 mai 2026
+> **Dernière mise à jour** : 5 mai 2026
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 
-Cet index liste les **11 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **12 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
 > **Référence cycle de vie** : ce README doit être mis à jour à chaque ajout/modification d'agent. Voir `maintenance_docs_checklist.md` (mémoire interne) section "Agents".
 
@@ -20,6 +20,7 @@ Cet index liste les **11 agents** spécialisés du projet, **quand les invoquer*
 | [`content-auditor`](content-auditor.md) | Haiku | ❌ | Avant release majeure | ⚠️ WARN seulement |
 | [`security-auditor`](security-auditor.md) | Sonnet | ❌ | Avant PR auth/RBAC/RLS/API/crypto + release majeure | ✅ CRITICAL/HIGH |
 | [`ui-auditor`](ui-auditor.md) | Haiku | ❌ | Avant PR composant UI | ✅ CRITICAL |
+| [`mobile-responsive-auditor`](mobile-responsive-auditor.md) | Sonnet | ❌ | Avant PR layout/nav/sidebar/drawer/forms/theme.css | ⚠️ verdict PASS/PASS_WITH_NOTES/BLOCK |
 | [`prompt-guardrail-auditor`](prompt-guardrail-auditor.md) | Haiku | ❌ | Avant PR `src/lib/ai/*` ou `src/app/components/ai/*` | ✅ CRITICAL |
 | [`route-attack-auditor`](route-attack-auditor.md) | Sonnet | ❌ | Avant PR `api/*` ou nouvel endpoint | ✅ verdict release-ready |
 | [`vercel-firewall-auditor`](vercel-firewall-auditor.md) | Sonnet | ❌ | Avant release majeure ou modif firewall | ⚠️ WARN si rules cassées |
@@ -44,6 +45,7 @@ linear-sync
 | `src/app/data/curriculum.ts` | `curriculum-validator` | **Avant** d'écrire la modification |
 | `src/app/data/curriculum.ts` ou `terminalEngine.ts` ou `validators.ts` | `test-runner` | **Après** la modification, avant push |
 | Composant UI (`*.tsx`) | `ui-auditor` | **Avant** d'ouvrir la PR |
+| Layout, nav, sidebar, drawer, forms, dashboard mobile, `theme.css`, tailwind config, `index.html` | `mobile-responsive-auditor` | **Avant** d'ouvrir la PR (complémentaire `ui-auditor`, vise WebKit iOS + desktop preserve) |
 | `src/lib/ai/*` ou `src/app/components/ai/*` | `prompt-guardrail-auditor` | **Avant** de coder + audit final post-implémentation |
 | `api/*`, `supabase/migrations/`, `src/lib/supabase.ts`, JWT, rate limiting, CSP, secrets | `security-auditor` | **Avant** d'ouvrir la PR |
 | `api/*` (HTTP-level) | `route-attack-auditor` | **Avant** d'ouvrir la PR |
@@ -108,6 +110,15 @@ sustain-auditor  # Quand l'agent sera instancié à partir de la spec
 **Modèle** : Haiku
 **Créé** : 13 avril 2026 (THI-86) — détecte composants HTML/Tailwind custom où shadcn/ui devrait être utilisé, deps inutilisées, composants installés jamais importés, couleurs/tailles en dur. **Bloquant** sur les PR UI.
 **Contexte historique** : 39 composants Radix installés mais pas utilisés au départ, l'umbrella THI-91 a tout migré.
+
+### `mobile-responsive-auditor` — WebKit iOS + Desktop preserve
+
+**Modèle** : Sonnet (judgment call sur regression desktop + sévérité WebKit-spécifique)
+**Créé** : 5 mai 2026 (THI-150, ex-brick 3a de THI-149 epic) — comble la lacune `ui-auditor` (Chromium-only). 11 sections / ≥48 checkpoints, ciblage iPhone Safari (WebKit) avec **bonus Section 11 Desktop Preservation** (TL-critical, mandate @cowork).
+**Pattern source** : `F:/PROJECTS/Apps/ankora/.claude/agents/mobile-ios-auditor.md` (cross-projet convergence). Adapté Vite/React/Tailwind v4/Vitest/Playwright (drop Next.js spécifique).
+**Adaptations TL** : env switcher pill (Linux/macOS/Windows/WSL), Terminal emulator interactif, AiTutorPanel drawer (Phase 7b), checkpoints **BUG-FAB-001** (visibility + contrast + detachment FAB Sparkles ✨) distribués §3 #14 + §8 #36a + §8 #36b.
+**Output** : verdict `PASS` / `PASS_WITH_NOTES` / `BLOCK` + findings `file:line` + sévérité (`ios-critical`/`ios-high`/`ios-medium`/`ios-low`/`desktop-regression`) + flag `WebKit-specific` + recommendations Tailwind/CSS + Playwright WebKit + Chromium desktop specs.
+**Lié** : THI-149 epic (P0 v0.9 publique), THI-151 (audit Playwright), THI-152 (mini-PRs fix séquentielles), PR #189 (THI-147 safe-area iPhone PWA), PR #191 (THI-149 hot fix overflow body).
 
 ### `prompt-guardrail-auditor` — Sécurité LLM (OWASP LLM Top 10)
 
@@ -174,7 +185,7 @@ L'objectif est de **garder Haiku par défaut** (rapide, économique) sauf si le 
 
 ## Histoire — pourquoi cet index existe
 
-Au 2 mai 2026, le projet a 11 agents internes accumulés sur 1 mois. Les frontmatters individuels ne suffisaient plus à savoir **quand invoquer quoi** ni **pourquoi un agent existe**. Le risque concret : dans 6 mois (pause santé Thierry, contexte Claude effacé), redécouverte douloureuse sans documentation.
+Au 5 mai 2026, le projet a 12 agents internes accumulés sur 1 mois. Les frontmatters individuels ne suffisaient plus à savoir **quand invoquer quoi** ni **pourquoi un agent existe**. Le risque concret : dans 6 mois (pause santé Thierry, contexte Claude effacé), redécouverte douloureuse sans documentation.
 
 L'index résout ça : un fichier unique, accessible GitHub, lié dans `CLAUDE.md` projet, à charge cognitive de redécouverte 5 min au lieu de 30+ min de fouille.
 
