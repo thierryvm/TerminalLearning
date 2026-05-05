@@ -106,4 +106,41 @@ test.describe('PWA safe-area insets — Safari iOS WebKit (THI-152 brick 7/9)', 
     expect(padding!.paddingLeft).toMatch(/^\d+(\.\d+)?px$/);
     expect(padding!.paddingRight).toMatch(/^\d+(\.\d+)?px$/);
   });
+
+  /**
+   * THI-152 brick 7bis hotfix — Landing nav safe-area-inset-top.
+   *
+   * Diagnostic @cowork: brick 7/9 fix on Layout.tsx flex-1 wrapper covers
+   * /app routes only. Landing (`/`) does not use Layout — it has its own
+   * `<nav>` (Terminal logo + GitHub + Login + "Commencer →"), and that
+   * nav was missing pt-safe-area, causing the "Commencer" button to be
+   * partially occluded by the battery icon on iPhone 14 PWA standalone.
+   */
+  test('Landing nav has max(1rem, env(safe-area-inset-top)) padding-top', async ({ page }) => {
+    await page.goto('/');
+    const padding = await page.evaluate(() => {
+      // The nav is the first <nav> on the landing page (Terminal Learning
+      // logo + GitHub + Login + "Commencer" CTA).
+      const nav = document.querySelector('nav');
+      if (!nav) return null;
+      const s = getComputedStyle(nav);
+      return {
+        paddingTop: s.paddingTop,
+        // Capture the className for diagnostic context if assertion fails.
+        className: nav.className,
+      };
+    });
+    expect(padding, 'Landing nav located').not.toBeNull();
+    // env(safe-area-inset-top) = 0 in headless WebKit, so max(1rem, 0px)
+    // resolves to 1rem = 16px. We assert ≥ 16 px to catch any regression
+    // that drops the safe-area max() pattern. In PWA standalone real
+    // device, the nav's padding-top will grow to ~47 px on iPhone 14
+    // and shift the "Commencer" CTA below the status bar icons.
+    const paddingTopPx = parseFloat(padding!.paddingTop);
+    expect(paddingTopPx, 'Landing nav padding-top resolves to ≥ 16 px (= 1rem baseline)').toBeGreaterThanOrEqual(16);
+    // Sanity check: the className still contains the max() arbitrary
+    // value pattern, so a future change that swaps it back to py-4 is
+    // caught even if env() collapses to 0 anyway.
+    expect(padding!.className, 'nav className uses pt-[max(...,env(safe-area-inset-top))]').toMatch(/pt-\[max\(.*safe-area-inset-top.*\)\]/);
+  });
 });

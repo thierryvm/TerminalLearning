@@ -5,6 +5,61 @@
 
 ---
 
+## Hotfix Landing nav safe-area-inset-top (PWA standalone)
+*5 mai 2026 soirée · Phase 7c · THI-152 brick 7bis*
+
+**Hotfix ultra-chirurgical** (1 fichier, 1 modification structurelle + 1 spec étendue) pour combler une lacune du fix mini-PR 7/9.
+
+**Bug empirique @thierry confirmé après hard refresh complet** (retire app home + cache Safari vidé + re-add + relance) : sur iPhone 14 PWA standalone, le bouton "Commencer →" du **header de la Landing page** restait partiellement occlus par la batterie. Le fix mini-PR 7/9 sur `Layout.tsx` flex-1 wrapper couvre uniquement les routes `/app` — Landing (`/`) **n'utilise pas Layout**, elle a son propre `<nav>`.
+
+### Diagnostic @cowork validé
+
+`Layout.tsx` flex-1 wrapper safe-area paddings ✅ couvre :
+- `/app` (Dashboard)
+- `/app/learn/:moduleId/:lessonId` (LessonPage)
+- `/app/reference` (CommandReference)
+
+`Landing.tsx` `<nav>` (Terminal logo + GitHub + Login + "Commencer →") = **séparé**, manquait son propre safe-area-inset-top.
+
+### Fix appliqué
+
+| Fichier | Ligne | Avant | Après |
+|---|---|---|---|
+| `Landing.tsx` | 75 | `... px-4 sm:px-6 py-4 ...` | `... px-4 sm:px-6 pb-4 pt-[max(1rem,env(safe-area-inset-top))] ...` |
+
+**Pattern senior** : `pt-[max(1rem,env(safe-area-inset-top))]` au lieu de `pt-[env(safe-area-inset-top)]` pur — sur Safari classique mobile et desktop, `env() = 0` → `max(1rem, 0)` = 1rem (= équivalent `py-4` baseline, **zéro régression**). Sur PWA standalone iPhone 14, env(safe-area-inset-top) ≈ 47 px → `max(1rem, 47px)` = 47 px → le nav shifte sous la status bar.
+
+**Cohérence codebase** : pattern identique au footer Landing.tsx ligne 593 (`pb-[max(2rem,env(safe-area-inset-bottom))]`).
+
+### Surfaces NON touchées (discipline scope)
+
+- `Layout.tsx` : aucun double-padding (Landing n'utilise pas Layout) → aucune modification
+- `LoginModal.tsx`, `TerminalEmulator.tsx`, `AiTutorPanel.tsx` : déjà conformes mini-PRs précédentes
+- Mobile top bar `/app` (h-14 burger + Terminal Master) : déjà couverte mini-PR 7/9 via flex-1 wrapper
+
+### Spec régression étendue
+
+`e2e/mobile/safe-area-pwa.webkit.spec.ts` — nouveau test :
+- `Landing nav has max(1rem, env(safe-area-inset-top)) padding-top`
+- Asserts `padding-top ≥ 16 px` (1rem baseline) en headless WebKit + le className contient bien le pattern `pt-[max(...,env(safe-area-inset-top))]` → garde-fou anti-régression si quelqu'un swap back `py-4`.
+
+Total spec file : 5 specs → **6 specs** × 3 viewports = **18 tests**.
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- e2e:mobile + e2e:desktop : exécutés par CI sur la preview Vercel
+
+### Validation @thierry post-merge
+
+Sur iPhone 14 réel, mode standalone (Add to Home Screen depuis `/`) :
+- Bouton "Commencer →" du header Landing n'est plus occlus par la batterie/wifi/signal
+- Logo Terminal Learning visible intégralement
+- Aucune régression sur Safari classique mobile (env=0 → comportement = py-4 actuel)
+- Aucune régression desktop
+
+---
+
 ## PWA safe-area top + autoFocus terminal contrôlé (mobile)
 *5 mai 2026 · Phase 7c · THI-152 brick 7/9*
 

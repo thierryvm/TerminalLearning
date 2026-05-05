@@ -72,7 +72,16 @@ export function Landing() {
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
-      <nav className="border-b border-[var(--github-border-primary)]/50 px-4 sm:px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+      {/* THI-152 brick 7bis: pt-[max(1rem,env(safe-area-inset-top))]
+          shifts the nav (Terminal logo + GitHub + Login + "Commencer →")
+          below the iOS status bar in PWA standalone mode (Add to Home
+          Screen). On Safari classic mobile and on desktop, env() resolves
+          to 0 → max(1rem, 0) = 1rem (= py-4 baseline, no regression).
+          Pattern matches the footer (line 593) `pb-[max(2rem,env(...))]`.
+          Layout.tsx already handles its own mobile top bar via the flex-1
+          wrapper safe-area paddings (mini-PR 7/9), but Landing does NOT
+          use Layout — it has its own nav, hence this dedicated fix. */}
+      <nav className="border-b border-[var(--github-border-primary)]/50 px-4 sm:px-6 pb-4 pt-[max(1rem,env(safe-area-inset-top))] flex items-center justify-between max-w-6xl mx-auto">
         <div className="flex items-center gap-2 shrink-0">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             <Terminal size={18} className="text-emerald-400" aria-hidden="true" />
