@@ -170,9 +170,24 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
         // bottom uses max(1rem, env(safe-area-inset-bottom)) so the FAB sits
         // above the iPhone home indicator in PWA standalone mode (THI-147).
         // The pattern matches MarkdownPage and PrivacyPolicy already-fixed FABs.
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-20 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white opacity-80 shadow-md ring-1 ring-black/30 transition hover:opacity-100 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:h-12 md:w-12"
+        //
+        // Position (THI-152 brick 3/9): right-6 (24px) anchors the FAB in the
+        // bottom-right corner cleanly. The legacy right-20 (80px) was a
+        // V1 (THI-111) precaution against overlapping the Landing
+        // scroll-to-top FAB, but the AI tutor is only rendered on
+        // Dashboard / LessonPage / CommandReference — none of which carry
+        // a scroll-to-top FAB. So the precaution was dead weight that
+        // pushed the icon awkwardly off the corner.
+        //
+        // Sizing: mobile 48px (h-12, comfort over the 44px Apple HIG floor),
+        // desktop 56px (md:h-14, Material/Apple FAB primary standard).
+        // Always-100% opacity so the Sparkles is unambiguously visible on
+        // every background; active:scale-95 gives a tactile press feedback
+        // on touch devices that the previous hover-only affordance could
+        // not deliver on Safari iOS (no hover state).
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:h-14 md:w-14"
       >
-        <Sparkles size={20} strokeWidth={2} aria-hidden="true" />
+        <Sparkles size={22} strokeWidth={2} aria-hidden="true" />
       </button>
 
       {open && (

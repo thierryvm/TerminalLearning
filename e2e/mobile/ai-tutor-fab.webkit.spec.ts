@@ -57,7 +57,7 @@ test.describe('AI tutor FAB — Safari iOS WebKit regression (THI-151)', () => {
     expect(bg).not.toBe('transparent');
   });
 
-  test('FAB hit area is at least 44×44 px (Apple HIG floor)', async ({ page }) => {
+  test('FAB hit area is 48×48 px on mobile (h-12, comfort over Apple HIG floor)', async ({ page }) => {
     await page.goto('/app');
 
     const fab = page.getByRole('button', { name: /tuteur IA/i });
@@ -65,8 +65,25 @@ test.describe('AI tutor FAB — Safari iOS WebKit regression (THI-151)', () => {
 
     const box = await fab.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.width, 'FAB width must be ≥ 44 px').toBeGreaterThanOrEqual(44);
-    expect(box!.height, 'FAB height must be ≥ 44 px').toBeGreaterThanOrEqual(44);
+    // Tightened from "≥ 44" to "= 48" after THI-152 brick 3/9 bumped the
+    // mobile FAB to h-12 w-12 (48 px). Catches a future regression that
+    // would silently shrink it back to 44 px (the Apple HIG floor with
+    // no comfort margin).
+    expect(box!.width, 'FAB mobile width must be 48 px (h-12)').toBe(48);
+    expect(box!.height, 'FAB mobile height must be 48 px (h-12)').toBe(48);
+  });
+
+  test('FAB opacity is 100% (no hover-dependent visibility on touch)', async ({ page }) => {
+    await page.goto('/app');
+
+    const fab = page.getByRole('button', { name: /tuteur IA/i });
+    await expect(fab).toBeVisible();
+
+    const opacity = await fab.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+    // THI-152 brick 3/9 dropped opacity-80 + hover:opacity-100 because
+    // Safari iOS has no hover state — the FAB was permanently 80%
+    // transparent and visually absorbed into the terminal panel chrome.
+    expect(opacity, 'FAB opacity must be 1 (always full visibility)').toBe(1);
   });
 
   test('FAB is rendered as a fixed positioned element', async ({ page }) => {
