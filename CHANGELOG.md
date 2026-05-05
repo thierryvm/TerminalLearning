@@ -5,6 +5,27 @@
 
 ---
 
+## Setup Playwright WebKit + 6 specs régression — gate anti-régression
+*5 mai 2026 · Phase 7c · THI-151*
+
+Ajout de 5 nouveaux projects Playwright dans `playwright.config.ts` : 3 viewports iPhone WebKit réel (iPhone 14 393×852, iPhone SE 375×667, iPhone 15 Pro Max 430×932) + 2 viewports desktop preserve (1280×800 laptop pro, 1920×1080 desktop pro). Les projects existants (chromium, mobile-iphone-se Chromium emulation, mobile-galaxy, tablet) sont préservés intacts.
+
+6 specs E2E ajoutés dans `e2e/mobile/*.webkit.spec.ts` et `e2e/desktop/*.chromium.spec.ts` :
+- `ai-tutor-fab.webkit.spec.ts` — régression directe FINDING-01 (PR #194 hot fix CSS vars) : les 4 CSS vars `--github-accent`, `--github-accent-hover`, `--github-bg-primary`, `--github-bg-tertiary` doivent toujours résoudre à une valeur non-vide ; FAB emerald `rgb(35, 134, 54)` ; ≥ 44×44 px ; alias drift `--github-bg-primary === --github-bg`.
+- `drawer-overflow.webkit.spec.ts` — drawer rendu sans overflow horizontal, fit dans viewport mobile, fermeture Escape (focus trap contract).
+- `touch-targets.webkit.spec.ts` — FAB AI tutor ≥ 44×44 px (les autres touch targets identifiés en audit #2 sont déférés à THI-152 mini-PR 3 par DoD strict "specs must PASS").
+- `safe-area.webkit.spec.ts` — FAB respecte safe-area-inset-bottom (THI-147 pattern), fixed-positioned, breathing room ≥ 0.
+- `lesson-page-split.chromium.spec.ts` — viewport-fit=cover (THI-97), html/body overflow-x:hidden + max-width:100vw (THI-149), main mounté.
+- `regression-no-mobile-leak.chromium.spec.ts` — env pills + Commencer visibles desktop, FAB emerald préservé desktop, fixed positioning, zéro overflow horizontal, 4 CSS vars PR #194 résolues.
+
+Scripts npm ajoutés : `e2e:mobile` (3 viewports WebKit), `e2e:desktop` (2 viewports preserve). Workers limités à 4 en local (8 worker provoquait des timeouts WebKit + 1 dev server saturé), CI reste à 1 worker pour déterminisme.
+
+**Quality gates** : 30/30 e2e:mobile (16s) + 20/20 e2e:desktop (7s) + 1268/1268 vitest + type-check + lint. Aucune régression sur les anciens specs (accessibility, mobile, seo).
+
+**Hors scope (= THI-152)** : aucun fix de bug. Les findings audit #1+#2 (touch targets sub-44px hors AI tutor FAB, focus traps modaux, font-size inputs anti-zoom, FAB visual detachment, etc.) restent dans la matrice unifiée THI-151 et seront traités en mini-PRs séquentielles avec validation empirique @thierry par bug-class.
+
+---
+
 ## STORY — section *Le matin du 5 mai* ajoutée
 *5 mai 2026 · narratif*
 

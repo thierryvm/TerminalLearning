@@ -5,7 +5,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Single dev server (`npm run dev`) becomes a bottleneck when too many
+  // browser workers hit it concurrently — local timeouts on WebKit specs
+  // observed at 8 workers, stable at ≤4. CI keeps 1 worker for full
+  // determinism.
+  workers: process.env.CI ? 1 : 4,
   reporter: [['html', { open: 'never' }], ['line']],
 
   use: {
@@ -14,7 +18,8 @@ export default defineConfig({
   },
 
   projects: [
-    // Desktop Chromium
+    // ── Existing Chromium projects (THI-97 + earlier mobile audit) ─────────
+    // Desktop Chromium (default — runs accessibility / seo / mobile suites)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
@@ -53,6 +58,56 @@ export default defineConfig({
         viewport: { width: 768, height: 1024 },
         isMobile: false,
         hasTouch: true,
+      },
+    },
+
+    // ── THI-151 — Real WebKit (Safari iOS) regression projects ────────────
+    // These run e2e/mobile/*.webkit.spec.ts only (testIgnore filter ensures
+    // they don't pick up the legacy Chromium-emulation suites above).
+    {
+      name: 'webkit-iphone-14',
+      testMatch: /e2e\/mobile\/.*\.webkit\.spec\.ts/,
+      use: {
+        ...devices['iPhone 14'],
+      },
+    },
+    {
+      name: 'webkit-iphone-se',
+      testMatch: /e2e\/mobile\/.*\.webkit\.spec\.ts/,
+      use: {
+        ...devices['iPhone SE'],
+      },
+    },
+    {
+      name: 'webkit-iphone-15-pro-max',
+      testMatch: /e2e\/mobile\/.*\.webkit\.spec\.ts/,
+      use: {
+        browserName: 'webkit',
+        viewport: { width: 430, height: 932 },
+        deviceScaleFactor: 3,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+
+    // ── THI-151 — Desktop Preservation regression projects ────────────────
+    // These run e2e/desktop/*.chromium.spec.ts to guarantee that mobile
+    // fixes (THI-152) don't regress the desktop layout (LessonPage 44%/42%
+    // split, Sidebar always visible, Landing scroll-to-top untouched).
+    {
+      name: 'desktop-1280',
+      testMatch: /e2e\/desktop\/.*\.chromium\.spec\.ts/,
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+    {
+      name: 'desktop-1920',
+      testMatch: /e2e\/desktop\/.*\.chromium\.spec\.ts/,
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1920, height: 1080 },
       },
     },
   ],
