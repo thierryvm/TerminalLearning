@@ -179,15 +179,26 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
         // a scroll-to-top FAB. So the precaution was dead weight that
         // pushed the icon awkwardly off the corner.
         //
-        // Sizing: mobile 48px (h-12, comfort over the 44px Apple HIG floor),
-        // desktop 56px (md:h-14, Material/Apple FAB primary standard).
+        // Sizing (THI-152 brick 5/9 Option D — empirical recalibration):
+        // mobile 44 px (h-11, exact Apple HIG floor — comfort kept via the
+        // 100% opacity + ring + shadow rather than extra surface area),
+        // desktop 56 px (md:h-14, Material/Apple FAB primary standard
+        // empirically validated by @thierry on preview as well-proportioned
+        // for desktop density).
+        //
+        // The asymmetry is intentional: a FAB is the only desktop button
+        // exempt from the "≤40 px compact density" rule because it is the
+        // primary visual anchor of the surface. The mobile 48 → 44 revert
+        // came from @thierry empirical feedback that 12% of a 393 px
+        // viewport felt visually heavy.
+        //
         // Always-100% opacity so the Sparkles is unambiguously visible on
         // every background; active:scale-95 gives a tactile press feedback
         // on touch devices that the previous hover-only affordance could
         // not deliver on Safari iOS (no hover state).
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:h-14 md:w-14"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:h-14 md:w-14"
       >
-        <Sparkles size={22} strokeWidth={2} aria-hidden="true" />
+        <Sparkles size={20} strokeWidth={2} aria-hidden="true" />
       </button>
 
       {open && (
@@ -230,7 +241,10 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Fermer le tuteur IA"
-                  className="rounded p-1 text-[var(--github-text-secondary)] hover:bg-[var(--github-bg-secondary)] focus-visible:outline-2"
+                  // THI-152 brick 5/9: 44×44 mobile (Apple HIG floor) / 36
+                  // desktop (compact density preserved). The previous
+                  // `p-1` collapsed the hit area to ~22 px, sub-floor.
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded text-[var(--github-text-secondary)] hover:bg-[var(--github-bg-secondary)] focus-visible:outline-2 md:min-h-9 md:min-w-9"
                 >
                   ✕
                 </button>
@@ -304,9 +318,10 @@ function ProviderPicker({ value, onChange }: PickerProps) {
           role="radio"
           aria-checked={value === p}
           onClick={() => onChange(p)}
-          // min-h-9 keeps tap targets ≥36px on mobile (closer to WCAG 44×44 in
-          // combination with the row padding).
-          className={`min-h-9 rounded px-3 py-1 text-xs ${
+          // THI-152 brick 5/9: 44 px mobile (Apple HIG floor) / 36 px
+          // desktop (compact density preserved via the md: variant).
+          // The previous unconditional min-h-9 was sub-44 on mobile.
+          className={`min-h-11 rounded px-3 py-1 text-xs md:min-h-9 ${
             value === p
               ? 'bg-[var(--github-accent)] text-white'
               : 'bg-[var(--github-bg-secondary)] text-[var(--github-text-secondary)] hover:bg-[var(--github-bg-tertiary)]'

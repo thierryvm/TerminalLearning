@@ -74,7 +74,11 @@ export function MessageInput({ onSend, disabled }: Props) {
           type="button"
           onClick={() => void submit()}
           disabled={disabled || text.trim().length === 0}
-          className="rounded-md bg-[var(--github-accent)] px-3 py-1.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2"
+          // THI-152 brick 5/9: min-h-11 (44 px) on mobile keeps the
+          // critical "Envoyer" action above the Apple HIG floor;
+          // md:min-h-9 (36 px) preserves the compact desktop density
+          // matching the surrounding character-count meta line.
+          className="rounded-md bg-[var(--github-accent)] px-3 py-1.5 text-sm font-medium text-white transition min-h-11 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--github-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-9"
         >
           Envoyer
         </button>

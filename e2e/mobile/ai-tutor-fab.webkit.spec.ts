@@ -57,7 +57,7 @@ test.describe('AI tutor FAB — Safari iOS WebKit regression (THI-151)', () => {
     expect(bg).not.toBe('transparent');
   });
 
-  test('FAB hit area is 48×48 px on mobile (h-12, comfort over Apple HIG floor)', async ({ page }) => {
+  test('FAB hit area is 44×44 px on mobile (h-11, Apple HIG floor)', async ({ page }) => {
     await page.goto('/app');
 
     const fab = page.getByRole('button', { name: /tuteur IA/i });
@@ -65,12 +65,14 @@ test.describe('AI tutor FAB — Safari iOS WebKit regression (THI-151)', () => {
 
     const box = await fab.boundingBox();
     expect(box).not.toBeNull();
-    // Tightened from "≥ 44" to "= 48" after THI-152 brick 3/9 bumped the
-    // mobile FAB to h-12 w-12 (48 px). Catches a future regression that
-    // would silently shrink it back to 44 px (the Apple HIG floor with
-    // no comfort margin).
-    expect(box!.width, 'FAB mobile width must be 48 px (h-12)').toBe(48);
-    expect(box!.height, 'FAB mobile height must be 48 px (h-12)').toBe(48);
+    // Empirical recalibration in THI-152 brick 5/9 Option D: @thierry
+    // observed that 48 px (h-12, ~12% of a 393 px viewport) felt
+    // visually heavy on mobile. Reverted to h-11 (44 px exact Apple
+    // HIG floor) while keeping md:h-14 (56 px) on desktop where
+    // empirical validation confirmed the size is well-proportioned.
+    // The asymmetric mobile/desktop sizing is intentional.
+    expect(box!.width, 'FAB mobile width must be 44 px (h-11)').toBe(44);
+    expect(box!.height, 'FAB mobile height must be 44 px (h-11)').toBe(44);
   });
 
   test('FAB opacity is 100% (no hover-dependent visibility on touch)', async ({ page }) => {
