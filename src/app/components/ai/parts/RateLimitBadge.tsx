@@ -41,7 +41,7 @@ export function RateLimitBadge({ remaining, total = 30, onReset }: Props) {
     <button
       type="button"
       onClick={onReset}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 ${colour}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 ${colour}`}
       title="Cliquer pour réinitialiser le compteur local (filet de sécurité — utile si tu as enchaîné des tests qui échouent)"
       aria-label={`Requêtes restantes : ${remaining} sur ${total}. Cliquer pour réinitialiser.`}
     >
