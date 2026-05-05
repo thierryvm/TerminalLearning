@@ -5,6 +5,76 @@
 
 ---
 
+## 🏁 Sprint Mobile Recovery TL — clôture (final polish HTML metas + tap highlight + Sidebar landscape)
+*5 mai 2026 soirée · Phase 7c · THI-152 brick 9/9 FINAL*
+
+Neuvième et **dernière** mini-PR du sprint THI-152 Mobile Recovery TL. Grab-bag final : 5 polish items + 3 nouveaux specs e2e. **89 % → 100 % du sprint complété**.
+
+**Voie safe @cowork** : aucune modification de `ui/button.tsx` variants, aucune nouvelle variante. Toutes les modifs sont sur `index.html` (metas), `src/styles/theme.css` (universal selector base), `src/app/components/Sidebar.tsx` (1 className).
+
+### 5 items du grab-bag final
+
+| # | Item | Fichier | Action |
+|---|---|---|---|
+| 1 | W3C `mobile-web-app-capable` | `index.html:57` | Ajouté à côté du legacy Apple meta — élimine le warning Chrome DevTools "deprecated", garde la compat iOS Safari (legacy lit toujours `apple-mobile-web-app-capable`) |
+| 2 | `theme-color` | `index.html:65` | **Déjà conforme** (`#0d1117` GitHub-dark présent depuis Phase 1). TL est dark-only sans toggle → pas de media query nécessaire. Pas d'action, flag |
+| 3 | `-webkit-tap-highlight-color: transparent` | `theme.css` (universal selector base) | Élimine le rectangle gris iOS au tap. Le design system TL utilise déjà `:active` (active:scale-95 FAB, hover:bg-* fallbacks) pour feedback tap brand-coherent |
+| 4 | `font-display: swap` audit | `node_modules/@fontsource/*` | **Déjà conforme** : fontsource 5.x applique `swap` par défaut (Inter Variable 5.2.8, JetBrains Mono récent). Vérifié dans les `@font-face` générés. Pas d'action, flag |
+| 5 | Sidebar `pl-[max(0px,env(safe-area-inset-left))]` | `Sidebar.tsx:80` | Backlog 7/9 résolu. En landscape iPhone X+, le notch latéral n'overlap plus le bord gauche du sidebar. Pattern `max(baseline, env())` cohérent avec hotfix 7bis |
+
+### 3 nouveaux specs e2e
+
+| Fichier | Specs | Tests (× viewports) |
+|---|---|---|
+| `e2e/mobile/html-metas.webkit.spec.ts` (NEW) | 3 | 9 (× 3 WebKit) |
+| `e2e/mobile/tap-highlight.webkit.spec.ts` (NEW) | 2 | 6 (× 3 WebKit) |
+| `e2e/mobile/safe-area-pwa.webkit.spec.ts` (étendu) | +1 (Sidebar) | +3 |
+
+**Total** sprint THI-152 e2e specs : ~25 specs WebKit + ~15 specs desktop preserve.
+
+### 🏁 Récap Sprint Mobile Recovery TL — 9/9 + hotfix 7bis
+
+| Brick | Titre | PR | Bug empirique éradiqué |
+|---|---|---|---|
+| 1/9 | Focus traps + Escape + ARIA modaux | #196 | A11y modaux mobile clavier external |
+| 2/9 | Forms font-size ≥16px anti-zoom Safari iOS | #197 | Auto-zoom iOS sur focus input |
+| 3/9 | FAB Sparkles size + opacity + position | #198 | FAB invisible sur certains backgrounds |
+| 4/9 | PWA apple-touch-icon PNG + standalone metas | #199 | Add to Home Screen lance dans Safari avec chrome |
+| 5/9 | Touch targets ≥44/≤40 + Option D FAB recalibration | #200 | Hit areas sub-44 px Apple HIG |
+| 6/9 | Drawer overflow word-break + header truncation | #201 | **Page déplaçable horizontalement drawer ouvert** |
+| 7/9 | PWA safe-area top + autoFocus terminal contrôlé | #202 | **Header `/app` sous status bar PWA standalone** |
+| 7bis | Hotfix Landing nav safe-area | #203 | **Bouton "Commencer →" Landing occlus par batterie PWA** |
+| 8/9 | Focus rings emerald harmonization | #204 | Incohérence a11y design system focus indicators |
+| 9/9 | Final polish HTML metas + tap highlight + Sidebar landscape | (cette PR) | W3C deprecated warning + tap-highlight gris iOS + Sidebar notch landscape |
+
+### Leçons apprises (méthodologiques)
+
+1. **Audit empirique > supposition théorique** : le bug 7bis (Landing nav vs Layout flex-1) a été détecté APRÈS hard refresh @thierry sur iPhone PWA standalone. Sans validation empirique réelle, le mini-PR 7/9 aurait été déclarée "fix complet" alors qu'elle ne couvrait que `/app` routes.
+
+2. **Voie safe @cowork = discipline scope** : aucune modification de `ui/button.tsx` variants ou nouvelle variant pendant tout le sprint. Tous les fixes ont ciblé `<button>` natifs HTML, `<textarea>` natives, ou wrappers structurels existants → **zéro régression sur les consumers shadcn**.
+
+3. **Pattern `max(baseline, env())` pour safe-area** : sur Safari classique mobile et desktop, `env() = 0` → `max(N, 0) = N` (baseline préservée, zéro régression). Sur PWA standalone iPhone, `max(N, ~47px) = 47px` (shift effectif). Ce pattern a été appliqué de façon cohérente : Landing footer (existant), FAB AiTutorPanel (THI-147), Landing nav (7bis), Sidebar landscape (9/9).
+
+4. **Specs static + dynamic hybrides** : pour les rings emerald (8/9), combiner static className guards (anti-régression silencieuse) + dynamic Tab vs click runtime (validation comportement `:focus-visible`) a donné la robustesse maximale avec ROI clair.
+
+5. **Empirical override @thierry** : au mini-PR 5/9, l'@thierry a empirically rejeté h-12 (48 px) sur mobile FAB → revert à h-11 (44 px), desktop md:h-14 inchangé. Asymétrie 44/56 mobile/desktop intentionnelle documentée comme "FAB primary action exemption" dans les specs preserve.
+
+6. **CI contracts solides** : type-check + lint + vitest 1268/1268 + Playwright WebKit (4 viewports) + Chromium desktop (2 viewports) + workers cap 4 local / 1 CI pour éviter le bottleneck dev server.
+
+### Quality gates
+
+- type-check ✅, lint ✅, vitest 1268/1268
+- e2e:mobile + e2e:desktop : exécutés par CI sur la preview Vercel
+
+### Validation @thierry post-merge (CRITIQUE — clôture sprint)
+
+- Chrome DevTools console `terminallearning.dev` : warning `apple-mobile-web-app-capable deprecated` DISPARU
+- iPhone 14 PWA landscape : Sidebar respecte le notch latéral gauche (pas d'icône clipée)
+- Safari iPhone tap : plus de rectangle gris au tap sur boutons/links — `:active` styles seuls
+- Aucune régression desktop, aucune régression Safari classique mobile
+
+---
+
 ## Focus rings emerald harmonization (a11y desktop + keyboard)
 *5 mai 2026 soirée · Phase 7c · THI-152 brick 8/9*
 
