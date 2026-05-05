@@ -6,17 +6,11 @@
 ---
 
 ## STORY — section *Le matin du 5 mai* ajoutée
-*5 mai 2026 · narratif · bundle THI-150*
+*5 mai 2026 · narratif*
 
-Ajout d'une section narrative dans `STORY.md` (après *"Un douzième agent"*, avant *"Tuteur IA — la promesse tenue (4 mai 2026)"*) qui raconte les événements du matin du 5 mai :
-- Test long 8 tours @thierry sur leçon Redirection/Pipes (sujet `>` vs `>>` vs `|`)
-- Cross-validation par ChatGPT comme second avis externe — pratique méta validée
-- 5 micro-frictions identifiées (4 par ChatGPT + 2 complétées par @cowork) : compound questions, sur-explication *internal mechanics*, indices répétés, `platformContext` absent confirme THI-148, conclusion ouverte sans marker fermé
-- Décision @cowork : upgrade THI-144 P2 → P1 (3-4h honnête recalibré, audit guardrail Règle 10 obligatoire post-bump prompt v1.0.0 → v1.1.0)
-- Bypass admin merge PR #190 (Sourcery comments cosmétiques bloquants malgré 4 checks verts) — exception consciente documentée
-- Cleanup Linear THI-149 (Option 2 @cowork : epic-parent Done + 3 sub-tickets THI-150/151/152)
+Nouvelle section dans `STORY.md` qui raconte la matinée du 5 mai 2026 — test long 8 tours sur Redirection/Pipes, cross-validation ChatGPT (pratique méta validée), upgrade THI-144 P2 → P1, bypass admin merge PR #190, cleanup Linear THI-149 en 3 sub-tickets.
 
-Préservation intégrale du Prologue, des parties I-V, des sections 1-2 mai, de la section *Tuteur IA — la promesse tenue (4 mai 2026)*. **Diff vérifié : aucune autre modification que le bloc inséré.**
+Détails complets dans `STORY.md`. Préservation intégrale des sections existantes.
 
 ---
 
