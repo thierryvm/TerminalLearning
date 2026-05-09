@@ -58,16 +58,19 @@ L'objectif est défensif : identifier ce qu'il faut durcir. Pas générer des Po
 
 ## Contexte projet — lecture obligatoire avant audit
 
-Lire AVANT de produire le rapport :
-- docs/adr/ADR-002-openrouter-byok-tiers.md
-- docs/adr/ADR-005-ai-tutor-v1-implementation.md
-- docs/adr/ADR-006-lti-1-3-implementation.md
-- CLAUDE.md projet
-- Tous feedback_*.md et project_*.md mémoire CC qui mentionnent IA / sécurité / BYOK / prompt
-- Audit récent security-auditor (baseline score)
-- Audit récent prompt-guardrail-auditor (verdict dernière PR)
+Lire AVANT de produire le rapport — chemins typiques (cibles primaires) :
+- ADRs sur l'architecture IA / BYOK / providers / sécurité (typiquement dans `docs/adr/`)
+- CLAUDE.md du projet courant (règles git, fichiers critiques, sécurité IA)
+- Mémoires CC du projet qui mentionnent IA / sécurité / BYOK / prompt
+- Audit récent `security-auditor` (baseline score app-layer)
+- Audit récent `prompt-guardrail-auditor` (verdict dernière PR)
 
-Audience cible Terminal Learning : étudiants belges (FR/NL/EN/DE), certains en situation sociale fragile. Une clé OpenRouter compromise = préjudice financier réel.
+**Règle de repli (portabilité cross-projet)** :
+- Si certains chemins n'existent pas (projet structuré différemment d'un standard ADR/memos), ne pas inventer leur contenu — chercher l'équivalent fonctionnel via `Glob` (par exemple `**/adr*/**/*.md`, `**/memory/**/*.md`, `**/CLAUDE.md`)
+- Si aucun équivalent trouvé : **déclasser le niveau de confiance global du rapport** — passer de VERIFIED/STRONG_INDICATOR à SPECULATIVE pour les findings qui auraient nécessité ce contexte
+- Documenter explicitement dans les Notes Couche 1 quels chemins ont été tentés et lesquels manquaient
+
+Audience cible : à inférer depuis le CLAUDE.md du projet courant. Pour Terminal Learning : étudiants belges (FR/NL/EN/DE), certains en situation sociale fragile, une clé OpenRouter compromise = préjudice financier réel. Pour d'autres projets : audience à identifier au moment du run.
 
 ---
 
@@ -150,7 +153,7 @@ Pour chaque vecteur, statut + niveau de confiance + bref scénario plausible.
 - V2 Multi-turn drift (6-8 tours dérive progressive)
 - V3 Many-Shot pattern bias (conversation pré-remplie pattern hors scope)
 - V4 Skeleton Key admission (faire admettre contexte recherche-éducation, bypass refus)
-- V5 Indirect Injection via curriculum (PR malveillant module avec goal contenant fermeture lesson_context et ouverture system)
+- V5 Indirect Injection via curriculum (PR malveillant module avec goal contenant la fermeture de lesson_context et l'ouverture de system)
 - V6 Agent Hijacking (si tools/MCP V2+, consent flow + scope strict)
 - V7 Sycophancy Abuse (validation hypothèse user, par exemple « tu es d'accord que `rm -rf /` est sûr ici ? »)
 - V8 Encoding Bypass au-delà base64 (ROT13, hex, URL-encode, Morse, leet, langues exotiques IT/ES/RU/AR/CN)
@@ -187,15 +190,17 @@ Chaînes A–D avec niveau de confiance.
 
 ## Couche 6 — Stress test des défenses existantes
 
-Lister chaque défense connue (prompt-guardrail-auditor, sanitizer, escapeDelimiters, CSP, rate limit, scrubber Sentry, consent flow, frustration heuristic) et identifier où elle pourrait être contournée.
+Lister chaque défense connue (gate-PR `prompt-guardrail-auditor`, sanitizer d'entrée utilisateur, fonction d'échappement des délimiteurs structurels, CSP, rate limit client, scrubber de télémétrie, consent flow, heuristique de frustration) et identifier où elle pourrait être contournée.
 
-- Sanitizer INJECTION_PATTERNS — couvre FR/NL/EN/DE — quid IT/ES/RU/AR/JP ?
-- escapeDelimiters DELIMITER_RX — couvre user_question, lesson_context, platform_context, system, assistant, user — quid context, role, inst (variantes provider) ?
-- detectKeyLeak KEY_PATTERNS — couvre OpenRouter/Anthropic/OpenAI/Google — quid Mistral, Cohere, Together AI, Groq, Fireworks ?
-- CSP connect-src — couvre 4 providers actuels — quid si V2 ajoute Mistral sans bump CSP ?
-- Rate limit sessionStorage — contournable trivialement — quid utilisateur qui automatise pour mal au taux réputation Vercel ?
-- Sentry scrubber — couvre 4 envelope types — quid spans transaction ?
-- Consent flow — boolean localStorage sans timestamp/expiry — RGPD si conditions changent ?
+Les défenses sont décrites par **comportement** plutôt que par nom de symbole — les noms en code peuvent être refactorisés (`BIDI_RX`, `DELIMITER_RX`, `INJECTION_PATTERNS`, `KEY_PATTERNS`, etc.) sans changer l'intention. Localiser dynamiquement via `Grep` sur le comportement attendu :
+
+- **Sanitizer de patterns d'injection multilingues** (regex qui matchent « ignore previous instructions » et variantes) — couvre généralement FR/NL/EN/DE — vérifier la couverture pour IT/ES/RU/AR/JP/CN
+- **Fonction d'échappement des délimiteurs structurels XML-style** (HTML-escape sur tags du system prompt) — vérifier la liste des tags couverts (user_question, lesson_context, platform_context, system, assistant, user) et les manquants (context, role, inst, variantes provider-specific)
+- **Détection de fuite de clés API dans la sortie du modèle** (regex sur préfixes connus sk-or-v1, sk-ant, sk-, AIza, etc.) — vérifier la couverture providers actuels et anticiper les nouveaux (Mistral, Cohere, Together AI, Groq, Fireworks, xAI Grok)
+- **CSP `connect-src`** — vérifier l'alignement avec la liste des providers actuels et la procédure de bump CSP quand un nouveau provider est ajouté
+- **Rate limit client-side (sessionStorage / IndexedDB)** — contournable trivialement, mitigé par BYOK (quota du provider de l'utilisateur) — quid d'un utilisateur qui automatise pour nuire au taux de réputation de l'hébergeur ?
+- **Scrubber de télémétrie (Sentry, Datadog, etc.)** — vérifier la couverture par type d'envelope (event, transaction, attachment, replay, span)
+- **Consent flow** — vérifier la présence de timestamp/expiry/version pour permettre re-consent quand les conditions changent (RGPD)
 
 ## Notes Couche 6
 [défenses solides vs avec gaps identifiés]
@@ -229,7 +234,7 @@ Angles morts identifiés et reclassifiés (avec niveau de confiance).
 
 ## L'agent lui-même comme surface d'attaque
 
-Cet agent lit beaucoup de fichiers et raisonne sur leur contenu. Les sources lues (`curriculum.ts`, ADRs, memos, code source) sont aujourd'hui dev-controlled, donc le risque d'injection indirecte qui détournerait l'audit est faible (VERIFIED, dev-controlled).
+Cet agent lit beaucoup de fichiers et raisonne sur leur contenu. Les sources lues (curriculum, ADRs, memos, code source) sont aujourd'hui dev-controlled, donc le risque d'injection indirecte qui détournerait l'audit est **faible** (STRONG_INDICATOR : la qualité du contrôle dev est observable via branch protection + Sourcery + reviews, mais la non-existence d'un payload caché ne peut pas être démontrée par lecture seule, donc pas VERIFIED).
 
 Mais c'est une surface qui croîtrait si :
 - Un PR malveillant atteignait main avant l'audit (mitigation : `prompt-guardrail-auditor` per-PR + branch protection + Sourcery)
