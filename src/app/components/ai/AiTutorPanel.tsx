@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Sparkles } from 'lucide-react';
 
+import { buildPlatformContext } from '@/app/data/platformContext';
 import {
   detectProvider,
   forgetKey as kmForgetKey,
@@ -93,11 +94,18 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
     }
   }, [provider]);
 
+  // THI-148 V1.0.1 — static, public-only platform overview injected as
+  // <platform_context>. Same trust class as lessonContext (curriculum data,
+  // never user input). Memoized once: curriculum is module-scope constant,
+  // so the string is stable across renders.
+  const platformContext = useMemo(() => buildPlatformContext(), []);
+
   const tutor = useAiTutor({
     provider,
     model: envOverride && envOverride.length > 0 ? envOverride : DEFAULT_MODELS[provider],
     lang,
     lessonContext,
+    platformContext,
   });
 
   const setProvider = useCallback((next: Provider) => {

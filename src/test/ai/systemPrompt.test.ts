@@ -28,8 +28,8 @@ const LANGS: readonly TutorLang[] = ['fr', 'nl', 'en', 'de'];
 const MODES: readonly TutorMode[] = ['socratic', 'direct'];
 
 describe('TUTOR_PROMPT_VERSION', () => {
-  it('is exactly "tutor/v1.0.0"', () => {
-    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.0.0');
+  it('is exactly "tutor/v1.0.1"', () => {
+    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.0.1');
   });
 });
 
@@ -75,11 +75,13 @@ describe('getSystemPrompt — mandatory refusal clauses', () => {
       expect(prompt).toContain(ROLEPLAY_REFUSAL[lang]);
     });
 
-    it(`${lang} mentions the structural delimiters <user_question> and <lesson_context>`, () => {
+    it(`${lang} mentions the structural delimiters <user_question>, <lesson_context>, and <platform_context>`, () => {
       const prompt = getSystemPrompt({ lang, mode: 'socratic' });
       expect(prompt).toContain('<user_question>');
       expect(prompt).toContain('</user_question>');
       expect(prompt).toContain('<lesson_context>');
+      // THI-148 V1.0.1 — platform overview block listed in delimiters clause
+      expect(prompt).toContain('<platform_context>');
     });
 
     it(`${lang} forbids revealing system instructions (prompt leak)`, () => {
@@ -108,6 +110,40 @@ describe('getSystemPrompt — mandatory refusal clauses', () => {
       };
       expect(prompt).toMatch(tutorPhrase[lang]);
       expect(prompt).toMatch(/Terminal\s+Learning/);
+    });
+  }
+});
+
+describe('getSystemPrompt — extended scope V1.0.1 (THI-148)', () => {
+  // V1.0.1 routes platform meta-questions through the new <platform_context>
+  // block. Each locale must explicitly call out the platform-meta extension
+  // AND keep an out-of-scope refusal list that catches genuinely off-topic
+  // questions (weather / news / political opinions).
+
+  const PLATFORM_META_CUE: Record<TutorLang, RegExp> = {
+    fr: /Terminal Learning/i,
+    nl: /Terminal Learning/i,
+    en: /Terminal Learning/i,
+    de: /Terminal Learning/i,
+  };
+
+  const OUT_OF_SCOPE_CUE: Record<TutorLang, RegExp> = {
+    fr: /m[ée]t[ée]o|actualit[ée]|opinions politiques/i,
+    nl: /weer|actualiteit|politieke meningen/i,
+    en: /weather|news|political opinions/i,
+    de: /Wetter|Aktualit[äa]t|politische Meinungen/i,
+  };
+
+  for (const lang of LANGS) {
+    it(`${lang} routes platform meta-questions through <platform_context>`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(PLATFORM_META_CUE[lang]);
+      expect(prompt).toContain('<platform_context>');
+    });
+
+    it(`${lang} keeps an extended out-of-scope refusal (weather / news / politics)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(OUT_OF_SCOPE_CUE[lang]);
     });
   }
 });
