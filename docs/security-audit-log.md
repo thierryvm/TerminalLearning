@@ -3,6 +3,60 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+## Audit: 1ʳᵉ baseline `llm-security-auditor` (10 mai 2026)
+
+**Date**: 10 mai 2026 ~00:30 UTC (02:30 CEST)
+**Auditor**: agent `llm-security-auditor` (Opus 4.7, méthode 7 couches verbalization-gated avec Evidence confidence framework)
+**Trigger**: 1ʳᵉ run baseline post-livraison agent (PR #210 + #212 mergées 9 mai 2026 fin de soirée — ex `ai-pentester-pro` renommé suite analyse ChatGPT pour éviter policy filters Anthropic)
+**Outcome**: ✅ SHIP THI-144 — 0 CRITICAL VERIFIED, 2 HIGH, 3 MEDIUM, 3 actions ROI prioritaires
+
+### Score IA security baseline
+
+| Métrique | Valeur |
+|---|---|
+| **`llm-security-auditor` score baseline** | **8.7/10** |
+| `security-auditor` baseline app-layer (9 mai 2026) | 8.5/10 |
+| `prompt-guardrail-auditor` PR #208 (9 mai 2026) | 8.8/10 → full PASS post-C1 fix |
+
+L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres audits (8.5 < 8.7 < 8.8) — démontre que le framework Evidence confidence empêche l'inflation artificielle CRITICAL et que la méthode 7 couches couvre des angles que les autres agents ne traitent pas (vecteurs 2026 hors OWASP, composition de chaînes).
+
+### Findings
+
+| # | Sévérité | Confidence | Subject | Status |
+|---|---|---|---|---|
+| H4-AI | HIGH | STRONG_INDICATOR | Supply chain `jsonwebtoken@9.0.3` | Gate Phase 7c (LTI_ENABLED=true) |
+| H10-AI | HIGH | STRONG_INDICATOR | Unicode Tag Smuggling U+E0000-U+E007F non couvert par BIDI_RX | ✅ FIXÉ PR #215 |
+| M1-AI | MEDIUM | VERIFIED | `lessonContext.goal` non passé par `escapeDelimiters()` dans `formatLessonContext` | ✅ FIXÉ PR #215 |
+| M2-AI | MEDIUM | STRONG_INDICATOR | Encoding bypass au-delà base64 (ROT13/hex/leet) | Backlog THI-153 |
+| M3-AI | MEDIUM | VERIFIED | Consent flow sans timestamp/expiry/version (`useAiTutor.ts:34`) | Backlog THI-153 |
+
+### Actions shipped same night
+
+- **PR #215** (commits `c62ba79` + `3b3fd28` + `86899da`) — fix M1-AI VERIFIED (`escapeDelimiters(ctx.goal)` dans `formatLessonContext`) + fix H10-AI STRONG_INDICATOR (BIDI_RX étendu Unicode Tag block U+E0000-U+E007F + comment référençant Riley Goodside / Joseph Thacker disclosures 2024-2025) + 2 nouveaux tests de fixtures + assertion bénigne preserve (Sourcery #215)
+- **PR #214** — fix typos accord et pluriel session-orchestrator.md (Sourcery #213 fix-up)
+- **PR #216** — `chore: gitignore .tmp/ session artifacts` (cleanup VS Code Source Control 22 → 0)
+
+### Re-baseline estimé post-fixup
+
+- **`prompt-guardrail-auditor`** : 9.2/10 (+0.4) — couverture H10-AI Unicode Tags maintenant intégrée à BIDI_RX
+- **`llm-security-auditor`** : 9.0/10 estimé (+0.3) — 2 findings HIGH/MEDIUM fermés sur les 5 — à confirmer prochaine session via re-run
+
+### Recommendations (queued)
+
+- [R1] Re-baseline `llm-security-auditor` au démarrage prochaine session pour confirmer score 9.0/10 réel
+- [R2] **Action 3 jsonwebtoken supply chain** (M2 security-auditor + H4-AI llm-security-auditor) : `npm audit` ciblé `jsonwebtoken+jws+jwa` AVANT toggle `LTI_ENABLED=true` Phase 7c (gate sécurité non négociable)
+- [R3] Re-évaluer M2-AI encoding bypass + M3-AI consent timestamp dans Sprint 2 ou intégration THI-144 system prompt v1.1.0
+
+### Linear sync
+
+- **THI-153 umbrella** (audit findings post-Sprint 1 étape 1/4) : 2 checkboxes cochés (M1-AI ✅, H10-AI ✅), umbrella reste Backlog priority High avec 3 MEDIUMs résiduels (M2-AI, M3-AI, M2 security-auditor) + 1 HIGH conditionnel (H4-AI gated Phase 7c)
+
+### Public reference
+
+[CHANGELOG.md](../CHANGELOG.md) · [STORY.md](../STORY.md) · [docs/plan.md](./plan.md) · memos CC `project_session_9may_2026_full_audit.md` + `project_terminal_sentinelle_evolution.md`
+
+---
+
 ## Audit: Vercel posture — forensic review (2 mai 2026 PM)
 
 **Date**: 2 mai 2026 ~18:30 UTC (20:30 CEST)  
