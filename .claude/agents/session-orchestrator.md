@@ -145,7 +145,7 @@ gh pr list --state open --json number,title,headRefName,createdAt,mergeable,merg
 Si PR > 7 jours : flag explicite avec date + statut CI/Sourcery/Vercel.
 
 **Repli** : si `gh` n'est pas installé, ou si l'authentification est expirée (`gh auth status` retourne non-authenticated), ou si le repo n'a pas de remote GitHub :
-- Signaler : *« gh CLI non disponible / non configuré / repo non lié à GitHub — Phase 2 PRs ouvertes non vérifiable »*
+- Signaler : *« gh CLI non disponible / non configuré / repo non lié à GitHub — PRs ouvertes de la Phase 2 non vérifiables »*
 - Suggérer au main agent d'installer/réauthentifier `gh` ou de lier le remote
 - Continuer le shutdown sans bloquer, mais le rapport final flagger explicitement « état GitHub non vérifié »
 
