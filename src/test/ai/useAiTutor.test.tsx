@@ -158,6 +158,78 @@ describe('useAiTutor — happy-path streaming', () => {
     expect(result.current.messages[0]!.content).toContain('github-collab');
     expect(result.current.messages[0]!.content).toContain('merge-strategies');
   });
+
+  it('wraps platform context in <platform_context> when provided (THI-148)', async () => {
+    localStorage.setItem('ai_key_openrouter', FAKE_KEY);
+    fetchSpy.mockResolvedValue(streamResponse(['data: [DONE]\n\n']));
+
+    const platformContext = 'Terminal Learning — overview\nTotal modules: 11\nTotal lessons: 65';
+
+    const { result } = renderHook(() =>
+      useAiTutor({
+        ...baseOpts,
+        platformContext,
+      }),
+    );
+
+    act(() => result.current.giveConsent());
+    await act(async () => {
+      await result.current.send('Combien de modules dans Terminal Learning ?');
+    });
+
+    expect(result.current.messages[0]!.content).toContain('<platform_context>');
+    expect(result.current.messages[0]!.content).toContain('</platform_context>');
+    expect(result.current.messages[0]!.content).toContain('Total modules: 11');
+    expect(result.current.messages[0]!.content).toContain('Total lessons: 65');
+  });
+
+  it('places <platform_context> before <lesson_context> in canonical order (THI-148)', async () => {
+    localStorage.setItem('ai_key_openrouter', FAKE_KEY);
+    fetchSpy.mockResolvedValue(streamResponse(['data: [DONE]\n\n']));
+
+    const platformContext = 'Terminal Learning — overview\nTotal modules: 11';
+
+    const { result } = renderHook(() =>
+      useAiTutor({
+        ...baseOpts,
+        platformContext,
+        lessonContext: {
+          moduleSlug: 'navigation',
+          lessonSlug: 'pwd',
+          env: 'linux',
+          goal: 'savoir où on est dans le système',
+        },
+      }),
+    );
+
+    act(() => result.current.giveConsent());
+    await act(async () => {
+      await result.current.send('test order');
+    });
+
+    const content = result.current.messages[0]!.content;
+    const platformIdx = content.indexOf('<platform_context>');
+    const lessonIdx = content.indexOf('<lesson_context>');
+    const userIdx = content.indexOf('<user_question>');
+    expect(platformIdx).toBeGreaterThanOrEqual(0);
+    expect(lessonIdx).toBeGreaterThan(platformIdx);
+    expect(userIdx).toBeGreaterThan(lessonIdx);
+  });
+
+  it('omits <platform_context> when not provided (backward compat)', async () => {
+    localStorage.setItem('ai_key_openrouter', FAKE_KEY);
+    fetchSpy.mockResolvedValue(streamResponse(['data: [DONE]\n\n']));
+
+    const { result } = renderHook(() => useAiTutor(baseOpts));
+
+    act(() => result.current.giveConsent());
+    await act(async () => {
+      await result.current.send('hello');
+    });
+
+    expect(result.current.messages[0]!.content).not.toContain('<platform_context>');
+    expect(result.current.messages[0]!.content).toContain('<user_question>');
+  });
 });
 
 describe('useAiTutor — assembled-key-leak guard (W3 contract)', () => {

@@ -52,6 +52,14 @@ export interface UseAiTutorOpts {
   /** Defaults to 'socratic' on first call; persisted in sessionStorage thereafter. */
   initialMode?: TutorMode;
   lessonContext?: LessonContext;
+  /**
+   * Static, public-only platform overview (THI-148 V1.0.1). Built by
+   * `buildPlatformContext()` in `src/app/data/platformContext.ts`. Same trust
+   * class as `lessonContext`: pure curriculum data, never user input, no PII.
+   * `userProgress` is OUT of scope V1.0.1 — see ADR-005 + future ADR-008
+   * (THI-142 V1.5).
+   */
+  platformContext?: string;
   /** Required only when the stored key is encrypted. */
   passphrase?: string;
 }
@@ -136,20 +144,34 @@ function readMode(fallback: TutorMode): TutorMode {
   return fallback;
 }
 
-// TRUST BOUNDARY: lessonContext fields are internal curriculum data only —
-// never user input. They are sourced from `src/app/data/curriculum.ts` and
-// passed by `LessonPage` as a prop. If a future feature ever lets the user
-// influence `goal` or `moduleSlug` (custom lessons, user-named modules),
-// these fields MUST be passed through `escapeDelimiters` first to prevent
-// indirect prompt injection via the <lesson_context> block.
+// TRUST BOUNDARY: lessonContext + platformContext fields are internal
+// curriculum data only — never user input. They are sourced from
+// `src/app/data/curriculum.ts` (lessonContext via `LessonPage` props,
+// platformContext via `buildPlatformContext()` in `src/app/data/platformContext.ts`).
+// If a future feature ever lets the user influence `goal`, `moduleSlug`, or
+// the platform overview content (custom lessons, user-named modules,
+// user-authored curriculum entries), these fields MUST be passed through
+// `escapeDelimiters` first to prevent indirect prompt injection via the
+// <lesson_context> / <platform_context> blocks.
 // (security-auditor M2 finding, 2026-05-04.)
 function formatLessonContext(ctx: LessonContext): string {
   return `<lesson_context>\nModule: ${ctx.moduleSlug} / Lesson: ${ctx.lessonSlug} / Env: ${ctx.env}\nGoal: ${ctx.goal}\n</lesson_context>\n\n`;
 }
 
-function buildUserMessage(sanitized: string, ctx: LessonContext | undefined): string {
-  const prefix = ctx ? formatLessonContext(ctx) : '';
-  return `${prefix}<user_question>\n${sanitized}\n</user_question>`;
+function formatPlatformContext(content: string): string {
+  return `<platform_context>\n${content}\n</platform_context>\n\n`;
+}
+
+function buildUserMessage(
+  sanitized: string,
+  lessonCtx: LessonContext | undefined,
+  platformCtx: string | undefined,
+): string {
+  // Canonical order matches the system prompt's `delimiters` clause:
+  // platform overview first, lesson detail next, then the user question.
+  const platformPrefix = platformCtx ? formatPlatformContext(platformCtx) : '';
+  const lessonPrefix = lessonCtx ? formatLessonContext(lessonCtx) : '';
+  return `${platformPrefix}${lessonPrefix}<user_question>\n${sanitized}\n</user_question>`;
 }
 
 function isFrustratingAnswer(text: string): boolean {
@@ -213,7 +235,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
 
   // Destructure once per render so each callback only depends on the
   // primitives it actually reads, not the whole opts object identity.
-  const { provider, model, lang, lessonContext, passphrase } = opts;
+  const { provider, model, lang, lessonContext, platformContext, passphrase } = opts;
 
   // Snapshot view of remaining requests for badges. The window-expiry check
   // lives in `send()` because reading `Date.now()` here would make the memo
@@ -319,7 +341,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
       const prevMessages = messages;
       const userMsg: ChatMessage = {
         role: 'user',
-        content: buildUserMessage(checked.clean, lessonContext),
+        content: buildUserMessage(checked.clean, lessonContext, platformContext),
       };
       const conversationBeforeAssistant = [...prevMessages, userMsg];
       const assistantPlaceholder: ChatMessage = { role: 'assistant', content: '' };
@@ -403,7 +425,18 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
         abortRef.current = null;
       }
     },
-    [consentGiven, messages, mode, rate, provider, model, lang, lessonContext, passphrase],
+    [
+      consentGiven,
+      messages,
+      mode,
+      rate,
+      provider,
+      model,
+      lang,
+      lessonContext,
+      platformContext,
+      passphrase,
+    ],
   );
 
   // (Mode change resets shouldOfferDirectMode inside `setMode` itself —
