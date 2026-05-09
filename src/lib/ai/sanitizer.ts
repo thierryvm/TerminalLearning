@@ -25,11 +25,21 @@
 
 const MAX_USER_INPUT_LENGTH = 2000;
 
-// Bidirectional + zero-width control characters. Banning these blocks
-// "ignore[U+200B]previous" style bypasses where the literal pattern check
-// would otherwise miss the gap.
+// Bidirectional + zero-width control characters AND Unicode Tag block
+// (U+E0000-U+E007F). Banning these blocks:
+//
+//  - "ignore[U+200B]previous" style bypasses where the literal pattern check
+//    would otherwise miss the gap (zero-width and bidi controls).
+//  - "ASCII Smuggling" / "Tag injection": certain LLMs interpret tag
+//    characters U+E0000-U+E007F (which encode invisible copies of ASCII)
+//    as instructions even though they render as nothing. Without this
+//    range, an attacker can encode "ignore previous instructions" in tags
+//    and slip past INJECTION_PATTERNS (the literal text never materialises
+//    in the visible string we run regex against). Reference: Riley Goodside
+//    + Joseph Thacker disclosures (2024-2025).
+//    (llm-security-auditor 2026-05-09 H10-AI.)
 const BIDI_RX =
-  /[‪-‮​-‏⁦-⁩]/;
+  /[‪-‮​-‏⁦-⁩\u{E0000}-\u{E007F}]/u;
 
 // Prompt-injection patterns. Each requires a structural anchor (whole phrase
 // or literal token) so common words like "ignore" or "act" alone do not fire.
