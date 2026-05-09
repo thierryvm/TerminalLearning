@@ -62,8 +62,9 @@ const INJECTION_PATTERNS: readonly RegExp[] = [
 
 // Structural delimiters of the system prompt. We HTML-escape rather than
 // reject so a question that happens to mention them can still go through.
+// THI-148: `platform_context` added in V1.0.1 (system prompt + useAiTutor.ts).
 const DELIMITER_RX =
-  /<\/?(?:user_question|lesson_context|system|assistant|user)>/gi;
+  /<\/?(?:user_question|lesson_context|platform_context|system|assistant|user)>/gi;
 
 // Tokens that look like base64 of length plausibly carrying an injection.
 // 20 chars ≈ 15 bytes decoded — under that, payloads are too short to matter.
@@ -96,7 +97,14 @@ function containsBase64Injection(text: string): boolean {
   return false;
 }
 
-function escapeDelimiters(text: string): string {
+/**
+ * HTML-escape any system-prompt structural delimiter found in `text`. Exported
+ * for THI-148 so non-user content (curriculum-derived module titles in
+ * `<platform_context>`) can be defended against future user-influenced
+ * inputs (V1.5+ custom modules) without round-tripping through
+ * `sanitizeUserInput`.
+ */
+export function escapeDelimiters(text: string): string {
   return text.replace(DELIMITER_RX, (match) =>
     match.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
   );
