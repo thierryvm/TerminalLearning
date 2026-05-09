@@ -197,6 +197,10 @@ describe('useAiTutor — happy-path streaming', () => {
     // The single legitimate <lesson_context> opening tag from
     // `formatLessonContext` itself stays intact.
     expect(content.indexOf('<lesson_context>')).toBeGreaterThanOrEqual(0);
+    // Defense-in-depth doesn't over-sanitise: the benign portion of the goal
+    // text is preserved so the model still receives the legitimate context.
+    // (Sourcery PR #215 testing suggestion.)
+    expect(content).toContain('legit goal ');
   });
 
   it('wraps platform context in <platform_context> when provided (THI-148)', async () => {
