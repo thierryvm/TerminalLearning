@@ -60,7 +60,7 @@ Tracées dans plan.md ligne 4. Sans ce mini-prompt, ces 5 sont à recharger à l
 3. **Concevoir l'eval suite** AVANT v1.1.0 (TDD-light) : écrire le corpus 10-15 Q d'abord, run avec v1.0.1 (baseline), capturer les scores avant bump.
 4. **Implémenter v1.1.0** en patchant le scope/refusals/socratic blocks selon ADR-008. Garder le pattern `PromptSections` 4 langues.
 5. **Run eval suite** sur v1.1.0, comparer scores avec baseline. Si régression sur une friction, corriger v1.1.0.
-6. **Audit `prompt-guardrail-auditor`** mandatory. Patrón THI-148 : findings CRITICAL/MEDIUM appliqués dans le même commit.
+6. **Audit `prompt-guardrail-auditor`** mandatory. Pattern THI-148 : findings CRITICAL/MEDIUM appliqués dans le même commit.
 7. **PR + validation empirique @thierry** : 5-6 prompts manuels sur Vercel preview (cf. les 5 frictions, vérifier qu'elles sont absorbées).
 
 ## Estimation honnête
