@@ -77,25 +77,50 @@ Trigger : « lance le process X », « audit Y », « update docs ».
 
 Exécuter uniquement la phase demandée + checks adjacents pertinents.
 
-## Étape 0 — Détection du contexte projet
+## Étape 0 — Détection du contexte projet (portable)
 
-Avant toute action, identifier :
-- **Projet courant** (cwd, repo git, nom dans `package.json` ou `Cargo.toml`)
-- **Path mémoire CC** : `~/.claude/projects/<encoded-cwd>/memory/` ou équivalent. Si introuvable, signaler au main agent (« mémoire CC absente, je ne peux pas exécuter le process — créer les memos d'abord »)
-- **Vault Obsidian** : pont MCP `claude-code-mcp` (port 22360) actif ? Si oui, utiliser MCP Obsidian. Sinon fallback Read/Write filesystem direct sur `<vault path>` documenté dans CLAUDE.md global
+Avant toute action, identifier dynamiquement :
+
+**1. Projet courant**
+- `cwd` du shell
+- Repo git → `git rev-parse --show-toplevel` si disponible
+- Nom du projet → `package.json` (`name`), `Cargo.toml` (`[package] name`), ou nom du dossier racine en dernier recours
+
+**2. Path mémoire CC du projet** — découverte dynamique via `Glob`, dans l'ordre de priorité :
+- Pattern primaire : motif équivalent à `~/.claude/projects/*<encoded-cwd>*/memory/` (Claude Code CLI default)
+- Pattern alternatif in-repo : `<project-root>/.claude/memory/`
+- Pattern fallback : `<project-root>/docs/processes/`
+- Si aucun trouvé : signaler au main agent « mémoire CC absente, je ne peux pas exécuter le process discipliné — créer les memos d'abord ou pointer le path explicite »
+
+**3. Path mémoire cross-projet (claude-config)** — défini dans :
+- CLAUDE.md global du projet courant (section `Contexte Développeur` ou équivalent)
+- Variable d'environnement `CLAUDE_CONFIG_PATH` si définie
+- Default fallback : recherche `**/claude-config/memory/` à partir de la racine projets connue (typiquement `F:\PROJECTS\` sous Windows, `~/projects/` sous Linux/macOS — à confirmer via CLAUDE.md global)
+- Si introuvable : signaler — le memo cross-projet ne sera pas synchronisé, mais le shutdown projet courant peut quand même se terminer
+
+**4. Vault Obsidian** (optionnel) — pont MCP `claude-code-mcp` (port 22360) actif ? Si oui, utiliser MCP Obsidian. Sinon fallback Read/Write filesystem direct sur `<vault path>` documenté dans CLAUDE.md global. Si vault absent : skip étape Obsidian sans erreur.
 
 ## Étape 1 — Lecture des process memos
 
-```
-~/.claude/projects/<projet>/memory/session_startup_process.md
-~/.claude/projects/<projet>/memory/session_shutdown_process.md
-~/.claude/projects/<projet>/memory/working_discipline_rules.md
-~/.claude/projects/<projet>/memory/maintenance_docs_checklist.md
-```
+**Découverte dynamique** plutôt que chemins en dur. Une fois le path mémoire CC identifié à l'Étape 0, chercher via `Glob` les fichiers process attendus :
 
-Si certains absent : ne pas inventer, signaler. Le main agent décidera s'il faut les créer ou si le projet utilise un autre pattern.
+| Fichier attendu | Pattern de recherche | Rôle |
+|---|---|---|
+| Startup process | `**/session_startup_process.md` ou `**/startup*.md` | Phase 0-4 démarrage |
+| Shutdown process | `**/session_shutdown_process.md` ou `**/shutdown*.md` | Phases 1-10 clôture |
+| Working discipline | `**/working_discipline_rules.md` ou `**/discipline*.md` | 10 règles continues |
+| Maintenance docs checklist | `**/maintenance_docs_checklist.md` ou `**/docs_checklist*.md` | .md vitaux à vérifier |
 
-## Étape 2 — Checks d'état exhaustifs
+**Règles de sélection** :
+- Priorité 1 : nom exact attendu
+- Priorité 2 : pattern flexible (premier match alphabétique)
+- Priorité 3 : aucun match → signaler explicitement quels fichiers manquent + suggérer création
+
+Si certains sont absents : ne pas inventer, signaler. Le main agent décidera s'il faut les créer ou si le projet utilise un autre pattern.
+
+## Étape 2 — Checks d'état exhaustifs (avec replis explicites)
+
+Chaque check ci-dessous a un comportement de repli si l'outil n'est pas disponible. Ne jamais inventer un état non vérifié — signaler explicitement les checks impossibles dans le rapport.
 
 ### Git local
 
@@ -104,6 +129,11 @@ git status
 git log --oneline -3
 git branch --show-current
 ```
+
+**Repli** : si la commande retourne une erreur du type « not a git repository » ou si `git` n'est pas dans le PATH :
+- Signaler dans le rapport : *« Pas un repo git détecté à <cwd> — checks Phase 1 état local non applicables »*
+- Skip toutes les phases qui dépendent de git (Phase 1, Phase 2 GitHub, Phase 3 audit agents par fichier modifié)
+- Continuer avec les phases qui n'en dépendent pas (lecture mémoire, .md vitaux par chemin absolu, etc.)
 
 ### GitHub
 
@@ -114,11 +144,21 @@ gh pr list --state open --json number,title,headRefName,createdAt,mergeable,merg
 
 Si PR > 7 jours : flag explicite avec date + statut CI/Sourcery/Vercel.
 
+**Repli** : si `gh` n'est pas installé, ou si l'authentification est expirée (`gh auth status` retourne non-authenticated), ou si le repo n'a pas de remote GitHub :
+- Signaler : *« gh CLI non disponible / non configuré / repo non lié à GitHub — PRs ouvertes de la Phase 2 non vérifiables »*
+- Suggérer au main agent d'installer/réauthentifier `gh` ou de lier le remote
+- Continuer le shutdown sans bloquer, mais le rapport final flagger explicitement « état GitHub non vérifié »
+
 ### Linear (si MCP linear-server disponible)
 
 Pour chaque issue mentionnée dans les commits récents ou les PRs ouvertes :
 - `mcp__linear-server__get_issue` pour vérifier statut actuel
 - Détecter incohérences : Done + PR non mergée, In Progress + PR ouverte, In Review + PR mergée
+
+**Repli** : si MCP `linear-server` non chargé dans la session, ou si le projet n'utilise pas Linear (utilise GitHub Issues, Jira, etc.) :
+- Signaler : *« MCP Linear off OU projet sans tracker Linear — sync issues non vérifiée »*
+- Si tracker alternatif détecté (présence de `.github/ISSUE_TEMPLATE/`, mention Jira dans CLAUDE.md, etc.), recommander au main agent d'invoquer l'outil approprié
+- Continuer sans bloquer
 
 ### Freshness markers
 
@@ -248,6 +288,6 @@ L'utilisateur n'a JAMAIS à expliquer manuellement :
 - « Mets à jour le CHANGELOG »
 - « Re-check les PRs ouvertes »
 - « N'oublie pas le freshness marker de docs/README »
-- « Lance tel agent après tel modif »
+- « Lance tel agent après telle modif »
 
 Si ça arrive, c'est que le process memo est incomplet → enrichir, pas blâmer le main agent.

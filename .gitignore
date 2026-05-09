@@ -40,3 +40,8 @@ playwright-report/
 
 # Internal Claude planning drafts (per-issue tactical plans, not project doc)
 .claude/plans/
+
+# Local CC scratch directory (commit message drafts, validation screenshots,
+# session reprise snapshots, audit reports, handoff files). Persistent local
+# only — never tracked. Cleanup safe à tout moment, contenu reproductible.
+.tmp/
