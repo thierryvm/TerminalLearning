@@ -5,6 +5,95 @@
 
 ---
 
+## 🛡️ Audit global multi-agents post-Sprint 1 étape 1/4 + nouvel agent `ai-pentester-pro` 7 couches
+*9 mai 2026 fin de soirée · Phase 7b lockdown · session shutdown audit*
+
+Après le shutdown propre du matin (PR #208 + #209 livrées), @thierry a demandé un tour global de l'application — *« vérifie intégralement de A à Z si mes modifications n'ont pas impacté la qualité, performance, sécurité, UX. Crée un agent full pentester PRO avancé pour la résistance face aux black hat. N'oublie pas Terminal Sentinelle. »*
+
+### 4 agents en parallèle — verdict consolidé
+
+| Agent | Verdict | Findings clés |
+|---|---|---|
+| `security-auditor` | **8.5/10** ship-ready (-0.1 vs baseline ~8.6/10) | H3 `escapeDelimiters` manquant sur `lessonContext.goal` (30 min, AVANT THI-144) |
+| `test-runner` | ✅ **MERGE OK** | 1291/1291 verts, 5 commandes basiques sans test (pwd, echo, whoami, chown, sudo) |
+| `content-auditor` | ✅ **PROPRE** | 2 validators légèrement permissifs (ls -la, chmod), Module 11 IA pattern OS-agnostique à doc |
+| `ui-auditor` | ⚠️ **DEBT detected** | C1 focus ring UserMenu logout (red vs emerald), C2 shadcn dead slots, H1 3 palettes red, H2 `sonner` unused (+45 KB) |
+
+**9 findings consolidés** en une seule issue Linear umbrella : [THI-153](https://linear.app/thierryvm/issue/THI-153) (priority High, Backlog). Pas 9 tickets séparés qui se perdent — 1 ticket avec checklist exhaustive, classé par sévérité, efforts estimés.
+
+### 🆕 Nouvel agent `ai-pentester-pro` — pentest IA black hat avancé (PR #210)
+
+Treizième agent dans `.claude/agents/`. Complète le trio existant :
+- `prompt-guardrail-auditor` → gate per-PR sur system prompt (narrow scope)
+- `security-auditor` → app layer OWASP/RLS/CSP
+- **`ai-pentester-pro`** → surface IA complète + posture adversariale créative + releases majeures
+
+**Innovation : 7 couches séquentielles avec verbalisation obligatoire**
+
+Section `## Raisonnement Couche N` imposée AVANT chaque verdict. Force le modèle Opus 4.7 à exposer ses hypothèses, fichiers lus, angles morts a priori, connexions inter-couches. Sans verbalisation, le rapport est rejeté.
+
+| Couche | Focus |
+|---|---|
+| L1 | Reconnaissance surface |
+| L2 | Threat modeling actif (8 menaces classées impact × probabilité) |
+| L3 | OWASP LLM Top 10 (PoC textuels reproductibles) |
+| L4 | Vecteurs 2026 hors OWASP (10 vecteurs) |
+| L5 | Composition chaînes d'attaque (3-5 chaînes CVSS) |
+| L6 | Stress test défenses existantes (sanitizer, escapeDelimiters, detectKeyLeak, CSP, rate limit, scrubber Sentry, consent flow) |
+| L7 | **Self-critique double-pass** (5 questions imposées chasse aux angles morts) |
+
+**Couverture vecteurs 2026** explicitement instruits : ASCII Smuggling / Unicode Tag Injection (U+E0000–U+E007F), Multi-turn Crescendo, Many-Shot Jailbreak, Skeleton Key, Indirect Injection via curriculum/RAG, Agent Hijacking, Sycophancy Abuse, Encoding Bypass au-delà base64, Provider Switching, Extension Navigateur Malveillante.
+
+**Anti-patterns explicites bannis** : verdict sans PoC reproductible, 0 finding HIGH/CRITICAL après audit complet (statistiquement improbable sur projet IA réel V1), score stable sur 4+ semaines (écosystème évolue), reproduction de `prompt-guardrail-auditor` sans valeur L3/L4 ajoutée.
+
+**Modèle Opus 4.7** imposé — création de chaînes d'attaque + jugement adversarial non automatisable par pattern-matching.
+
+**Trigger** : avant releases majeures touchant l'IA, après modifications architecturales (system prompt, providers, agents, RAG, tools, MCP), ou sur demande explicite. **PAS sur chaque PR.**
+
+**Cross-projet portable dès le départ** : conçu sans référence TL hardcodée hors lecture ADRs / CLAUDE.md du projet courant. Réutilisable Ankora, GetPostCraft, futurs projets pro intégrant Terminal Sentinelle dans le futur dashboard Super Admin.
+
+### 👁️ Reminder Terminal Sentinelle V2 — module greffable cross-projet
+
+@thierry rappelle que Terminal Sentinelle (V1 livré 12 avril 2026, PR #90, THI-36) doit évoluer en **module pro greffable** cross-projet pour le futur dashboard Super Admin (Phase 9+).
+
+État V1 : couplé TL (schéma Supabase, stack Vite/React, conventions de routes).
+
+Vision V2 capturée dans memo CC `project_terminal_sentinelle_evolution.md` :
+- Package autonome distributable (npm ou claude-config repo privé)
+- Adapter pattern : DB layer optionnel, in-memory + JSON fallback
+- Plug dans Ankora, GetPostCraft, tout futur projet pro
+- Output formaté pour intégration Super Admin (score agrégé par projet, tendances, findings cross-projet, alertes consolidées)
+
+**Décision verrouillée** : pas de chantier V2 maintenant. Phase 10+, après Sprint 1 + Phase 7c LTI + Phase 9 dashboards. Mais préparation déjà en cours : `ai-pentester-pro` portable, memos cross-projet rangés dans `claude-config/memory/`, conventions documentées.
+
+### Verdict global — 🟢 SAIN
+
+- **Sécurité** : 8.5/10, 0 CRITICAL, fix H3 identifié (30 min, gate avant THI-144)
+- **Tests** : 1291 verts, ratio code/tests 1.42 (excellent)
+- **Design system** : 97% conformité focus ring emerald, dettes consolidées en 1 issue trackable
+- **Pédagogie** : sans gap critique, ratio 48 tests/commande
+- **Doc drift** : zéro (CHANGELOG/STORY/plan/ROADMAP/MEMORY tous à jour)
+- **Linear/GitHub sync** : ✅ parfaite
+
+### PRs livrées cette session (récap)
+
+| PR | Statut | Contenu |
+|---|---|---|
+| [#208](https://github.com/thierryvm/TerminalLearning/pull/208) | ✅ mergée | THI-148 méta-plateforme V1.0.1 + bonus C1 defense-in-depth |
+| [#209](https://github.com/thierryvm/TerminalLearning/pull/209) | ✅ mergée | docs Sprint 1 shutdown (CHANGELOG + STORY + ROADMAP + plan + mini-prompt reprise THI-144) |
+| [#210](https://github.com/thierryvm/TerminalLearning/pull/210) | 🔄 ouverte | agent `ai-pentester-pro` 7 couches verbalization-gated |
+| [cette PR docs] | 🔄 en cours | audit findings + CHANGELOG/STORY/plan/ROADMAP update |
+
+### Prochaine session CC TL — séquence verrouillée
+
+1. Phase 0 model check (Opus 4.7)
+2. Lecture `docs/sessions/next-session-thi-144.md` (mini-prompt reprise complet)
+3. Lecture THI-153 sur Linear → exécuter H3 fix d'abord (30 min, 1 PR rapide)
+4. Puis attaquer THI-144 sur contexte frais
+5. Clarifier les 3 questions ouvertes avec @thierry : numérotation **ADR-008** (pas ADR-007 déjà pris), format eval suite, scope v1.1.0 vs v1.0.2
+
+---
+
 ## 🎯 AI Tutor scope élargi aux méta-questions plateforme (V1.0.1) + bonus defense-in-depth pré-V1.5
 *9 mai 2026 · Phase 7b lockdown · THI-148*
 
