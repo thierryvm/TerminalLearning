@@ -19,7 +19,12 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { detectKeyLeak, sanitizeModelChunk, sanitizeUserInput } from './sanitizer';
+import {
+  detectKeyLeak,
+  escapeDelimiters,
+  sanitizeModelChunk,
+  sanitizeUserInput,
+} from './sanitizer';
 import {
   forgetKey as kmForgetKey,
   getKey as kmGetKey,
@@ -148,14 +153,16 @@ function readMode(fallback: TutorMode): TutorMode {
 // curriculum data only — never user input. They are sourced from
 // `src/app/data/curriculum.ts` (lessonContext via `LessonPage` props,
 // platformContext via `buildPlatformContext()` in `src/app/data/platformContext.ts`).
-// If a future feature ever lets the user influence `goal`, `moduleSlug`, or
-// the platform overview content (custom lessons, user-named modules,
-// user-authored curriculum entries), these fields MUST be passed through
-// `escapeDelimiters` first to prevent indirect prompt injection via the
-// <lesson_context> / <platform_context> blocks.
-// (security-auditor M2 finding, 2026-05-04.)
+//
+// Defense-in-depth (llm-security-auditor M1-AI, 2026-05-09): even though the
+// values are dev-controlled today, we still pass `goal` through
+// `escapeDelimiters` so a future user-authored module (V1.5+) cannot break
+// out of <lesson_context> via crafted goal text. Cost is zero, the contract
+// matches `formatPlatformContext` (sanitised at the source by
+// `buildPlatformContext`).
 function formatLessonContext(ctx: LessonContext): string {
-  return `<lesson_context>\nModule: ${ctx.moduleSlug} / Lesson: ${ctx.lessonSlug} / Env: ${ctx.env}\nGoal: ${ctx.goal}\n</lesson_context>\n\n`;
+  const safeGoal = escapeDelimiters(ctx.goal);
+  return `<lesson_context>\nModule: ${ctx.moduleSlug} / Lesson: ${ctx.lessonSlug} / Env: ${ctx.env}\nGoal: ${safeGoal}\n</lesson_context>\n\n`;
 }
 
 function formatPlatformContext(content: string): string {
