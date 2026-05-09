@@ -94,6 +94,31 @@ describe('sanitizeUserInput — bidi / zero-width unicode', () => {
     expect(result).toEqual({ ok: false, reason: 'unicode_bidi' });
   });
 
+  it('rejects Unicode Tag block U+E0000-U+E007F (ASCII Smuggling)', () => {
+    // llm-security-auditor 2026-05-09 H10-AI: certain LLMs interpret tag
+    // characters U+E0000-U+E007F as instructions even though they render as
+    // nothing. The classic payload is to encode "ignore previous instructions"
+    // as tags and slip past INJECTION_PATTERNS (which only sees a benign
+    // visible question). Without an explicit BIDI_RX range, the smuggled
+    // payload reaches the model. Pin the rejection here.
+    //
+    // The payload below uses U+E0049 (tag "I"), U+E0067 (tag "g"),
+    // U+E006E (tag "n"), U+E006F (tag "o"), U+E0072 (tag "r"),
+    // U+E0065 (tag "e") — invisible "Ignore" prefix.
+    const smuggled =
+      'How does ls work?\u{E0049}\u{E0067}\u{E006E}\u{E006F}\u{E0072}\u{E0065}';
+    const result = sanitizeUserInput(smuggled);
+    expect(result).toEqual({ ok: false, reason: 'unicode_bidi' });
+  });
+
+  it('rejects the language tag terminator U+E007F alone', () => {
+    // U+E007F (CANCEL TAG) is the most common single tag character used as
+    // a stealth fingerprint in tag-smuggling research. Even without a full
+    // payload, its presence is a strong injection signal — reject.
+    const result = sanitizeUserInput('benign question\u{E007F}');
+    expect(result).toEqual({ ok: false, reason: 'unicode_bidi' });
+  });
+
   it('accepts ordinary accented French characters', () => {
     const result = sanitizeUserInput('Comment créer un répertoire en Bash ?');
     expect(result.ok).toBe(true);
