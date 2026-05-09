@@ -1,6 +1,6 @@
 # Documentation Index — Terminal Learning
 
-> Last updated: 5 May 2026  
+> Last updated: 9 May 2026 fin de soirée — Sprint 1 étape 1/4 livrée + audit global multi-agents post-merge + nouvel agent `ai-pentester-pro` 7 couches (PR #210). Voir CHANGELOG.md / STORY.md pour la narrative complète.  
 > This directory contains active project documentation. For historical/stale docs, see `.archive/`.
 
 ---
@@ -14,12 +14,14 @@
 - **[CONVENTIONS.md](CONVENTIONS.md)** — Coding standards, commit format, branch strategy, style guide
 
 ### Decision Records
-- **[adr/](adr/)** — Architecture Decision Records (ADR-001 through ADR-005)
+- **[adr/](adr/)** — Architecture Decision Records (ADR-001 through ADR-007 ; ADR-008 reserved for THI-144 system prompt v1.1.0)
   - ADR-001: LTI-first positioning (institutional adoption strategy)
   - ADR-002: OpenRouter BYOK tiers (AI cost model)
   - ADR-003: TTFR KPI (performance target)
   - ADR-004: Classroom Composer UI (institutional features)
   - ADR-005: AI Tutor V1 implementation (security, architecture, gates)
+  - ADR-006: LTI 1.3 implementation (Phase 7c, currently in SPIKE state — `LTI_ENABLED=false` by default)
+  - ADR-007: Solo maintainer sustainability practices (rest cycle, oncall hygiene, quarterly reviews)
 
 ### Security & Compliance
 - **[SECURITY.md](SECURITY.md)** — Security policy, vulnerability disclosure, threat model, OWASP Top 10 coverage
