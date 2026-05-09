@@ -5,6 +5,58 @@
 
 ---
 
+## 🎯 AI Tutor scope élargi aux méta-questions plateforme (V1.0.1) + bonus defense-in-depth pré-V1.5
+*9 mai 2026 · Phase 7b lockdown · THI-148*
+
+Première étape du Sprint 1 *Phase 7b lockdown* (avant pivot Phase 7c LTI). Le tuteur IA refusait poliment des questions légitimes du type « combien de modules dans Terminal Learning ? » — bug UX confirmé empiriquement par @thierry sur Production post-merge THI-111 + THI-146 (Haiku 4.5). Méthode scientifique d'isolation @cowork (Test 1/5 retest Haiku) : le scope du **system prompt** bloquait, indépendamment du modèle.
+
+### Solution V1.0.1 — strict scope, strict privacy
+
+| Livrable | Détail |
+|---|---|
+| **NEW** `src/app/data/platformContext.ts` | Fonction pure `buildPlatformContext()` — 11 modules, 65 leçons, 3 environnements, levels par module. Statique, déterministe, **pas de PII**, **pas de progression personnelle** (`userProgress` reporté V1.5 + ADR-009). |
+| **NEW** `src/lib/ai/prompts/tutor-v1.0.1.ts` | Bump frozen `tutor/v1.0.0` → `tutor/v1.0.1` (v1.0.0 préservé pour rollback). Scope étendu FR/NL/EN/DE pour méta-questions + out-of-scope refusal list étendue (météo, actualité, opinions politiques). Refusals block UNCHANGED verbatim → 44 injection-fixtures restent rejetées. |
+| **MOD** `src/lib/ai/useAiTutor.ts` | Param opt-in `platformContext?: string` + helper `formatPlatformContext()` + `buildUserMessage()` injecte 3 blocs en ordre canonique : `<platform_context>` → `<lesson_context>` → `<user_question>`. |
+| **MOD** `src/app/components/ai/AiTutorPanel.tsx` | `useMemo(buildPlatformContext)` calculé une fois par mount. |
+| **MOD** `src/lib/ai/systemPrompt.ts` | Bump `TUTOR_PROMPT_VERSION` + dispatch `buildTutorPromptV1_0_1`. |
+
+### 🔒 Bonus defense-in-depth — fix pré-V1.5 appliqué dans le même commit
+
+L'audit **`prompt-guardrail-auditor`** mandatory (Règle 10 ADR-005, gate avant chaque PR `systemPrompt.ts`) a remonté un finding **MEDIUM C1** : `escapeDelimiters()` n'était pas appliqué sur les titres de modules injectés dans `<platform_context>`, et `DELIMITER_RX` (sanitizer) ne couvrait pas le nouveau bloc.
+
+**Pas critique aujourd'hui** (curriculum.ts est dev-controlled), **mais structurellement fragile pour V1.5** (où des users pourraient renommer ou créer des modules custom). Conformément à la Règle 1 *working_discipline_rules* (« pas de reporter à plus tard quand le contexte est frais »), le fix a été appliqué dans le même commit :
+
+- `DELIMITER_RX` étendu pour matcher `<platform_context>` / `</platform_context>`
+- `escapeDelimiters()` exporté depuis `sanitizer.ts`
+- Tous les titres de modules wrappés dans `escapeDelimiters()` dans `buildPlatformContext()`
+- 2 tests defense-in-depth ajoutés dans `platformContext.test.ts`
+
+**Verdict guardrail-auditor final** : 8.8/10, *full PASS* post-fix (vs *CONDITIONAL PASS* pré-fix). Le path est *hardened* avant que la surface d'attaque devienne réelle.
+
+### Tests
+
+| Métrique | Valeur |
+|---|---|
+| Vitest full suite | **1291 passed** \| 20 skipped (RBAC Phase 9) \| 0 failed (+22 vs baseline 1268) |
+| Tests AI seuls | 250 passed (incl. 44 injection-fixtures inchangées) |
+| Snapshots | 8 régénérés (4 langues × 2 modes) |
+| Nouveaux fichiers test | `src/test/data/platformContext.test.ts` (13 tests : counts deterministic + privacy guards + defense-in-depth) |
+| Type-check + lint | Clean |
+
+### Décision stratégique tracée — *finish what started*
+
+THI-148 ouvre le Sprint 1 *Phase 7b lockdown* validé par @thierry après analyse complète : fermer Phase 7b proprement (THI-148 → THI-144 → THI-112 → THI-113 audit final triple) **avant** pivot Phase 7c LTI. Le code LTI actuel reste en phase SPIKE (`api/lti/launch.ts` avec `verifyJwt()` placeholder + `LTI_ENABLED=false` par défaut), tracé dans le memo CC `project_lti_spike_state.md` pour reprise propre Phase 7c.
+
+Doctrine codifiée dans `feedback_finish_what_started.md` : avant d'ouvrir une nouvelle phase ≥ 1 semaine d'effort, fermer la phase en cours avec audit final + verrouillage docs. Phase 7b est LIVE en prod (Haiku 4.5 score empirique 9.3/10) — améliorer ce qui sert maintenant > construire du nouveau qui ne servira personne sans Phase 7c complète + UI Phase 9.
+
+### PR + dépendances
+
+- **PR** : [#208](https://github.com/thierryvm/TerminalLearning/pull/208)
+- **Bloque** : rien
+- **Débloque** : prochaine étape Sprint 1 = THI-144 (system prompt v1.1.0 + ADR-008 + eval suite 10-15 Q). Mini-prompt de reprise verrouillé dans `docs/sessions/next-session-thi-144.md` pour absorber tout le contexte sans recharger l'historique.
+
+---
+
 ## 🏁 Sprint Mobile Recovery TL — clôture (final polish HTML metas + tap highlight + Sidebar landscape)
 *5 mai 2026 soirée · Phase 7c · THI-152 brick 9/9 FINAL*
 
