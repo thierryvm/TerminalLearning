@@ -21,6 +21,30 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, modèles
 
 ---
 
+## Le tuteur qui pose moins de questions — quatre micro-frictions cousues main (10 mai 2026, après-midi)
+
+Ce matin, post-shutdown 10 phases. Branche standby, mini-prompt verrouillé, audit baseline 8.7/10 documenté. Reprise CC TL en début de journée pour le step 2/4 du Sprint 1 : THI-144, system prompt v1.1.0. Le travail le plus délicat de la phase — pas en ligne de code, en finesse pédagogique. Trois questions ouvertes verrouillées dans le mini-prompt : numérotation ADR, format eval suite, scope one-shot vs découpage. @thierry tranche les trois en quelques minutes — ADR-008 (ADR-007 = sustainability déjà pris), eval suite hybride (a) CI mock + (b) script manuel Haiku, scope one-shot v1.1.0. Pas une décision n'est laissée flottante.
+
+Première PR (#220) avant même de toucher au code : aligner toutes les références « ADR-007 » qui pointaient à tort vers THI-144 dans plan / ROADMAP / CHANGELOG / STORY + 5 mémoires CC TL hors-Git. Doc drift préventivement éliminé. Linear THI-144 corrigé en `In Progress` (auto-close erroné via PR #209 qui mentionnait l'issue dans son body). Discipline préventive : un détail mais qui aurait pollué chaque référence future.
+
+Deuxième PR (#221) avant d'écrire la moindre ligne de feature : re-baseline `llm-security-auditor` sur main HEAD post-#220. Score confirmé **9.0/10**. Delta +0.3 vs baseline matin verrouillé. Un nouveau finding identifié au passage par la couche 7 self-critique — M4-AI LOW VERIFIED, asymétrie entre `KEY_PATTERNS` du sanitizer et le `generic_api_key` fallback du Sentry scrubber. Quick-win 30 minutes, gain estimé +0.1, à bundler dans la PR THI-144 puisque le scope touche déjà `src/lib/ai/*`.
+
+Troisième PR (#222), le cœur du chantier : tutor v1.1.0 + ADR-008 + eval suite + M4-AI bundled. La rédaction de l'ADR-008 m'a pris une heure — pas du remplissage, du raisonnement explicite sur pourquoi un one-shot bump v1.1.0 plutôt que quatre patches v1.0.2 → 1.0.5, pourquoi frozen pattern (rollback safety + git blame propre), pourquoi eval suite hybride (a) seule serait aveugle au comportement modèle, (b) seule manquerait le gate régression CI. Les quatre frictions résolues, c'est exactement ce que ChatGPT avait identifié dans la session 8 tours @thierry du 5 mai — compound questions noyantes, sur-explication des mécaniques internes, indices répétés round après round, et la conclusion qui termine systématiquement par une nouvelle question même quand l'apprenant a explicitement signalé qu'il avait compris.
+
+Le tuteur v1.0.1, c'est nous qui lui avons demandé d'être thorough. Et il l'a fait. Juste un peu trop. Haiku 4.5 plafonne à 9.3/10 sur les bugs visibles parce que le modèle ne peut pas savoir que je préfère un résumé d'1 phrase quand je dis « ok j'ai compris ». C'est au prompt de le lui dire. Quatre règles textuelles, un fichier `prompts/tutor-v1.1.0.ts` frozen comme ses prédécesseurs, 4 langues × 2 modes de pédagogie. Snapshots régénérés, 24 nouvelles assertions structurelles (1 par friction × 4 langs × certains modes), eval suite (a) qui pinne les regex de protection dans le prompt généré, eval suite (b) qui réutilise le même corpus de 14 fixtures pour un run manuel sur Haiku via OpenRouter clé personnelle.
+
+Au passage, le M4-AI fix s'est dédoublé : l'audit `prompt-guardrail-auditor` sur la PR (mandatory Règle 10 ADR-005) a immédiatement remonté un finding R1 LOW VERIFIED — ma fix ajoutait le fallback générique à `KEY_PATTERNS` (le redactor), mais pas à `KEY_DETECTION_PATTERNS` (le détecteur boolean utilisé par `detectKeyLeak`). Asymétrie sub-couche : la clé Mistral hallucinée serait redactée du DOM mais pas flaggée vers Sentry. Sept lignes de fix, commit dédié, audit renvoyé : 0 CRITICAL, 0 WARNING, 9.1/10 estimé. Le finding R1 trouvé et fermé dans la même PR. Pattern THI-148 respecté.
+
+Empirique Vercel preview testée en autonomie (zéro erreur console sur `/`, `/changelog`, `/story`, `/app/learn/navigation/orientation`). CI verte en 56 secondes. Sourcery skipping (rate-limit hebdomadaire, acceptable). Merge en autonomie totale — @thierry m'avait explicitement libéré ce matin : « quand tu peux merge directement et que tu es certains de faire correctement les choses à 100%, ne m'attends pas, je dois partir, tu bosses en totale autonomie ». Six commits dans la branche, tous avec rationale, tous avec Co-Authored-By Claude Opus 4.7 explicit. Re-baseline post-merge : **9.1/10 confirmé**, delta +0.1 verrouillé.
+
+Trajectoire 9.5 désormais visible : R2 (consent JSON timestamp, +0.15), R3 (encoding bypass étendu ROT13/hex/leet, +0.15), R5 (jsonwebtoken `npm audit fix` avant Phase 7c LTI, +0.1 IA + +0.3 security global). Trois chantiers identifiés, tous tracked dans THI-153 umbrella, aucun bloqué.
+
+Une dernière retenue : eval suite (b) requiert `OPENROUTER_API_KEY` env, que je n'ai pas en session. Le run manuel reste à exécuter par @thierry post-merge — si une régression sur une friction apparaissait, le frozen pattern rend le rollback trivial (un commit revert sur `TUTOR_PROMPT_VERSION`). Risque résiduel accepté, documenté dans le body de la PR pour qu'aucun aspect ne traîne en silence.
+
+Travail fait avant le passage de témoin. Prochaine étape Sprint 1 : THI-112 onboarding (`AiKeySetup` + `AiConsentModal` + `AiSettings` + `/privacy#ai-processing`).
+
+---
+
 ## Le rename de minuit — quand on enlève un mot pour gagner un agent (10 mai 2026, ~03h CEST)
 
 Trois heures du matin. La session marathon du 9 mai était officiellement terminée — rapport final 8 sections envoyé, branche standby, mini-prompt de reprise verrouillé pour THI-144. Bonne nuit, posé, fini. Sauf que.
