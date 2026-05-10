@@ -870,7 +870,7 @@ Détails complets dans `STORY.md`. Préservation intégrale des sections existan
 - 🔻 **THI-142 (lessonContext renforcé)** → **Low** — Haiku gère déjà très bien le contexte leçon (Tests 2+3 prouvés)
 - 🔻 **THI-143 (frustration heuristic V1.5)** → **Low** — Haiku résout naturellement la frustration via compréhension contextuelle (Test 4 = 10/10, bascule mode direct sans code)
 - 🔴 **THI-148 (extend tutor scope méta-plateforme)** → **P1 INCHANGÉ, GO IMMÉDIAT** — Test 1 a démontré que le system prompt bloque indépendamment du modèle (méthode scientifique d'isolation)
-- 🟡 **THI-144 (system prompt v1.1.0 + ADR-007 + eval suite)** → **P2 Medium** — peut englober THI-148 dans une PR plus large avec eval suite formelle
+- 🟡 **THI-144 (system prompt v1.1.0 + ADR-008 + eval suite)** → **P2 Medium** — peut englober THI-148 dans une PR plus large avec eval suite formelle
 - 🟢 **THI-145 (chat role-based Phase 9+)** → **P3 Low** vision long-terme
 
 **ROI méthode scientifique** : économie ~4-6h de code V1.5 (THI-142/143 reportés V2). 5 tests qualitatifs ciblés en ~30 min ont permis de **trancher** un backlog qui aurait sinon mobilisé une journée complète. Validation principe « bascule la variable la moins coûteuse d'abord » (cf. mémoire `feedback_scope_vs_model_isolation.md`).
@@ -894,7 +894,7 @@ Détails complets dans `STORY.md`. Préservation intégrale des sections existan
 | **THI-146** | P1 High | Bascule modèle par défaut Llama → Claude Haiku 4.5 via OpenRouter (déjà actif via env var Vercel) |
 | **THI-142** | P1 High | Renforcer ancrage `lessonContext` (description + commandes attendues + env explicit) — bug "j'ai dû fortement orienter" |
 | **THI-143** | P2 Medium | Frustration heuristic V1.5 — fenêtre 500 chars + détection `?` final + détection sémantique côté MESSAGE USER (« comprends pas », « perdu »…) |
-| **THI-144** | P2 Medium | System prompt v1.1.0 + ADR-007 + eval suite 10-15 questions (PR dédiée) |
+| **THI-144** | P2 Medium | System prompt v1.1.0 + ADR-008 + eval suite 10-15 questions (PR dédiée) |
 | **THI-145** | P3 Low | Chat assistant role-based Phase 9+ (étudiant/prof/admin) |
 
 **Méthode scientifique d'isolation (validée @cowork)** : Haiku activé d'abord → retest 5 questions qualitatif (en cours) → si Haiku score ≥ 8/10 → THI-142/143 deviennent LOW priority, économie ~4h. THI-148 reste P1 quoi qu'il arrive (bug UX prouvé indépendant du modèle).
