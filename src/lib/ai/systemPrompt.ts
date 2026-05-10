@@ -29,6 +29,25 @@ import { buildTutorPromptV1_1_0 } from './prompts/tutor-v1.1.0';
 
 export const TUTOR_PROMPT_VERSION = 'tutor/v1.1.0';
 
+/**
+ * Literal type of the currently shipped prompt version, derived from
+ * `TUTOR_PROMPT_VERSION` so the two stay in lock-step automatically.
+ *
+ * This resolves to a single literal at any point in time — older versions
+ * are intentionally NOT preserved in the type. The eval-suite fixtures
+ * (`src/lib/ai/eval/fixtures.ts`) all set `promptVersion: TUTOR_PROMPT_VERSION`
+ * and the invariant test in `evalSuite.test.ts` asserts equality at
+ * runtime; together they force any future bump to also re-validate or
+ * replace every fixture rather than letting old versions silently drift
+ * in alongside the new one.
+ *
+ * If you need to keep multiple versions valid simultaneously (e.g. dual
+ * shipping during a migration window), switch this to an explicit union
+ * literal you maintain by hand and adapt the invariant test to allow
+ * the configured set instead of strict equality.
+ */
+export type TutorPromptVersion = typeof TUTOR_PROMPT_VERSION;
+
 export type TutorLang = 'fr' | 'nl' | 'en' | 'de';
 export type TutorMode = 'socratic' | 'direct';
 

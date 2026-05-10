@@ -1,15 +1,17 @@
 /**
  * Eval suite (b) — manual run on a real Haiku model — THI-144 / ADR-008.
  *
- * Reads the EVAL_FIXTURES corpus from `src/test/ai/eval-fixtures.ts` and
+ * Reads the EVAL_FIXTURES corpus from `src/lib/ai/eval/fixtures.ts` and
  * sends each fixture to Claude Haiku 4.5 via OpenRouter. Writes a markdown
  * report to `.tmp/eval-tutor-<timestamp>.md` with per-fixture model
  * response + simple heuristic checks.
  *
- * The corpus is in a dedicated `eval-fixtures.ts` file (not the `.test.ts`
- * sibling) so importing it from this standalone script does not pull
- * Vitest's `describe`/`it` globals — those crash with an `InitSuite` error
- * outside the test runner. Reported by @thierry on 10 May 2026 PM.
+ * The corpus lives under `src/lib/ai/eval/` (not `src/test/`) so this
+ * production-like manual tool does not transitively depend on the test
+ * directory and does not pull Vitest globals — those caused an
+ * `InitSuite` crash when the script ran outside the test runner.
+ * Reported by @thierry on 10 May 2026 PM, fixed in PR #224, relocated
+ * after Sourcery feedback.
  *
  * Usage:
  *   OPENROUTER_API_KEY=sk-or-v1-... npx tsx scripts/eval-tutor.ts
@@ -42,7 +44,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-import { EVAL_FIXTURES, type EvalFixture } from '../src/test/ai/eval-fixtures';
+import { EVAL_FIXTURES, type EvalFixture } from '../src/lib/ai/eval/fixtures';
 import { getSystemPrompt } from '../src/lib/ai/systemPrompt';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -197,12 +199,25 @@ function formatReport(results: FixtureResult[], model: string): string {
     FAIL: results.filter((r) => r.heuristicVerdict === 'FAIL').length,
     'N/A': results.filter((r) => r.heuristicVerdict === 'N/A').length,
   };
+  // The invariant test in `evalSuite.test.ts` guarantees a single prompt
+  // version across the corpus at the version currently shipped — so we
+  // surface it directly. If we ever loosen the invariant (dual-shipping
+  // window) and end up with multiple versions, flag it visibly so the
+  // human reviewer notices instead of trusting a one-line summary.
+  const distinctVersions = Array.from(
+    new Set(results.map((r) => r.fixture.promptVersion)),
+  );
+  const versionLine =
+    distinctVersions.length === 1
+      ? `\`${distinctVersions[0]}\``
+      : `⚠️ multiple versions in corpus (invariant breach): \`${distinctVersions.join('`, `')}\``;
 
   const lines: string[] = [];
   lines.push(`# Eval suite (b) — manual run report`);
   lines.push('');
   lines.push(`- **Date**: ${ts}`);
   lines.push(`- **Model**: \`${model}\``);
+  lines.push(`- **Prompt version**: ${versionLine}`);
   lines.push(`- **Fixtures**: ${total}`);
   lines.push(
     `- **Heuristic counts**: ✅ PASS ${counts.PASS} · ⚠️ WARN ${counts.WARN} · ❌ FAIL ${counts.FAIL} · ⚪ N/A ${counts['N/A']}`,
