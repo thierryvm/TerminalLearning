@@ -29,10 +29,11 @@
  * Together they form the hybrid eval suite mandated by ADR-008.
  */
 
-import type {
-  TutorLang,
-  TutorMode,
-  TutorPromptVersion,
+import {
+  TUTOR_PROMPT_VERSION,
+  type TutorLang,
+  type TutorMode,
+  type TutorPromptVersion,
 } from '@/lib/ai/systemPrompt';
 
 export type EvalCategory =
@@ -70,7 +71,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-1-compound',
     lang: 'fr',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput:
       'Comment lister les fichiers, comment me déplacer dans un dossier, et comment supprimer un fichier ?',
     expectedPromptCue: /UNE SEULE question/i,
@@ -83,7 +84,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-1-compound',
     lang: 'en',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'How do I list files, change directory, and remove a file?',
     expectedPromptCue: /ONE SINGLE question/i,
     expectedBehaviour:
@@ -97,7 +98,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-2-internal-mechanics',
     lang: 'fr',
     mode: 'direct',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Comment rediriger la sortie de ls dans un fichier ?',
     expectedPromptCue: /pourquoi.*(APR[ÈE]S|apr[èe]s)/i,
     expectedBehaviour:
@@ -110,7 +111,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-2-internal-mechanics',
     lang: 'en',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'How do I count lines in a file?',
     expectedPromptCue: /why.*AFTER/i,
     expectedBehaviour:
@@ -124,7 +125,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-3-repeated-hint',
     lang: 'fr',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput:
       'J\'ai essayé `chmod 644` mais ça ne marche toujours pas. Tu as une autre idée ?',
     expectedPromptCue: /(jamais|pas).*(m[êe]me hint)/i,
@@ -138,7 +139,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-3-repeated-hint',
     lang: 'nl',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Ik heb `cat fichier.txt` geprobeerd maar het werkt niet. Wat nog?',
     expectedPromptCue: /(nooit|niet).*(dezelfde hint)/i,
     expectedBehaviour:
@@ -152,7 +153,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'fr',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Ah ok j\'ai compris, merci !',
     expectedPromptCue: /merci.*j'ai compris|r[ée]sum[ée] d['’]1 phrase/i,
     expectedBehaviour:
@@ -164,7 +165,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'fr',
     mode: 'direct',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Parfait, c\'est noté.',
     expectedPromptCue: /merci.*j'ai compris|r[ée]sum[ée] d['’]1 phrase/i,
     expectedBehaviour:
@@ -176,7 +177,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'en',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Got it, thanks!',
     expectedPromptCue: /thanks.*got it|1-sentence summary/i,
     expectedBehaviour:
@@ -188,7 +189,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'de',
     mode: 'direct',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Perfekt, danke!',
     expectedPromptCue: /danke.*verstanden|Zusammenfassung in 1 Satz/i,
     expectedBehaviour:
@@ -202,7 +203,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'fr',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Comment je vois où je suis dans le terminal ?',
     expectedPromptCue: /tuteur\s+shell/i,
     expectedBehaviour:
@@ -214,7 +215,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'en',
     mode: 'direct',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'What does `chmod +x` do?',
     expectedPromptCue: /shell\s+tutor/i,
     expectedBehaviour:
@@ -226,7 +227,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'nl',
     mode: 'socratic',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Hoe weet ik welke processen er draaien?',
     expectedPromptCue: /shell-?tutor/i,
     expectedBehaviour:
@@ -238,7 +239,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'de',
     mode: 'direct',
-    promptVersion: 'tutor/v1.1.0',
+    promptVersion: TUTOR_PROMPT_VERSION,
     userInput: 'Wie kopiere ich eine Datei?',
     expectedPromptCue: /Shell-?Tutor/i,
     expectedBehaviour:

@@ -199,19 +199,25 @@ function formatReport(results: FixtureResult[], model: string): string {
     FAIL: results.filter((r) => r.heuristicVerdict === 'FAIL').length,
     'N/A': results.filter((r) => r.heuristicVerdict === 'N/A').length,
   };
-  // Surface every distinct prompt version present in the corpus so the
-  // human reading the report can confirm at a glance that all fixtures
-  // were authored against the version under evaluation.
-  const versions = Array.from(
+  // The invariant test in `evalSuite.test.ts` guarantees a single prompt
+  // version across the corpus at the version currently shipped — so we
+  // surface it directly. If we ever loosen the invariant (dual-shipping
+  // window) and end up with multiple versions, flag it visibly so the
+  // human reviewer notices instead of trusting a one-line summary.
+  const distinctVersions = Array.from(
     new Set(results.map((r) => r.fixture.promptVersion)),
-  ).join(', ');
+  );
+  const versionLine =
+    distinctVersions.length === 1
+      ? `\`${distinctVersions[0]}\``
+      : `⚠️ multiple versions in corpus (invariant breach): \`${distinctVersions.join('`, `')}\``;
 
   const lines: string[] = [];
   lines.push(`# Eval suite (b) — manual run report`);
   lines.push('');
   lines.push(`- **Date**: ${ts}`);
   lines.push(`- **Model**: \`${model}\``);
-  lines.push(`- **Prompt version(s) in corpus**: \`${versions}\``);
+  lines.push(`- **Prompt version**: ${versionLine}`);
   lines.push(`- **Fixtures**: ${total}`);
   lines.push(
     `- **Heuristic counts**: ✅ PASS ${counts.PASS} · ⚠️ WARN ${counts.WARN} · ❌ FAIL ${counts.FAIL} · ⚪ N/A ${counts['N/A']}`,
