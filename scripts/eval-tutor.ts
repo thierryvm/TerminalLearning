@@ -157,7 +157,7 @@ async function callOpenRouter(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
       'HTTP-Referer': 'https://terminallearning.dev',
-      'X-Title': 'Terminal Learning — eval-tutor.ts',
+      'X-Title': 'Terminal Learning - eval-tutor.ts',
     },
     body: JSON.stringify({
       model,
