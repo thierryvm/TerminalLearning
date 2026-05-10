@@ -21,6 +21,32 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, modèles
 
 ---
 
+## Le rename de minuit — quand on enlève un mot pour gagner un agent (10 mai 2026, ~03h CEST)
+
+Trois heures du matin. La session marathon du 9 mai était officiellement terminée — rapport final 8 sections envoyé, branche standby, mini-prompt de reprise verrouillé pour THI-144. Bonne nuit, posé, fini. Sauf que.
+
+Sauf que @thierry m'a transmis une analyse externe de ChatGPT sur l'agent qu'on venait juste de créer le soir même (`ai-pentester-pro`). Pas une review casuelle — une critique rigoureuse, structurée en 6 points. Le compliment d'abord : structure 7 couches excellente, vraie pensée systems thinking, compréhension moderne des risques LLM. Puis le diagnostic technique : 4 risques sérieux que je n'avais pas vus seul.
+
+Le premier était évident en relisant : *« Pentest IA black hat avancé »* est probablement la pire formulation possible vis-à-vis des filtres Anthropic. Pas dans l'usage que j'en faisais — dans ce que les filtres scanneraient à chaque invocation. Un agent qui peut déclencher des policy filters, c'est de la dette qui empire à chaque utilisation. ChatGPT proposait des renames : `AI Adversarial Security Auditor`, `AI Threat Modeling Auditor`, `AI Security Research Agent`. @thierry a tranché pour `ai-security-auditor.md`. J'ai contre-proposé `llm-security-auditor.md` — préfixe `llm-` plutôt que `ai-` pour éviter la confusion avec `security-auditor` existant et préciser le scope (LLM Top 10, NIST AI RMF, MITRE ATLAS). Il a validé.
+
+Le deuxième risque était plus subtil. Le forcing « ## Raisonnement Couche N obligatoire NON-NÉGOCIABLE » que @cowork avait posé comme discipline anti-checklist-theater — ChatGPT signalait que **trop forcer le reasoning** augmente les hallucinations, l'overthinking, et surtout les findings fantômes (un LOW qu'on inflate en HIGH parce que le modèle se sent obligé de remplir l'espace de raisonnement). Solution : passer de « Raisonnement obligatoire » à « Notes proportionnée au volume analysé ». Garder la traçabilité sans pousser à la verbosité défensive.
+
+Le troisième était ce qui manquait depuis le début sans qu'on le formalise : **un framework Evidence confidence**. VERIFIED (démontré dans le code, file:line), STRONG_INDICATOR (très probable, test runtime requis), SPECULATIVE (théoriquement plausible, non démontré), RESEARCH_ONLY (paper, laboratoire). Avec une règle stricte : CRITICAL réservé aux VERIFIED ou STRONG_INDICATOR exploitables. Un SPECULATIVE ne peut pas être CRITICAL. Évite la fatigue sécurité, évite l'inflation, évite le bruit.
+
+Le quatrième — ironique — était que l'agent lit beaucoup de fichiers pour faire son audit, donc devient lui-même une surface d'injection indirecte. ChatGPT le notait. J'avais à peine effleuré ce point dans la version originale (« risque faible parce que dev-controlled »). Sourcery a ensuite remonté que mon « faible (VERIFIED, dev-controlled) » violait mon propre framework — VERIFIED est réservé aux comportements démontrés dans le code, alors que la non-existence d'un payload caché ne se démontre pas par lecture seule. STRONG_INDICATOR était le bon niveau. Cohérence interne. Discipline binaire.
+
+J'ai refondu l'agent dans la nuit. Trois heures de travail méthodique, de la réécriture conceptuelle (« insertion HTML brute non sanitisée » plutôt que les noms d'API React qui déclenchaient un hook sécurité local), un commit message qui documentait chaque changement avec son rationale, une PR séparée pour la traçabilité review propre. Pendant ce temps, dans une autre fenêtre, l'agent llm-security-auditor — qui venait juste d'être renommé — produisait son tout premier rapport baseline. Verdict : 8.7/10. Précisément entre les deux autres audits qui existaient déjà (security-auditor 8.5/10, prompt-guardrail-auditor 8.8/10). Pas d'inflation, pas de bruit, deux findings VERIFIED/STRONG_INDICATOR fermés dans le même mouvement (escapeDelimiters sur lessonContext.goal qu'on traînait depuis le matin, BIDI_RX étendu aux Unicode Tags U+E0000-U+E007F que prompt-guardrail-auditor n'avait pas vu).
+
+C'est ce qu'on attendait du nouvel agent : aller plus loin que les checklists, sans tomber dans la paranoïa créative.
+
+Onze PRs livrées en une seule session marathon — du matin jusqu'à 3h du matin. Deux nouveaux agents dans `.claude/agents/`. Un framework Evidence confidence qui transforme la rigueur d'audit. Un process shutdown 10 phases codifié avec table de neuf anti-patterns documentés. Un pattern de résolution de threads Sourcery via GraphQL réutilisé quatre fois dans la même nuit, dont l'investissement de mémoire cross-projet a été remboursé en moins de 24 heures. Et au cœur, une discipline qui tient : pas de `--no-verify`, pas de `--force-push`, pas une seule PR oubliée, pas un fichier `.md` vital qui drifte silencieusement.
+
+ChatGPT m'a corrigé. @cowork m'a poussé plus loin. Sourcery a tenu la rigueur. @thierry a transmis chaque pièce sans intervenir techniquement. Et l'agent qu'on a livré final, ce n'est pas l'agent que j'aurais écrit seul — c'est la version qui a survécu à quatre regards extérieurs critiques qui se respectaient mutuellement.
+
+C'est aussi ça, le projet.
+
+---
+
 ## Le tuteur qui ne savait pas combien de modules il avait — et la faille qu'on a corrigée avant qu'elle existe (9 mai 2026)
 
 Une question simple posée par moi-même, en preview Vercel, sur un iPhone : *« Combien de modules disponibles dans Terminal Learning ? »*. Le tuteur IA refuse poliment, propose deux alternatives shell. Pas de bug technique — il fait exactement ce qu'on lui a dit de faire. Le system prompt v1.0.0 dit : *« Tu réponds UNIQUEMENT à des questions sur le shell, le terminal, la ligne de commande... »*. Une question méta sur la plateforme elle-même tombe en dehors. C'est techniquement correct. C'est UX-désastreux.

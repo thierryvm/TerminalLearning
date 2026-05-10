@@ -1,6 +1,6 @@
 # Documentation Index — Terminal Learning
 
-> Last updated: 9 May 2026 fin de soirée — Sprint 1 étape 1/4 livrée + audit global multi-agents post-merge + nouvel agent `ai-pentester-pro` 7 couches (PR #210). Voir CHANGELOG.md / STORY.md pour la narrative complète.  
+> Last updated: 10 May 2026 ~03h CEST — Session marathon clôturée : 11 PRs livrées #208 → #217. Agent renommé `ai-pentester-pro` → **`llm-security-auditor`** (PR #212 policy filter mitigation + Evidence confidence framework). 14ᵉ agent **`session-orchestrator`** créé (PR #213 + #214). 1ʳᵉ baseline `llm-security-auditor` **8.7/10** officielle (audit-log PR #217). Voir CHANGELOG.md / STORY.md pour la narrative complète.  
 > This directory contains active project documentation. For historical/stale docs, see `.archive/`.
 
 ---
