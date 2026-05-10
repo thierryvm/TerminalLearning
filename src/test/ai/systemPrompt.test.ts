@@ -1,18 +1,21 @@
 /**
- * Tests for src/lib/ai/systemPrompt.ts — THI-111 step 2/8.
+ * Tests for src/lib/ai/systemPrompt.ts — THI-111 step 2/8 + THI-148 + THI-144.
  *
  * The system prompt is the LLM's guardrail. Its content is versioned
- * (`tutor/v1.0.0`) and immutable for the V1 ship — any change implies a new
+ * (`tutor/v1.1.0`) and immutable per ship — any change implies a new
  * jailbreak retest pass (cf. security_new_session_rules Règle 10).
  *
  * Coverage:
- *  - version constant is the literal `tutor/v1.0.0`
+ *  - version constant is the literal `tutor/v1.1.0`
  *  - 4 languages × 2 modes = 8 variants resolve without throw
  *  - each variant contains the four mandatory refusal clauses (scope, prompt
  *    leak, secret request, role-play) so a guardrail audit can grep them
  *  - structural delimiters `<lesson_context>` and `<user_question>` are named
  *    in the prompt so the model knows where user content lives
  *  - the mode-specific instruction (socratic / direct) is present
+ *  - V1.1.0 anti-friction rules are present (THI-144 / ADR-008): compound
+ *    questions ban, over-explanation curb, repeated-hint ban, satisfaction
+ *    signal handling
  *  - snapshots pin the exact strings — any reword breaks the test, forcing the
  *    author to bump the version constant
  */
@@ -28,8 +31,8 @@ const LANGS: readonly TutorLang[] = ['fr', 'nl', 'en', 'de'];
 const MODES: readonly TutorMode[] = ['socratic', 'direct'];
 
 describe('TUTOR_PROMPT_VERSION', () => {
-  it('is exactly "tutor/v1.0.1"', () => {
-    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.0.1');
+  it('is exactly "tutor/v1.1.0"', () => {
+    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.1.0');
   });
 });
 
@@ -180,15 +183,90 @@ describe('getSystemPrompt — mode-specific instructions', () => {
   });
 });
 
+describe('getSystemPrompt — anti-friction rules V1.1.0 (THI-144 / ADR-008)', () => {
+  // V1.1.0 embeds 4 rules sourced from the 8-turn @thierry test cross-validated
+  // by ChatGPT (5 May 2026). Each locale must surface the rule cues so a
+  // guardrail auditor can grep them and so future bumps cannot silently
+  // drop a rule.
+
+  // Friction 1 — compound questions ban. Socratic only (the rule is about
+  // limiting guiding questions to one at a time). Each locale uses a distinct
+  // emphasis form ("UNE SEULE", "SLECHTS ÉÉN", "ONE SINGLE", "NUR EINE").
+  const COMPOUND_QUESTION_BAN_CUE: Record<TutorLang, RegExp> = {
+    fr: /UNE SEULE question/i,
+    nl: /SLECHTS [ÉE]{2}N vraag/i,
+    en: /ONE SINGLE question/i,
+    de: /NUR EINE Frage/i,
+  };
+
+  // Friction 2 — over-explanation curb. Both modes. Each locale frames the
+  // rule as how-first / why-after with the same structural verb.
+  const HOW_BEFORE_WHY_CUE: Record<TutorLang, RegExp> = {
+    fr: /pourquoi.*(APR[ÈE]S|apr[èe]s)|comment.*demand[ée]/i,
+    nl: /waarom.*(PAS DAARNA|daarna)|hoe.*gevraagd/i,
+    en: /why.*AFTER|how.*being asked/i,
+    de: /Warum.*(ERST DANACH|danach)|Wie.*gefragt/i,
+  };
+
+  // Friction 3 — repeated-hint ban. Socratic only.
+  const REPEATED_HINT_BAN_CUE: Record<TutorLang, RegExp> = {
+    fr: /(jamais|pas).*(m[êe]me hint)/i,
+    nl: /(nooit|niet).*(dezelfde hint)/i,
+    en: /(never|do not|don't).*(same hint)/i,
+    de: /(niemals|nicht).*(denselben Hinweis)/i,
+  };
+
+  // Friction 4 — satisfaction signal handling. Both modes. Each locale lists
+  // the satisfaction cue words and the 1-sentence summary fallback.
+  const SATISFACTION_SIGNAL_CUE: Record<TutorLang, RegExp> = {
+    fr: /merci.*j'ai compris|r[ée]sum[ée] d['’]1 phrase/i,
+    nl: /bedankt.*ik snap het|samenvatting van 1 zin/i,
+    en: /thanks.*got it|1-sentence summary/i,
+    de: /danke.*verstanden|Zusammenfassung in 1 Satz/i,
+  };
+
+  for (const lang of LANGS) {
+    it(`${lang} socratic prompt bans compound questions (friction 1)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(COMPOUND_QUESTION_BAN_CUE[lang]);
+    });
+
+    it(`${lang} socratic prompt curbs over-explanation (friction 2)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(HOW_BEFORE_WHY_CUE[lang]);
+    });
+
+    it(`${lang} direct prompt curbs over-explanation (friction 2)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'direct' });
+      expect(prompt).toMatch(HOW_BEFORE_WHY_CUE[lang]);
+    });
+
+    it(`${lang} socratic prompt bans repeated hints (friction 3)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(REPEATED_HINT_BAN_CUE[lang]);
+    });
+
+    it(`${lang} socratic prompt handles satisfaction signal (friction 4)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'socratic' });
+      expect(prompt).toMatch(SATISFACTION_SIGNAL_CUE[lang]);
+    });
+
+    it(`${lang} direct prompt handles satisfaction signal (friction 4)`, () => {
+      const prompt = getSystemPrompt({ lang, mode: 'direct' });
+      expect(prompt).toMatch(SATISFACTION_SIGNAL_CUE[lang]);
+    });
+  }
+});
+
 describe('getSystemPrompt — immutability snapshots', () => {
-  // These snapshots are the authoritative copy of the V1 prompt. ANY edit to
-  // src/lib/ai/prompts/tutor-v1.0.0.ts will break these tests. The fix is NOT
-  // to update the snapshot blindly — bump TUTOR_PROMPT_VERSION first, then
-  // re-run the prompt-guardrail-auditor against the new content, and only
-  // then update the snapshot.
+  // These snapshots are the authoritative copy of the current prompt
+  // (tutor/v1.1.0). ANY edit to src/lib/ai/prompts/tutor-v1.1.0.ts will
+  // break these tests. The fix is NOT to update the snapshot blindly —
+  // bump TUTOR_PROMPT_VERSION first, then re-run the prompt-guardrail-auditor
+  // against the new content, and only then update the snapshot.
   for (const lang of LANGS) {
     for (const mode of MODES) {
-      it(`pins ${lang}/${mode} to its frozen v1.0.0 string`, () => {
+      it(`pins ${lang}/${mode} to its frozen v1.1.0 string`, () => {
         const out = getSystemPrompt({ lang, mode });
         expect(out).toMatchSnapshot();
       });
