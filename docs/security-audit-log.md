@@ -3,6 +3,79 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+## Audit: Re-baseline `llm-security-auditor` (10 mai 2026 PM)
+
+**Date**: 10 mai 2026 ~08:30 UTC (10:30 CEST)
+**Auditor**: agent `llm-security-auditor` (Opus 4.7, méthode 7 couches verbalization-gated avec Evidence confidence framework)
+**Trigger**: Re-baseline post-PR #220 demandée pour confirmer/infirmer score estimé 9.0/10 post-fixup PR #215 (M1-AI VERIFIED + H10-AI STRONG_INDICATOR)
+**Outcome**: ✅ **Score 9.0/10 CONFIRMÉ** — delta +0.3 verrouillé · 0 régression · 1 finding LOW nouveau (M4-AI quick win 30 min) · ratio Evidence-confidence rigoureux préservé
+
+### Score IA security re-baseline
+
+| Métrique | Valeur |
+|---|---|
+| **`llm-security-auditor` score re-baseline** | **9.0/10** |
+| Delta vs baseline 8.7/10 (10 mai matin) | **+0.3 confirmé** |
+| Tendance | amélioration confirmée — pas de régression |
+| Confiance globale | 7 VERIFIED · 3 STRONG_INDICATOR · 2 SPECULATIVE · 0 RESEARCH_ONLY |
+| Verdict ship-readiness | **SHIP-READY** sur surface AI Tutor V1.0.1 (aucun CRITICAL VERIFIED · aucun HIGH non-mitigé sur scope IA pure) |
+
+### Findings closed (delta +0.3)
+
+| # | Sévérité | Confidence | Status |
+|---|---|---|---|
+| H10-AI | HIGH | STRONG_INDICATOR | ✅ FERMÉ — BIDI_RX étend U+E0000-U+E007F (PR #215), test pinné `sanitizer.test.ts:97-120` |
+| M1-AI | MEDIUM | VERIFIED | ✅ FERMÉ — `escapeDelimiters(ctx.goal)` actif (PR #215), `useAiTutor.ts:164` |
+
+### Findings résiduels (tracked THI-153)
+
+| # | Sévérité | Confidence | Status |
+|---|---|---|---|
+| H4-AI | HIGH (OUT-OF-SCOPE-AI) | STRONG_INDICATOR | jsonwebtoken@9.0.3 supply chain — gate Phase 7c (LTI_ENABLED=true) |
+| M2-AI | MEDIUM | STRONG_INDICATOR | Encoding bypass au-delà base64 (ROT13/hex/leet) — backlog THI-153 |
+| M3-AI | MEDIUM | VERIFIED | Consent flow sans timestamp/expiry/version — backlog THI-153 |
+
+### Finding nouveau identifié (Couche 7 self-critique)
+
+| # | Sévérité | Confidence | Origine |
+|---|---|---|---|
+| **M4-AI** | LOW | VERIFIED | Asymétrie `KEY_PATTERNS` sanitizer (4 providers spécifiques) vs Sentry/tunnel `generic_api_key` fallback — `sanitizer.ts:181-185` ne couvre pas Mistral/Groq/Cohere/Together/xAI alors que `sentry.ts:25` + `api/sentry-tunnel.ts:37` oui. Conséquence : si LLM hallucine une clé hors-spec dans une réponse, elle arriverait dans le DOM utilisateur (pas de fuite serveur). |
+
+**Mitigation R1 proposée (effort 30 min, gain estimé +0.1)** : ajouter `/sk-[A-Za-z0-9_-]{20,}/g` en fallback APRÈS les 4 patterns spécifiques de `sanitizer.ts:KEY_PATTERNS` + 2 tests (1 strip Mistral hypothétique + 1 préserve `sk-` bare).
+
+→ **Inclusion proposée dans PR THI-144** (system prompt v1.1.0) puisque la PR touche déjà `src/lib/ai/*`. Quick win cohérent.
+
+### Couches 1-7 — synthèse
+
+- **Couche 1 (surface)** : 11 fichiers IA + `vercel.json` + `docs/security-audit-log.md` lus. RAG / function calling / MCP tools confirmés non-exposés V1.
+- **Couche 2 (threat modeling)** : 8 menaces 2026 — T1 (PI directe), T2 (ASCII Smuggling), T4 (indirect injection curriculum), T6 (exfil clé) **VERIFIED défendues**. T3 (multi-turn drift), T5 (encoding bypass), T7 (extension navigateur) défendues partiellement. T8 (provider drift) théorique.
+- **Couche 3 (OWASP LLM Top 10)** : 7/10 PROTÉGÉ · 2/10 PARTIEL (LLM05 supply chain hors scope IA + LLM09 overreliance acceptable V1) · 3/10 N/A volontaire. **Aucun EXPOSÉ.**
+- **Couche 4 (vecteurs 2026 hors OWASP)** : V1 ASCII Smuggling + V3 Many-Shot + V5 Indirect Injection **VERIFIED**. V2 Crescendo + V4 Skeleton Key + V7 Sycophancy + V8 Encoding bypass + V10 Extension navigateur défendus partiellement.
+- **Couche 5 (chaînes d'attaque CVSS)** : Chaîne A fuite clé (LOW), Chaîne B encoding role-flip (MEDIUM SPECULATIVE), Chaîne C indirect injection curriculum (LOW VERIFIED), Chaîne D XSS triple-rempart (LOW VERIFIED).
+- **Couche 6 (stress test défenses)** : 11 défenses RÉSISTANTES VERIFIED. 2 gaps STRONG_INDICATOR (INJECTION_PATTERNS multilingue limité EN/FR/NL/DE + KEY_PATTERNS coverage providers).
+- **Couche 7 (self-critique double-pass)** : 1 angle mort identifié (M4-AI nouveau LOW VERIFIED) — quick win 30 min.
+
+### Recommendations next steps (queued)
+
+- **R1** (LOW VERIFIED, 30 min, +0.1) — Fermer M4-AI : ajouter regex generic fallback dans `sanitizer.ts:KEY_PATTERNS` → **proposé dans PR THI-144**
+- **R2** (MEDIUM VERIFIED, 2h, +0.15) — Fermer M3-AI : refactor `CONSENT_KEY` en payload JSON `{version, accepted, ts}` pour permettre re-consent bumpé → THI-153
+- **R3** (MEDIUM STRONG_INDICATOR, 4h, +0.15) — Fermer M2-AI : étendre `containsBase64Injection` → `containsEncodedInjection` (ROT13 + hex + leet) → THI-153
+- **R4** (LOW STRONG_INDICATOR, 3h, +0.05) — Fermer L1-AI multilingue (IT/ES/RU/AR/JP/CN) si audience cible évolue
+- **R5** (HIGH STRONG_INDICATOR, gain +0.2 IA + +0.3 security global) — Fermer H4-AI : `npm audit fix` ciblé `jsonwebtoken+jws+jwa` AVANT toggle `LTI_ENABLED=true` (gate Phase 7c non négociable)
+
+**Trajectoire 9.0 → 9.5/10** : R1 + R2 + R3 + R5 livrés = 9.5/10 atteignable. R4 marginal.
+
+### Linear sync
+
+- THI-153 umbrella (audit findings post-Sprint 1 étape 1/4) : 2 checkboxes cochés (M1-AI ✅, H10-AI ✅) confirmés post-re-baseline. Reste 3 findings résiduels (M2-AI, M3-AI, H4-AI) + 1 nouveau (M4-AI) à intégrer dans l'umbrella.
+- Recommandation : ajouter M4-AI à THI-153 umbrella **OU** le fermer directement dans PR THI-144 (proposé par auditor).
+
+### Public reference
+
+[CHANGELOG.md](../CHANGELOG.md) · [STORY.md](../STORY.md) · [docs/plan.md](./plan.md) · memo CC `project_session_9may_2026_full_audit.md` (cross-référencé)
+
+---
+
 ## Audit: 1ʳᵉ baseline `llm-security-auditor` (10 mai 2026)
 
 **Date**: 10 mai 2026 ~00:30 UTC (02:30 CEST)
