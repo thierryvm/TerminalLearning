@@ -1,10 +1,15 @@
 /**
  * Eval suite (b) — manual run on a real Haiku model — THI-144 / ADR-008.
  *
- * Reads the EVAL_FIXTURES corpus from `src/test/ai/evalSuite.test.ts` and
+ * Reads the EVAL_FIXTURES corpus from `src/test/ai/eval-fixtures.ts` and
  * sends each fixture to Claude Haiku 4.5 via OpenRouter. Writes a markdown
  * report to `.tmp/eval-tutor-<timestamp>.md` with per-fixture model
  * response + simple heuristic checks.
+ *
+ * The corpus is in a dedicated `eval-fixtures.ts` file (not the `.test.ts`
+ * sibling) so importing it from this standalone script does not pull
+ * Vitest's `describe`/`it` globals — those crash with an `InitSuite` error
+ * outside the test runner. Reported by @thierry on 10 May 2026 PM.
  *
  * Usage:
  *   OPENROUTER_API_KEY=sk-or-v1-... npx tsx scripts/eval-tutor.ts
@@ -37,7 +42,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-import { EVAL_FIXTURES, type EvalFixture } from '../src/test/ai/evalSuite.test';
+import { EVAL_FIXTURES, type EvalFixture } from '../src/test/ai/eval-fixtures';
 import { getSystemPrompt } from '../src/lib/ai/systemPrompt';
 
 const __filename = fileURLToPath(import.meta.url);
