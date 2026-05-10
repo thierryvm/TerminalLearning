@@ -93,18 +93,18 @@ These files remain in `.archive/` for historical reference. Current session prot
 
 | Document | Last Updated | Status |
 |----------|-------------|--------|
-| ROADMAP.md | 5 May 2026 (Sprint Mobile Recovery TL THI-152 🏁 COMPLETE — 9 mini-PRs + hotfix 7bis) | 🟢 Active |
+| ROADMAP.md | 10 May 2026 (Session marathon clôturée — 11 PRs livrées #208→#217, baseline llm-security 8.7/10) | 🟢 Active |
 | ARCHITECTURE.md | 14 April 2026 | 🟢 Active |
 | SECURITY.md | 1 May 2026 | 🟢 Active |
 | CONVENTIONS.md | 13 April 2026 | 🟢 Active |
-| plan.md | 5 May 2026 (Sprint Mobile Recovery TL clos + lien narration v1.5) | 🟢 Active |
-| security-audit-log.md | 2 May 2026 (audit run 1 May logged) | 🟢 Active |
+| plan.md | 10 May 2026 (Clôture finale session marathon — rename agent + baseline 8.7/10) | 🟢 Active |
+| security-audit-log.md | 10 May 2026 (1ʳᵉ baseline llm-security-auditor 8.7/10 + actions shipped) | 🟢 Active |
 | GUIDELINES.md | 11 April 2026 | 🟡 Stable |
 | vercel-firewall.md | 14 April 2026 | 🟢 Active |
 | ATTRIBUTIONS.md | 2 April 2026 | 🟡 Stable |
-| adr/ | 18 April 2026 | 🟢 Active |
+| adr/ | 24 April 2026 (ADR-007 solo-maintainer-sustainability ; ADR-008 reserved THI-144) | 🟢 Active |
 | guides/ | 15 April 2026 | 🟢 Active |
-| story/v1-5-mobile-recovery-narrative.md | 5 May 2026 (NEW — narration thématique sprint THI-152) | 🟢 Active |
+| story/v1-5-mobile-recovery-narrative.md | 5 May 2026 (narration thématique sprint THI-152) | 🟢 Active |
 
 ---
 
