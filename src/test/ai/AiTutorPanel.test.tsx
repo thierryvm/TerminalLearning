@@ -9,10 +9,29 @@
  */
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  render as rtlRender,
+  screen,
+  waitFor,
+  within,
+  type RenderOptions,
+  type RenderResult,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 
 import { AiTutorPanel } from '@/app/components/ai/AiTutorPanel';
+
+/**
+ * Wrap any subtree under a MemoryRouter so child components that use
+ * react-router primitives (e.g. the `<Link to="/privacy#ai-processing">`
+ * inside AiKeySetup, THI-112 Phase A) do not crash when rendered in
+ * isolation. The behaviour under test is unchanged — the panel itself
+ * does not depend on routing.
+ */
+function render(ui: React.ReactElement, options?: RenderOptions): RenderResult {
+  return rtlRender(<MemoryRouter>{ui}</MemoryRouter>, options);
+}
 
 const FAKE_OPENROUTER = 'sk-or-v1-FAKE_TEST_KEY_DO_NOT_USE_0123';
 const FAKE_ANTHROPIC = 'sk-ant-FAKE_TEST_KEY_DO_NOT_USE_0123';
