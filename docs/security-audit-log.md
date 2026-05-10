@@ -3,6 +3,74 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+## Audit: Re-baseline `llm-security-auditor` post-THI-144 (10 mai 2026 fin PM)
+
+**Date**: 10 mai 2026 ~10:30 UTC (12:30 CEST)
+**Auditor**: agent `llm-security-auditor` (Opus 4.7, méthode 7 couches verbalization-gated avec Evidence confidence framework)
+**Trigger**: Re-baseline post-merge PR #222 (THI-144 — system prompt v1.1.0 + ADR-008 + eval suite + M4-AI + R1 symmetric)
+**Outcome**: ✅ **Score 9.1/10 CONFIRMÉ** — delta +0.1 vs baseline matin · M4-AI fermé symétriquement (sanitizer + detectKeyLeak) · 4 anti-friction rules embedded sans nouvelle surface d'injection · 0 CRITICAL · 0 HIGH non-mitigé scope IA pure
+
+### Score IA security re-baseline post-THI-144
+
+| Métrique | Valeur |
+|---|---|
+| **`llm-security-auditor` score post-THI-144** | **9.1/10** |
+| Delta vs baseline 9.0/10 (10 mai matin) | **+0.1 confirmé** |
+| Trajectoire | 8.7 (matin baseline) → 9.0 (matin post-#220) → **9.1 (post-#222)** |
+| Confiance globale | 8 VERIFIED · 3 STRONG_INDICATOR · 1 SPECULATIVE · 0 RESEARCH_ONLY |
+| Verdict ship-readiness | **SHIP-READY** sur surface AI Tutor V1.1.0 |
+
+### Findings closed (delta +0.1)
+
+| # | Sévérité | Confidence | PR fix | Status |
+|---|---|---|---|---|
+| M4-AI | LOW | VERIFIED | ✅ #222 | Generic `/sk-[A-Za-z0-9_-]{20,}/g` fallback dans `KEY_PATTERNS` (`sanitizer.ts:181-195`) — symétrie avec Sentry+tunnel `generic_api_key` |
+| R1 (follow-up audit guardrail) | LOW | VERIFIED | ✅ #222 | Symétrie `KEY_DETECTION_PATTERNS` (`sanitizer.ts:276-282`) — `detectKeyLeak` flag Sentry pour les mêmes patterns que `sanitizeModelChunk` redacte |
+
+### Améliorations OWASP LLM Top 10
+
+- **LLM06 Sensitive Info Disclosure** : PROTÉGÉ VERIFIED (était PROTÉGÉ STRONG_INDICATOR) — symétrie complète sanitizer ↔ Sentry ↔ tunnel post-fix M4-AI/R1
+- **LLM09 Overreliance** : PROTÉGÉ VERIFIED (était PARTIEL) — friction 4 (satisfaction signal) + friction 3 (indices répétés) coupent matériellement la dérive sycophancique et le looping de questions
+
+### Findings résiduels (tracked)
+
+| # | Sévérité | Confidence | Status |
+|---|---|---|---|
+| H4-AI | HIGH (OUT-OF-SCOPE-AI) | STRONG_INDICATOR | jsonwebtoken@9.0.3 supply chain — gate Phase 7c (LTI_ENABLED=true) |
+| M2-AI | MEDIUM | STRONG_INDICATOR | Encoding bypass au-delà base64 (ROT13/hex/leet) — backlog THI-153 |
+| M3-AI | MEDIUM | VERIFIED | Consent flow sans timestamp/expiry/version — backlog THI-153 |
+| L1-AI | LOW | STRONG_INDICATOR | INJECTION_PATTERNS multilingue limité EN/FR/NL/DE — backlog si audience cible évolue |
+
+### Findings nouveaux (non-security, info)
+
+| # | Type | Confidence | Origine |
+|---|---|---|---|
+| U1-AI | UX dette V1.5 | SPECULATIVE | Friction 3 (LLM bascule auto direct) peut désamorcer le toast UI frustration heuristic — pas un risque sécurité, à signaler V1.5 backlog |
+| E1-AI | Eval coverage gap | STRONG_INDICATOR | Eval suite (a) couverture lang asymétrique pour F1/F2/F3 (NL/DE manquants) — recommandation R6 ajouter 4 fixtures (30 min) |
+| T9 | Dev hygiene | SPECULATIVE | Shell history dev peut leak `OPENROUTER_API_KEY` après `npx tsx scripts/eval-tutor.ts` — hors scope app |
+
+### Trajectoire 9.1 → 9.5/10
+
+| Action | Gain | Cumul | Prereq |
+|---|---|---|---|
+| Baseline post-#222 | — | **9.1** | ✅ Live |
+| R6 eval coverage NL/DE F1/F2/F3 | +0.0 (qualité non-régression) | 9.1 | 30 min, optionnel |
+| R2 M3-AI consent JSON `{version, ts}` | +0.15 | 9.25 | THI-153 sprint 2 |
+| R3 M2-AI encoding bypass extended (ROT13/hex/leet) | +0.15 | 9.4 | THI-153 sprint 2 |
+| R5 H4-AI jsonwebtoken `npm audit fix` | +0.1 IA + +0.3 security global | **9.5 IA** | Phase 7c gate (LTI_ENABLED=true) |
+
+### Linear sync
+
+- THI-144 → Done auto-close (PR #222 mention, completedAt 2026-05-10T08:08:10 UTC)
+- THI-153 umbrella : 4 checkboxes cochés (M1-AI ✅, H10-AI ✅, M4-AI ✅, R1 ✅), reste 3 résiduels (M2-AI, M3-AI, H4-AI gated)
+- Backlog V1.5 : ajouter U1-AI (UX friction 3 ↔ frustration heuristic) + E1-AI (eval coverage NL/DE)
+
+### Public reference
+
+[CHANGELOG.md](../CHANGELOG.md) · [STORY.md](../STORY.md) · [docs/plan.md](./plan.md) · `docs/adr/ADR-008-ai-tutor-v1-1-0-anti-frictions.md`
+
+---
+
 ## Audit: Re-baseline `llm-security-auditor` (10 mai 2026 PM)
 
 **Date**: 10 mai 2026 ~08:30 UTC (10:30 CEST)

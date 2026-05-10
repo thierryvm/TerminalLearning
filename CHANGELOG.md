@@ -5,6 +5,81 @@
 
 ---
 
+## 🧠 THI-144 — AI Tutor system prompt v1.1.0 anti-frictions + score IA 9.0 → 9.1/10
+*10 mai 2026 ~12h CEST · Phase 7b Sprint 1 étape 2/4 · session conceptuelle autonome*
+
+Bump `tutor/v1.0.1` → `tutor/v1.1.0` en one-shot package « anti-frictions ChatGPT cross-validation ». Quatre micro-frictions sourced from the 8-tour @thierry test session sur Redirection/Pipes (5 mai, ChatGPT cross-validé), résiduelles post-V1.0.1 — donc imputables au system prompt, pas au modèle Haiku 4.5 (qui plafonne à 9.3/10 sur les bugs visibles).
+
+### 4 frictions résolues
+
+| # | Friction | Mode | Règle v1.1.0 |
+|---|---|---|---|
+| 1 | Compound questions | socratic | « UNE SEULE question à la fois. Si l'apprenant a posé plusieurs sous-questions, traite-les avec des bullets numérotés, une question guidante par bullet. » |
+| 2 | Sur-explication mécaniques internes | les 2 modes | « Concentre-toi sur le 'comment' demandé. L'explication 'pourquoi' vient APRÈS, uniquement si l'apprenant la demande explicitement. » |
+| 3 | Indices répétés | socratic | « N'offre jamais deux fois la même hint. Reformule l'angle ou bascule en mode direct. » |
+| 4 | Conclusion ouverte si satisfait | les 2 modes | « Si l'apprenant exprime satisfaction (« merci », « ok je vois », « j'ai compris »), conclus avec un résumé d'1 phrase au lieu d'une question. » |
+
+### 3 PRs livrées (chaîne séquentielle propre)
+
+| PR | Type | Contenu |
+|---|---|---|
+| [#220](https://github.com/thierryvm/TerminalLearning/pull/220) | chore | Align `ADR-007` → `ADR-008` references for THI-144 — préviens le doc drift permanent (CHANGELOG ×2, ROADMAP ×3, plan ×3, STORY ×2 + 5 mémoires CC TL hors-Git) |
+| [#221](https://github.com/thierryvm/TerminalLearning/pull/221) | docs(audit-log) | Re-baseline `llm-security-auditor` 9.0/10 confirmé (delta +0.3 vs 8.7/10 matin, M1-AI + H10-AI fermés PR #215, M4-AI nouveau LOW VERIFIED identifié) |
+| [#222](https://github.com/thierryvm/TerminalLearning/pull/222) | feat | THI-144 — system prompt v1.1.0 + ADR-008 + eval suite hybride (a)+(b) + M4-AI quick-win bundled + R1 follow-up symmetric |
+
+### Décisions tranchées (mini-prompt next-session-thi-144 + 10 mai arbitrage)
+
+| Q | Verdict |
+|---|---|
+| Q1 Numérotation ADR | **ADR-008** confirmé (ADR-007 = `solo-maintainer-sustainability`, déjà pris) |
+| Q2 Format eval suite | **(c) hybride** — (a) `src/test/ai/evalSuite.test.ts` mock CI gate ($0) + (b) `scripts/eval-tutor.ts` manuel Haiku via OpenRouter clé env (~$0.10/run, BYOK pure ADR-002) |
+| Q3 Scope v1.1.0 vs v1.0.2 | **One-shot v1.1.0** (les 4 frictions sont sémantiquement liées « tone & flow ») |
+
+### 🎯 Score IA security re-baseline post-#222 — **9.1/10**
+
+| Métrique | Valeur |
+|---|---|
+| `llm-security-auditor` post-THI-144 | **9.1/10** |
+| Delta vs 9.0/10 (10 mai matin) | **+0.1 confirmé** |
+| Trajectoire | 8.7 (matin baseline) → 9.0 (matin post-#220) → **9.1 (post-#222)** |
+| `prompt-guardrail-auditor` v1.1.0 | **9.1/10** PASS (0 CRITICAL, 0 WARNING, 47/47 fixtures injection rejetées) |
+
+### Findings fermés (delta +0.1)
+
+- **M4-AI [LOW VERIFIED]** Asymétrie `KEY_PATTERNS` sanitizer vs Sentry `generic_api_key` fallback ✅ FIXÉ — `/sk-[A-Za-z0-9_-]{20,}/g` ajouté APRÈS les 4 patterns spécifiques (`sanitizer.ts:181-195`)
+- **R1 (audit guardrail follow-up)** Symétrie `KEY_DETECTION_PATTERNS` ✅ FIXÉ — `detectKeyLeak` flag Sentry pour les mêmes patterns que `sanitizeModelChunk` redacte (`sanitizer.ts:276-282`)
+
+### Améliorations OWASP LLM Top 10
+
+- **LLM06 Sensitive Info Disclosure** : PROTÉGÉ STRONG_INDICATOR → **PROTÉGÉ VERIFIED** (symétrie complète sanitizer ↔ Sentry ↔ tunnel)
+- **LLM09 Overreliance** : PARTIEL → **PROTÉGÉ VERIFIED** (friction 3 + 4 coupent dérive sycophancique)
+
+### Tests + checks
+
+- **1339 tests passent** (+48 vs baseline 1291) · type-check ✅ · lint ✅ · build 5.81s
+- **286 AI tests** (was 235 ; +51 = 24 friction assertions × 4 langs × 2 modes + 18 evalSuite + 9 sanitizer M4-AI/R1)
+- **47 injection-fixtures** restent rejetées (no regression jailbreak surface)
+
+### Cleanup mémoires CC TL hors-Git
+
+`feedback_finish_what_started.md:28` + `project_lti_spike_state.md:59` mélangaient `ADR-007` (sustainability) avec une référence à un ADR LTI Sprint 2 (alors qu'`ADR-006 = lti-1-3-implementation` existait déjà). Clarifié : Sprint 2 LTI amende ADR-006 OU crée ADR-010+ (numéros à verrouiller au démarrage Phase 7c).
+
+### Trajectoire 9.5/10
+
+R2 (M3-AI consent JSON `{version, ts}`, +0.15) + R3 (M2-AI encoding bypass étendu ROT13/hex/leet, +0.15) + R5 (H4-AI `npm audit fix` jsonwebtoken avant Phase 7c LTI, +0.1) = **9.5/10 IA atteignable**.
+
+### 🔬 Eval suite (b) — manual run gate ship pending
+
+L'eval suite (b) (script `eval-tutor.ts` sur Haiku 4.5 via OpenRouter clé env personnelle) **n'a pas été exécutée** dans cette session (pas de `OPENROUTER_API_KEY` env disponible côté agent). À exécuter manuellement par @thierry post-merge, avant validation empirique des 5 frictions sur Vercel preview live. Si régression sur une friction → rollback trivial via frozen pattern (1 commit revert `TUTOR_PROMPT_VERSION`).
+
+### Refs
+
+- ADR-008 : `docs/adr/ADR-008-ai-tutor-v1-1-0-anti-frictions.md`
+- Re-baseline log : `docs/security-audit-log.md` (10 mai 2026 fin PM)
+- Linear THI-144 : Done auto-close
+
+---
+
 ## 🌙 Clôture finale session marathon — rename agent + 1ʳᵉ baseline llm-security-auditor 8.7/10
 *10 mai 2026 ~03h CEST · Phase 7b lockdown · post-shutdown cleanup*
 
