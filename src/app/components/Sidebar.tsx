@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import {
-  Terminal, LayoutDashboard, BookOpen,
+  Terminal, LayoutDashboard, BookOpen, Settings,
   ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
@@ -155,6 +155,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <BookOpen size={16} />
             Référence
+          </NavLink>
+          <NavLink
+            to="/app/settings"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                isActive
+                  ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                  : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+              }`
+            }
+          >
+            <Settings size={16} />
+            Paramètres IA
           </NavLink>
         </nav>
 
