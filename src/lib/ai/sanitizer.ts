@@ -267,11 +267,18 @@ export function sanitizeModelChunk(chunk: string): string {
 
 // Predicate variants of the key patterns for non-destructive detection.
 // Reused by `useAiTutor` to flag a scrubbed message in Sentry.
+//
+// Mirrors KEY_PATTERNS above — including the M4-AI generic `sk-…` fallback
+// — so the predicate symmetrically catches what the redactor strips.
+// Without the fallback here, `sanitizeModelChunk` would redact an emerging
+// `sk-…` provider key but `detectKeyLeak` would not flag it for Sentry,
+// creating a silent gap in the leak alerting layer.
 const KEY_DETECTION_PATTERNS: readonly RegExp[] = [
   /sk-or-v1-[A-Za-z0-9_-]{16,}/,
   /sk-ant-(?:api\d{2}-)?[A-Za-z0-9_-]{16,}/,
   /sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{16,}/,
   /AIza[A-Za-z0-9_-]{20,}/,
+  /sk-[A-Za-z0-9_-]{20,}/, // Generic `sk-…` fallback (M4-AI symmetry)
 ];
 
 /** True iff `text` contains a recognisable provider API key. */
