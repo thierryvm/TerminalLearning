@@ -176,12 +176,22 @@ const KEY_REDACTED = '[redacted]';
 const UNSAFE_CMD_REPLACED = '[unsafe-command-removed]';
 
 // Order matters: more specific patterns first so an OpenRouter key is not
-// re-matched by the generic OpenAI pattern.
+// re-matched by the generic OpenAI pattern, then a generic `sk-…` fallback
+// last as a defence-in-depth filet for emerging providers.
 const KEY_PATTERNS: readonly RegExp[] = [
   /sk-or-v1-[A-Za-z0-9_-]{16,}/g,           // OpenRouter
   /sk-ant-(?:api\d{2}-)?[A-Za-z0-9_-]{16,}/g, // Anthropic
   /sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{16,}/g, // OpenAI (any sub-prefix)
   /AIza[A-Za-z0-9_-]{20,}/g,                // Google / Gemini
+  // M4-AI (LOW VERIFIED, llm-security-auditor re-baseline 2026-05-10 PM):
+  // triple-layer alignment with the Sentry scrubber's `generic_api_key`
+  // fallback (src/lib/sentry.ts:25 + api/sentry-tunnel.ts:37). Catches
+  // `sk-…` keys from emerging providers (Mistral, DeepSeek, …) and keeps
+  // sanitiser coverage symmetric to telemetry coverage even if the
+  // specific patterns above evolve toward stricter prefix matching.
+  // Placed last so the existing labels above keep their semantic meaning
+  // when a key matches multiple patterns.
+  /sk-[A-Za-z0-9_-]{20,}/g,                 // Generic `sk-…` fallback
 ];
 
 const DESTRUCTIVE_PATTERNS: readonly RegExp[] = [
