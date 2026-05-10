@@ -1,31 +1,39 @@
 /**
  * Eval suite fixtures — pure data — THI-144 / ADR-008.
  *
- * Extracted from `evalSuite.test.ts` so the corpus can be imported by
- * standalone scripts (`scripts/eval-tutor.ts`) without pulling Vitest
- * globals — the previous co-location triggered an InitSuite crash when
- * the script ran outside the Vitest runner (issue raised by @thierry,
- * 10 May 2026 PM).
+ * Shared corpus consumed by both the test runner (`evalSuite.test.ts`)
+ * and the standalone manual eval script (`scripts/eval-tutor.ts`). Lives
+ * under `src/lib/ai/eval/` (not `src/test/`) because the script is a
+ * production-like tool that must not transitively depend on the test
+ * directory; mixing the two boundaries was raised by Sourcery on
+ * PR #224 (10 May 2026) and triggered the original `InitSuite` crash
+ * that #224 itself fixed in a more localised way.
  *
- * 14 fixtures covering 4 frictions × representative cases + standard
- * pedagogical baselines. Each fixture pins a regex cue that the system
- * prompt MUST contain so a future bump cannot silently drop a rule.
+ * Each fixture pins:
+ *  - a regex cue the system prompt MUST contain (structural gate (a))
+ *  - a description of the expected LLM behaviour (empirical gate (b))
+ *  - a `promptVersion` field locking the fixture to a specific tutor
+ *    prompt version. The invariant test in `evalSuite.test.ts` asserts
+ *    that every fixture's `promptVersion` matches `TUTOR_PROMPT_VERSION`,
+ *    so a future bump cannot silently leave older fixtures drifting out
+ *    of sync — the CI gate forces the dev to either re-validate them
+ *    against the new version or replace them.
  *
  * Consumers:
- *  - `evalSuite.test.ts` — runs in CI on every PR (gate against
- *    structural regression on the prompt content)
+ *  - `src/test/ai/evalSuite.test.ts` — runs in CI on every PR (gate
+ *    against structural regression on the prompt content)
  *  - `scripts/eval-tutor.ts` — runs manually before each prompt bump
  *    (gate against empirical regression on real model behaviour, ~$0.10
  *    per Haiku run via OpenRouter BYOK per ADR-002)
  *
  * Together they form the hybrid eval suite mandated by ADR-008.
- *
- * Invariant: any new prompt rule (v1.2.0+) requires a new fixture here
- * AND a re-run of (b) before merge. Adding a fixture without bumping
- * the version means adding a regression check for the current version.
  */
 
-import type { TutorLang, TutorMode } from '@/lib/ai/systemPrompt';
+import type {
+  TutorLang,
+  TutorMode,
+  TutorPromptVersion,
+} from '@/lib/ai/systemPrompt';
 
 export type EvalCategory =
   | 'friction-1-compound'
@@ -39,11 +47,18 @@ export interface EvalFixture {
   category: EvalCategory;
   lang: TutorLang;
   mode: TutorMode;
+  /**
+   * Tutor prompt version this fixture was authored against. The invariant
+   * test in `evalSuite.test.ts` asserts equality with the currently shipped
+   * `TUTOR_PROMPT_VERSION`, forcing future bumps to either re-validate the
+   * fixture (and bump this field) or replace it.
+   */
+  promptVersion: TutorPromptVersion;
   /** Verbatim learner question that would trigger the friction in v1.0.1. */
   userInput: string;
-  /** Regex cue the v1.1.0 system prompt MUST contain to defend against the friction. */
+  /** Regex cue the targeted system prompt MUST contain to defend against the friction. */
   expectedPromptCue: RegExp;
-  /** What a healthy v1.1.0 LLM response should look like (used by eval b script). */
+  /** What a healthy LLM response should look like (used by eval (b) script). */
   expectedBehaviour: string;
   notes: string;
 }
@@ -55,6 +70,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-1-compound',
     lang: 'fr',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput:
       'Comment lister les fichiers, comment me déplacer dans un dossier, et comment supprimer un fichier ?',
     expectedPromptCue: /UNE SEULE question/i,
@@ -67,6 +83,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-1-compound',
     lang: 'en',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'How do I list files, change directory, and remove a file?',
     expectedPromptCue: /ONE SINGLE question/i,
     expectedBehaviour:
@@ -80,6 +97,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-2-internal-mechanics',
     lang: 'fr',
     mode: 'direct',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Comment rediriger la sortie de ls dans un fichier ?',
     expectedPromptCue: /pourquoi.*(APR[ÈE]S|apr[èe]s)/i,
     expectedBehaviour:
@@ -92,6 +110,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-2-internal-mechanics',
     lang: 'en',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'How do I count lines in a file?',
     expectedPromptCue: /why.*AFTER/i,
     expectedBehaviour:
@@ -105,6 +124,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-3-repeated-hint',
     lang: 'fr',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput:
       'J\'ai essayé `chmod 644` mais ça ne marche toujours pas. Tu as une autre idée ?',
     expectedPromptCue: /(jamais|pas).*(m[êe]me hint)/i,
@@ -118,6 +138,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-3-repeated-hint',
     lang: 'nl',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Ik heb `cat fichier.txt` geprobeerd maar het werkt niet. Wat nog?',
     expectedPromptCue: /(nooit|niet).*(dezelfde hint)/i,
     expectedBehaviour:
@@ -131,6 +152,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'fr',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Ah ok j\'ai compris, merci !',
     expectedPromptCue: /merci.*j'ai compris|r[ée]sum[ée] d['’]1 phrase/i,
     expectedBehaviour:
@@ -142,6 +164,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'fr',
     mode: 'direct',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Parfait, c\'est noté.',
     expectedPromptCue: /merci.*j'ai compris|r[ée]sum[ée] d['’]1 phrase/i,
     expectedBehaviour:
@@ -153,6 +176,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'en',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Got it, thanks!',
     expectedPromptCue: /thanks.*got it|1-sentence summary/i,
     expectedBehaviour:
@@ -164,6 +188,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'friction-4-satisfaction-signal',
     lang: 'de',
     mode: 'direct',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Perfekt, danke!',
     expectedPromptCue: /danke.*verstanden|Zusammenfassung in 1 Satz/i,
     expectedBehaviour:
@@ -177,6 +202,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'fr',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Comment je vois où je suis dans le terminal ?',
     expectedPromptCue: /tuteur\s+shell/i,
     expectedBehaviour:
@@ -188,6 +214,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'en',
     mode: 'direct',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'What does `chmod +x` do?',
     expectedPromptCue: /shell\s+tutor/i,
     expectedBehaviour:
@@ -199,6 +226,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'nl',
     mode: 'socratic',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Hoe weet ik welke processen er draaien?',
     expectedPromptCue: /shell-?tutor/i,
     expectedBehaviour:
@@ -210,6 +238,7 @@ export const EVAL_FIXTURES: readonly EvalFixture[] = [
     category: 'standard-pedagogical',
     lang: 'de',
     mode: 'direct',
+    promptVersion: 'tutor/v1.1.0',
     userInput: 'Wie kopiere ich eine Datei?',
     expectedPromptCue: /Shell-?Tutor/i,
     expectedBehaviour:

@@ -29,6 +29,17 @@ import { buildTutorPromptV1_1_0 } from './prompts/tutor-v1.1.0';
 
 export const TUTOR_PROMPT_VERSION = 'tutor/v1.1.0';
 
+/**
+ * Literal type of the currently shipped prompt version. Used by the eval
+ * suite (`src/lib/ai/eval/fixtures.ts`) to pin each fixture to a specific
+ * version so older fixtures cannot silently drift out of sync after a
+ * future bump. When you bump the version constant above, expand this
+ * union (e.g. `'tutor/v1.1.0' | 'tutor/v1.2.0'`) and update or replace
+ * the fixtures accordingly — the invariant test in `evalSuite.test.ts`
+ * will fail until they match.
+ */
+export type TutorPromptVersion = typeof TUTOR_PROMPT_VERSION;
+
 export type TutorLang = 'fr' | 'nl' | 'en' | 'de';
 export type TutorMode = 'socratic' | 'direct';
 
