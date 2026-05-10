@@ -461,6 +461,27 @@ describe('sanitizeModelChunk — leaked API key stripping', () => {
     const out = sanitizeModelChunk('the sk- prefix denotes a secret key');
     expect(out).toContain('sk-');
   });
+
+  // M4-AI (LOW VERIFIED, llm-security-auditor re-baseline 2026-05-10 PM):
+  // generic `sk-…` fallback aligns sanitiser coverage with the Sentry
+  // scrubber's generic_api_key pattern (src/lib/sentry.ts:25). The next
+  // two tests pin that emerging-provider keys (Mistral, DeepSeek, …) get
+  // redacted by the sanitiser too, not only by the telemetry scrubber.
+  it('strips a generic `sk-…` key from an emerging provider (Mistral-shaped)', () => {
+    // Hypothetical Mistral-style key: `sk-` prefix + 24 alphanum chars.
+    // No specific pattern matches it; the new fallback must.
+    const out = sanitizeModelChunk('use sk-mistralAbCdEf0123456789xyz now');
+    expect(out).not.toContain('sk-mistralAbCdEf');
+    expect(out).toContain('[redacted]');
+  });
+
+  it('strips a short legacy `sk-…` key body (≥20 chars)', () => {
+    // 20 chars after `sk-` — below all specific patterns, above the
+    // generic fallback's {20,} threshold.
+    const out = sanitizeModelChunk('header sk-abc123XYZ_98-defghIj4 footer');
+    expect(out).not.toContain('sk-abc123XYZ_98-defghIj4');
+    expect(out).toContain('[redacted]');
+  });
 });
 
 describe('detectKeyLeak', () => {
@@ -486,6 +507,13 @@ describe('detectKeyLeak', () => {
 
   it('returns false for the bare prefix "sk-" without a key body', () => {
     expect(detectKeyLeak('the sk- prefix')).toBe(false);
+  });
+
+  // M4-AI: detectKeyLeak must also flag emerging-provider `sk-…` keys
+  // so the assembled-message guard in useAiTutor catches them before
+  // the leak banner is shown.
+  it('returns true for a generic `sk-…` key from an emerging provider', () => {
+    expect(detectKeyLeak('here is sk-mistralAbCdEf0123456789xyz')).toBe(true);
   });
 
   it('returns false for non-string input', () => {

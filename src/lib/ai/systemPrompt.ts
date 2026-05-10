@@ -1,5 +1,5 @@
 /**
- * System prompt entry point — THI-111 step 2/8 + THI-148 (V1.0.1).
+ * System prompt entry point — THI-111 step 2/8 + THI-148 (V1.0.1) + THI-144 (V1.1.0).
  *
  * Public surface:
  *   - `TUTOR_PROMPT_VERSION`: the frozen identifier shipped to every LLM call.
@@ -16,13 +16,18 @@
  * ever interpolating into the frozen guardrail string.
  *
  * V1.0.1 extends scope to platform meta-questions (module count, navigation,
- * environments) routed through the new <platform_context> block. Refusal
- * clauses (role-play, secret-request, prompt-leak) are preserved verbatim.
+ * environments) routed through the new <platform_context> block.
+ *
+ * V1.1.0 (THI-144) embeds 4 anti-friction rules in the socratic and direct
+ * blocks (compound questions, over-explanation, repeated hints, satisfaction
+ * signal handling). Refusal clauses (role-play, secret-request, prompt-leak)
+ * are preserved verbatim. See docs/adr/ADR-008-ai-tutor-v1-1-0-anti-frictions.md
+ * for the full rationale.
  */
 
-import { buildTutorPromptV1_0_1 } from './prompts/tutor-v1.0.1';
+import { buildTutorPromptV1_1_0 } from './prompts/tutor-v1.1.0';
 
-export const TUTOR_PROMPT_VERSION = 'tutor/v1.0.1';
+export const TUTOR_PROMPT_VERSION = 'tutor/v1.1.0';
 
 export type TutorLang = 'fr' | 'nl' | 'en' | 'de';
 export type TutorMode = 'socratic' | 'direct';
@@ -42,5 +47,5 @@ export function getSystemPrompt(opts: SystemPromptOpts): string {
   if (!VALID_MODES.has(opts.mode)) {
     throw new Error(`Unknown tutor mode: ${String(opts.mode)}`);
   }
-  return buildTutorPromptV1_0_1(opts.lang, opts.mode);
+  return buildTutorPromptV1_1_0(opts.lang, opts.mode);
 }
