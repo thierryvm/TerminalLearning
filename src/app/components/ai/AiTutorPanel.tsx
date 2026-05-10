@@ -29,6 +29,7 @@ import { DEFAULT_MODELS } from '@/lib/ai/providers';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
 
+import { AiConsentModal } from './AiConsentModal';
 import { AiKeySetup } from './AiKeySetup';
 import { MessageInput } from './parts/MessageInput';
 import { MessageList } from './parts/MessageList';
@@ -271,7 +272,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
             <ProviderPicker value={provider} onChange={setProvider} />
 
             {!tutor.consentGiven ? (
-              <ConsentBlock onAccept={tutor.giveConsent} />
+              <AiConsentModal onAccept={tutor.giveConsent} />
             ) : !hasStoredKey ? (
               <AiKeySetup
                 provider={provider}
@@ -347,67 +348,6 @@ function ProviderPicker({ value, onChange }: PickerProps) {
           {PROVIDER_LABELS[p]}
         </button>
       ))}
-    </div>
-  );
-}
-
-interface ConsentProps {
-  onAccept: () => void;
-}
-
-function ConsentBlock({ onAccept }: ConsentProps) {
-  const [checked, setChecked] = useState(false);
-  return (
-    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 text-sm text-[var(--github-text-primary)]">
-      <p>
-        Avant d'utiliser le tuteur IA, j'ai besoin que tu confirmes deux points
-        importants :
-      </p>
-      <ul className="list-disc space-y-1 pl-5 text-[var(--github-text-secondary)]">
-        <li>
-          Ta clé API reste stockée sur <strong>ce navigateur uniquement</strong>.
-          Aucun serveur Terminal Learning ne la voit.
-        </li>
-        <li>
-          Tes questions sont envoyées <strong>directement au provider choisi</strong>{' '}
-          (OpenRouter, Anthropic, OpenAI ou Gemini). Ton historique terminal,
-          ton profil et tes données de leçon ne sont pas partagés.
-        </li>
-        <li>
-          Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé ».
-        </li>
-      </ul>
-      <p className="text-xs text-[var(--github-text-secondary)]">
-        Pas sûr·e du provider à choisir ?{' '}
-        <a
-          href="https://github.com/thierryvm/TerminalLearning/blob/main/docs/guides/ai-tutor-quickstart.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[var(--github-accent)] underline hover:text-[var(--github-accent-hover)]"
-        >
-          Lire le guide démarrage (5 min) →
-        </a>
-      </p>
-      <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-3">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--github-accent)]"
-          aria-describedby="ai-consent-summary"
-        />
-        <span id="ai-consent-summary" className="text-[var(--github-text-primary)]">
-          <strong>J'ai lu et compris</strong> les trois points ci-dessus.
-        </span>
-      </label>
-      <button
-        type="button"
-        onClick={onAccept}
-        disabled={!checked}
-        className="mt-2 self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Accepter et utiliser le tuteur IA
-      </button>
     </div>
   );
 }

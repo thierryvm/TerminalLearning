@@ -40,6 +40,34 @@ export const CONSENT_KEY = 'ai_consent_v1';
 export const RATE_STORAGE_KEY = 'ai_rate_v1';
 export const MODE_STORAGE_KEY = 'ai_tutor_mode';
 
+/**
+ * Current shape version of the persisted consent record. Bump when the
+ * record's user-facing semantics change (e.g. new disclosure clauses,
+ * new data flows). The runtime treats any record whose `version` does
+ * not match `CONSENT_VERSION` as not-yet-given so the modal re-prompts.
+ *
+ * THI-112 (M3-AI fix from llm-security-auditor re-baseline 10 May 2026 PM):
+ * the previous storage was a bare `'true'` literal — no timestamp, no
+ * expiry, no version. A consent given on day 0 was binding forever. The
+ * record below carries the three missing fields so re-consent on disclosure
+ * change becomes possible by bumping `CONSENT_VERSION`.
+ */
+export const CONSENT_VERSION = 1;
+
+/**
+ * GDPR-aligned re-consent window. One year is consistent with common
+ * Belgian/EU privacy practice for non-sensitive web services and matches
+ * the 12-month review cadence already used elsewhere in TL. Tunable per
+ * future ADR if user research shows a shorter window is warranted.
+ */
+export const CONSENT_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
+export interface ConsentRecord {
+  version: number;
+  acceptedAt: number;
+  expiresAt: number;
+}
+
 const FRUSTRATION_PEEK_CHARS = 200;
 const FRUSTRATION_QUESTION_THRESHOLD = 2;
 
@@ -131,12 +159,58 @@ function writeRate(state: RateState): void {
   }
 }
 
-function readConsent(): boolean {
+/**
+ * Reads the persisted consent record, transparently migrating any legacy
+ * `'true'` literal to the new JSON shape on first read. Returns `null` if
+ * no record is stored, the JSON is malformed, the version does not match,
+ * or the record has expired. Never throws — storage access is best-effort.
+ */
+export function readConsentRecord(): ConsentRecord | null {
   try {
-    return localStorage.getItem(CONSENT_KEY) === 'true';
+    const raw = localStorage.getItem(CONSENT_KEY);
+    if (!raw) return null;
+
+    // Legacy migration: pre-THI-112 records were the literal string `'true'`.
+    // Treat them as accepted now with a fresh expiry — the user gave consent
+    // at some point, we just no longer know exactly when, and asking again on
+    // every load would be hostile UX.
+    if (raw === 'true') {
+      const now = Date.now();
+      const migrated: ConsentRecord = {
+        version: CONSENT_VERSION,
+        acceptedAt: now,
+        expiresAt: now + CONSENT_TTL_MS,
+      };
+      writeConsentRecord(migrated);
+      return migrated;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<ConsentRecord>;
+    if (
+      typeof parsed.version !== 'number' ||
+      typeof parsed.acceptedAt !== 'number' ||
+      typeof parsed.expiresAt !== 'number'
+    ) {
+      return null;
+    }
+    if (parsed.version !== CONSENT_VERSION) return null;
+    if (Date.now() > parsed.expiresAt) return null;
+    return parsed as ConsentRecord;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function writeConsentRecord(record: ConsentRecord): void {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(record));
+  } catch {
+    /* storage may be disabled — best effort */
+  }
+}
+
+function readConsent(): boolean {
+  return readConsentRecord() !== null;
 }
 
 function readMode(fallback: TutorMode): TutorMode {
@@ -254,11 +328,12 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
   );
 
   const giveConsent = useCallback(() => {
-    try {
-      localStorage.setItem(CONSENT_KEY, 'true');
-    } catch {
-      /* ignore */
-    }
+    const now = Date.now();
+    writeConsentRecord({
+      version: CONSENT_VERSION,
+      acceptedAt: now,
+      expiresAt: now + CONSENT_TTL_MS,
+    });
     setConsentGiven(true);
   }, []);
 
