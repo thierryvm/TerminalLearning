@@ -45,7 +45,7 @@ export function PrivacyPolicy() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[var(--github-text-primary)]">Politique de confidentialité</h1>
-            <p className="text-[var(--github-text-secondary)] text-sm">Dernière mise à jour : 31 mars 2026</p>
+            <p className="text-[var(--github-text-secondary)] text-sm">Dernière mise à jour : 10 mai 2026</p>
           </div>
         </div>
 
@@ -109,8 +109,104 @@ export function PrivacyPolicy() {
             </div>
           </section>
 
+          <section id="ai-processing" className="scroll-mt-24">
+            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">4. Tuteur IA — traitement des données (BYOK)</h2>
+            <p className="mb-3">
+              Le tuteur IA est <strong className="text-[var(--github-text-primary)]">optionnel</strong>{' '}
+              et désactivé par défaut. Il fonctionne en mode <strong>BYOK</strong>{' '}
+              (Bring Your Own Key) — tu apportes ta propre clé API du provider de
+              ton choix. Cette section décrit précisément quelles données circulent,
+              qui les voit, et combien de temps elles sont conservées.
+            </p>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Architecture sans serveur</h3>
+                <p className="text-sm">
+                  <strong className="text-[var(--github-text-primary)]">Aucun serveur Terminal Learning ne voit ta clé ni tes questions.</strong>{' '}
+                  Quand tu poses une question au tuteur, ton navigateur appelle
+                  directement l'API du provider que tu as choisi (OpenRouter,
+                  Anthropic, OpenAI ou Gemini). Terminal Learning n'a pas
+                  d'intermédiaire dans la chaîne — ce choix est figé dans
+                  l'architecture (cf.{' '}
+                  <a
+                    href="https://github.com/thierryvm/TerminalLearning/blob/main/docs/adr/ADR-002-openrouter-byok-tiers.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:text-emerald-300 underline"
+                  >
+                    ADR-002
+                  </a>
+                  ).
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Données envoyées au provider à chaque question</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li>Une consigne système expliquant que l'IA est ton tuteur shell (frozen, identique à chaque appel).</li>
+                  <li>Un contexte statique de la plateforme (nombre de modules, environnements supportés — pas de progression personnelle).</li>
+                  <li>Le contexte de la leçon en cours si tu poses la question depuis une leçon (slug + objectif pédagogique public).</li>
+                  <li>La question que tu tapes.</li>
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Données <em>non</em> envoyées</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li>Ton historique de saisie dans le terminal d'entraînement.</li>
+                  <li>Tes données de progression (leçons réussies, scores).</li>
+                  <li>Ton email, ton identifiant Supabase, ton profil OAuth.</li>
+                  <li>Les questions précédentes hors fenêtre courte de conversation (transcript in-memory uniquement, jamais persistant).</li>
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Conservation locale de ta clé</h3>
+                <p className="text-sm mb-2">
+                  Ta clé API est stockée <strong className="text-[var(--github-text-primary)]">uniquement sur ce navigateur</strong> :
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li><strong className="text-[var(--github-text-primary)]">Mode par défaut</strong> : localStorage en clair (suffisant pour les clés `:free` sans risque financier).</li>
+                  <li><strong className="text-[var(--github-text-primary)]">Mode chiffré opt-in</strong> : IndexedDB + AES-GCM 256 bits + PBKDF2 ≥ 210 000 itérations dérivées d'une passphrase que tu choisis. Recommandé pour les clés payantes.</li>
+                  <li>Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé » dans le panel ou la page <code className="text-emerald-400 text-sm">/app/settings</code>.</li>
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Consentement et durée</h3>
+                <p className="text-sm">
+                  Avant la première utilisation du tuteur, un encart de consentement
+                  liste les trois points ci-dessus. Ton consentement est tracé
+                  localement (date d'acceptation + version + date d'expiration) et{' '}
+                  <strong className="text-[var(--github-text-primary)]">valable 12 mois</strong>.
+                  Au-delà, le tuteur te re-demandera ton consentement. Tu peux le
+                  révoquer à tout moment depuis la page paramètres.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Politiques des providers tiers</h3>
+                <p className="text-sm mb-2">
+                  Une fois la requête envoyée, les données sont traitées par le
+                  provider que tu as choisi selon <em>sa</em> politique de
+                  confidentialité :
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li><a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">OpenRouter</a> (recommandé pour débuter — modèles `:free` gratuits)</li>
+                  <li><a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">Anthropic (Claude)</a></li>
+                  <li><a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">OpenAI</a></li>
+                  <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">Google (Gemini)</a></li>
+                </ul>
+                <p className="text-sm mt-3">
+                  <strong className="text-[var(--github-text-primary)]">Conseil</strong> : si tu utilises une clé partagée (compte d'école, organisation), vérifie aussi la politique du provider sur la conservation des prompts pour usage entraînement modèle. La plupart proposent un opt-out, OpenRouter le fait par défaut sur les modèles non-`:free`.
+                </p>
+              </div>
+            </div>
+          </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">4. Cookies</h2>
+            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">5. Cookies</h2>
             <p>
               Terminal Learning n'utilise pas de cookies de tracking, publicitaires ou analytiques.
               Seul le <code className="text-emerald-400 text-sm">localStorage</code> du navigateur
@@ -119,7 +215,7 @@ export function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">5. Tes droits (RGPD)</h2>
+            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">6. Tes droits (RGPD)</h2>
             <p className="mb-3">
               Conformément au Règlement Général sur la Protection des Données (RGPD —
               Règlement UE 2016/679) et à la loi belge du 30 juillet 2018 relative à la
@@ -143,7 +239,7 @@ export function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">6. Autorité de contrôle</h2>
+            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">7. Autorité de contrôle</h2>
             <p>
               En Belgique, l'autorité de protection des données est l'
               <strong className="text-[var(--github-text-primary)]">Autorité de Protection des Données (APD)</strong> —
@@ -157,7 +253,7 @@ export function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">7. Modifications</h2>
+            <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">8. Modifications</h2>
             <p>
               Cette politique peut être mise à jour. La date de dernière modification est
               indiquée en haut de cette page. Les modifications importantes seront annoncées

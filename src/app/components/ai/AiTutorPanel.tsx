@@ -16,32 +16,27 @@
  *  - the key input uses `type="password"` + `autocomplete="off"` so browser
  *    form-fillers / extensions don't see it
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
 import { buildPlatformContext } from '@/app/data/platformContext';
 import {
-  detectProvider,
   forgetKey as kmForgetKey,
   hasKey as kmHasKey,
-  saveKey as kmSaveKey,
   type Provider,
 } from '@/lib/ai/keyManager';
 import { DEFAULT_MODELS } from '@/lib/ai/providers';
+import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
 
+import { AiConsentModal } from './AiConsentModal';
+import { AiKeySetup } from './AiKeySetup';
 import { MessageInput } from './parts/MessageInput';
 import { MessageList } from './parts/MessageList';
 import { RateLimitBadge } from './parts/RateLimitBadge';
 
 const PROVIDER_STORAGE_KEY = 'ai_tutor_provider';
-const PROVIDER_LABELS: Readonly<Record<Provider, string>> = {
-  openrouter: 'OpenRouter',
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-};
 
 interface Props {
   lang?: TutorLang;
@@ -272,9 +267,9 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
             <ProviderPicker value={provider} onChange={setProvider} />
 
             {!tutor.consentGiven ? (
-              <ConsentBlock onAccept={tutor.giveConsent} />
+              <AiConsentModal onAccept={tutor.giveConsent} />
             ) : !hasStoredKey ? (
-              <KeyEntryBlock
+              <AiKeySetup
                 provider={provider}
                 onSaved={() => setHasStoredKey(true)}
               />
@@ -349,194 +344,6 @@ function ProviderPicker({ value, onChange }: PickerProps) {
         </button>
       ))}
     </div>
-  );
-}
-
-interface ConsentProps {
-  onAccept: () => void;
-}
-
-function ConsentBlock({ onAccept }: ConsentProps) {
-  const [checked, setChecked] = useState(false);
-  return (
-    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 text-sm text-[var(--github-text-primary)]">
-      <p>
-        Avant d'utiliser le tuteur IA, j'ai besoin que tu confirmes deux points
-        importants :
-      </p>
-      <ul className="list-disc space-y-1 pl-5 text-[var(--github-text-secondary)]">
-        <li>
-          Ta clé API reste stockée sur <strong>ce navigateur uniquement</strong>.
-          Aucun serveur Terminal Learning ne la voit.
-        </li>
-        <li>
-          Tes questions sont envoyées <strong>directement au provider choisi</strong>{' '}
-          (OpenRouter, Anthropic, OpenAI ou Gemini). Ton historique terminal,
-          ton profil et tes données de leçon ne sont pas partagés.
-        </li>
-        <li>
-          Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé ».
-        </li>
-      </ul>
-      <p className="text-xs text-[var(--github-text-secondary)]">
-        Pas sûr·e du provider à choisir ?{' '}
-        <a
-          href="https://github.com/thierryvm/TerminalLearning/blob/main/docs/guides/ai-tutor-quickstart.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[var(--github-accent)] underline hover:text-[var(--github-accent-hover)]"
-        >
-          Lire le guide démarrage (5 min) →
-        </a>
-      </p>
-      <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-3">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--github-accent)]"
-          aria-describedby="ai-consent-summary"
-        />
-        <span id="ai-consent-summary" className="text-[var(--github-text-primary)]">
-          <strong>J'ai lu et compris</strong> les trois points ci-dessus.
-        </span>
-      </label>
-      <button
-        type="button"
-        onClick={onAccept}
-        disabled={!checked}
-        className="mt-2 self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Accepter et utiliser le tuteur IA
-      </button>
-    </div>
-  );
-}
-
-interface KeyEntryProps {
-  provider: Provider;
-  onSaved: () => void;
-}
-
-function KeyEntryBlock({ provider, onSaved }: KeyEntryProps) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const expectedPrefix = useMemo(() => {
-    switch (provider) {
-      case 'openrouter':
-        return 'sk-or-v1-…';
-      case 'anthropic':
-        return 'sk-ant-…';
-      case 'openai':
-        return 'sk-…';
-      case 'gemini':
-        return 'AIza…';
-    }
-  }, [provider]);
-
-  // Short novice-friendly description per provider, surfaced above the key
-  // input so the learner understands what they are about to use. Verbose
-  // comparison lives in docs/guides/ai-tutor-quickstart.md (linked from the
-  // ConsentBlock).
-  const providerHint = useMemo(() => {
-    switch (provider) {
-      case 'openrouter':
-        return '🔄 Hub multi-providers — modèles :free gratuits (Llama 3.3 70B par défaut, GPT-OSS 20B…). Recommandé pour débuter.';
-      case 'anthropic':
-        return '🧠 Claude (Anthropic) — raisonnement haute qualité, excellent en code. Crédit Anthropic requis.';
-      case 'openai':
-        return '⚠️ OpenAI direct refuse les requêtes navigateur (CORS). Préfère OpenRouter pour accéder à GPT-4o-mini & co.';
-      case 'gemini':
-        return '✨ Gemini (Google) — quota gratuit généreux (Gemini 2.0 Flash). Crédit Google AI Studio requis.';
-    }
-  }, [provider]);
-
-  // OpenAI does not allow direct browser fetches without a backend proxy
-  // (CORS policy on api.openai.com). Confirmed during live validation
-  // 2026-05-04 against http://localhost:5173. The other three providers
-  // (OpenRouter, Anthropic with opt-in header, Gemini) are all fine.
-  const openaiNeedsProxy = provider === 'openai';
-
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      setError('La clé est vide.');
-      return;
-    }
-    const detected = detectProvider(trimmed);
-    if (detected !== provider) {
-      setError(
-        `Cette clé ne correspond pas au provider ${PROVIDER_LABELS[provider]} (préfixe attendu : ${expectedPrefix}).`,
-      );
-      return;
-    }
-    setError(null);
-    setSaving(true);
-    try {
-      await kmSaveKey(provider, trimmed);
-      setValue('');
-      onSaved();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 text-sm text-[var(--github-text-primary)]"
-    >
-      <p className="rounded-md bg-[var(--github-bg-secondary)] p-2 text-xs text-[var(--github-text-secondary)]">
-        {providerHint}
-      </p>
-      <p>
-        Colle ta clé <strong>{PROVIDER_LABELS[provider]}</strong> ci-dessous.
-        Préfixe attendu : <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5 text-xs">{expectedPrefix}</code>
-      </p>
-      {openaiNeedsProxy && (
-        <div
-          role="alert"
-          className="rounded border border-yellow-500/30 bg-yellow-500/10 p-2 text-xs text-yellow-300"
-        >
-          ⚠️ <strong>OpenAI</strong> bloque les appels directs depuis le
-          navigateur (politique CORS officielle d'OpenAI, pour décourager le
-          BYOK client-side). Ta clé sera enregistrée mais l'envoi échouera
-          avec une erreur réseau. <strong>Solution V1</strong> : utilise{' '}
-          <strong>OpenRouter</strong> à la place — il propose les mêmes
-          modèles GPT (`openai/gpt-4o-mini`, `openai/gpt-oss-20b:free`, etc.)
-          sans cette limitation. Le proxy OpenAI direct arrivera en V2.
-        </div>
-      )}
-      <input
-        type="password"
-        name="ai-tutor-api-key"
-        id="ai-tutor-api-key"
-        autoComplete="off"
-        spellCheck={false}
-        value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
-        aria-label="Clé API"
-        placeholder={expectedPrefix}
-        className="w-full rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] p-2 text-base md:text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0"
-      />
-      {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
-      <button
-        type="submit"
-        disabled={saving}
-        className="self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 disabled:opacity-50"
-      >
-        {saving ? 'Sauvegarde…' : 'Enregistrer'}
-      </button>
-      <p className="text-xs text-[var(--github-text-secondary)]">
-        ⚠️ Mode V1 : la clé est stockée en clair dans le localStorage. Le mode
-        chiffré (passphrase + AES-GCM) sera activé en THI-112.
-      </p>
-    </form>
   );
 }
 

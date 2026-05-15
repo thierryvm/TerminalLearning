@@ -26,6 +26,9 @@ const LessonPage = lazy(() =>
 const CommandReference = lazy(() =>
   import('./components/CommandReference').then(({ CommandReference }) => ({ default: CommandReference }))
 );
+const AiSettings = lazy(() =>
+  import('./components/AiSettings').then(({ AiSettings }) => ({ default: AiSettings }))
+);
 const Changelog = lazy(() =>
   import('./components/Changelog').then(({ Changelog }) => ({ default: Changelog }))
 );
@@ -52,6 +55,7 @@ export const router = createBrowserRouter([
       { index: true, Component: Dashboard },
       { path: 'learn/:moduleId/:lessonId', Component: LessonPage },
       { path: 'reference', Component: CommandReference },
+      { path: 'settings', Component: AiSettings },
     ],
   },
 
