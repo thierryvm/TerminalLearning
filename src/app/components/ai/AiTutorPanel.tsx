@@ -26,6 +26,7 @@ import {
   type Provider,
 } from '@/lib/ai/keyManager';
 import { DEFAULT_MODELS } from '@/lib/ai/providers';
+import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
 
@@ -36,12 +37,6 @@ import { MessageList } from './parts/MessageList';
 import { RateLimitBadge } from './parts/RateLimitBadge';
 
 const PROVIDER_STORAGE_KEY = 'ai_tutor_provider';
-const PROVIDER_LABELS: Readonly<Record<Provider, string>> = {
-  openrouter: 'OpenRouter',
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-};
 
 interface Props {
   lang?: TutorLang;

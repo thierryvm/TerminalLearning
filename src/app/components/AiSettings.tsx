@@ -33,6 +33,7 @@ import {
   type Provider,
 } from '@/lib/ai/keyManager';
 import { DEFAULT_MODELS } from '@/lib/ai/providers';
+import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import {
   CONSENT_KEY,
   readConsentRecord,
@@ -42,13 +43,6 @@ import {
 import { AiKeySetup } from './ai/AiKeySetup';
 
 const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
-
-const PROVIDER_LABELS: Readonly<Record<Provider, string>> = {
-  openrouter: 'OpenRouter',
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-};
 
 interface ProviderStatus {
   provider: Provider;

@@ -44,6 +44,15 @@ export function AiConsentModal({ onAccept, className }: AiConsentModalProps) {
     setChecked(e.target.checked);
   };
 
+  // Defence-in-depth: do not rely on the button's `disabled` attribute alone.
+  // If the attribute is stripped (devtools, automation, theme override), the
+  // handler must still refuse to fire unless the in-component state confirms
+  // the learner has ticked the checkbox. Sourcery review on PR #228.
+  const handleAccept = () => {
+    if (!checked) return;
+    onAccept();
+  };
+
   return (
     <div
       role="region"
@@ -110,16 +119,22 @@ export function AiConsentModal({ onAccept, className }: AiConsentModalProps) {
       </label>
       <button
         type="button"
-        onClick={onAccept}
+        onClick={handleAccept}
         disabled={!checked}
         className="mt-2 self-start rounded-md bg-[var(--github-accent)] px-4 py-2 text-sm font-medium text-white outline-none transition hover:bg-[var(--github-accent-hover)] focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Accepter et utiliser le tuteur IA
       </button>
       <p className="text-xs text-[var(--github-text-secondary)]">
-        Ton consentement est valable 12 mois et peut être révoqué à tout
-        moment depuis les paramètres ou en cliquant « Oublier ma clé »
-        ci-dessous.
+        Ton consentement est valable <strong>12 mois</strong> et peut être
+        <strong>révoqué à tout moment</strong> depuis la page{' '}
+        <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5">
+          /app/settings
+        </code>
+        . Le bouton « Oublier ma clé » ci-dessous ne fait que{' '}
+        <strong>supprimer la clé API</strong> ; il ne révoque pas
+        l'enregistrement du consentement (utilise la page paramètres pour
+        ça).
       </p>
     </div>
   );

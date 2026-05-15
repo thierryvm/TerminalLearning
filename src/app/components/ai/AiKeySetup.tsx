@@ -36,31 +36,11 @@ import {
   saveKey as kmSaveKey,
   type Provider,
 } from '@/lib/ai/keyManager';
-
-const PROVIDER_LABELS: Readonly<Record<Provider, string>> = {
-  openrouter: 'OpenRouter',
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-};
-
-const PROVIDER_PREFIX_HINT: Readonly<Record<Provider, string>> = {
-  openrouter: 'sk-or-v1-…',
-  anthropic: 'sk-ant-…',
-  openai: 'sk-…',
-  gemini: 'AIza…',
-};
-
-const PROVIDER_QUICK_HELP: Readonly<Record<Provider, string>> = {
-  openrouter:
-    '🔄 Hub multi-providers — modèles `:free` gratuits (Llama 3.3 70B par défaut, GPT-OSS 20B…). Recommandé pour débuter.',
-  anthropic:
-    '🧠 Claude (Anthropic) — raisonnement haute qualité, excellent en code. Crédit Anthropic requis.',
-  openai:
-    '⚠️ OpenAI direct refuse les requêtes navigateur (CORS). Préfère OpenRouter pour accéder à GPT-4o-mini & co.',
-  gemini:
-    '✨ Gemini (Google) — quota gratuit généreux (Gemini 2.0 Flash). Crédit Google AI Studio requis.',
-};
+import {
+  PROVIDER_LABELS,
+  PROVIDER_PREFIX_HINT,
+  PROVIDER_QUICK_HELP,
+} from '@/lib/ai/providers/meta';
 
 export interface AiKeySetupProps {
   provider: Provider;

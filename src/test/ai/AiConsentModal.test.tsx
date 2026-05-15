@@ -7,7 +7,7 @@
  * this file focuses on the UI contract.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
@@ -72,18 +72,17 @@ describe('AiConsentModal — accept gate', () => {
   });
 
   it('does NOT call onAccept while the checkbox is unticked even if the button is forced', async () => {
-    // Defence-in-depth: even if the disabled attribute were stripped via
-    // devtools, the button is wired to onAccept directly without any state
-    // gating on the handler — the gate is the disabled attribute. We assert
-    // the explicit flow here so any future refactor that splits the gate
-    // out of `disabled` keeps it on the click path too.
-    const user = userEvent.setup();
+    // Defence-in-depth: do not rely on the `disabled` attribute alone.
+    // `fireEvent.click` bypasses the userEvent disabled-check, simulating
+    // an adversarial path (devtools removing `disabled`, automation, etc).
+    // The in-component `handleAccept` must still refuse to fire onAccept
+    // because `checked` is `false`. Sourcery review on PR #228.
     const { onAccept } = renderModal();
     const button = screen.getByRole('button', {
       name: /Accepter et utiliser/i,
     });
-    // userEvent respects `disabled`, so this is a no-op click.
-    await user.click(button);
+    button.removeAttribute('disabled');
+    fireEvent.click(button);
     expect(onAccept).not.toHaveBeenCalled();
   });
 
