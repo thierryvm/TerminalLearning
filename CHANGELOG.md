@@ -5,6 +5,52 @@
 
 ---
 
+## ⚡ THI-118 — Landing LCP regression fix (−73 % bundle gzip + lazy auth modals)
+*16 mai 2026 · Sprint 2 démarrage*
+
+Premier ticket Sprint 2 (deadline 10 juin écoles + admin panel). **Sentry Weekly report** avait flaggué une régression LCP p75 sur `/` : **3.87 s → 9.31 s** (×2.4) sur la route la plus trafiquée — en zone Google Core Web Vitals « poor » (>4 s), bloquant la crédibilité écoles à la première impression.
+
+### Diagnostic — Lighthouse mobile Slow 4G + CPU 4×
+
+- LCP element = hero `<p>` sous-titre **(texte)**, pas le `TerminalPreview`
+- 98.9 % du LCP time dans **Render delay** (2001 ms / 2025 ms) — bottleneck JS critical path
+- Critical chain : HTML 621 ms → CSS 1237 ms render-blocking → JS parse → React mount → LCP
+
+Deux fuites identifiées :
+
+1. **`landingContent.ts`** importait `commandCatalogue` + `ENVIRONMENTS` uniquement pour calculer `TOTAL_COMMANDS = commandCatalogue.reduce(...)` et `ACTIVE_ENVIRONMENTS.length` — Vite ne peut pas tree-shaker un `.reduce()`. Le chunk `curriculum-*.js` (~41 kB gzip) chargeait eagerly sur `/` alors qu'il n'est jamais lu là.
+2. **`UserMenu`, `LoginModal`, `PWAInstallModal`** importés eagerly alors qu'ils sont 100 % conditionnels :
+   - `UserMenu` ne rend que pour `user !== null` (minorité visiteurs landing)
+   - `LoginModal` / `PWAInstallModal` ne montent qu'après clic utilisateur
+
+### Fix — `src/app/data/landingContent.ts` + `Landing.tsx` + `NotFound.tsx`
+
+- **Hardcoder** `TOTAL_LESSONS = 65` (était 64 — drift de +1 caught par le nouveau test 🎯), `TOTAL_COMMANDS = 27`, `ACTIVE_ENVIRONMENTS_COUNT = 3`. Plus aucun import de `commandCatalogue` / `ENVIRONMENTS` depuis landingContent.
+- **Nouveau drift guard** `src/test/landingTotals.test.ts` — ré-importe la vraie source (`curriculum`, `commandCatalogue`, `ENVIRONMENTS`) côté test uniquement (pas d'impact bundle) et fail si les constantes hardcodées dérivent. C'est ce test qui a immédiatement attrapé +1 leçon silencieux.
+- **`UserMenu` / `LoginModal` / `PWAInstallModal` → `React.lazy` + `Suspense`** — montés uniquement quand leur boolean conditionnel est vrai (LoginModal seulement après clic « Se connecter », etc.).
+- **`NotFound.tsx`** déduplique les mêmes constantes via `landingContent` au lieu de répéter les `.reduce()` qui forçaient le même chunk.
+
+### Bundle impact mesuré (build prod)
+
+| Chunk | Avant | Après | Delta |
+|---|---|---|---|
+| `Landing-*.js` | 27.29 kB gzip | **7.33 kB gzip** | **−73 %** |
+| `LoginModal-*.js` | (eager sur `/`) | 15.97 kB gzip (lazy on-click) | sorti du critical path |
+| `UserMenu-*.js` | (eager sur `/`) | 1.92 kB gzip (lazy, si loggué) | sorti du critical path |
+| `PWAInstallModal-*.js` | (eager sur `/`) | 1.84 kB gzip (lazy) | sorti du critical path |
+| `curriculum-*.js` lessons (138 kB raw / 41 kB gzip) | eager sur `/` | **plus dans le graph landing** | gain net |
+
+### Validation empirique
+
+- `npx tsc --noEmit` : 0 erreurs · `npx vitest run` : full suite green · `npx eslint --quiet` : 0 warnings
+- Drift test catché immédiatement le décalage `TOTAL_LESSONS` 64 → 65 (silencieux jusqu'ici)
+- Chrome DevTools MCP sur preview Vercel : snapshot OK, modal lazy fonctionne (chunk fetché à la demande, HTTP 200, focus trap actif), **zéro erreur console**
+- Le **gain LCP réel field data** sera mesuré sur Sentry weekly + Vercel Speed Insights p75 sur 24-48 h post-merge (lab ≠ field — sur localhost le TTFB est instantané donc le gain réseau ne se voit qu'en conditions réelles)
+
+PR [#232](https://github.com/thierryvm/TerminalLearning/pull/232) · Closes [THI-118](https://linear.app/thierryvm/issue/THI-118).
+
+---
+
 ## 🏁 THI-113 — Audit final Tuteur IA (triple) + H1 fix + Sprint 1 Phase 7b lockdown CLOS 4/4 + score IA 9.3 → 9.4/10
 *16 mai 2026 · Phase 7b Sprint 1 étape 4/4 — clôture Sprint 1*
 
