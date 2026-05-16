@@ -5,6 +5,55 @@
 
 ---
 
+## 🧹 THI-153 — Unified destructive red palette + sonner cleanup + brand consistency fix
+*16 mai 2026 · Sprint 2 étape 2/N*
+
+Cleanup UI bundle umbrella ticket des findings audit post-Sprint 1. Cherry-picked **4 items** qui ont survécu à la re-vérification du 16 mai (sur les 5 initiaux — M1 button variants flaggées orphelines s'est révélé périmé, toutes utilisées).
+
+### H1 — 3 palettes red consolidées dans `--github-red`
+
+Avant : les composants AI / auth mixaient `text-[#f85149]` literal (hex GitHub), `text-red-400` / `text-red-300` (Tailwind palette), `border-red-500/30 bg-red-500/10` (Tailwind avec opacity). Drift garanti à chaque retouche.
+
+Après : nouvelle CSS var `--github-red: #f85149` dans `theme.css` (`:root, .dark` scope). Migration de tous les composants destructive / error vers `text-[var(--github-red)]`, `bg-[var(--github-red)]/10`, etc. (Tailwind v4 opacity modifiers sur arbitrary value). Source de vérité unique, future palette tweak = 1 ligne.
+
+**Migré** : `App.tsx` FallbackUI · `LoginModal` error · `TerminalEmulator` error line · `UserMenu` sync-error dot + card-variant logout + compact-variant logout · `AiSettings` forget-key + revoke-consent (extraits dans `DestructiveActionButton` helper local après revue Sourcery) · `AiKeySetup` error message · `AiTutorPanel` error banner · `MessageInput` overshoot counter · `RateLimitBadge` empty state.
+
+**Volontairement conservé Tailwind `red-*`** : `Dashboard` processus category gradient · `CommandReference` processus card · level-5 badge dans `landingContent` · `NotFound` custom 404 → palette **pédagogique**, pas destructive.
+
+**WCAG 2.2 AA vérifié** : 4.12 → 4.9:1 sur dark GitHub bg + opacity-tinted bgs (validé par `ui-auditor`).
+
+### C1 — UserMenu logout focus ring aligné emerald
+
+`ring-[#f85149]/60` → `ring-emerald-500/60` sur card + compact variants. Garde le rouge pour border/text/hover (signale destructive), restaure cohérence keyboard focus avec le standard Sprint Mobile Recovery (THI-152 brick 8/9 emerald focus harmonization).
+
+### C2 — Shadcn dead slots documentés (pas strippés)
+
+`button.tsx` + `badge.tsx` gardent les slots `focus-visible:ring-ring/50` + `aria-invalid:ring-destructive/*` dans la base class car les variants shadcn `default` / `destructive` / `outline` / `secondary` / `ghost` / `link` en dépendent encore. Header comments ajoutés pour documenter pourquoi les variants TL `tl-*` / `emerald-*` les overrident → auto-documenté pour les futurs contributeurs.
+
+### H2 — `sonner` désinstallé (-45 kB minified)
+
+Zéro import dans `src/`. La seule mention est dans `curriculum.ts` (Module 11 IA, ligne 2714) — un **exemple textuel pédagogique** d'hallucination IA (« `import { toast } from 'sonner'  # pas dans votre projet` »). Référence pédagogique préservée, dépendance retirée.
+
+### Bonus — Brand consistency fix
+
+`Layout.tsx:24` (mobile top bar `/app`) affichait « Terminal Master » — placeholder aspirationnel hérité, incohérent avec toutes les autres surfaces (`<title>`, OG, schema.org, landing nav, footer, README, CHANGELOG) qui lisent **« Terminal Learning »**. Rebadge unique vers « Terminal Learning » pour qu'un décideur école ne se demande pas s'il regarde deux produits.
+
+### Sourcery review addressed
+
+- **Duplication destructive button** → extrait `DestructiveActionButton` helper local dans `AiSettings.tsx` (les 2 boutons étaient pixel-identiques sauf `mt-3`). Autres surfaces rouges (banner, counter, badge) intentionnellement gardées inlined (parallèles, pas duplication).
+- **emerald focus ring token** → justification documentée en commit : `emerald-500` EST le token Tailwind v4 mappé via `@theme inline` dans `theme.css`. Pas d'alias séparé, ajouter un `--github-emerald` serait juste un renaming sans valeur sémantique. Cohérence avec sweep emerald-focus de THI-152.
+
+### Validation empirique
+
+- `npx tsc --noEmit` → 0 erreurs · `npx eslint --quiet` → 0 warnings · `npx vitest run` → **1386 passed | 20 skipped | 0 errors**
+- `npm run build` → Landing chunk **7.33 kB gzip stable** (baseline THI-118 préservée)
+- Chrome DevTools MCP sur preview Vercel : CSS var `--github-red` injectée correctement, 0 erreur console
+- Agent `ui-auditor` → **SHIP-READY** (après fix L265 AiSettings revoke-consent button flaggé comme migration oubliée — corrigé dans le même PR avant merge)
+
+PR [#234](https://github.com/thierryvm/TerminalLearning/pull/234) · Closes [THI-153](https://linear.app/thierryvm/issue/THI-153).
+
+---
+
 ## ⚡ THI-118 — Landing LCP regression fix (−73 % bundle gzip + lazy auth modals)
 *16 mai 2026 · Sprint 2 démarrage*
 
