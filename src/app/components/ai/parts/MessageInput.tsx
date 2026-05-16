@@ -65,7 +65,7 @@ export function MessageInput({ onSend, disabled }: Props) {
       />
       <div className="flex items-center justify-between">
         <span
-          className={`text-xs ${overshoot ? 'text-red-400' : 'text-[var(--github-text-secondary)]'}`}
+          className={`text-xs ${overshoot ? 'text-[var(--github-red)]' : 'text-[var(--github-text-secondary)]'}`}
           aria-live="polite"
         >
           {Math.max(0, remaining)} / {MAX_CHARS}

@@ -20,7 +20,7 @@ const SYNC_CONFIG: Record<UserMenuProps['syncStatus'], { label: string; dot: str
   local:   { label: 'Local',          dot: 'bg-[#8b949e]',               text: 'text-[var(--github-text-secondary)]' },
   syncing: { label: 'Sync…',          dot: 'bg-yellow-400 animate-pulse', text: 'text-yellow-400' },
   synced:  { label: 'Synchronisé',    dot: 'bg-emerald-400',              text: 'text-emerald-400' },
-  error:   { label: 'Erreur de sync', dot: 'bg-[#f85149]',               text: 'text-[#f85149]' },
+  error:   { label: 'Erreur de sync', dot: 'bg-[var(--github-red)]',               text: 'text-[var(--github-red)]' },
 };
 
 function UserAvatar({ avatarUrl, initials, size }: { avatarUrl?: string; initials: string; size: 'sm' | 'md' }) {
@@ -134,7 +134,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           size="link-inline"
           onClick={handleSignOut}
           disabled={signingOut}
-          className="w-full gap-2 py-1.5 rounded-md text-xs font-mono text-[#f85149] border border-[#f85149]/20 hover:bg-[#f85149]/10 hover:text-[#f85149] hover:border-[#f85149]/40 transition-all focus-visible:ring-[#f85149]/60 focus-visible:ring-2 focus-visible:ring-offset-0"
+          className="w-full gap-2 py-1.5 rounded-md text-xs font-mono text-[var(--github-red)] border border-[var(--github-red)]/20 hover:bg-[var(--github-red)]/10 hover:text-[var(--github-red)] hover:border-[var(--github-red)]/40 transition-all focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0"
         >
           <LogOut size={12} aria-hidden="true" />
           {signingOut ? 'Déconnexion…' : 'Se déconnecter'}
@@ -189,7 +189,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
               role="menuitem"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[#f85149] font-mono hover:bg-[#f85149]/10 hover:text-[#f85149] rounded-none transition-colors focus-visible:ring-[#f85149]/60 focus-visible:ring-2 focus-visible:ring-offset-0"
+              className="w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-red)] font-mono hover:bg-[var(--github-red)]/10 hover:text-[var(--github-red)] rounded-none transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0"
             >
               <LogOut size={14} aria-hidden="true" />
               {signingOut ? 'Déconnexion…' : 'Se déconnecter'}

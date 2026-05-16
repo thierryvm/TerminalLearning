@@ -4,6 +4,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "./utils";
 
+// THI-153 — Terminal Learning uses a 100 % custom GitHub-dark design
+// system: every `tl-*` / `emerald-*` variant below overrides the focus
+// ring with its own emerald token, and we never set `aria-invalid` on
+// our buttons. The default shadcn slots (`focus-visible:ring-ring/50`,
+// `aria-invalid:ring-destructive/*`) therefore stay inactive for the TL
+// variants. They are kept on the base class because the shadcn
+// `default` / `destructive` / `outline` / `secondary` / `ghost` / `link`
+// variants are still exported for occasional reuse via shadcn primitives
+// and rely on those tokens. Do not strip the slots without first
+// migrating those upstream consumers (badge.tsx mirrors this).
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {

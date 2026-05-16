@@ -207,7 +207,7 @@ export function AiSettings() {
                       <button
                         type="button"
                         onClick={() => void onForget(s.provider)}
-                        className="flex items-center gap-1 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 outline-none hover:bg-red-500/20 focus-visible:ring-2 focus-visible:ring-red-500/60"
+                        className="flex items-center gap-1 rounded-md border border-[var(--github-red)]/40 bg-[var(--github-red)]/10 px-3 py-1.5 text-xs text-[var(--github-red)] outline-none hover:bg-[var(--github-red)]/20 focus-visible:ring-2 focus-visible:ring-[var(--github-red)]/60"
                       >
                         <Trash2 size={12} aria-hidden="true" />
                         Oublier
@@ -262,7 +262,7 @@ export function AiSettings() {
               <button
                 type="button"
                 onClick={() => void onRevokeConsent()}
-                className="mt-3 flex items-center gap-1 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 outline-none hover:bg-red-500/20 focus-visible:ring-2 focus-visible:ring-red-500/60"
+                className="mt-3 flex items-center gap-1 rounded-md border border-[var(--github-red)]/40 bg-[var(--github-red)]/10 px-3 py-1.5 text-xs text-[var(--github-red)] outline-none hover:bg-[var(--github-red)]/20 focus-visible:ring-2 focus-visible:ring-[var(--github-red)]/60"
               >
                 <Trash2 size={12} aria-hidden="true" />
                 Révoquer le consentement

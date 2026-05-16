@@ -20,7 +20,7 @@ export function RateLimitBadge({ remaining, total = 30, onReset }: Props) {
   const low = remaining <= 5;
   const empty = remaining === 0;
   const colour = empty
-    ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+    ? 'bg-[var(--github-red)]/15 text-[var(--github-red)] hover:bg-[var(--github-red)]/25'
     : low
       ? 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25'
       : 'bg-[var(--github-bg-tertiary)] text-[var(--github-text-secondary)] hover:bg-[var(--github-bg-secondary)]';

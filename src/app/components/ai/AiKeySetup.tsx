@@ -245,7 +245,7 @@ export function AiKeySetup({ provider, onSaved, className }: AiKeySetupProps) {
       </fieldset>
 
       {error && (
-        <p className="text-xs text-red-400" role="alert">
+        <p className="text-xs text-[var(--github-red)]" role="alert">
           {error}
         </p>
       )}
