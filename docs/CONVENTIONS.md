@@ -162,6 +162,52 @@ Slack -> Notifie et permet d'en discuter
 
 ---
 
+## Migrations Supabase — template GRANT obligatoire (post-30 octobre 2026)
+
+À partir du **30 octobre 2026**, Supabase applique un breaking change : les nouvelles tables créées dans le schema `public` ne sont **plus exposées automatiquement** via PostgREST / GraphQL / `@supabase/supabase-js`. Sans `GRANT` explicite, le frontend retourne 404 / empty pour ces tables.
+
+Référence officielle : [Discussion #45329](https://github.com/orgs/supabase/discussions/45329) · [Changelog](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)
+
+### Template à appliquer pour TOUTE nouvelle migration `public.*`
+
+```sql
+-- ─── 0XX: <Description> ──────────────────────────────────────────────────
+-- ⚠️ Rappel post-30 octobre 2026 : sans GRANT explicite, cette table ne sera
+-- pas exposée via PostgREST/GraphQL/supabase-js (breaking change Supabase
+-- Data API opt-in). Voir docs/CONVENTIONS.md section "Migrations Supabase".
+
+create table if not exists public.<nom_table> (
+  -- ... colonnes ...
+);
+
+-- 1. RLS obligatoire (zero policy si table service_role-only, sinon policies explicites)
+alter table public.<nom_table> enable row level security;
+
+-- 2. GRANT explicite pour rôles client (anon / authenticated)
+--    ↳ Adapter selon le besoin : SELECT only pour read-only, full pour CRUD client
+grant select, insert, update, delete on table public.<nom_table>
+  to anon, authenticated;
+
+-- 3. Pour les fonctions SECURITY DEFINER : REVOKE FROM PUBLIC (pas seulement anon/authenticated)
+--    ↳ Pattern leçon migration 015 — PUBLIC inheritance bypass les REVOKE explicites
+revoke execute on function public.<nom_fonction>() from public;
+```
+
+### Exceptions valides
+
+- **Audit logs write-only** (ex: `lti_launches`, `admin_audit_log`) : pas de GRANT — la table reste service_role-only, accessible uniquement depuis Vercel Functions avec `SUPABASE_SERVICE_ROLE_KEY`.
+- **Schémas dédiés non-public** (ex: schema `private` pour les RLS helpers — THI-182) : ne pas exposer du tout, ne pas GRANT.
+
+### Cas particulier : SECURITY DEFINER functions
+
+Pour les fonctions `SECURITY DEFINER` :
+- Si **trigger-only** (pas appelée en RPC) : `revoke execute from PUBLIC` + `revoke execute from anon, authenticated` (defense in depth)
+- Si **RLS-essential** (invoquée par USING clauses) : **NE PAS REVOKE** — PostgreSQL exige EXECUTE même pour invocation via RLS. Solution structurelle : déplacer dans schema `private` non-exposé par PostgREST.
+
+Vu empiriquement migration 015 : `REVOKE FROM anon, authenticated` ne suffit pas, il faut inclure `PUBLIC` (anon/authenticated héritent de PUBLIC par défaut).
+
+---
+
 ## Synchronisation de la documentation
 
 **À la fin de chaque session de développement, vérifier :**

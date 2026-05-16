@@ -38,7 +38,7 @@
     "@radix-ui/react-slot": "1.1.2",
     "@sentry/node": "^10.51.0",
     "@sentry/react": "^10.47.0",
-    "@supabase/supabase-js": "^2.101.1",
+    "@supabase/supabase-js": "^2.105.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
