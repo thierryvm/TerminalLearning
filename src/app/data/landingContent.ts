@@ -5,16 +5,19 @@ import {
   Compass, FolderOpen, FileText, Cpu, GitMerge, GitBranch, GitFork, Globe,
   Monitor, Code2, Bot,
 } from 'lucide-react';
-import { commandCatalogue } from './commandCatalogue';
-import { ENVIRONMENTS } from '../types/curriculum';
 import type { SelectedEnvironment } from '../context/EnvironmentContext';
 
 // ── Computed totals ───────────────────────────────────────────────────────────
 
-/** Hardcoded — update when adding lessons. Source of truth: curriculum.ts. */
-export const TOTAL_LESSONS = 64;
-export const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
-export const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active');
+// THI-118 — hardcoded to prevent the landing chunk from pulling in
+// `commandCatalogue` / `curriculum` (≈ 41 kB gzip) on first paint. The
+// landing page only needs the totals, not the full data. A drift test in
+// `src/test/landingTotals.test.ts` re-imports both and fails if these
+// constants get out of sync with the actual catalogue/curriculum.
+export const TOTAL_LESSONS = 65;
+export const TOTAL_COMMANDS = 27;
+/** Count of environments with `status: 'active'` in `types/curriculum.ts`. */
+export const ACTIVE_ENVIRONMENTS_COUNT = 3;
 
 // ── Features ──────────────────────────────────────────────────────────────────
 
@@ -168,7 +171,7 @@ export const STATS = [
   { value: String(MODULE_PREVIEWS.length), label: 'Modules', icon: BookOpen },
   { value: String(TOTAL_LESSONS), label: 'Leçons', icon: FileText },
   { value: `${TOTAL_COMMANDS}+`, label: 'Commandes', icon: Terminal },
-  { value: String(ACTIVE_ENVIRONMENTS.length), label: 'Environnements', icon: Monitor },
+  { value: String(ACTIVE_ENVIRONMENTS_COUNT), label: 'Environnements', icon: Monitor },
 ];
 
 // ── Competency levels per environment (hero section) ─────────────────────────

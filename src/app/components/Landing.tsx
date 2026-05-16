@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { FadeIn } from './landing/FadeIn';
 import {
@@ -7,14 +7,18 @@ import {
   Compass, Monitor, LogIn, Share2, Check, Download, ArrowUp,
 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import { PWAInstallModal } from './PWAInstallModal';
 import { TerminalPreview } from './landing/TerminalPreview';
 import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
-import { UserMenu } from './auth/UserMenu';
-import { LoginModal } from './auth/LoginModal';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+
+// THI-118 — defer non-critical chunks to keep the landing critical path lean.
+// UserMenu only renders for logged-in users (minority of landing visitors);
+// LoginModal / PWAInstallModal only mount after user interaction.
+const UserMenu = lazy(() => import('./auth/UserMenu').then((m) => ({ default: m.UserMenu })));
+const LoginModal = lazy(() => import('./auth/LoginModal').then((m) => ({ default: m.LoginModal })));
+const PWAInstallModal = lazy(() => import('./PWAInstallModal').then((m) => ({ default: m.PWAInstallModal })));
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import {
   TOTAL_LESSONS, TOTAL_COMMANDS,
@@ -69,7 +73,13 @@ export function Landing() {
 
   return (
     <div className="min-h-dvh bg-[var(--github-bg)] text-[var(--github-text-primary)]" style={{ fontFamily: 'Inter, sans-serif' }}>
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      {/* Mount LoginModal only after the user opens it — keeps the lazy
+          chunk out of the landing critical path (THI-118). */}
+      {loginOpen && (
+        <Suspense fallback={null}>
+          <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+        </Suspense>
+      )}
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
       {/* THI-152 brick 7bis: pt-[max(1rem,env(safe-area-inset-top))]
@@ -99,7 +109,9 @@ export function Landing() {
             <Github size={18} aria-hidden="true" />
           </a>
           {user ? (
-            <UserMenu syncStatus={syncStatus} variant="compact" />
+            <Suspense fallback={null}>
+              <UserMenu syncStatus={syncStatus} variant="compact" />
+            </Suspense>
           ) : (
             <Button
               variant="nav-link"
@@ -286,7 +298,11 @@ export function Landing() {
         </div>
       </section>
 
-      {showPWAModal && <PWAInstallModal onClose={() => setShowPWAModal(false)} />}
+      {showPWAModal && (
+        <Suspense fallback={null}>
+          <PWAInstallModal onClose={() => setShowPWAModal(false)} />
+        </Suspense>
+      )}
 
       {/* ── TRUST BADGES ────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-8">
