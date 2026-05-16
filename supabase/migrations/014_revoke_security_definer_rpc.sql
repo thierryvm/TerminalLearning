@@ -15,6 +15,30 @@
 -- their TRIGGER definitions without consulting GRANTs. Revoking is therefore
 -- safe and closes the relevant PostgREST exposure surface.
 --
+-- ─── EXECUTE retention policy (per Sourcery review on PR #237) ──────────────
+-- After this migration, EXECUTE on each function is held by:
+--   • `handle_new_user()`         → `postgres` (owner) only.
+--                                   Invoked by the auth.users INSERT trigger,
+--                                   which fires under `supabase_auth_admin`
+--                                   (cross-schema) without needing EXECUTE.
+--   • `prevent_role_escalation()` → `postgres` (owner) only.
+--                                   Invoked by the profiles UPDATE trigger
+--                                   under the calling user — `postgres` owns
+--                                   the trigger and runs it with definer rights.
+--   • `rls_auto_enable()`         → `postgres` (owner) + `service_role`.
+--                                   Manual admin helper, invoked via
+--                                   Supabase service_role key (Dashboard /
+--                                   migration runner / admin scripts).
+--                                   `service_role` retains EXECUTE because it
+--                                   bypasses RLS and inherits all privileges
+--                                   on `public` by default — listed here so
+--                                   future cleanup migrations preserve it.
+--
+-- ─── Idempotency (per Sourcery review on PR #237) ───────────────────────────
+-- Each REVOKE + COMMENT is wrapped in a `DO` block that checks `pg_proc` first.
+-- If a function has been renamed or dropped, the block becomes a no-op instead
+-- of failing the whole migration. Safe to re-run across environments.
+--
 -- Refs:
 --   - Supabase advisor lints 0028 + 0029
 --   - Detected during THI-131 PR #236 cascade audit
@@ -28,35 +52,61 @@
 --   - Auth → Settings → "Leaked password protection" → ON
 --     (closes the auth_leaked_password_protection advisor)
 
--- ── Trigger-only functions: SAFE to revoke (no callers via REST or RLS) ─────
-
--- 1. handle_new_user() — fires on INSERT into auth.users (defined 001_init.sql:44).
+-- ── 1. handle_new_user() — fires on INSERT into auth.users (001_init.sql:44).
 --    Never called as RPC; never referenced in RLS policies.
-revoke execute on function public.handle_new_user() from anon, authenticated;
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'handle_new_user'
+      and pg_get_function_identity_arguments(p.oid) = ''
+  ) then
+    execute 'revoke execute on function public.handle_new_user() from anon, authenticated';
+    execute $cmt$comment on function public.handle_new_user() is
+      'TRIGGER on auth.users INSERT — auto-creates profile row with role=student. '
+      'SECURITY DEFINER for cross-schema write (auth → public). '
+      'EXECUTE retained by postgres (owner) only. '
+      'Revoked from anon/authenticated (THI-180) — invoked by trigger, never RPC.'$cmt$;
+  end if;
+end$$;
 
--- 2. prevent_role_escalation() — fires on UPDATE OF role ON profiles
---    (defined 005_rbac_roles.sql:128). Trigger only.
-revoke execute on function public.prevent_role_escalation() from anon, authenticated;
+-- ── 2. prevent_role_escalation() — fires on UPDATE OF role ON profiles
+--    (005_rbac_roles.sql:128). Trigger only.
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'prevent_role_escalation'
+      and pg_get_function_identity_arguments(p.oid) = ''
+  ) then
+    execute 'revoke execute on function public.prevent_role_escalation() from anon, authenticated';
+    execute $cmt$comment on function public.prevent_role_escalation() is
+      'TRIGGER on profiles UPDATE — blocks unauthorized role escalation. '
+      'SECURITY DEFINER to read parent profile institution_id without RLS recursion. '
+      'EXECUTE retained by postgres (owner) only. '
+      'Revoked from anon/authenticated (THI-180) — invoked by trigger, never RPC.'$cmt$;
+  end if;
+end$$;
 
--- 3. rls_auto_enable() — admin helper, manual invocation only (no RLS user)
-revoke execute on function public.rls_auto_enable() from anon, authenticated;
-
--- ── Documentation comments ──────────────────────────────────────────────────
-
-comment on function public.handle_new_user() is
-  'TRIGGER on auth.users INSERT — auto-creates profile row with role=student. '
-  'SECURITY DEFINER for cross-schema write (auth → public). '
-  'EXECUTE revoked from anon/authenticated (THI-180) — invoked by trigger only.';
-
-comment on function public.prevent_role_escalation() is
-  'TRIGGER on profiles UPDATE — blocks unauthorized role escalation. '
-  'SECURITY DEFINER to read parent profile institution_id without RLS recursion. '
-  'EXECUTE revoked from anon/authenticated (THI-180) — invoked by trigger only.';
-
-comment on function public.rls_auto_enable() is
-  'Admin helper to enable RLS on new tables. '
-  'SECURITY DEFINER for ALTER TABLE permission. '
-  'EXECUTE revoked from anon/authenticated (THI-180) — admin manual invocation only.';
+-- ── 3. rls_auto_enable() — admin helper, manual invocation only (no RLS user).
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'rls_auto_enable'
+      and pg_get_function_identity_arguments(p.oid) = ''
+  ) then
+    execute 'revoke execute on function public.rls_auto_enable() from anon, authenticated';
+    execute $cmt$comment on function public.rls_auto_enable() is
+      'Admin helper to enable RLS on new tables. '
+      'SECURITY DEFINER for ALTER TABLE permission. '
+      'EXECUTE retained by postgres (owner) AND service_role (admin invocation). '
+      'Revoked from anon/authenticated (THI-180) — never user-facing.'$cmt$;
+  end if;
+end$$;
 
 -- ── NOT revoked (deliberate — would break RLS policies) ─────────────────────
 --
