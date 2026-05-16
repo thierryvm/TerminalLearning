@@ -1,6 +1,6 @@
 # Documentation Index — Terminal Learning
 
-> Last updated: 10 May 2026 ~03h CEST — Session marathon clôturée : 11 PRs livrées #208 → #217. Agent renommé `ai-pentester-pro` → **`llm-security-auditor`** (PR #212 policy filter mitigation + Evidence confidence framework). 14ᵉ agent **`session-orchestrator`** créé (PR #213 + #214). 1ʳᵉ baseline `llm-security-auditor` **8.7/10** officielle (audit-log PR #217). Voir CHANGELOG.md / STORY.md pour la narrative complète.  
+> Last updated: 16 May 2026 ~10h CEST — **Sprint 1 Phase 7b lockdown CLOS à 4/4** : THI-148 (V1.0.1 méta-plateforme) ✅ → THI-144 (v1.1.0 anti-frictions + ADR-008) ✅ → THI-112 (onboarding AiKeySetup + AiConsentModal + AiSettings + Privacy section + M3-AI fix) ✅ → **THI-113 (audit final triple + H1 fix sentry-tunnel scrubber symétrique)** ✅. Score IA security : 8.7/10 (baseline 10 mai matin) → 9.0 → 9.1 → 9.3 → **9.4/10** post-H1 fix. Rapport audit final dans `docs/audits/ai-tutor-v1-2026-05-16.md` — verdict ALL CLEAR (3 agents : security-auditor + prompt-guardrail-auditor + ui-auditor). Prochaine étape : Phase 7c LTI activation (gate H4-AI jsonwebtoken). Voir CHANGELOG.md / STORY.md pour la narrative complète.  
 > This directory contains active project documentation. For historical/stale docs, see `.archive/`.
 
 ---
