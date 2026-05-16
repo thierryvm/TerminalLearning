@@ -3,7 +3,9 @@
  *
  * Settings page under `/app/settings` that lets the learner review and
  * manage everything the AI tutor stores locally:
- *  - per-provider key status (configured? plain or encrypted? masked tail)
+ *  - per-provider key status (configured? plain or encrypted?) — the
+ *    key body itself is never rendered, masked or otherwise, to keep
+ *    zero-disclosure on a casual screen-share or screenshot
  *  - consent record (accepted? when? expires when? remaining days)
  *  - actions: edit a key (mounts AiKeySetup inline), forget a key,
  *    revoke consent

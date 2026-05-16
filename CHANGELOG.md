@@ -5,6 +5,76 @@
 
 ---
 
+## 🔑 THI-112 — Onboarding AI Tutor (AiKeySetup + AiConsentModal + AiSettings + Privacy section) + score IA 9.1 → 9.3/10
+*15-16 mai 2026 · Phase 7b Sprint 1 étape 3/4 · session multi-jours, scope révisé senior co-décideur*
+
+Quatre commits scope-séparés livrant la surface user-facing complète de l'onboarding BYOK, plus la fermeture VERIFIED du dernier finding MEDIUM du re-baseline `llm-security-auditor` (M3-AI consent versioning).
+
+### Scope révisé vs original
+
+Le ticket Linear initial décrivait un wizard 3 étapes + i18n FR/NL/EN/DE + agents QA `gdpr-compliance-auditor`/`i18n-auditor`. Reconnaissance pré-code a révélé 5 hypothèses incompatibles avec la réalité TL (React Router v7 vs Next.js App Router, pas de système i18n, agents inexistants). Scope révisé validé par @thierry : **4 commits ~6-8h, 100% FR, agents QA disponibles (security/prompt-guardrail/ui), AiConsentModal = extraction du gate inline + M3-AI bundled**.
+
+### 4 commits livrés
+
+| # | Commit | Apport |
+|---|---|---|
+| A1 | `924610c` | **AiKeySetup standalone** — extraction du `KeyEntryBlock` inline du panel + encrypt opt-in (passphrase ≥ 8 chars confirmé) + lien privacy |
+| A2 | `6d7792f` | **AiConsentModal + M3-AI** — extraction du `ConsentBlock` + consent storage `'true'` → JSON `{version: 1, acceptedAt, expiresAt}` TTL 365j + migration legacy transparente + 8 tests invariants |
+| A3 | `bfa7a39` | **PrivacyPolicy section `#ai-processing`** — 6 cards (architecture sans serveur, données envoyées/non-envoyées, conservation locale plain vs encrypted opt-in PBKDF2 ≥210k, consent versioning 12 mois, politiques providers tiers) |
+| B  | `6efc92f` | **AiSettings page + route `/app/settings` + Sidebar nav** — status per-provider (plain/chiffrée) + consent record (date + expiry + jours restants) + actions modifier/oublier/révoquer |
+
+### Sourcery review round 2 (3 findings) — fix-up `fad5b5a` bundled
+
+| Finding | Fix |
+|---|---|
+| Provider metadata duplication (3 surfaces) | Nouveau module `src/lib/ai/providers/meta.ts` (PROVIDER_LABELS + PROVIDER_PREFIX_HINT + PROVIDER_QUICK_HELP) — 3 consumers refactorisés |
+| `AiConsentModal.onAccept` reliait uniquement `disabled` | Nouveau `handleAccept` qui check `checked` state avant `onAccept()` — devtools-bypass impossible |
+| Revocation copy ambiguë ("Oublier ma clé révoque le consent") | Texte clarifié : "Oublier ma clé supprime la clé API, ne révoque pas le consentement (utilise `/app/settings`)" |
+
+### 🎯 Score IA security re-baseline post-#228 — **9.3/10**
+
+| Métrique | Valeur |
+|---|---|
+| `llm-security-auditor` post-THI-112 | **9.3/10** |
+| Delta vs 9.1/10 (10 mai PM) | **+0.2 confirmé** (cible 9.25 dépassée) |
+| Trajectoire | 8.7 → 9.0 → 9.1 → **9.3** |
+| Verdict ship-readiness | **SHIP-READY** |
+
+### Findings fermés (delta +0.2)
+
+- **M3-AI [MEDIUM VERIFIED]** Consent flow sans timestamp/expiry/version ✅ FIXÉ — JSON shape + invariants tests
+- **L2 [LOW VERIFIED]** Commentaire « masked tail » désaligné dans `AiSettings.tsx:6` ✅ FIXÉ dans cette PR chore docs (réécrit en « never rendered, zero-disclosure »)
+
+### Améliorations OWASP LLM Top 10
+
+- **LLM06 Sensitive Info Disclosure** : UX consent visible (date + expiry + révocation explicit `/app/settings`)
+- **LLM02 Insecure Output Handling** : AiSettings n'affiche **jamais** la clé en clair (zéro disclosure)
+
+### Tests + checks
+
+- **1391 tests passants** (was 1379 baseline ; +12 = AiSettings.test.tsx)
+- **AI subset** : 314 → ~329 (12 AiKeySetup + 7 AiConsentModal + 8 consent invariants + 12 AiSettings)
+- Type-check ✅ · Lint ✅ · Build ✅ 7.76s
+- Sourcery review **pass** (round 1 et round 2)
+- Validation empirique Vercel preview : `/`, `/privacy#ai-processing`, `/app/settings` (screenshot @thierry — Paramètres IA cards rendus correctement)
+
+### Trajectoire 9.3 → 9.5/10
+
+R3 M2-AI encoding bypass étendu (THI-153, +0.1) + R5 H4-AI jsonwebtoken Phase 7c gate (+0.1) = **9.5/10 atteignable**.
+
+### 🔮 Eval suite (b) manual run gate ship — note
+
+Eval suite (b) `scripts/eval-tutor.ts` non re-exécutée sur cette PR (pas d'OPENROUTER_API_KEY dans la session agent). Pas critique : aucune modification du system prompt, sanitizer, providers ou prompt builder. Pattern frozen v1.1.0 préservé.
+
+### Refs
+
+- ADR-002 (BYOK 4 tiers) + ADR-005 (consent governance + Règle 10) + ADR-008 (anti-frictions)
+- Re-baseline log : `docs/security-audit-log.md` (16 mai 2026 ~01h CEST)
+- Linear THI-112 : Done auto-close
+- Sourcery threads (round 1 + round 2) : tous résolus via GraphQL `resolveReviewThread`
+
+---
+
 ## 🧠 THI-144 — AI Tutor system prompt v1.1.0 anti-frictions + score IA 9.0 → 9.1/10
 *10 mai 2026 ~12h CEST · Phase 7b Sprint 1 étape 2/4 · session conceptuelle autonome*
 
