@@ -54,6 +54,36 @@ interface ProviderStatus {
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+// THI-153 / Sourcery review on #234 — the forget-key and revoke-consent
+// buttons share the exact same destructive styling (only `mt-3` differs).
+// Extracting a tiny local helper keeps the truly-duplicated styles in one
+// place so a future palette change touches one line instead of two.
+// Banner / inline error usages elsewhere (AiTutorPanel, MessageInput,
+// RateLimitBadge) share the `var(--github-red)` color token but not the
+// surrounding layout, so they stay inlined intentionally.
+interface DestructiveActionButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  icon?: React.ReactNode;
+}
+
+function DestructiveActionButton({
+  icon,
+  children,
+  className = '',
+  ...rest
+}: DestructiveActionButtonProps) {
+  return (
+    <button
+      type="button"
+      className={`flex items-center gap-1 rounded-md border border-[var(--github-red)]/40 bg-[var(--github-red)]/10 px-3 py-1.5 text-xs text-[var(--github-red)] outline-none hover:bg-[var(--github-red)]/20 focus-visible:ring-2 focus-visible:ring-[var(--github-red)]/60 ${className}`.trim()}
+      {...rest}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
 function formatDateFr(ts: number): string {
   return new Date(ts).toLocaleDateString('fr-FR', {
     day: '2-digit',
@@ -204,14 +234,12 @@ export function AiSettings() {
                       {s.configured ? 'Modifier' : 'Configurer'}
                     </button>
                     {s.configured && (
-                      <button
-                        type="button"
+                      <DestructiveActionButton
                         onClick={() => void onForget(s.provider)}
-                        className="flex items-center gap-1 rounded-md border border-[var(--github-red)]/40 bg-[var(--github-red)]/10 px-3 py-1.5 text-xs text-[var(--github-red)] outline-none hover:bg-[var(--github-red)]/20 focus-visible:ring-2 focus-visible:ring-[var(--github-red)]/60"
+                        icon={<Trash2 size={12} aria-hidden="true" />}
                       >
-                        <Trash2 size={12} aria-hidden="true" />
                         Oublier
-                      </button>
+                      </DestructiveActionButton>
                     )}
                   </div>
                 </div>
@@ -259,14 +287,13 @@ export function AiSettings() {
                 </strong>{' '}
                 ({daysRemaining(consent.expiresAt)} jours restants).
               </p>
-              <button
-                type="button"
+              <DestructiveActionButton
                 onClick={() => void onRevokeConsent()}
-                className="mt-3 flex items-center gap-1 rounded-md border border-[var(--github-red)]/40 bg-[var(--github-red)]/10 px-3 py-1.5 text-xs text-[var(--github-red)] outline-none hover:bg-[var(--github-red)]/20 focus-visible:ring-2 focus-visible:ring-[var(--github-red)]/60"
+                className="mt-3"
+                icon={<Trash2 size={12} aria-hidden="true" />}
               >
-                <Trash2 size={12} aria-hidden="true" />
                 Révoquer le consentement
-              </button>
+              </DestructiveActionButton>
             </div>
           ) : (
             <div className="rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] p-4 text-sm text-[var(--github-text-secondary)]">
