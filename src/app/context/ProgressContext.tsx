@@ -54,32 +54,71 @@ const STORAGE_KEY = 'terminal-master-progress';
 const STORAGE_OWNER_KEY = 'terminal-master-progress-owner';
 export const GUEST_OWNER = '__guest__';
 
-function loadProgress(): ProgressState {
+/**
+ * Reads the raw localStorage value at `STORAGE_KEY`. Returns `null` if the
+ * key is missing or if `localStorage` is unavailable (private mode / quota /
+ * disabled storage).
+ *
+ * Narrow try/catch isolated to the `localStorage.getItem` call — exposed so
+ * tests can reuse the same boundary semantics (per Sourcery review on PR #242).
+ */
+function readRawProgress(): string | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { completedLessons: {} };
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
-    // THI-186 migration : tout `terminal-master-progress` stocké AVANT le fix
-    // owner-tracking n'a PAS de `STORAGE_OWNER_KEY` associé. Le résultat peut
-    // être contaminé (état du user précédent) — on ne peut pas savoir, et le
-    // risque de leak est plus grave que la perte de progression locale.
-    //
-    // → Si pas d'owner stocké, on force-clear. Pour les users authenticated,
-    //   onAuthStateChange INITIAL_SESSION + syncWithRemote restaure depuis
-    //   Supabase. Pour les pure guests legacy, perte acceptée (coût migration).
-    //
-    // Migration ponctuelle au premier `loadProgress()` post-déploiement. Une
-    // fois passée, l'owner est setté (via `setStoredOwner`) et le check passe
-    // silencieusement à toutes les sessions suivantes.
-    const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
-    if (!hasOwner) {
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      return { completedLessons: {} };
-    }
+/**
+ * THI-186 migration : `terminal-master-progress` stocké AVANT le fix
+ * owner-tracking (PR #241+#242) n'a PAS de `STORAGE_OWNER_KEY` associé.
+ * Le résultat peut être contaminé (état du user précédent) — on ne peut pas
+ * savoir, et le risque de leak est plus grave que la perte de progression
+ * locale guest.
+ *
+ * → Si pas d'owner stocké et qu'on a quand même un payload de progression
+ *   en cache, on force-clear. Pour les users authenticated,
+ *   `onAuthStateChange` INITIAL_SESSION + `syncWithRemote` restaurera depuis
+ *   Supabase. Pour les pure guests legacy, perte acceptée (coût migration
+ *   sécuritaire ponctuelle).
+ *
+ * Migration auto-déclenchée au premier `loadProgress()` post-déploiement
+ * du fix round 2. Une fois passée, l'owner est setté via `setStoredOwner`
+ * et le check ne se redéclenche plus.
+ *
+ * Exporté pour que `progressContextIsolation.test.ts` partage exactement
+ * la même logique que la prod (per Sourcery review on PR #242 — éviter
+ * future drift entre helper test et code de production).
+ *
+ * @returns `true` si la migration a clearé le cache ; `false` sinon.
+ */
+export function applyLegacyOwnerMigration(raw: string | null): boolean {
+  if (!raw) return false;
+  const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
+  if (hasOwner) return false;
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  return true;
+}
 
+function loadProgress(): ProgressState {
+  const raw = readRawProgress();
+  if (!raw) return { completedLessons: {} };
+
+  // THI-186 round 2 : check legacy contamination before parsing.
+  if (applyLegacyOwnerMigration(raw)) {
+    return { completedLessons: {} };
+  }
+
+  // Narrow try/catch around JSON.parse only — per Sourcery review on PR #242.
+  // Any other unexpected error in this path should NOT be silenced.
+  try {
     return JSON.parse(raw) as ProgressState;
-  } catch {}
-  return { completedLessons: {} };
+  } catch {
+    // Malformed JSON (e.g. user manually edited storage, partial write) —
+    // fall back to empty state and let the next save overwrite cleanly.
+    return { completedLessons: {} };
+  }
 }
 
 function saveProgress(state: ProgressState) {
