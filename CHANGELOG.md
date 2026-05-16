@@ -5,6 +5,70 @@
 
 ---
 
+## 🏁 THI-113 — Audit final Tuteur IA (triple) + H1 fix + Sprint 1 Phase 7b lockdown CLOS 4/4 + score IA 9.3 → 9.4/10
+*16 mai 2026 · Phase 7b Sprint 1 étape 4/4 — clôture Sprint 1*
+
+**Gate de sortie V1 AI Tutor.** Trois agents lancés en parallèle (`security-auditor` + `prompt-guardrail-auditor` + `ui-auditor`) — verdict consolidé : **✅ ALL CLEAR**. Rapport complet : [`docs/audits/ai-tutor-v1-2026-05-16.md`](https://github.com/thierryvm/TerminalLearning/blob/main/docs/audits/ai-tutor-v1-2026-05-16.md).
+
+### Scores audits (ADR-005 step 7 — gate Phase 7b)
+
+| Agent | Score | Findings actionables |
+|---|---|---|
+| `security-auditor` | **9.4/10** (+0.1 vs 9.3) | 1 HIGH (H1) ✅ FERMÉ |
+| `prompt-guardrail-auditor` | **9.3/10** | 0 finding · 44/44 fixtures × 4 locales rejetées · Règle 10 SATISFIED |
+| `ui-auditor` | SHIP-READY | 3 LOW non bloquants (W1/W2 polish V1.1 optionnels, W3 documenté secure-by-design) |
+
+### H1 fix — asymétrie scrubber Sentry tunnel
+
+`api/sentry-tunnel.ts:scrubEnvelopeItem` ne strippait pas `request.url` (query string OAuth tokens) ni `request.headers` (Authorization/X-API-Key/*token*) alors que `sentry.ts:beforeSend` côté client le faisait. **Vecteur réel** : OAuth callback URL avec `access_token=...` dans le query, ou Sentry capture hors lifecycle `beforeSend`.
+
+Fix bundled dans la même PR (~30 lignes) + 4 tests invariants pinned :
+- URL parsing standard via `new URL()` + reconstruct `origin+pathname`
+- **Fallback string-based** (suite Sourcery review security 🚨) : `split('#')[0].split('?')[0]` pour URLs relatives (`/auth/callback?access_token=...`) et malformées où `new URL()` throw
+- Headers Authorization/X-API-Key/*token* redactés `[REDACTED:header]`, autres au pattern engine
+
+### H2 + H3 différés
+
+- **H2** `undici` ≤ 6.23.0 CVEs HIGH dans `@vercel/node` transitive deps → Linear issue séparée à créer (breaking change `npm audit fix --force` à valider sur Edge Functions LTI)
+- **H3** Git history credential `TerminalLearning2026!` → risque résiduel accepté (5 comptes test rotés via Admin API, CLAUDE.md incident 006)
+
+### 🏁 Sprint 1 Phase 7b lockdown — récap final 4/4
+
+| Étape | Ticket | PR | Score IA après |
+|---|---|---|---|
+| 1/4 | THI-148 méta-plateforme V1.0.1 | #208 | 8.7 baseline |
+| 2/4 | THI-144 system prompt v1.1.0 + ADR-008 + eval suite + M4-AI fix | #222 | 9.1 |
+| 3/4 | THI-112 onboarding + M3-AI fix | #228 | 9.3 |
+| **4/4** | **THI-113 audit final triple + H1 fix** | **#230** | **9.4** |
+
+**Phase 7b ✅ COMPLETE.** Prochaine étape : **Phase 7c LTI activation** (gate H4-AI jsonwebtoken supply chain à fermer avant `LTI_ENABLED=true`).
+
+### Trajectoire IA security — bilan Sprint 1
+
+8.7 (matin 10 mai) → 9.0 (#220 align ADR refs) → 9.1 (#222 v1.1.0 + M4-AI) → 9.3 (#228 + M3-AI) → **9.4 (#230 + H1 fix)**.
+
+Marge restante vers 9.5/10 : H2 undici upgrade (+0.05) + R3 M2-AI encoding bypass étendu THI-153 (+0.1) + R5 H4-AI jsonwebtoken Phase 7c gate (+0.1).
+
+### Sourcery review collaboration
+
+Round 1 (3 findings sur PR #230) : 1 security 🚨 (defensive URL fallback) + 2 typos français — tous fix dans commit fix-up `b117805` + threads résolus via GraphQL `resolveReviewThread` avant merge.
+
+### Tests + checks
+
+- **1381 tests passing** (+2 H1 sentry-scrubber invariants, +2 Sourcery defensive fallback invariants — 16 tests sentry-scrubber au total)
+- Type-check ✅ · Lint ✅ · Build ✅ 6.19s
+- 44/44 injection fixtures × 4 locales rejected
+- Règle 10 ADR-005 SATISFIED
+
+### Refs
+
+- ADR-005 step 7 (audit final triple) — gate Phase 7b CLOS
+- Rapport audit : `docs/audits/ai-tutor-v1-2026-05-16.md`
+- Linear THI-113 : Done auto-close
+- PRs Sprint 1 Phase 7b : #208, #222, #228, **#230**
+
+---
+
 ## 🔑 THI-112 — Onboarding AI Tutor (AiKeySetup + AiConsentModal + AiSettings + Privacy section) + score IA 9.1 → 9.3/10
 *15-16 mai 2026 · Phase 7b Sprint 1 étape 3/4 · session multi-jours, scope révisé senior co-décideur*
 
