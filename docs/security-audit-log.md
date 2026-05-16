@@ -200,21 +200,47 @@ Blockers avant LTI_ENABLED=true (PR #2+):
 
 ---
 
-## Audit: Supabase Database Advisors hardening — THI-180 (16 mai 2026)
+## Audit: Supabase Database Advisors hardening — THI-180 + completion 015 PUBLIC fix (16 mai 2026)
 
-**Date**: 16 mai 2026 ~17:00 CEST
-**Auditor**: Senior co-décideur reverse course post-Advisor flag
+**Date**: 16 mai 2026 ~17:00 CEST (initial) + 20:30 CEST (completion empirique)
+**Auditor**: Senior co-décideur reverse course post-Advisor flag + vérification empirique post-application
 **Trigger**: Cascade détection pendant audit LTI — Supabase Database Advisors flaggait 7 WARN findings pré-existants à THI-131
-**Outcome**: ✅ **7 WARN → 3 WARN** (post-application manuelle migration 014 + flip Dashboard "Leaked password protection")
+**Outcome**: ✅ **7 WARN → 3 WARN** (post-application migration 014 + 015 via Supabase CLI ; `auth_leaked_password_protection` reste WARN — non disponible sur free plan Supabase, accepté résiduel)
 
-### Findings traités
+### Findings traités (post-application live empirique)
 
 | Function | Flag | Action | Status |
 |---|---|---|---|
-| `public.handle_new_user()` | `anon_security_definer_function_executable` + `authenticated_*` | REVOKE EXECUTE FROM anon, authenticated (trigger only, safe) | ✅ Migration 014 (PR #237) |
-| `public.prevent_role_escalation()` | idem | REVOKE EXECUTE (trigger only, safe) | ✅ Migration 014 |
-| `public.rls_auto_enable()` | idem | REVOKE EXECUTE (admin helper, service_role conserve via inheritance) | ✅ Migration 014 |
-| `auth_leaked_password_protection` | check HaveIBeenPwned.org désactivé | Toggle ON dans Dashboard Auth → Settings | 🔜 Manuel @thierry post-merge |
+| `public.handle_new_user()` | `anon_security_definer_function_executable` + `authenticated_*` | REVOKE FROM anon, authenticated (014) + REVOKE FROM PUBLIC (015) | ✅ **Empiriquement fermé** (verified `has_function_privilege` = false) |
+| `public.prevent_role_escalation()` | idem | REVOKE FROM anon, authenticated (014) + REVOKE FROM PUBLIC (015) | ✅ Empiriquement fermé |
+| `public.rls_auto_enable()` | idem | REVOKE FROM anon, authenticated (014) + REVOKE FROM PUBLIC (015) | ✅ Empiriquement fermé (service_role conserve via superuser-equivalent bypass) |
+| `auth_leaked_password_protection` | check HaveIBeenPwned.org désactivé | **Non disponible sur free plan Supabase** | 🟡 **WARN résiduel accepté** (gated par plan tier — pas un défaut projet) |
+
+### Senior reverse course #2 — découverte PUBLIC grant
+
+Migration 014 avait `REVOKE EXECUTE FROM anon, authenticated` mais **n'a pas effectivement fermé la surface** :
+- PostgreSQL accorde `EXECUTE` à `PUBLIC` par défaut sur toute nouvelle fonction
+- anon + authenticated **héritent de PUBLIC**
+- `REVOKE FROM anon, authenticated` retire les grants explicites mais PUBLIC reste actif
+- `has_function_privilege('anon', 'public.<fn>()', 'EXECUTE')` retournait toujours `true` post-014
+
+Découvert empiriquement post-application via query SQL de vérification. Migration **015_revoke_execute_from_public.sql** ajoute le `REVOKE FROM PUBLIC` chirurgical sur les 3 fonctions trigger-only.
+
+**Verified live empirique** :
+```sql
+SELECT proname, has_function_privilege('anon', 'public.' || proname || '()', 'EXECUTE') AS anon_exec
+FROM pg_proc WHERE proname IN ('handle_new_user', 'prevent_role_escalation', 'rls_auto_enable')
+-- Result: anon_exec=false, auth_exec=false, service_exec=true ✅
+```
+
+RLS-essential functions (`get_my_role`, `get_my_institution_id`, `is_teacher_of_class`) **non touchées** par 015 — `anon_exec=true` + `auth_exec=true` préservé volontairement (sinon RLS USING clauses cassent). Tracker THI-182 (private schema migration) reste la solution structurelle long terme.
+
+**Validation post-application** :
+- 40 RBAC unit tests verts (no regression)
+- Suite totale 1405 pass / 20 skipped
+- Pattern leçon retenue : **PostgreSQL REVOKE doit toujours inclure PUBLIC** quand l'objectif est de fermer une surface, sinon le grant par défaut continue d'inheritance
+
+### Findings tracked (THI-182 Backlog Low)
 
 ### Findings tracked (THI-182 Backlog Low)
 
@@ -230,7 +256,7 @@ L'instinct naïf aurait révoqué en bloc les 6 fonctions. Vérification empiriq
 
 Migration `014_revoke_security_definer_rpc.sql` chirurgicale : revoke seulement sur les 3 trigger-only (s'exécutent sous le rôle de la transaction sans consulter GRANT). Idempotente multi-env via `DO $$ ... pg_proc check $$` blocks (suggestion Sourcery review). EXECUTE retention documentée par fonction.
 
-THI-182 (Backlog Low) trace le chantier structurel : `015_private_rls_helpers.sql` déplacera les 3 RLS-essential dans schema `private` non-exposé par PostgREST + update ~15 références. Effort 2-3h, hors deadline 10 juin.
+THI-182 (Backlog Low) trace le chantier structurel : déplacera les 3 RLS-essential dans schema `private` non-exposé par PostgREST + update ~15 références. Effort 2-3h, hors deadline 10 juin.
 
 ---
 
