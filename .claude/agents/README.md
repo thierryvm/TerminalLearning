@@ -1,10 +1,10 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 5 mai 2026
+> **Dernière mise à jour** : 16 mai 2026 (ajout `lti-auditor` MVP 10 checks pour Phase 7c LTI 1.3 — gate-zéro avant PR #236 THI-131)
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 
-Cet index liste les **12 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **15 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
 > **Référence cycle de vie** : ce README doit être mis à jour à chaque ajout/modification d'agent. Voir `maintenance_docs_checklist.md` (mémoire interne) section "Agents".
 
@@ -22,6 +22,7 @@ Cet index liste les **12 agents** spécialisés du projet, **quand les invoquer*
 | [`ui-auditor`](ui-auditor.md) | Haiku | ❌ | Avant PR composant UI | ✅ CRITICAL |
 | [`mobile-responsive-auditor`](mobile-responsive-auditor.md) | Sonnet | ❌ | Avant PR layout/nav/sidebar/drawer/forms/theme.css | ⚠️ verdict PASS/PASS_WITH_NOTES/BLOCK |
 | [`prompt-guardrail-auditor`](prompt-guardrail-auditor.md) | Haiku | ❌ | Avant PR `src/lib/ai/*` ou `src/app/components/ai/*` | ✅ CRITICAL |
+| [`lti-auditor`](lti-auditor.md) | **Opus 4.7** | ❌ | Avant PR `src/lib/lti/*`, `api/lti/*`, `supabase/migrations/*lti*` | ✅ CRITICAL/HIGH |
 | [`route-attack-auditor`](route-attack-auditor.md) | Sonnet | ❌ | Avant PR `api/*` ou nouvel endpoint | ✅ verdict release-ready |
 | [`vercel-firewall-auditor`](vercel-firewall-auditor.md) | Sonnet | ❌ | Avant release majeure ou modif firewall | ⚠️ WARN si rules cassées |
 | [`rbac-flow-tester`](rbac-flow-tester.md) | Haiku | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
@@ -126,6 +127,15 @@ sustain-auditor  # Quand l'agent sera instancié à partir de la spec
 **Créé** : 18 avril 2026 (THI-109) — gate-zero **AVANT** implémentation Tuteur IA (anti-pattern "tests à la fin"). Couvre : prompt injection, jailbreaks, prompt leaks, role enforcement, bypass sanitizer, XSS sur rendu réponse, fuite clé API.
 **Lié** : ADR-002 (BYOK 4-tiers), ADR-005 (V1 implementation), THI-110 (keyManager), THI-111 (panel + sanitizer + providers).
 **Premier audit gate-zero** : 2 mai 2026 ✅ CLEAN avant THI-111.
+
+### `lti-auditor` — Sécurité LTI 1.3 (10 critical checks MVP)
+
+**Modèle** : **Opus 4.7** (anti-Haiku discipline post-incident 24/04, crypto LTI = sécurité critique)
+**Créé** : 16 mai 2026 (THI-131 Phase 7c) — gate-zero **AVANT** implémentation Auth MVP. Pattern repris de `prompt-guardrail-auditor` (THI-109). Couvre 10 checks critiques sur la chaîne crypto LTI : RS256 signature (`jose@6`), iss allowlist (anti-SSRF pre-fetch JWKS), aud match, exp/iat clock tolerance ≤30s, nonce store replay collision, jti uniqueness window, kid matches JWKS, alg ≠ none, deployment_id présent, target_link_uri same-origin.
+**Lié** : ADR-001 (LTI-first positioning), ADR-006 (LTI 1.3 implementation), THI-131 (PR #236 Auth MVP), THI-180 (revoke SECURITY DEFINER trigger functions cascade), THI-182 (private schema RLS helpers follow-up).
+**Premier audit cascade** : 16 mai 2026 ✅ ship-ready PR #236 + 3 findings cleanup SPIKE intégrés AVANT merge (W1 `ignoreExpiration: true` + clé string littérale + JWKS jeté = famille CVE-2015-9235 alg confusion · R2 collision import path · W4 `X-Frame-Options: ALLOW` non-RFC retiré).
+**Évolutif** : méthode 7-couches post-V1 LTI (alignement `llm-security-auditor`) quand AGS grade passback + NRPS + Deep Linking arriveront.
+**Note** : effective-NEXT-session après PR de création (runtime CC ne voit pas l'agent dans la session qui le crée — 1ère baseline officielle au prochain démarrage).
 
 ### `route-attack-auditor` — HTTP/route attack surface
 

@@ -5,6 +5,64 @@
 
 ---
 
+## 🔐 THI-131 + THI-180 — Phase 7c LTI Auth MVP (1/N) + revoke trigger-only SECURITY DEFINER
+*16 mai 2026 · Sprint 2 étape 3/N*
+
+**Double livraison sécurité-critique** : ouverture du chantier LTI 1.3 Phase 7c (PR #236, première de 3) + hardening Supabase RPC exposure surface (PR #237) détectée en cascade par le nouvel agent `lti-auditor` créé dans la même session.
+
+### THI-131 — LTI 1.3 Auth MVP crypto core (Option D senior co-décideur)
+
+Posture trade-off matrix : ADR-006 prescrit ~4-6 semaines pour Phase 7c full (RS256 + JWK + AGS grade passback + NRPS + DL 2.0). Deadline 10 juin = ~3.5 semaines. Brainstorm avec @thierry → **Option D** : Auth MVP (1 semaine) + Profile Hub THI-42 + heatmaps admin THI-77/78 en parallèle, démo end-to-end le 10 juin (Canvas click → dashboard prof avec heatmap classe). AGS grade passback différé V1.1 Q3 2026, documenté publiquement dans `docs/lti-install.md`.
+
+**Crypto core** (`src/lib/lti/*`) :
+- `types.ts` — discriminated `LtiVerifyException` error model, full LTI 1.3 claim URIs typed
+- `nonceStore.ts` — in-memory best-effort replay store (10 min TTL, 10k entries cap, FIFO eviction)
+- `verifyJwt.ts` — pipeline `jose@6` strict : `createRemoteJWKSet` + `jwtVerify` avec `algorithms: ['RS256']`, `clockTolerance: 30s`, `requiredClaims: ['iat','exp','jti','sub']`. Allowlist `iss` validée **PRE-fetch JWKS** (anti-SSRF). Manual `iat` upper-bound check (jose ne valide pas `iat` futur). `target_link_uri` validé same-origin `terminallearning.dev` (anti open redirect). Replay protection 2 couches : nonceStore mémoire + DB UNIQUE(jti).
+
+**Tests** : `src/test/lti-verifyJwt.test.ts` — **19 tests crypto** verts (couvrant les 10 critical checks de l'agent `lti-auditor`) + suite totale **1405 pass / 20 skipped** (vs baseline 1386). `// @vitest-environment node` forcé pour le crypto (jose webapi vs jsdom TextEncoder shim incompatible). DI `jwksResolver` + `nonceStore` pour isolation tests.
+
+**Infra** (`supabase/migrations/013_lti_launches.sql`) : table write-only audit log + UNIQUE(jti) replay protection canonique au niveau DB + RLS service_role-only (zero policy). Application différée à PR #2 (endpoint integration).
+
+**Agent gate-zero** (`.claude/agents/lti-auditor.md`) : 10 critical checks documentés, modèle **Opus 4.7** (anti-Haiku discipline post-incident 24/04 corrigé en session après remarque @thierry).
+
+**Cleanup audit cascade** : l'agent a flaggé W1 + R2 + W4 sur le SPIKE existant :
+- `api/lti/launch.ts:170-187` exportait `verifyJwt()` inline avec `ignoreExpiration: true` + clé string littérale `'TODO_PHASE7C_PUBLIC_KEY'` passée à `jsonwebtoken.verify()` (famille CVE-2015-9235 alg confusion risk) + JWKS fetched et jeté. **Code mort dangereux + collision de nom** avec mon nouveau `src/lib/lti/verifyJwt.ts`. Supprimé dans cette PR.
+- `vercel.json` `X-Frame-Options: ALLOW` — valeur non-RFC, ignorée par browsers modernes. CSP `frame-ancestors` déjà en place couvre l'iframe LMS. Supprimé.
+
+**Deps** : `@vercel/node` `5.7.15 → 5.8.2` patch bump · `jose@^6.2.3` ajouté. H4-AI `jsonwebtoken` memo daté → 0 CVE active confirmée par `npm audit`. H2 `undici` 7 CVEs catalog documentées dans `docs/audits/lti-phase7c-deps-risk.md` (0 exploitable TL — allowlist iss + rate-limit + scrubber).
+
+**Discipline bypass token MCP respectée** : preview Vercel SSO protégée → règle 24/04 (incident bypass URL Chrome DevTools) tenue, validation faite via prod publique post-merge fast-forward + `curl` bash terminal (compliant, jamais MCP). Quand `x-vercel-protection-bypass` header n'a pas fonctionné en curl (token apparemment regénéré sans "Automation Bypass" enabled côté project), refus catégorique de tomber sur le query string fallback — exactement l'attaque vectorielle de l'incident.
+
+PR [#236](https://github.com/thierryvm/TerminalLearning/pull/236) · Closes [THI-131](https://linear.app/thierryvm/issue/THI-131).
+
+### THI-180 — Revoke EXECUTE on trigger-only SECURITY DEFINER (senior reverse course)
+
+Supabase Database Advisors avait flaggé **7 WARN findings** sur le projet (pré-existants à THI-131, détectés en cascade par l'audit). Premier réflexe : tout revoke. Senior reverse course après vérification empirique : sur les 6 fonctions `SECURITY DEFINER` exposées via `/rest/v1/rpc/*`, **3 sont invoquées dans ~15 RLS USING clauses** (`get_my_role`, `get_my_institution_id`, `is_teacher_of_class`). PostgreSQL exige `EXECUTE` du rôle appelant **même quand l'invocation passe par RLS** — revoke = `permission denied for function` sur toutes les SELECT protégées.
+
+Migration `014_revoke_security_definer_rpc.sql` chirurgicale : REVOKE seulement sur les **3 fonctions trigger-only** (`handle_new_user`, `prevent_role_escalation`, `rls_auto_enable`). Triggers s'exécutent sous le rôle de la transaction, pas besoin d'EXECUTE. Idempotent multi-env via `DO $$ ... pg_proc check $$` blocks (suggestion Sourcery review). EXECUTE retention documentée par fonction (postgres only / postgres + service_role pour `rls_auto_enable`).
+
+Les 3 fonctions RLS-essential restantes → ticket **THI-182** (Backlog Low) : migration `015_private_rls_helpers.sql` qui déplace les helpers vers schema `private` non-exposé par PostgREST + update ~15 références RLS. Effort 2-3h + tests RBAC complets, hors scope sprint 10 juin.
+
+**Validation** : 40 RBAC tests verts + suite totale 1405/1405. Migration appliquée manuellement par @thierry via Supabase Dashboard SQL Editor (historic project state : `schema_migrations` table jamais peuplée — migrations 001-014 appliquées via MCP `apply_migration`, `supabase db push` casserait).
+
+**Pour @thierry post-merge** : (1) appliquer `014_revoke_security_definer_rpc.sql` via Dashboard SQL Editor (5 secondes, idempotent) · (2) flip "Leaked password protection" ON dans Auth → Settings (1 clic, ferme le 4ᵉ WARN). Net result : **7 WARN → 3 WARN** (tracked THI-182 structural fix).
+
+PR [#237](https://github.com/thierryvm/TerminalLearning/pull/237) · Closes [THI-180](https://linear.app/thierryvm/issue/THI-180) · Backlog [THI-182](https://linear.app/thierryvm/issue/THI-182).
+
+### Métriques session
+
+| Métrique | Avant session | Après session |
+|---|---|---|
+| Tests Vitest | 1386 pass / 20 skipped | **1405 pass** / 20 skipped (+19 crypto LTI) |
+| Landing chunk gzip | 7.33 kB | **7.33 kB stable** (gain THI-118 préservé) |
+| Supabase advisors WARN | 7 | **3** (post-apply migration 014 + flip dashboard) |
+| Lib LTI crypto | 0 fichier | 3 fichiers (`types.ts` + `nonceStore.ts` + `verifyJwt.ts`, 504 lignes) |
+| Agents `.claude/agents/` | 13 | **14** (nouvel agent `lti-auditor` MVP 10 checks, modèle Opus 4.7) |
+| ADRs alignés | ADR-006 SPIKE | ADR-006 implémentation V1 démarrée |
+| Tickets backlog créés | — | THI-180 (Done) + THI-182 (Backlog Low) |
+
+---
+
 ## 🧹 THI-153 — Unified destructive red palette + sonner cleanup + brand consistency fix
 *16 mai 2026 · Sprint 2 étape 2/N*
 
