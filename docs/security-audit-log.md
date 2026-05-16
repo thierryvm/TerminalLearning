@@ -3,6 +3,237 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+---
+
+## Audit: Delta post-PR #236 (THI-131) + PR #237 (THI-180) -- 16 mai 2026
+
+**Date**: 16 mai 2026
+**Auditor**: agent security-auditor (Opus 4.7, black-hat posture, delta-scoped)
+**Commit baseline**: HEAD e6adcd5
+**PRs in scope**: #236 (THI-131) + #237 (THI-180)
+**Baseline pre-session**: 8.8/10 (post-THI-111 PR #188)
+**Standards**: OWASP Top 10 (2021) - OWASP API Sec (2023) - CSP L3 - 2026 norms
+
+### Scope audite
+
+| Fichier | Statut |
+|---|---|
+| supabase/migrations/013_lti_launches.sql | Audite |
+| supabase/migrations/014_revoke_security_definer_rpc.sql | Audite |
+| api/lti/launch.ts | Audite |
+| vercel.json | Audite (diff LTI block) |
+| package.json + package-lock.json | Audite |
+| src/lib/lti/{types,nonceStore,verifyJwt}.ts | Audite |
+
+---
+
+### CRITICAL -- 0
+
+Aucun finding critique.
+
+---
+
+### HIGH -- 1
+
+**[H1] Supply chain -- undici@5.28.4 bundle dans @vercel/node@5.8.2 (7 CVE HIGH)**
+
+- Surface: @vercel/node@5.8.2 en devDependencies (runtime Vercel Node.js Functions)
+- Vecteur: undici@5.28.4 bundlee. npm audit: 7 CVE HIGH actifs: GHSA-c76h-2ccp-4975 (random values), GHSA-g9mf-h72j-4rw9 (decompression DoS), GHSA-cxrh-j4jr-qwg3 (bad cert DoS), GHSA-2mjp-6q6p-2qxm (HTTP smuggling), GHSA-vrm6-8vpv-qv8q (WebSocket memory), GHSA-v9p9-hfj2-hcw8 (WebSocket exception), GHSA-4992-7rv2-5pvq (CRLF injection via upgrade).
+- Impact: GHSA-2mjp-6q6p-2qxm + GHSA-4992-7rv2-5pvq exploitables sur Vercel Functions effectuant requetes HTTP sortantes (JWKS fetch verifyJwt.ts, import @sentry/node lazy-load).
+- Mitigation active: LTI_ENABLED=false gate retourne 503 avant toute logique JWKS. Surface inactive tant que flag reste false.
+- Contexte: npm audit fix --force downgraderait vers @vercel/node@4.0.0 (breaking). Attendre patch upstream undici >=6.24.0.
+- Remediation: Creer THI-{next}. Gate non-negociable: LTI_ENABLED ne passe pas a true tant que H1 non resolu.
+
+---
+
+### MEDIUM -- 2
+
+**[M1] Dual ALLOWED_ISSUERS -- drift entre api/lti/launch.ts et src/lib/lti/verifyJwt.ts**
+
+- Surface: api/lti/launch.ts:80 definit son propre Set local independant de src/lib/lti/verifyJwt.ts:61.
+- Vecteur: Ajout LMS dans verifyJwt.ts oublie dans launch.ts = 400 errones pour tokens valides. Drift inverse post-PR #2 = issuer non valide cote crypto accepte.
+- Impact actuel: LOW (LTI_ENABLED=false). Impact post-PR #2: MEDIUM si drift non resolu.
+- Remediation PR #2: Supprimer const ALLOWED_ISSUERS dans launch.ts, importer depuis verifyJwt.ts. Si bundling interdit, creer api/lti/_lti-config.ts. Test CI obligatoire.
+
+**[M2] PII dans Sentry contexts -- context_id + roles exposes**
+
+- Surface: api/lti/launch.ts:233 + :255 -- contexts: { lti_launch: { ...log } } spread inclut context_id et roles.
+- Vecteur: context_id = identifiant institutionnel RGPD. Croiser events Sentry pour meme sub reconstitue parcours scolaire.
+- Mitigation existante: api/sentry-tunnel.ts scrube contexts (THI-120, PR #230). Risque residuel contenu.
+- Remediation: Remplacer spread par contexts: { lti_launch: { event: log.event, timestamp: log.timestamp } }.
+
+---
+
+### LOW / INFO -- 5
+
+**[L1] lti_launches.client_ip -- IP brute sans TTL (dette RGPD)**
+Surface: 013_lti_launches.sql:41. Remediation non urgent: hash pg_crypto ou purge automatique. Tracker THI-182.
+
+**[L2] verifyJwt.ts ne valide pas le claim nonce LTI 1.3**
+Surface: types.ts:36 declare nonce? mais verifyJwt.ts ne le valide pas. Non-bloquant (protection via jti C5). Documenter comme TODO PR #2.
+
+**[L3] rls_auto_enable() retient EXECUTE pour service_role**
+Surface: 014_revoke_security_definer_rpc.sql:31-35. Volontaire et documente. Exploitabilite faible. THI-182 est la cloture.
+
+**[L4] GitHub Actions -- SHA pins confirmes OK**
+actions/checkout@34e114..., actions/setup-node@49933e..., gitleaks-action@dcedce.... Aucun tag mutable.
+
+**[L5] jsonwebtoken@9.0.3 en production dependencies**
+package.json:48 -- residuel SPIKE. npm audit: 0 CVE actif. PR #2 doit supprimer ou deplacer en devDependencies.
+
+---
+
+### Positifs notables (zero finding)
+
+| Surface | Verdict |
+|---|---|
+| 013 RLS zero-policy | enable row level security sans policy = zero acces anon/authenticated. |
+| 013 UNIQUE(jti) replay | Double defense: nonceStore in-memory + UNIQUE DB cold-start resilience. |
+| 014 idempotency DO blocks | Verification pg_proc avant REVOKE = migration re-runnable. |
+| 014 3 fonctions epargnees documentees | Distinction trigger-only vs RLS-invoked documentee, pointeur THI-182. |
+| vercel.json X-Frame-Options ALLOW retire | Bloc LTI sans header RFC-invalide. CSP frame-ancestors LMS reste. |
+| vercel.json wildcard frame-ancestors none | Routes non-LTI protegees contre clickjacking. |
+| LTI_ENABLED=false gate | 503 avant tout import lourd. 503 path O(1). |
+| Rate limit x-vercel-forwarded-for | Header non-spoofable Vercel edge. |
+| jsonwebtoken non importe en runtime | Imports: @vercel/node (types) + @sentry/node (lazy apres flag). |
+| verifyJwt.ts RS256 strict | algorithms RS256, jose@6 bloque bypass alg. |
+| verifyJwt.ts SSRF defendu | Allowlist validee AVANT tout fetch reseau. |
+| verifyJwt.ts iat future valide | Verification manuelle ligne 247 ferme replay JWT indefini. |
+| nonceStore.ts TTL adequat | 10 min > 5 min JWT LTI standard. |
+| Migrations SQL zero credential | Aucun password, token, crypt() litteral dans 013 + 014. |
+| Git history migrations propre | Historique des 2 nouveaux fichiers: aucun credential. |
+
+---
+
+### Score
+
+| Metrique | Valeur |
+|---|---|
+| Baseline pre-session | 8.8/10 |
+| Delta PR #236 + #237 | +0.0 (H1 undici non resolu compense gains architecturaux) |
+| **Score post-audit** | **8.8/10 maintenu** |
+| Tendance | Stable -- surface LTI bien concue, bloquee par supply chain undici hors controle direct |
+
+Gains +0.3 (REVOKE trigger functions, UNIQUE jti, SSRF defendu, X-Frame-Options ALLOW retire, idempotency DO blocks) / Pertes -0.3 (H1 undici 7 HIGH CVEs, M1 dual ALLOWED_ISSUERS drift, M2 PII Sentry contexts).
+
+---
+
+### Verdict release-ready
+
+**SHIP AVEC MITIGATIONS** (LTI_ENABLED=false gate maintenu)
+
+Code livre dans PR #236 + #237 correctement structure pour un SPIKE gate. Surfaces cryptographiques (verifyJwt.ts, nonceStore, DB UNIQUE jti) solides. Migration 014 propre et idempotente.
+
+Blockers avant LTI_ENABLED=true (PR #2+):
+1. H1 -- undici@5.28.4: surveiller @vercel/node patch
+2. M1 -- fusionner ALLOWED_ISSUERS en source de verite unique
+3. M2 -- nettoyer contexts.lti_launch Sentry
+4. L5 -- supprimer jsonwebtoken des production deps
+
+---
+
+### 3 actions prioritaires
+
+1. **[P1 -- H1 gate]** Creer THI-{next} pour monitorer @vercel/node bump undici >=6.24.0. Ajouter dans docs/lti-install.md: LTI_ENABLED reste false tant que H1 non resolu. Gate non-negociable.
+
+2. **[P2 -- M1 avant PR #2]** Supprimer const ALLOWED_ISSUERS de api/lti/launch.ts, importer depuis src/lib/lti/verifyJwt.ts (ou api/lti/_lti-config.ts si bundling interdit). Test CI: issuer dans un seul des deux Sets = build echoue.
+
+3. **[P3 -- M2 avant PR #2]** Remplacer contexts: { lti_launch: { ...log } } par contexts: { lti_launch: { event: log.event, timestamp: log.timestamp } } dans les deux captureMessage/captureException de api/lti/launch.ts.
+
+---
+
+### Linear sync
+
+- THI-131 -> Done (PR #236 merged)
+- THI-180 -> Done (PR #237 merged)
+- THI-{next} a creer: tracker H1 undici supply chain gate LTI_ENABLED
+- THI-182 (existant): L3 rls_auto_enable schema private -- non modifie par cet audit
+
+**Last Updated**: 16 mai 2026
+**Next Review**: Pre-PR #2 LTI (avant activation LTI_ENABLED=true)
+
+
+## Audit: LTI Phase 7c Auth MVP — cascade `lti-auditor` + cleanup SPIKE (16 mai 2026)
+
+**Date**: 16 mai 2026 ~15:00 CEST
+**Auditor**: agent `lti-auditor` (Opus 4.7, MVP 10 checks critiques — gate-zéro Phase 7c, pattern THI-109)
+**Trigger**: Audit cascade pendant PR #236 (THI-131 LTI 1.3 Auth MVP, première PR de la séquence Phase 7c) + détection d'anti-patterns dormants dans le SPIKE existant `api/lti/launch.ts`
+**Outcome**: ✅ **Verdict ship-ready PR #236** + 3 findings cleanup intégrés dans la même PR (anti-patterns SPIKE supprimés AVANT merge)
+
+### 10 critical checks couverts par 19 tests Vitest (`src/test/lti-verifyJwt.test.ts`)
+
+| Check | Status | Couverture |
+|---|---|---|
+| C1 — RS256 signature verification | ✅ | `algorithms: ['RS256']` strict via `jose.jwtVerify` + tamper test |
+| C2 — `iss` whitelist | ✅ | Allowlist hardcodée validée **PRE-fetch JWKS** (anti-SSRF) |
+| C3 — `aud` match | ✅ | Strict equality avec `TL_CLIENT_ID` env-provided |
+| H4 — exp/iat strict ≤30s skew | ✅ | `clockTolerance: 30s` + manual `iat` upper-bound check (jose ne valide pas iat futur par défaut) |
+| C5 — nonce store collision | ✅ | In-memory 10min TTL + DB UNIQUE(jti) defense-in-depth |
+| H6 — jti uniqueness window | ✅ | TTL ≥ JWT exp typique (LTI 1.3 = 5min) |
+| H7 — kid matches JWKS | ✅ | `createRemoteJWKSet` natif jose (cooldown 30s + timeout 5s) |
+| C8 — alg ≠ none | ✅ | `algorithms` allowlist strict — UnsecuredJWT rejected |
+| H9 — deployment_id présent | ✅ | LTI claim `.../deployment_id` requis non-vide |
+| C10 — target_link_uri same-origin | ✅ | `new URL(claim).origin === 'https://terminallearning.dev'` |
+
+### Findings cleanup (intégrés dans PR #236, anti-patterns SPIKE dormants détectés en cascade)
+
+| # | Sévérité | Status | Fix |
+|---|---|---|---|
+| W1 | HIGH | ✅ Fixed in PR #236 | `api/lti/launch.ts:170-187` exportait `verifyJwt()` inline avec `ignoreExpiration: true` + clé string littérale `'TODO_PHASE7C_PUBLIC_KEY'` passée à `jsonwebtoken.verify()` (famille CVE-2015-9235 alg confusion) + JWKS jeté. **Code mort dangereux + collision de nom** avec nouveau `src/lib/lti/verifyJwt.ts`. Fonction supprimée, helpers `getOidcConfig`/`getJwkSet`/`oidcConfigCache` supprimés. |
+| R2 | MEDIUM | ✅ Fixed in PR #236 | Collision import path : `import { verifyJwt }` pouvait résoudre soit le SPIKE dangereux soit le nouveau code. Résolu par suppression W1. |
+| W4 | LOW | ✅ Fixed in PR #236 | `vercel.json` `/(lti\|api/lti)/(.*)` exposait `X-Frame-Options: ALLOW` — valeur **non-RFC**, ignorée par browsers modernes, polluait audit SecurityHeaders.com. CSP `frame-ancestors https://*.instructure.com/moodlecloud.com/smartschool.be` couvre déjà l'iframe LMS. Header retiré. |
+
+### Senior reverse course capturé
+
+- **Modèle correction** : agent créé initialement avec `model: haiku`. @thierry a rappelé l'incident 24/04/2026 (Haiku catastrophe). Crypto LTI = sécurité critique = jamais Haiku. **Modèle remonté à `opus`** dans la même PR. Garde-fou pinning `.claude/settings.local.json` protège la session courante mais frontmatter agent = couche distincte à surveiller indépendamment.
+- **`iat` upper-bound check manuel** : jose ne valide pas iat futur par défaut. Sans check explicite, un attacker forgeant un JWT avec iat distant futur garde son replay valide indéfiniment après cleanup nonce store. Ajouté à `src/lib/lti/verifyJwt.ts:152-160`.
+
+### Test coverage + ship verdict
+
+- 19 nouveaux tests crypto (`// @vitest-environment node` forcé — jose webapi vs jsdom TextEncoder shim)
+- Suite totale **1405 pass / 20 skipped** (vs baseline 1386, +19)
+- Build prod : Landing chunk 7.33 kB gzip stable
+- `LTI_ENABLED` reste à `false` en prod (zéro surface activée par cette PR)
+- Migration `013_lti_launches.sql` versionnée mais application différée à PR #2 (endpoint integration)
+
+**Prochain audit `lti-auditor`** : 1ère baseline officielle post-merge formelle au prochain démarrage CC (l'agent est `effective-NEXT-session` après sa propre PR de création).
+
+---
+
+## Audit: Supabase Database Advisors hardening — THI-180 (16 mai 2026)
+
+**Date**: 16 mai 2026 ~17:00 CEST
+**Auditor**: Senior co-décideur reverse course post-Advisor flag
+**Trigger**: Cascade détection pendant audit LTI — Supabase Database Advisors flaggait 7 WARN findings pré-existants à THI-131
+**Outcome**: ✅ **7 WARN → 3 WARN** (post-application manuelle migration 014 + flip Dashboard "Leaked password protection")
+
+### Findings traités
+
+| Function | Flag | Action | Status |
+|---|---|---|---|
+| `public.handle_new_user()` | `anon_security_definer_function_executable` + `authenticated_*` | REVOKE EXECUTE FROM anon, authenticated (trigger only, safe) | ✅ Migration 014 (PR #237) |
+| `public.prevent_role_escalation()` | idem | REVOKE EXECUTE (trigger only, safe) | ✅ Migration 014 |
+| `public.rls_auto_enable()` | idem | REVOKE EXECUTE (admin helper, service_role conserve via inheritance) | ✅ Migration 014 |
+| `auth_leaked_password_protection` | check HaveIBeenPwned.org désactivé | Toggle ON dans Dashboard Auth → Settings | 🔜 Manuel @thierry post-merge |
+
+### Findings tracked (THI-182 Backlog Low)
+
+| Function | Pourquoi non traité dans THI-180 |
+|---|---|
+| `public.get_my_role()` | Invoquée dans ~15 RLS USING clauses — REVOKE = `permission denied for function` régression |
+| `public.get_my_institution_id()` | Idem RLS-essential |
+| `public.is_teacher_of_class(uuid)` | Idem RLS-essential |
+
+### Senior reverse course capturé
+
+L'instinct naïf aurait révoqué en bloc les 6 fonctions. Vérification empirique : **3 sont invoquées depuis ~15 USING clauses RLS**. PostgreSQL exige `EXECUTE` du rôle appelant **même quand l'invocation passe par RLS** (USING expression sous le rôle de l'utilisateur, pas owner). REVOKE = casse toutes les SELECT protégées avec `permission denied for function`.
+
+Migration `014_revoke_security_definer_rpc.sql` chirurgicale : revoke seulement sur les 3 trigger-only (s'exécutent sous le rôle de la transaction sans consulter GRANT). Idempotente multi-env via `DO $$ ... pg_proc check $$` blocks (suggestion Sourcery review). EXECUTE retention documentée par fonction.
+
+THI-182 (Backlog Low) trace le chantier structurel : `015_private_rls_helpers.sql` déplacera les 3 RLS-essential dans schema `private` non-exposé par PostgREST + update ~15 références. Effort 2-3h, hors deadline 10 juin.
+
+---
+
 ## Audit: Re-baseline `llm-security-auditor` post-THI-112 (16 mai 2026)
 
 **Date**: 16 mai 2026 ~00:00 UTC (01:00 CEST)
