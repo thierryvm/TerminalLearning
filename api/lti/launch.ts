@@ -124,67 +124,17 @@ function setCorsHeaders(res: VercelResponse): void {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-/**
- * Fetch OIDC configuration from LMS to get public key
- * Caches result for 24h to avoid repeated fetches
- */
-const oidcConfigCache = new Map<string, { config: Record<string, unknown>; expires: number }>();
-
-async function getOidcConfig(issuer: string): Promise<Record<string, unknown>> {
-  const cached = oidcConfigCache.get(issuer);
-  if (cached && cached.expires > Date.now()) {
-    return cached.config;
-  }
-
-  const configUrl = `${issuer}/.well-known/openid-configuration`;
-  const response = await fetch(configUrl, { method: 'GET' });
-  if (!response.ok) {
-    throw new Error(`OIDC config fetch failed: ${response.status}`);
-  }
-  const config = (await response.json()) as Record<string, unknown>;
-
-  oidcConfigCache.set(issuer, {
-    config,
-    expires: Date.now() + 24 * 60 * 60 * 1000,
-  });
-
-  return config;
-}
-
-async function getJwkSet(jwksUri: string): Promise<unknown> {
-  const response = await fetch(jwksUri, { method: 'GET' });
-  if (!response.ok) {
-    throw new Error(`JWKS fetch failed: ${response.status}`);
-  }
-  return await response.json();
-}
-
-/**
- * Verify and decode JWT — Phase 7c (not called in SPIKE phase, see THI-133 feature flag)
- * RS256 only per LTI 1.3 spec. No HS256 (security-auditor H5 fix).
- *
- * Lazy-loads `jsonwebtoken` to keep the cold-start lightweight when LTI_ENABLED=false
- * (THI-134). Exported so noUnusedLocals does not flag it; consumers will pass through
- * the handler in Phase 7c once `verifyJwt()` actually validates RS256 signatures.
- */
-export async function verifyJwt(token: string, issuer: string): Promise<JwtClaims> {
-  const oidcConfig = await getOidcConfig(issuer);
-  if (!oidcConfig.jwks_uri) {
-    throw new Error('OIDC config missing jwks_uri');
-  }
-
-  void (await getJwkSet(oidcConfig.jwks_uri as string));
-
-  // Lazy-load jsonwebtoken (heavy import, can crash Node.js cold-start on Vercel)
-  const { verify } = await import('jsonwebtoken');
-
-  // TODO Phase 7c: extract correct public key from jwkSet matching kid claim
-  return verify(token, 'TODO_PHASE7C_PUBLIC_KEY', {
-    issuer,
-    algorithms: ['RS256'], // LTI 1.3 mandate
-    ignoreExpiration: true, // SPIKE only — Phase 7c will set false
-  }) as JwtClaims;
-}
+// THI-131 cleanup: the SPIKE `verifyJwt()`, `getOidcConfig()`, `getJwkSet()`,
+// and `oidcConfigCache` previously defined here have been REMOVED.
+//
+// Why: they exposed `ignoreExpiration: true` + a string-literal "public key"
+// passed to `jsonwebtoken.verify()` (alg confusion risk), and the function
+// `verifyJwt` collided with the new authoritative implementation at
+// `src/lib/lti/verifyJwt.ts` (jose@6 — strict RS256, JWKS, replay store).
+// PR #2 will wire the SPIKE handler below to call the new verifier; for V1
+// PR #1 the endpoint stays SPIKE-gated by `LTI_ENABLED=false` (returns 503).
+//
+// Detected by `.claude/agents/lti-auditor.md` audit on this branch (W1 + R2).
 
 function mapLtiRoles(ltiRoles: string[]): string[] {
   const roleMap: { [key: string]: string } = {

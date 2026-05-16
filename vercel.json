@@ -21,10 +21,6 @@
           "value": "nosniff"
         },
         {
-          "key": "X-Frame-Options",
-          "value": "ALLOW"
-        },
-        {
           "key": "X-XSS-Protection",
           "value": "0"
         },
