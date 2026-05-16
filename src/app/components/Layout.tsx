@@ -21,7 +21,7 @@ export function Layout() {
         {/* Mobile top bar */}
         <div className="lg:hidden shrink-0 h-14 border-b border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] flex items-center gap-3 px-3">
           <MenuButton onClick={() => setSidebarOpen(true)} />
-          <span className="text-sm text-[var(--github-text-primary)] font-mono">Terminal Master</span>
+          <span className="text-sm text-[var(--github-text-primary)] font-mono">Terminal Learning</span>
         </div>
 
         <main className="flex-1 overflow-y-auto min-h-0">

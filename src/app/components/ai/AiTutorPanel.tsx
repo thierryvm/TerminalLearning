@@ -351,7 +351,7 @@ function ErrorBanner({ code, message }: { code: string; message: string }) {
   return (
     <div
       role="alert"
-      className="border-b border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400"
+      className="border-b border-[var(--github-red)]/30 bg-[var(--github-red)]/10 px-3 py-2 text-xs text-[var(--github-red)]"
     >
       <strong className="font-semibold">{code}</strong> — {message}
     </div>

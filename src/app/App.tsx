@@ -16,7 +16,7 @@ function FallbackUI() {
   return (
     <div className="min-h-dvh bg-[var(--github-bg)] flex items-center justify-center text-[var(--github-text-primary)] font-mono">
       <div className="text-center space-y-4">
-        <p className="text-[#f85149] text-lg">Une erreur inattendue s'est produite.</p>
+        <p className="text-[var(--github-red)] text-lg">Une erreur inattendue s'est produite.</p>
         <Button
           variant="outline"
           onClick={() => window.location.reload()}

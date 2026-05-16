@@ -272,7 +272,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
                 <span className="text-[var(--github-text-primary)] break-all">{line.text}</span>
               </div>
             ) : line.type === 'error' ? (
-              <div className="text-[#f85149]">{line.text}</div>
+              <div className="text-[var(--github-red)]">{line.text}</div>
             ) : line.type === 'success' ? (
               <div className="text-[#3fb950]">{line.text}</div>
             ) : line.type === 'info' ? (

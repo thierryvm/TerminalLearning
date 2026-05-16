@@ -98,6 +98,16 @@
   --github-subtle: #484f58;
   --github-accent: #238636;
   --github-accent-hover: #2ea043;
+  /* THI-153 — single source of truth for the GitHub-themed danger
+   * color (logout, errors, destructive actions). Modern Tailwind v4
+   * supports opacity modifiers on arbitrary values, so usage in
+   * components looks like `text-[var(--github-red)]` and
+   * `bg-[var(--github-red)]/10`. Replaces the `#f85149` literal that
+   * was duplicated across UserMenu, LoginModal, TerminalEmulator,
+   * App.tsx. The Tailwind `red-*` palette in pedagogical components
+   * (Dashboard processus category, CommandReference, level-5 badge)
+   * is intentional and stays. */
+  --github-red: #f85149;
 }
 
 @theme inline {

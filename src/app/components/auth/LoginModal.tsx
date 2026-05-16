@@ -211,7 +211,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               />
 
               {error && (
-                <p className="text-[#f85149] text-xs font-mono">{error}</p>
+                <p className="text-[var(--github-red)] text-xs font-mono">{error}</p>
               )}
 
               <Button
