@@ -41,6 +41,19 @@ interface ProgressContextValue {
 // and offline performance. See /privacy for user-facing disclosure.
 const STORAGE_KEY = 'terminal-master-progress';
 
+// THI-186 (security fix) : tracks which "owner" wrote the current localStorage state.
+//   • `null` (unset) : fresh browser / never touched
+//   • `GUEST_OWNER`  : last writer was an unauthenticated guest session
+//   • `<userId>`     : last writer was an authenticated user with that Supabase user id
+//
+// At auth boundary transitions (login as a different user, logout, or page reload
+// after a previously-authenticated session expired) we clear the local cache to
+// prevent (a) reading another user's progress as a guest and (b) merging another
+// user's progress into the newly-signed-in account's remote table via the
+// `mergeProgress + upsert` path.
+const STORAGE_OWNER_KEY = 'terminal-master-progress-owner';
+export const GUEST_OWNER = '__guest__';
+
 function loadProgress(): ProgressState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -52,6 +65,34 @@ function loadProgress(): ProgressState {
 function saveProgress(state: ProgressState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
+function getStoredOwner(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setStoredOwner(ownerId: string): void {
+  try {
+    localStorage.setItem(STORAGE_OWNER_KEY, ownerId);
+  } catch {}
+}
+
+/**
+ * Drops the cached progress AND the owner marker. Called when the local cache
+ * could leak between accounts (sign-out, account switch, stale-session guest).
+ *
+ * Note: doesn't touch the remote `progress` table — Supabase RLS already
+ * isolates per-user rows. This is purely about the client-side cache.
+ */
+function clearProgressLocalCache(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_OWNER_KEY);
   } catch {}
 }
 
@@ -76,6 +117,12 @@ type CurriculumBundle = {
 };
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
+  // Initial state: we cannot yet tell here whether a Supabase session is active
+  // — `onAuthStateChange` will fire INITIAL_SESSION shortly after mount and
+  // either confirm the stored owner (keep cache) or detect a stale-session
+  // mismatch and clear (THI-186). We optimistically read the cache so the
+  // landing render isn't delayed by a network round-trip; if the owner check
+  // later rejects it we just re-set to empty (single re-render, no flash).
   const [progress, setProgress] = useState<ProgressState>(loadProgress);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
   const [currBundle, setCurrBundle] = useState<CurriculumBundle | null>(null);
@@ -185,6 +232,26 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           activeController = null;
           activeUserId = null;
           setSyncStatus('local');
+
+          // THI-186 security fix : if the cache was owned by an authenticated
+          // user, clear it. Otherwise we'd render the previous user's progress
+          // in guest mode AND, on the next sign-in by a different account,
+          // upsert it into that account's remote table (cross-account data
+          // contamination via mergeProgress + getDelta).
+          //
+          // Pure guest sessions (owner = GUEST_OWNER or null) are preserved so
+          // a disconnected user keeps their local progress until they sign in.
+          //
+          // Triggers on:
+          //   - SIGNED_OUT          : user explicitly signed out
+          //   - INITIAL_SESSION (no user) where stored owner was an authenticated id
+          //     → previously-authenticated session expired or cookies cleared.
+          const storedOwner = getStoredOwner();
+          if (storedOwner && storedOwner !== GUEST_OWNER) {
+            clearProgressLocalCache();
+            setProgress({ completedLessons: {} });
+            setStoredOwner(GUEST_OWNER);
+          }
           return;
         }
 
@@ -194,6 +261,28 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN') return;
 
         const userId = session.user.id;
+
+        // THI-186 security fix : if the cached owner is a *different* authenticated
+        // user, we must clear before sync. Otherwise:
+        //   - mergeProgress(user A's local, user B's remote) keeps A's lessons
+        //     in the merged state shown to B (read leak)
+        //   - getDelta returns A's lessons not in B's remote
+        //   - upsert writes A's lessons into B's progress table (write leak)
+        //
+        // A previously-stored GUEST_OWNER state is intentionally kept and merged
+        // into the signing-in user — this preserves the legitimate "complete a
+        // few lessons as guest, then sign up" UX.
+        const storedOwnerNow = getStoredOwner();
+        if (
+          storedOwnerNow &&
+          storedOwnerNow !== GUEST_OWNER &&
+          storedOwnerNow !== userId
+        ) {
+          clearProgressLocalCache();
+          setProgress({ completedLessons: {} });
+        }
+        setStoredOwner(userId);
+
         setTimeout(() => {
           if (!cancelled) void syncWithRemote(userId);
         }, 0);
@@ -226,16 +315,26 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       };
       saveProgress(next);
 
+      // THI-186 security fix : ensure the owner marker is set so the next
+      // session boundary check (sign-in / sign-out) can tell whether this
+      // cache belongs to a guest or to a specific authenticated user.
+      // If no owner is set yet, this means we are in a guest session.
+      if (!getStoredOwner()) setStoredOwner(GUEST_OWNER);
+
       // Fire-and-forget upsert — supabaseLoader is already resolved by the time
       // a user completes a lesson (loads within ~200 ms of app mount).
       supabaseLoader.then(({ supabase }) => {
         if (!supabase) return;
         supabase.auth.getSession().then(({ data }) => {
           if (!data.session?.user) return;
+          const userId = data.session.user.id;
+          // Promote the owner marker now that we know who is authenticated —
+          // any future sign-out / account switch will correctly clear.
+          setStoredOwner(userId);
           supabase
             .from('progress')
             .upsert(
-              { user_id: data.session.user.id, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
+              { user_id: userId, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
               { onConflict: 'user_id,lesson_id' }
             )
             .then(({ error }) => {
@@ -280,6 +379,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     const empty: ProgressState = { completedLessons: {} };
     setProgress(empty);
     saveProgress(empty);
+    // THI-186 : an explicit reset wipes the owner too — the next interaction
+    // (guest action or sign-in) will re-stamp the owner correctly. This avoids
+    // a stale owner pointing at a now-empty cache.
+    try {
+      localStorage.removeItem(STORAGE_OWNER_KEY);
+    } catch {}
   }, []);
 
   const totalCompleted = Object.values(progress.completedLessons).filter(Boolean).length;
