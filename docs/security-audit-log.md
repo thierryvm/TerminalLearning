@@ -3,6 +3,75 @@
 Record of security findings, fixes, and protocol improvements for Terminal Learning.
 This log is updated after each security audit and serves as institutional memory.
 
+## Audit: Re-baseline `llm-security-auditor` post-THI-112 (16 mai 2026)
+
+**Date**: 16 mai 2026 ~00:00 UTC (01:00 CEST)
+**Auditor**: agent `llm-security-auditor` (Opus 4.7, méthode 7 couches Evidence confidence framework)
+**Trigger**: Re-baseline post-merge PR #228 (THI-112 — onboarding AI Tutor: AiKeySetup + AiConsentModal + AiSettings + Privacy section + M3-AI consent versioning fix)
+**Outcome**: ✅ **Score 9.3/10 CONFIRMÉ** — delta +0.2 vs 9.1/10 baseline 10 mai (cible 9.25 dépassée) · M3-AI VERIFIED fermé · 0 CRITICAL · 0 HIGH · 0 MEDIUM · 2 LOW non bloquants
+
+### Score IA security re-baseline post-THI-112
+
+| Métrique | Valeur |
+|---|---|
+| **`llm-security-auditor` post-THI-112** | **9.3/10** |
+| Delta vs 9.1/10 (10 mai PM) | **+0.2 confirmé** (cible 9.25 dépassée) |
+| Trajectoire | 8.7 (matin baseline) → 9.0 (post-#220) → 9.1 (post-#222) → **9.3 (post-#228)** |
+| Verdict ship-readiness | **SHIP-READY** sur surface AI Tutor V1 + onboarding |
+
+### Findings closed (delta +0.2)
+
+| # | Sévérité | Confidence | PR fix | Status |
+|---|---|---|---|---|
+| M3-AI | MEDIUM | VERIFIED | ✅ #228 | Consent storage refactor `'true'` → JSON `{version, acceptedAt, expiresAt}` + TTL 365j + migration legacy + 8 invariants tests (`consent.test.ts`) |
+
+### Améliorations OWASP LLM Top 10
+
+- **LLM06 Sensitive Info Disclosure** : renforcé — UX consent visible (date, expiry, jours restants, bouton révocation) sur `/app/settings`
+- **LLM02 Insecure Output Handling** : AiSettings n'affiche **jamais** la clé en clair, même pas en masked tail (zéro disclosure même sur screen-share)
+
+### Defense-in-depth additions
+
+- `AiConsentModal.handleAccept` : check `checked` state en plus de l'attribut `disabled` (devtools-bypass impossible)
+- `AiKeySetup` : `setPassphrase('')` post-save + reset complet quand encrypt toggle off (wipe mémoire React state)
+- Provider metadata centralisé dans `src/lib/ai/providers/meta.ts` — élimine drift entre 3 surfaces
+
+### Findings résiduels (LOW non bloquants)
+
+| # | Sévérité | Confidence | Mitigation |
+|---|---|---|---|
+| L2 | LOW VERIFIED | Commentaire « masked tail » désaligné `AiSettings.tsx:6` | ✅ Corrigé dans cette PR (réécrit en « never rendered, zero-disclosure ») |
+| L3 | LOW STRONG_INDICATOR | Migration legacy `'true'` étend implicitement consent de 12 mois | Trade-off UX vs strictness RGPD — non bloquant V1, à discuter dans memo ou ADR si besoin |
+
+### Findings résiduels (tracked THI-153 / V1.5)
+
+| # | Sévérité | Confidence | Status |
+|---|---|---|---|
+| H4-AI | HIGH (OUT-OF-SCOPE-AI) | STRONG_INDICATOR | jsonwebtoken@9.0.3 — gate Phase 7c LTI |
+| M2-AI | MEDIUM | STRONG_INDICATOR | Encoding bypass ROT13/hex/leet — backlog THI-153 |
+| V10 | LOW | STRONG_INDICATOR | Extension navigateur lit localStorage — mitigation Web Worker isolation différée V1.5 (THI-114) |
+
+### Trajectoire 9.3 → 9.5/10
+
+| Action | Gain | Cumul | Prereq |
+|---|---|---|---|
+| Baseline post-#228 | — | **9.3** | ✅ Live |
+| R3 M2-AI encoding bypass étendu (ROT13/hex/leet) | +0.1 | 9.4 | THI-153 sprint 2 |
+| R5 H4-AI `npm audit fix jsonwebtoken` | +0.1 IA + +0.3 security global | **9.5 IA** | Phase 7c gate (LTI_ENABLED=true) |
+| THI-114 Web Worker isolation V1.5 (V10 défense) | +0.05 | 9.55 | post-onboarding stabilisé |
+
+### Linear sync
+
+- THI-112 → Done auto-close (PR #228 mention, completedAt 2026-05-15T22:53 UTC)
+- THI-153 umbrella : 5 findings fermés total (M1, H10, M4, R1, M3) sur 13 historiques + 1 nouveau LOW masked-tail tracé et corrigé dans cette PR
+- Sprint 1 Phase 7b lockdown : étape 3/4 ✅ THI-112 livrée. Reste **THI-113 audit final triple** (étape 4/4)
+
+### Public reference
+
+[CHANGELOG.md](../CHANGELOG.md) · [STORY.md](../STORY.md) · [docs/plan.md](./plan.md)
+
+---
+
 ## Audit: Re-baseline `llm-security-auditor` post-THI-144 (10 mai 2026 fin PM)
 
 **Date**: 10 mai 2026 ~10:30 UTC (12:30 CEST)
