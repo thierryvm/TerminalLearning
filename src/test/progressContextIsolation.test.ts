@@ -205,6 +205,51 @@ describe('THI-186 progress isolation — write contamination (cross-account)', (
   });
 });
 
+describe('THI-186 progress migration — legacy clients (no owner key)', () => {
+  it('force-clears legacy localStorage with progress but no owner key', () => {
+    // Simule un user qui a chargé l'app AVANT le fix : `terminal-master-progress`
+    // contient des données, mais pas de `terminal-master-progress-owner`.
+    saveRaw({ completedLessons: { 'mod1/lesson1': true, 'mod1/lesson2': true } });
+    expect(getOwner()).toBeNull();
+
+    // Helper de migration mirroring `loadProgress` post-fix (THI-186 round 2).
+    function loadWithMigration(): { completedLessons: Record<string, boolean> } {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { completedLessons: {} };
+      const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
+      if (!hasOwner) {
+        localStorage.removeItem(STORAGE_KEY);
+        return { completedLessons: {} };
+      }
+      return JSON.parse(raw);
+    }
+
+    const result = loadWithMigration();
+    expect(result).toEqual({ completedLessons: {} });
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull(); // Cleared by migration.
+  });
+
+  it('keeps localStorage when owner key IS present (post-fix users)', () => {
+    saveRaw({ completedLessons: { 'mod1/lesson1': true } });
+    setOwner('user-x-id');
+
+    function loadWithMigration(): { completedLessons: Record<string, boolean> } {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { completedLessons: {} };
+      const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
+      if (!hasOwner) {
+        localStorage.removeItem(STORAGE_KEY);
+        return { completedLessons: {} };
+      }
+      return JSON.parse(raw);
+    }
+
+    const result = loadWithMigration();
+    expect(result).toEqual({ completedLessons: { 'mod1/lesson1': true } });
+    expect(getOwner()).toBe('user-x-id');
+  });
+});
+
 describe('THI-186 progress isolation — boundary edges', () => {
   it('handles malformed localStorage gracefully (does not throw)', () => {
     localStorage.setItem(STORAGE_KEY, 'not-valid-json');
