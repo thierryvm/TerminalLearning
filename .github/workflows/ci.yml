@@ -18,7 +18,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '20'
+          # Node version centralisée dans `.nvmrc` (single source of truth — évite drift entre workflows).
+          # Actuellement Node 22 LTS — Node 20 EOL 30 avril 2026, Supabase deadline 30 juin 2026.
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies
