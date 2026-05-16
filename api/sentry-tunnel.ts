@@ -150,6 +150,44 @@ export function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: 
   if (itemJson.request?.data) {
     itemJson.request.data = scrubValue(itemJson.request.data);
   }
+  // Request URL — may carry OAuth access_token, code, state, or other
+  // secrets in the query string. The client-side `beforeSend` already
+  // strips the query (`sentry.ts:83-90`) but a crash or envelope item
+  // captured outside that lifecycle slips through. Symmetric scrub here
+  // is THI-113 H1 finding (security-auditor 16 May 2026) closure.
+  //
+  // Defensive fallback (Sourcery review on PR #230): `new URL()` throws
+  // on relative paths (e.g. `/auth/callback?access_token=...`) and on
+  // some malformed URLs. The catch must NOT leave the original URL
+  // intact — it would silently leak the query. String-level fallback
+  // strips everything after `?` and `#` so query / fragment secrets are
+  // never logged, even when URL parsing fails.
+  if (typeof itemJson.request?.url === 'string') {
+    try {
+      const u = new URL(itemJson.request.url);
+      itemJson.request.url = `${u.origin}${u.pathname}`;
+    } catch {
+      const noFragment = itemJson.request.url.split('#')[0];
+      itemJson.request.url = noFragment.split('?')[0];
+    }
+  }
+  // Request headers — strip `authorization`, `x-api-key`, and any
+  // `*token*` header verbatim; scrub the rest defensively through the
+  // pattern engine. Mirrors the client `beforeSend` headers handling
+  // (`sentry.ts:151-161`).
+  if (itemJson.request?.headers && typeof itemJson.request.headers === 'object') {
+    itemJson.request.headers = Object.fromEntries(
+      Object.entries(itemJson.request.headers as Record<string, unknown>).map(
+        ([k, v]) => {
+          const lower = k.toLowerCase();
+          if (lower === 'authorization' || lower === 'x-api-key' || lower.includes('token')) {
+            return [k, '[REDACTED:header]'];
+          }
+          return [k, scrubValue(String(v))];
+        },
+      ),
+    );
+  }
   // Environment/release strings (rarely sensitive but cheap to scrub uniformly).
   if (typeof itemJson.environment === 'string') {
     itemJson.environment = scrubValue(itemJson.environment);

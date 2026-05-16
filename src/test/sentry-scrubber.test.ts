@@ -121,6 +121,80 @@ describe('Sentry tunnel scrubber — coverage matrix (THI-140)', () => {
     });
   });
 
+  describe('request.url + request.headers symmetric scrub (THI-113 H1)', () => {
+    it('strips the query string from request.url so OAuth tokens never reach Sentry', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'oauth callback failed' }] },
+        request: {
+          url: 'https://terminallearning.dev/auth/callback?access_token=ya29.A0ARrdaM_super_secret&state=xyz',
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.url).toBe('https://terminallearning.dev/auth/callback');
+      expect(scrubbed).not.toContain('access_token');
+      expect(scrubbed).not.toContain('ya29.A0ARrdaM');
+    });
+
+    it('strips the query from RELATIVE URLs too (Sourcery PR #230 — URL parse throws on relative paths)', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'relative path oauth' }] },
+        request: {
+          // Sentry envelope occasionally captures relative paths instead
+          // of absolute URLs. `new URL('/path?token=...')` throws, so the
+          // catch must still strip the query via string fallback.
+          url: '/auth/callback?access_token=relative_path_secret_value&state=xyz',
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.url).toBe('/auth/callback');
+      expect(scrubbed).not.toContain('access_token');
+      expect(scrubbed).not.toContain('relative_path_secret_value');
+    });
+
+    it('strips the fragment from malformed URLs (string fallback covers # too)', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'malformed url with fragment' }] },
+        request: {
+          // Some OAuth providers (e.g. implicit flow) put tokens in the
+          // fragment. The fallback must strip everything after `#` AND
+          // everything after `?`, even when URL parsing fails.
+          url: '://not-a-valid-url#access_token=fragment_secret',
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.url).toBe('://not-a-valid-url');
+      expect(scrubbed).not.toContain('fragment_secret');
+    });
+
+    it('redacts authorization / x-api-key / *token* request headers verbatim', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'request failed' }] },
+        request: {
+          headers: {
+            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.fake.jwt',
+            'X-API-Key': 'sk-ant-api03-FAKE_KEY_DO_NOT_USE_0123456789',
+            'X-Custom-Token': 'tok_FAKE_session_token_value',
+            'Content-Type': 'application/json',
+          },
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.headers.Authorization).toBe('[REDACTED:header]');
+      expect(parsed.request.headers['X-API-Key']).toBe('[REDACTED:header]');
+      expect(parsed.request.headers['X-Custom-Token']).toBe('[REDACTED:header]');
+      // Non-secret headers stay readable for debugging
+      expect(parsed.request.headers['Content-Type']).toBe('application/json');
+    });
+  });
+
   describe('non-JSON / unknown body', () => {
     it('falls back to text-level scrub for non-JSON bodies', () => {
       const item = `random text containing ${FAKE_OPENROUTER_KEY} somewhere`;
