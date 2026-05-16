@@ -207,39 +207,38 @@ describe('THI-186 progress isolation — write contamination (cross-account)', (
 
 describe('THI-186 progress migration — legacy clients (no owner key)', () => {
   // Sourcery review on PR #242 : eviter la drift entre le helper test et le code
-  // de prod, on importe `applyLegacyOwnerMigration` exporté depuis le module
+  // de prod, on importe `applyLegacyOwnerMigrationIfNeeded` exporté depuis le module
   // ProgressContext lui-même (single source of truth).
 
   it('force-clears legacy localStorage with progress but no owner key', async () => {
-    const { applyLegacyOwnerMigration } = await import('../app/context/ProgressContext');
+    const { applyLegacyOwnerMigrationIfNeeded } = await import('../app/context/ProgressContext');
 
     // Simule un user qui a chargé l'app AVANT le fix : `terminal-master-progress`
     // contient des données, mais pas de `terminal-master-progress-owner`.
     saveRaw({ completedLessons: { 'mod1/lesson1': true, 'mod1/lesson2': true } });
     expect(getOwner()).toBeNull();
 
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const cleared = applyLegacyOwnerMigration(raw);
+    const cleared = applyLegacyOwnerMigrationIfNeeded();
     expect(cleared).toBe(true);
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull(); // Cleared by migration.
   });
 
   it('keeps localStorage when owner key IS present (post-fix users)', async () => {
-    const { applyLegacyOwnerMigration } = await import('../app/context/ProgressContext');
+    const { applyLegacyOwnerMigrationIfNeeded } = await import('../app/context/ProgressContext');
 
     saveRaw({ completedLessons: { 'mod1/lesson1': true } });
     setOwner('user-x-id');
 
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const cleared = applyLegacyOwnerMigration(raw);
+    const cleared = applyLegacyOwnerMigrationIfNeeded();
     expect(cleared).toBe(false);
     expect(loadRaw()).toEqual({ completedLessons: { 'mod1/lesson1': true } });
     expect(getOwner()).toBe('user-x-id');
   });
 
-  it('returns false (no clear) when raw is null', async () => {
-    const { applyLegacyOwnerMigration } = await import('../app/context/ProgressContext');
-    expect(applyLegacyOwnerMigration(null)).toBe(false);
+  it('returns false (no clear) when no progress is cached', async () => {
+    const { applyLegacyOwnerMigrationIfNeeded } = await import('../app/context/ProgressContext');
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(applyLegacyOwnerMigrationIfNeeded()).toBe(false);
   });
 });
 

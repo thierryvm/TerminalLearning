@@ -77,11 +77,10 @@ function readRawProgress(): string | null {
  * savoir, et le risque de leak est plus grave que la perte de progression
  * locale guest.
  *
- * → Si pas d'owner stocké et qu'on a quand même un payload de progression
- *   en cache, on force-clear. Pour les users authenticated,
- *   `onAuthStateChange` INITIAL_SESSION + `syncWithRemote` restaurera depuis
- *   Supabase. Pour les pure guests legacy, perte acceptée (coût migration
- *   sécuritaire ponctuelle).
+ * → Si on a un payload de progression en cache mais pas d'owner stocké,
+ *   on force-clear. Pour les users authenticated, `onAuthStateChange`
+ *   INITIAL_SESSION + `syncWithRemote` restaurera depuis Supabase. Pour les
+ *   pure guests legacy, perte acceptée (coût migration sécuritaire ponctuelle).
  *
  * Migration auto-déclenchée au premier `loadProgress()` post-déploiement
  * du fix round 2. Une fois passée, l'owner est setté via `setStoredOwner`
@@ -93,22 +92,29 @@ function readRawProgress(): string | null {
  *
  * @returns `true` si la migration a clearé le cache ; `false` sinon.
  */
-export function applyLegacyOwnerMigration(raw: string | null): boolean {
-  if (!raw) return false;
-  const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
+export function applyLegacyOwnerMigrationIfNeeded(): boolean {
+  // Tous les accès à `localStorage` passent par les helpers `readRawProgress`
+  // et `getStoredOwner` qui encapsulent leurs propres try/catch — protège
+  // contre SecurityError, quota errors, ou storage désactivé (private mode).
+  // Sans cette résilience, `loadProgress` planterait sur des navigateurs
+  // restrictifs (per Sourcery review on PR #243).
+  const hasProgress = readRawProgress() !== null;
+  if (!hasProgress) return false;
+  const hasOwner = !!getStoredOwner();
   if (hasOwner) return false;
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
   return true;
 }
 
 function loadProgress(): ProgressState {
-  const raw = readRawProgress();
-  if (!raw) return { completedLessons: {} };
-
-  // THI-186 round 2 : check legacy contamination before parsing.
-  if (applyLegacyOwnerMigration(raw)) {
+  // THI-186 round 2 : check legacy contamination first.
+  // If migration clears, return empty state immediately (no need to re-read).
+  if (applyLegacyOwnerMigrationIfNeeded()) {
     return { completedLessons: {} };
   }
+
+  const raw = readRawProgress();
+  if (!raw) return { completedLessons: {} };
 
   // Narrow try/catch around JSON.parse only — per Sourcery review on PR #242.
   // Any other unexpected error in this path should NOT be silenced.
