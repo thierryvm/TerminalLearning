@@ -163,7 +163,7 @@ async function verifyAndExpectFailure(
 
 describe('verifyJwt — 10 critical LTI 1.3 checks', () => {
   it('[Check 1+8] accepts a valid RS256-signed JWT and rejects forged signatures', async () => {
-    const token = await makeToken();
+    const token = await makeToken({ jti: 'check1-valid-token' });
     const result = await verify(token);
     expect(result.iss).toBe(VALID_ISS);
     expect(result.sub).toBe('user-12345');
@@ -171,9 +171,15 @@ describe('verifyJwt — 10 critical LTI 1.3 checks', () => {
     expect(result.deploymentId).toBe(DEPLOYMENT_ID);
     expect(result.targetLinkUri).toBe(VALID_TARGET);
 
-    // Tamper with the signature segment — must fail.
-    const parts = token.split('.');
-    const tampered = `${parts[0]}.${parts[1]}.${parts[2].replace(/.$/, (c) => (c === 'A' ? 'B' : 'A'))}`;
+    // Tamper with the signature segment — must fail BEFORE reaching the nonce store.
+    // We use a DIFFERENT jti for the tampered token to isolate the signature
+    // verification check from the replay protection check (otherwise a sufficiently
+    // small tamper that jose's Web Crypto happens to accept on some Node versions
+    // would land on `replay_detected` instead of `invalid_signature` — flaky test).
+    // We also tamper enough characters (~16) to guarantee an invalid signature.
+    const tamperedSource = await makeToken({ jti: 'check1-tampered-token' });
+    const parts = tamperedSource.split('.');
+    const tampered = `${parts[0]}.${parts[1]}.${'A'.repeat(16)}${parts[2].slice(16)}`;
     await verifyAndExpectFailure(tampered, 'invalid_signature');
   });
 
