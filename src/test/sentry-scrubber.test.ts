@@ -137,6 +137,41 @@ describe('Sentry tunnel scrubber — coverage matrix (THI-140)', () => {
       expect(scrubbed).not.toContain('ya29.A0ARrdaM');
     });
 
+    it('strips the query from RELATIVE URLs too (Sourcery PR #230 — URL parse throws on relative paths)', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'relative path oauth' }] },
+        request: {
+          // Sentry envelope occasionally captures relative paths instead
+          // of absolute URLs. `new URL('/path?token=...')` throws, so the
+          // catch must still strip the query via string fallback.
+          url: '/auth/callback?access_token=relative_path_secret_value&state=xyz',
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.url).toBe('/auth/callback');
+      expect(scrubbed).not.toContain('access_token');
+      expect(scrubbed).not.toContain('relative_path_secret_value');
+    });
+
+    it('strips the fragment from malformed URLs (string fallback covers # too)', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: 'malformed url with fragment' }] },
+        request: {
+          // Some OAuth providers (e.g. implicit flow) put tokens in the
+          // fragment. The fallback must strip everything after `#` AND
+          // everything after `?`, even when URL parsing fails.
+          url: '://not-a-valid-url#access_token=fragment_secret',
+        },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const parsed = JSON.parse(scrubbed);
+      expect(parsed.request.url).toBe('://not-a-valid-url');
+      expect(scrubbed).not.toContain('fragment_secret');
+    });
+
     it('redacts authorization / x-api-key / *token* request headers verbatim', () => {
       const item = JSON.stringify({
         type: 'event',
