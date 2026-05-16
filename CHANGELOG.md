@@ -8,7 +8,7 @@
 ## 🏁 THI-113 — Audit final Tuteur IA (triple) + H1 fix + Sprint 1 Phase 7b lockdown CLOS 4/4 + score IA 9.3 → 9.4/10
 *16 mai 2026 · Phase 7b Sprint 1 étape 4/4 — clôture Sprint 1*
 
-**Gate de sortie V1 AI Tutor.** Trois agents lancés en parallèle (`security-auditor` + `prompt-guardrail-auditor` + `ui-auditor`) — verdict consolidé : **✅ ALL CLEAR**. Rapport complet : [`docs/audits/ai-tutor-v1-2026-05-16.md`](docs/audits/ai-tutor-v1-2026-05-16.md).
+**Gate de sortie V1 AI Tutor.** Trois agents lancés en parallèle (`security-auditor` + `prompt-guardrail-auditor` + `ui-auditor`) — verdict consolidé : **✅ ALL CLEAR**. Rapport complet : [`docs/audits/ai-tutor-v1-2026-05-16.md`](https://github.com/thierryvm/TerminalLearning/blob/main/docs/audits/ai-tutor-v1-2026-05-16.md).
 
 ### Scores audits (ADR-005 step 7 — gate Phase 7b)
 
