@@ -5,6 +5,88 @@
 
 ---
 
+## 🚨 THI-186 — Critical security fix : progress data leak inter-utilisateurs (localStorage)
+*16-17 mai 2026 · Sprint 2 étape 4/N · Urgent shipped en 2 rounds + cleanup data prod*
+
+Bug critique signalé en production par @thierry : sur `terminallearning.dev/app` en mode invité, le Dashboard affichait **la progression du user précédent** (37 % / 24 lessons / 11 modules). Avec un compte secondaire, après login, **mêmes 24 lessons récupérées**. Hard refresh ne corrigeait pas.
+
+### Root cause (purement client, pas RLS Supabase)
+
+Bug dans `src/app/context/ProgressContext.tsx`, vivant dormant depuis la **Phase 3 livrée le 3 avril 2026** (commit `2c8a969 feat(phase3): Supabase Auth + progress sync`) — donc **6 semaines de contamination silencieuse** en production, jusqu'au signalement.
+
+```ts
+const local = loadProgress();              // ← user A's progress (stale localStorage)
+const merged = mergeProgress(local, remote_B);   // merge = A + B
+const delta = getDelta(local, remote_B);   // = ALL of A's lessons
+upserts = delta.map(id => ({ user_id: userId_B, lesson_id: id, completed: true }));
+client.from('progress').upsert(upserts);   // ← écrit A's lessons dans B's account
+```
+
+Deux facettes du bug : (a) `localStorage['terminal-master-progress']` persistait après logout → mode invité affichait l'ancien state, (b) au login d'un user B sur même browser → `mergeProgress + upsert` uploadait A's lessons dans B's Supabase row. **Double leak read + write**.
+
+### Smoking gun empirique en prod (Supabase live query)
+
+```sql
+SELECT user_id, COUNT(*) FROM progress WHERE completed=true AND user_id IN (
+  '6832c7a5-...',  -- thierryvm@gmail.com (Google)
+  'a0c4a8cd-...'   -- thierryvm@hotmail.com (email)
+) GROUP BY user_id;
+-- Result: 24 + 24, shared=24, only_google=0, only_hotmail=0
+```
+
+**24 lessons IDENTIQUES** sur les deux comptes — preuve formelle mathématique de la contamination. Timestamps montrent que Google a "complété" 7 lessons en **1 seconde** (3 avril 10:18:49), exactly à la création du compte Google → mass upsert signature du bug.
+
+### Fix livré en 2 rounds + cleanup
+
+**Round 1 — PR [#241](https://github.com/thierryvm/TerminalLearning/pull/241) — owner-tracking aux transitions auth**
+
+Track `STORAGE_OWNER_KEY = 'terminal-master-progress-owner'` qui marque qui possède le cache localStorage actuellement :
+- `null` : fresh browser
+- `GUEST_OWNER = '__guest__'` : guest session
+- `<userId>` : user authentifié
+
+À chaque transition `onAuthStateChange` :
+- **SIGNED_OUT** + owner = userId authentifié → CLEAR + mark `GUEST_OWNER`
+- **INITIAL_SESSION sans user** + owner = userId → CLEAR (stale session)
+- **SIGNED_IN userId X** + owner ≠ X et ≠ guest → CLEAR avant merge (anti-contamination)
+- **SIGNED_IN userId X** + owner = guest ou null → preserve (UX legitime "complète quelques lessons puis sign up")
+
+9 nouveaux tests d'isolation dans `src/test/progressContextIsolation.test.ts`. Suite 1405 → **1414** (+9).
+
+**Round 2 — PR [#242](https://github.com/thierryvm/TerminalLearning/pull/242) — migration force-clear legacy clients**
+
+Le fix round 1 ne se déclenche qu'aux transitions et seulement quand le nouveau code est chargé. Chrome cachait l'ancien bundle JS (pré-fix) → `loadProgress()` legacy continuait à lire la contamination silencieusement après le merge.
+
+`loadProgress()` détecte désormais la présence de `terminal-master-progress` **sans** `STORAGE_OWNER_KEY` associé = signature impossible post-fix → **force-clear au boot**. Validation empirique Chrome MCP : injecté 24 fake lessons stale sans owner → navigate `/app` → Dashboard 0 % / 0 lessons / localStorage cleared. 2 nouveaux tests migration. Suite 1414 → **1416**.
+
+**Cleanup post-merge — Sourcery review #242 addressed + Sidebar branding**
+
+- `applyLegacyOwnerMigration(raw)` extracted en helper exporté pour shared source-of-truth entre prod code et tests (anti-drift)
+- `try/catch` narrow autour de `JSON.parse` seulement (n'avale plus les erreurs unexpected dans la migration)
+- `Sidebar.tsx:99` « Terminal Master » → « Terminal Learning » (cohérence branding B2B écoles, même fix que `Layout.tsx` mobile header THI-153 PR #234 mais sur surface sidebar)
+- Test additionnel `applyLegacyOwnerMigration` retourne false sur raw=null. Suite 1416 → **1417**.
+
+### Cleanup data prod Supabase
+
+Décision @thierry post-analyse timestamps : `thierryvm@hotmail.com` = compte principal organique (timestamps étalés du 3 avril au 4 mai), `thierryvm@gmail.com` = secondaire contaminé (7 lessons mass-upsert à 10:18:49 au signup). Backup CSV défensif local puis `DELETE FROM progress WHERE user_id = '6832c7a5-...'` → Google **24 → 0 lessons**, Hotmail **24 préservées**.
+
+### Pourquoi pas attrapé avant
+
+- `rbac-flow-tester` (Phase 9+) teste flow auth Supabase REST mais pas localStorage lifecycle
+- `security-auditor` couvre OWASP Top 10 mais pas state transitions client multi-session
+- Aucun E2E Playwright ne simulait `login A → logout → login B → assert isolated`
+- Tests `rbac.test.ts` testent les permissions Supabase RLS (qui fonctionnent correctement) mais pas le client state cross-session
+
+### Suivi (tickets Backlog)
+
+- **THI-186** Done (cette entry)
+- **THI-187** (Medium) — feat UX : exposer un bouton "Réinitialiser ma progression" dans Settings (demandé par @thierry pendant la session)
+- *Implicite, à créer plus tard* : agent `client-state-isolation-tester` ou extension `rbac-flow-tester` avec scénario multi-session pour attraper ce type de bug à l'avenir
+
+PRs : [#241](https://github.com/thierryvm/TerminalLearning/pull/241) (round 1) · [#242](https://github.com/thierryvm/TerminalLearning/pull/242) (round 2) · cette entry (round 3 polish + branding + docs). Closes [THI-186](https://linear.app/thierryvm/issue/THI-186).
+
+---
+
 ## 🔐 THI-131 + THI-180 — Phase 7c LTI Auth MVP (1/N) + revoke trigger-only SECURITY DEFINER
 *16 mai 2026 · Sprint 2 étape 3/N*
 

@@ -687,6 +687,30 @@ THI-111 commence vraiment à la prochaine session, avec les décisions actées e
 
 ---
 
+## La nuit du 16 au 17 mai — Le bug qui dormait depuis six semaines
+
+Tout allait bien. La journée venait de se clôturer sur trois pull requests vertes — le LTI, le hardening Supabase, les bumps Q3. Thierry m'a renvoyé deux captures d'écran. Sur Brave en mode invité, son Dashboard affichait 37 %, vingt-quatre leçons complétées. Sur Chrome avec un compte secondaire, après connexion, les mêmes vingt-quatre. Hard refresh, rien ne bougeait.
+
+J'ai cherché d'abord du côté du cache navigateur. Mauvaise piste. En ouvrant le code, le bug a sauté aux yeux avec une netteté qui ne laissait pas de place au doute. Le state de progression vivait dans le `localStorage` du navigateur, et personne ne l'effaçait au logout. Pire encore — quand un autre utilisateur se connectait sur le même appareil, le code fusionnait l'ancien state local du précédent avec le nouveau state distant, et tout ce qui manquait au serveur était ré-uploadé sous l'identité du nouveau venu. En une seule transaction, le compte B héritait des leçons du compte A. Vol silencieux. Faux unlocks. Et personne ne s'en était rendu compte.
+
+Une requête Supabase live a posé la preuve. Sur les deux comptes de Thierry, exactement vingt-quatre leçons identiques. Pas une seule différence. `shared: 24, only_google: 0, only_hotmail: 0`. Mathématiquement impossible par hasard. Les timestamps racontaient le reste : le compte principal Hotmail avait travaillé organiquement, étalé sur un mois. Le compte secondaire Google avait "complété" sept leçons en une seule seconde le 3 avril à dix heures dix-huit, exactement au moment de sa création. Le bug avait contaminé le compte le jour même de sa naissance, vingt-neuf minutes après que Thierry ait commencé à apprendre.
+
+Le `git blame` a donné l'âge réel. Le code fautif avait été livré le 3 avril, la même phase qui a apporté Supabase Auth au projet. Six semaines. Six semaines de bug dormant en production, sans que rien ni personne ne le remarque, jusqu'à ce qu'un utilisateur fasse exactement ce qu'il fallait pour le réveiller — ouvrir deux comptes sur le même navigateur. Thierry m'a demandé si c'était lié à mes modifications Supabase de la veille. Non. Le bug existait bien avant. Mais la question qu'il pose vraiment, sans le dire, c'est combien d'autres dorment encore, attendant le scénario qui les fera apparaître.
+
+Le fix a demandé deux passages. Au premier — j'ai ajouté une trace qui dit qui possède le cache local, et à chaque transition d'authentification le code décide s'il garde ou s'il nettoie. Si on déconnecte un utilisateur authentifié, on efface. Si on en connecte un autre que celui marqué, on efface aussi. Si c'est un invité légitime qui s'inscrit pour la première fois, on garde sa progression locale et on l'upload proprement dans son nouveau compte. Neuf tests pour couvrir les chemins. Merge.
+
+Sauf que Thierry rouvre Chrome après le merge et le bug est toujours là. Vingt-huit pour cent, dix-huit leçons en mode invité. J'avais oublié que Chrome cachait l'ancien JavaScript. Le nouveau code ne s'exécutait même pas — le navigateur tournait encore sur la version pré-fix, qui n'avait aucune idée qu'il fallait nettoyer quoi que ce soit. Deuxième passage : au moment même où l'application boote, si elle trouve un cache de progression sans la nouvelle clé de propriétaire, elle l'efface. Migration ponctuelle, déclenchée automatiquement à la première visite après que le nouveau code se télécharge. J'ai vérifié sur la preview en injectant manuellement vingt-quatre fausses leçons dans le navigateur, en naviguant vers le Dashboard. Zéro pour cent. Cache nettoyé. C'était la preuve qu'on attendait.
+
+Restait la donnée prod contaminée. Thierry m'avait dit plus tôt dans la soirée que seul Hotmail comptait, que reset Google ne posait aucun problème. Backup défensif d'abord, puis suppression. Google passe à zéro. Hotmail conserve ses vingt-quatre leçons organiques. Au passage Thierry m'a aussi pointé que le logo dans le sidebar affichait toujours « Terminal / Master » — vieux vestige d'un branding qu'on avait corrigé ailleurs en THI-153, mais cette surface précise nous avait échappé. Petit fix, cohérence retrouvée. Sourcery a relu mon round 2 et a demandé deux choses raisonnables : ne pas dupliquer la logique de migration entre prod et tests, et resserrer la portée du try/catch. Intégrées dans la PR de fin.
+
+Ce qui m'a marqué dans cette session, c'est que tout le monde faisait correctement son travail sauf le code. La RLS Supabase isolait bien les utilisateurs. Les tests RBAC passaient. Les audits de sécurité avaient validé OWASP Top 10. Et pourtant, dans une fonction de fusion, deux identités utilisateurs se mélangeaient parce que personne n'avait jamais posé la question : qu'est-ce qui se passe quand deux personnes partagent le même appareil ? L'angle mort ne se trouvait pas dans la sécurité serveur, mais dans le cycle de vie du state côté client à travers les frontières d'authentification. Aucun agent ne couvrait ça. On va devoir y remédier — étendre `rbac-flow-tester` avec un scénario multi-session, ou créer un agent dédié au state-lifecycle client. Pas ce soir. À tête reposée, à la prochaine session.
+
+Thierry m'a aussi demandé d'ouvrir la possibilité, pour un utilisateur, de réinitialiser sa progression depuis l'interface. Plusieurs fois s'il en a envie. La fonction existe déjà dans le code, il manque juste un bouton et un modal de confirmation. Ticket THI-187 ouvert pour ne pas perdre l'idée.
+
+Trois pull requests, mille quatre cent dix-sept tests verts, six semaines de bug fermées en quelques heures, et une preuve empirique qu'un fix tient sous un cache navigateur récalcitrant. Il était une heure du matin. Trop tard pour célébrer, juste à temps pour clôturer.
+
+---
+
 ## Le 16 mai — Le pont LTI s'ouvre, et un détour SQL imprévu
 
 Le sprint 2 a commencé avec une deadline qui faisait peur. Le 10 juin, il faut pouvoir présenter Terminal Learning aux écoles avec une intégration LTI 1.3 et un panel admin minimum. Quinze jours utiles. L'ADR-006 dit honnêtement que la Phase 7c LTI complète demande 4 à 6 semaines. Le calcul ne tombait pas juste.
@@ -724,4 +748,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 16 mai 2026 (Sprint 2 étape 3/N — pont LTI + détour SQL)*
+*Dernière mise à jour : 17 mai 2026 (THI-186 — fermeture d'un bug data leak dormant six semaines)*

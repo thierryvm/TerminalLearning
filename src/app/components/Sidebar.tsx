@@ -96,7 +96,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div>
               <div className="text-sm text-[var(--github-text-primary)] font-mono">Terminal</div>
-              <div className="text-xs text-emerald-400 font-mono">Master</div>
+              <div className="text-xs text-emerald-400 font-mono">Learning</div>
             </div>
           </NavLink>
           <Button
