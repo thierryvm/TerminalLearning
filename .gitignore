@@ -41,6 +41,11 @@ playwright-report/
 # Internal Claude planning drafts (per-issue tactical plans, not project doc)
 .claude/plans/
 
+# Mini-prompts de reprise next-session (handoff inter-sessions, jamais committé —
+# vit dans .tmp/sessions/ qui est déjà gitignoré, mais on ignore aussi explicitement
+# docs/sessions/ par précaution au cas où le pattern réémergerait par habitude).
+docs/sessions/
+
 # Local CC scratch directory (commit message drafts, validation screenshots,
 # session reprise snapshots, audit reports, handoff files). Persistent local
 # only — never tracked. Cleanup safe à tout moment, contenu reproductible.
