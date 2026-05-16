@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Terminal, Home, Github, BookOpen, Zap, Shield, Heart, Clock, type LucideIcon } from 'lucide-react';
-import { curriculum } from '../data/curriculum';
-import { commandCatalogue } from '../data/commandCatalogue';
-import { ENVIRONMENTS } from '../types/curriculum';
+import { TOTAL_LESSONS, TOTAL_COMMANDS, ACTIVE_ENVIRONMENTS_COUNT } from '../data/landingContent';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-
-const TOTAL_LESSONS = curriculum.reduce((sum, mod) => sum + mod.lessons.length, 0);
-const TOTAL_COMMANDS = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
-const ACTIVE_ENVIRONMENTS = ENVIRONMENTS.filter((e) => e.status === 'active').length;
 
 const TERMINAL_LINES = [
   { prompt: '$', command: ' cd /page-introuvable', delay: 0 },
@@ -23,7 +17,7 @@ type PillVariant = 'pill-emerald' | 'pill-blue' | 'pill-amber' | 'pill-purple';
 const PILLS: Array<{ icon: LucideIcon; label: string; variant: PillVariant }> = [
   { icon: BookOpen, label: `${TOTAL_LESSONS} leçons`, variant: 'pill-emerald' },
   { icon: Terminal, label: `${TOTAL_COMMANDS}+ commandes`, variant: 'pill-blue' },
-  { icon: Zap, label: `${ACTIVE_ENVIRONMENTS} environnements`, variant: 'pill-amber' },
+  { icon: Zap, label: `${ACTIVE_ENVIRONMENTS_COUNT} environnements`, variant: 'pill-amber' },
   { icon: Shield, label: '100% gratuit', variant: 'pill-purple' },
 ];
 
