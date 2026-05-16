@@ -170,6 +170,8 @@ Référence officielle : [Discussion #45329](https://github.com/orgs/supabase/di
 
 ### Template à appliquer pour TOUTE nouvelle migration `public.*`
 
+**Principe de moindre privilège** : commencer avec `SELECT` seulement, ajouter `INSERT/UPDATE/DELETE` au cas par cas selon le besoin réel du client.
+
 ```sql
 -- ─── 0XX: <Description> ──────────────────────────────────────────────────
 -- ⚠️ Rappel post-30 octobre 2026 : sans GRANT explicite, cette table ne sera
@@ -183,13 +185,17 @@ create table if not exists public.<nom_table> (
 -- 1. RLS obligatoire (zero policy si table service_role-only, sinon policies explicites)
 alter table public.<nom_table> enable row level security;
 
--- 2. GRANT explicite pour rôles client (anon / authenticated)
---    ↳ Adapter selon le besoin : SELECT only pour read-only, full pour CRUD client
-grant select, insert, update, delete on table public.<nom_table>
-  to anon, authenticated;
+-- 2. GRANT minimal par défaut (SELECT only — principe de moindre privilège).
+--    ↳ Ajouter INSERT/UPDATE/DELETE uniquement si le client réel en a besoin.
+grant select on table public.<nom_table> to anon, authenticated;
+-- grant insert, update, delete on table public.<nom_table> to authenticated; -- si CRUD client
 
--- 3. Pour les fonctions SECURITY DEFINER : REVOKE FROM PUBLIC (pas seulement anon/authenticated)
---    ↳ Pattern leçon migration 015 — PUBLIC inheritance bypass les REVOKE explicites
+-- 3. Pour les fonctions SECURITY DEFINER : REVOKE FROM PUBLIC (pas seulement anon/authenticated).
+--    ↳ Pattern vu lors de la migration 015 — PUBLIC inheritance bypass les REVOKE explicites.
+--    ↳ ATTENTION : la signature complète (types d'arguments) doit matcher exactement.
+--    Pour des fonctions avec paramètres :
+--      revoke execute on function public.<nom_fonction>(arg1_type, arg2_type) from public;
+--    Pour des fonctions sans paramètres :
 revoke execute on function public.<nom_fonction>() from public;
 ```
 

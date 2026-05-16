@@ -5,6 +5,9 @@
   "description": "Terminal Learning — une app pour apprendre et pratiquer les commandes du terminal (design issu de Figma, build avec Vite + React).",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "vite build",
