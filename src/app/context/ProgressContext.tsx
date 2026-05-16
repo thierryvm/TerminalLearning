@@ -57,7 +57,27 @@ export const GUEST_OWNER = '__guest__';
 function loadProgress(): ProgressState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as ProgressState;
+    if (!raw) return { completedLessons: {} };
+
+    // THI-186 migration : tout `terminal-master-progress` stocké AVANT le fix
+    // owner-tracking n'a PAS de `STORAGE_OWNER_KEY` associé. Le résultat peut
+    // être contaminé (état du user précédent) — on ne peut pas savoir, et le
+    // risque de leak est plus grave que la perte de progression locale.
+    //
+    // → Si pas d'owner stocké, on force-clear. Pour les users authenticated,
+    //   onAuthStateChange INITIAL_SESSION + syncWithRemote restaure depuis
+    //   Supabase. Pour les pure guests legacy, perte acceptée (coût migration).
+    //
+    // Migration ponctuelle au premier `loadProgress()` post-déploiement. Une
+    // fois passée, l'owner est setté (via `setStoredOwner`) et le check passe
+    // silencieusement à toutes les sessions suivantes.
+    const hasOwner = !!localStorage.getItem(STORAGE_OWNER_KEY);
+    if (!hasOwner) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      return { completedLessons: {} };
+    }
+
+    return JSON.parse(raw) as ProgressState;
   } catch {}
   return { completedLessons: {} };
 }
