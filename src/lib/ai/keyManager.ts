@@ -15,9 +15,21 @@ export interface KeySaveOpts {
   passphrase?: string;
 }
 
-const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
+/** Single source of truth for the list of supported providers (THI-207). */
+export const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
 
-const LS_PREFIX = 'ai_key_';
+/** Prefix for plain-mode API keys stored in localStorage. */
+export const LS_PREFIX = 'ai_key_';
+
+/**
+ * Storage keys for AI session state — single source of truth (THI-207).
+ * `clearAiSessionData()` purges every entry below at signout to enforce the
+ * per-user RGPD + defense-in-depth contract documented in THI-186/THI-207.
+ */
+export const PROVIDER_KEY = 'ai_tutor_provider';
+export const CONSENT_KEY = 'ai_consent_v1';
+export const RATE_KEY = 'ai_rate_v1';
+export const MODE_KEY = 'ai_tutor_mode';
 const DB_NAME = 'ai_keys_encrypted';
 const DB_VERSION = 1;
 const STORE_NAME = 'keys';
@@ -286,12 +298,12 @@ export async function clearAiSessionData(opts?: { includeEncrypted?: boolean }):
   const ss = (globalThis as { sessionStorage?: Storage }).sessionStorage;
 
   for (const p of PROVIDERS) ls.removeItem(LS_PREFIX + p);
-  ls.removeItem('ai_tutor_provider');
-  ls.removeItem('ai_consent_v1');
+  ls.removeItem(PROVIDER_KEY);
+  ls.removeItem(CONSENT_KEY);
 
   try {
-    ss?.removeItem('ai_rate_v1');
-    ss?.removeItem('ai_tutor_mode');
+    ss?.removeItem(RATE_KEY);
+    ss?.removeItem(MODE_KEY);
   } catch {
     // Best effort — sessionStorage may be disabled (privacy mode, embedded WebView).
   }

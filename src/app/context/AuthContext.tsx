@@ -56,11 +56,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { supabase } = await supabaseLoader;
     if (!supabase) return;
     // THI-207 — defense-in-depth + RGPD : purge AI session data BEFORE the UI
-    // reacts to the cleared session. Awaiting guarantees that the next user
-    // who logs in on the same device sees the consent modal again and does not
-    // inherit any plain key, provider preference, rate counter, or tutor mode.
+    // reacts to the cleared session. The next user logging in on the same
+    // device must see the consent modal again and must not inherit any plain
+    // key, provider preference, rate counter, or tutor mode.
     // Encrypted IndexedDB keys are preserved by design (passphrase-gated).
-    await clearAiSessionData();
+    //
+    // The try/catch is non-optional : in privacy mode (Firefox ITP strict,
+    // some Android WebViews) `localStorage.removeItem` can throw a
+    // SecurityError. Letting it bubble up would abort `setSession(null)` and
+    // the Supabase token revocation below, leaving a zombie session — exactly
+    // the failure mode the prompt-guardrail + security audits flagged before
+    // merge.
+    try {
+      await clearAiSessionData();
+    } catch (err) {
+      console.error('[auth] clearAiSessionData failed (non-fatal):', err);
+    }
     // Clear local session immediately — the UI reacts instantly.
     // Then revoke the server-side refresh token in the background (fire-and-forget).
     // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the

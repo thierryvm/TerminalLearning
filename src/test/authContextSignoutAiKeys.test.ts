@@ -15,14 +15,18 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  CONSENT_KEY,
   clearAiSessionData,
   getKey,
+  LS_PREFIX,
+  MODE_KEY,
+  PROVIDER_KEY,
+  PROVIDERS,
+  RATE_KEY,
   saveKey,
-  type Provider,
 } from '@/lib/ai/keyManager';
 
 const DB_NAME = 'ai_keys_encrypted';
-const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
 
 function resetIdb(): Promise<void> {
   return new Promise((resolve) => {
@@ -35,17 +39,18 @@ function resetIdb(): Promise<void> {
 }
 
 function seedPlainKeys(): void {
-  localStorage.setItem('ai_key_openrouter', 'sk-or-v1-userA');
-  localStorage.setItem('ai_key_anthropic', 'sk-ant-userA');
-  localStorage.setItem('ai_key_openai', 'sk-userA');
-  localStorage.setItem('ai_key_gemini', 'AIzaUserA');
+  // Cover every provider in the canonical list so a future addition
+  // automatically lands in the seeding loop and assertions.
+  for (const p of PROVIDERS) {
+    localStorage.setItem(`${LS_PREFIX}${p}`, `seed-${p}-userA`);
+  }
 }
 
 function seedPrefs(): void {
-  localStorage.setItem('ai_tutor_provider', 'anthropic');
-  localStorage.setItem('ai_consent_v1', JSON.stringify({ accepted: true, version: 1 }));
-  sessionStorage.setItem('ai_rate_v1', JSON.stringify({ count: 7, windowStart: Date.now() }));
-  sessionStorage.setItem('ai_tutor_mode', 'socratic');
+  localStorage.setItem(PROVIDER_KEY, 'anthropic');
+  localStorage.setItem(CONSENT_KEY, JSON.stringify({ accepted: true, version: 1 }));
+  sessionStorage.setItem(RATE_KEY, JSON.stringify({ count: 7, windowStart: Date.now() }));
+  sessionStorage.setItem(MODE_KEY, 'socratic');
 }
 
 beforeEach(async () => {
@@ -55,37 +60,37 @@ beforeEach(async () => {
 });
 
 describe('THI-207 clearAiSessionData — 5 items + IDB preserved by default', () => {
-  it('flushes the 4 plain API keys from localStorage', async () => {
+  it('flushes every plain API key from localStorage', async () => {
     seedPlainKeys();
-    expect(localStorage.getItem('ai_key_openrouter')).toBe('sk-or-v1-userA');
+    expect(localStorage.getItem(`${LS_PREFIX}openrouter`)).toBe('seed-openrouter-userA');
 
     await clearAiSessionData();
 
     for (const p of PROVIDERS) {
-      expect(localStorage.getItem(`ai_key_${p}`)).toBeNull();
+      expect(localStorage.getItem(`${LS_PREFIX}${p}`)).toBeNull();
     }
   });
 
-  it('flushes ai_tutor_provider and ai_consent_v1 from localStorage (RGPD critical)', async () => {
+  it('flushes the last provider and the consent record from localStorage (RGPD critical)', async () => {
     seedPrefs();
-    expect(localStorage.getItem('ai_tutor_provider')).toBe('anthropic');
-    expect(localStorage.getItem('ai_consent_v1')).not.toBeNull();
+    expect(localStorage.getItem(PROVIDER_KEY)).toBe('anthropic');
+    expect(localStorage.getItem(CONSENT_KEY)).not.toBeNull();
 
     await clearAiSessionData();
 
-    expect(localStorage.getItem('ai_tutor_provider')).toBeNull();
-    expect(localStorage.getItem('ai_consent_v1')).toBeNull();
+    expect(localStorage.getItem(PROVIDER_KEY)).toBeNull();
+    expect(localStorage.getItem(CONSENT_KEY)).toBeNull();
   });
 
-  it('flushes ai_rate_v1 and ai_tutor_mode from sessionStorage', async () => {
+  it('flushes the rate counter and the tutor mode from sessionStorage', async () => {
     seedPrefs();
-    expect(sessionStorage.getItem('ai_rate_v1')).not.toBeNull();
-    expect(sessionStorage.getItem('ai_tutor_mode')).toBe('socratic');
+    expect(sessionStorage.getItem(RATE_KEY)).not.toBeNull();
+    expect(sessionStorage.getItem(MODE_KEY)).toBe('socratic');
 
     await clearAiSessionData();
 
-    expect(sessionStorage.getItem('ai_rate_v1')).toBeNull();
-    expect(sessionStorage.getItem('ai_tutor_mode')).toBeNull();
+    expect(sessionStorage.getItem(RATE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(MODE_KEY)).toBeNull();
   });
 
   it('preserves the encrypted IndexedDB key when called without opts', async () => {
@@ -99,7 +104,7 @@ describe('THI-207 clearAiSessionData — 5 items + IDB preserved by default', ()
     await clearAiSessionData();
 
     // Plain side fully wiped.
-    expect(localStorage.getItem('ai_key_anthropic')).toBeNull();
+    expect(localStorage.getItem(`${LS_PREFIX}anthropic`)).toBeNull();
     // Encrypted side still readable with the right passphrase.
     expect(await getKey('anthropic', 'pwd-userA')).toBe('sk-ant-encrypted-userA');
   });
@@ -135,14 +140,14 @@ describe('THI-207 clearAiSessionData — idempotence and edges', () => {
 
   it('reproduces the RGPD per-user pattern (consent must re-appear for next user)', async () => {
     // User A accepts consent → app records it in localStorage.
-    localStorage.setItem('ai_consent_v1', JSON.stringify({ accepted: true, version: 1, userId: 'A' }));
-    expect(localStorage.getItem('ai_consent_v1')).not.toBeNull();
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ accepted: true, version: 1, userId: 'A' }));
+    expect(localStorage.getItem(CONSENT_KEY)).not.toBeNull();
 
     // User A signs out → THI-207 flushes consent.
     await clearAiSessionData();
 
     // User B opens the app on the same device: consent record is absent,
     // so the AI Consent modal will be shown again (RGPD per-user property).
-    expect(localStorage.getItem('ai_consent_v1')).toBeNull();
+    expect(localStorage.getItem(CONSENT_KEY)).toBeNull();
   });
 });
