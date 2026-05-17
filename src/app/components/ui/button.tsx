@@ -111,10 +111,10 @@ const buttonVariants = cva(
         "icon-lg": "size-11",
         // Terminal Learning — Sidebar module row
         "tl-sidebar-row": "h-auto min-h-11 px-3 py-2 text-sm rounded-lg",
-        // Terminal Learning — Sidebar lesson subitem
-        "tl-sidebar-lesson": "h-auto min-h-10 px-2 py-1.5 text-xs rounded-md",
-        // Terminal Learning — Env switcher pill
-        "tl-env-pill": "h-auto flex-1 min-h-9 py-1.5 px-1 text-xs gap-1 rounded-md",
+        // Terminal Learning — Sidebar lesson subitem (THI-211 mobile touch target Apple HIG 44px)
+        "tl-sidebar-lesson": "h-auto min-h-11 px-2 py-1.5 text-xs rounded-md",
+        // Terminal Learning — Env switcher pill (THI-211 mobile touch target Apple HIG 44px)
+        "tl-env-pill": "h-auto flex-1 min-h-11 py-1.5 px-1 text-xs gap-1 rounded-md",
         // Terminal Learning — LessonPage inline nav (back, reset, mobile toggle, hint, prev)
         "tl-nav-inline": "h-auto min-h-11 rounded px-2 text-sm font-normal gap-1.5",
         // Terminal Learning — LessonPage hint toggle (xs, tighter gap)

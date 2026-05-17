@@ -103,7 +103,7 @@ export function Landing() {
             href="https://github.com/thierryvm/TerminalLearning"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors shrink-0"
+            className="inline-flex items-center justify-center min-h-11 min-w-11 -m-2.5 text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
             aria-label="Voir le projet sur GitHub"
           >
             <Github size={18} aria-hidden="true" />
@@ -118,7 +118,7 @@ export function Landing() {
               size="link-inline"
               onClick={() => setLoginOpen(true)}
               aria-label="Se connecter"
-              className="gap-1.5 text-sm font-mono"
+              className="gap-1.5 text-sm font-mono min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:h-auto"
             >
               <LogIn size={18} className="sm:hidden" aria-hidden="true" />
               <span className="hidden sm:inline">Se connecter</span>
