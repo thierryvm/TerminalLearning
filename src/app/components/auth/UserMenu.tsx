@@ -90,7 +90,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           variant="emerald-soft"
           size="link-inline"
           onClick={() => navigate('/')}
-          className="w-full gap-2 py-1.5 rounded-md text-xs font-mono hover:border-emerald-500/40"
+          className="w-full gap-2 min-h-11 py-1.5 rounded-md text-xs font-mono hover:border-emerald-500/40"
         >
           <LogIn size={12} aria-hidden="true" />
           Se connecter
