@@ -5,6 +5,93 @@
 
 ---
 
+## 🔐 THI-207 — RGPD critical : AI consent + plain keys persistent au signout (clearAiSessionData)
+*17 mai 2026 · Sprint 2 étape 5/N · Empirical proof avant fix + Voie B PROD validée post-merge*
+
+Suite logique de **THI-186** sur surface AI Tutor : au signout, le pattern owner-tracking de `ProgressContext` n'avait pas son équivalent côté `keyManager` + `useAiTutor`. Conséquence directe en production : les 5 items de session AI **persistent dans le navigateur après signout**.
+
+### Preuve empirique avant fix (Voie B PROD)
+
+Sur `terminallearning.dev` (compte test), le scénario reproduit montrait :
+
+| Phase | localStorage AI | sessionStorage AI | Supabase auth |
+|---|---|---|---|
+| Login User A + setup clé OpenRouter + accept consent | `ai_key_openrouter` + `ai_tutor_provider` + `ai_consent_v1` | `ai_rate_v1` + `ai_tutor_mode` | session active |
+| **Signout effectif (Landing affichée)** | **persistent ❌** | **persistent ❌** | session disparue |
+
+→ **Violation RGPD Article 7** confirmée (consent doit être explicite et per-user). User B login OAuth sur même device hérite du consent de User A sans jamais voir la modal. Plus risque crédit OpenRouter inter-user si clé payante.
+
+### Fix livré — clearAiSessionData() exporté + AuthContext.signOut() patché
+
+`src/lib/ai/keyManager.ts` exporte désormais :
+
+```ts
+export async function clearAiSessionData(opts?: { includeEncrypted?: boolean }): Promise<void> {
+  const PROVIDERS: Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
+  for (const p of PROVIDERS) ls.removeItem(LS_PREFIX + p);
+  ls.removeItem('ai_tutor_provider');
+  ls.removeItem('ai_consent_v1');
+  ss?.removeItem('ai_rate_v1');
+  ss?.removeItem('ai_tutor_mode');
+  if (opts?.includeEncrypted) {
+    for (const p of PROVIDERS) await forgetKey(p);  // IndexedDB AES-GCM
+  }
+}
+```
+
+`AuthContext.signOut()` l'appelle sans opts (encrypted IndexedDB **préservé par design** — passphrase-gated AES-GCM PBKDF2 210k iter, flusher annulerait le value prop du mode encrypted → friction → user revient au plain → dégradation sécurité). Le bouton "Forget all AI data on this device" (THI-208 backlog Low) utilisera l'opt-in `includeEncrypted: true` pour le scénario "device prêté/revendu".
+
+7 nouveaux tests `authContextSignoutAiKeys.test.ts` + 0 régression sur 1417 tests existants. Cascade QA `prompt-guardrail-auditor` finding C1 + `security-auditor` finding M2 (BLOCKER) addressés via try/catch wrapper signOut + console.error non-fatal. Sourcery centralisation constantes (`PROVIDERS`, `LS_PREFIX`, `PROVIDER_KEY`, `CONSENT_KEY`, `RATE_KEY`, `MODE_KEY` désormais exports de `keyManager`).
+
+### Validation post-merge — Voie B PROD par backup décisionnaire
+
+Le soir du 17/05, post-deploy `28c50ee` sur prod, validation empirique automatisée via Chrome DevTools MCP avec compte test (`test.student@terminallearning.dev`) :
+
+1. Login direct, setup state pre-signout (5 items AI injectés via `evaluate_script` simulant le scénario "User A authentifié + AI configuré")
+2. Click "Se déconnecter" via sidebar `/app/settings`
+3. Inspection localStorage + sessionStorage
+
+**Verdict** : ✅ 5 AI keys + auth token tous **CLEARED**, sessionStorage vide, seul reste le marker guest `terminal-master-progress-owner` (THI-186 owner-tracking — comportement attendu). Bug RGPD résolu et confirmé en production. Rapport détaillé dans [`docs/security-audit-log.md`](docs/security-audit-log.md) entry 17/05 ~21h CEST.
+
+### Suivi backlog (Low priority)
+
+- **THI-208** — Bouton UX "Forget all AI data on this device" dans `/app/settings` (utilise `clearAiSessionData({ includeEncrypted: true })`). ~10 lignes UI + confirm dialog.
+- **THI-215** — M1 owner-mismatch at sign-in (gap résiduel : User A token expiry silencieux sans signout → User B login → hérite consent). Symétrie pattern THI-186 owner-tracking à appliquer sur `ai_consent_v1` record (bump v2 avec champ `userId`). ~20 lignes prod + 30 tests.
+- **THI-210** — Docs RGPD : consent expiry policy 365j + passphrase recovery FAQ dans PrivacyPolicy + AiSettings.
+- **THI-209** → archivé comme duplicate de THI-215 (leçon coordination Linear cross-session documentée dans `feedback_linear_multi_project_safety.md`).
+
+### Pourquoi pas attrapé avant
+
+Comme THI-186, ce bug aurait dû tomber dans :
+
+- `prompt-guardrail-auditor` (audits récurrents AI Tutor) — qui audite l'isolation prompts mais pas le lifecycle `localStorage` entre transitions auth
+- E2E Playwright multi-account — n'existe pas encore pour AI Tutor (existe pour Progress depuis THI-186 mais pas AI)
+
+À tracer en agent extension future : `client-state-isolation-tester` qui simulerait `login A → setup AI → logout → assert isolation` sur toutes les surfaces user-specific (Progress + AI + autres futures).
+
+PRs : [#246](https://github.com/thierryvm/TerminalLearning/pull/246) (fix prod core + Sourcery centralisation + audits C1/M2) · [#251](https://github.com/thierryvm/TerminalLearning/pull/251) (post-deploy Voie B PROD validation entry + THI-216 UserMenu touch target bonus, scope mixed documenté mea culpa discipline). Closes [THI-207](https://linear.app/thierryvm/issue/THI-207).
+
+---
+
+## 🛠 Polish 17 mai 2026 — Sustainability doctrine + mobile touch targets + ROADMAP coherence
+*17 mai 2026 · Sprint 2 étape 5b · 4 PRs backup décisionnaire en parallèle de THI-207*
+
+Pendant que la session Sprint 2 livrait THI-207 (RGPD critical), la session backup décisionnaire (Opus 4.7) a livré 4 PRs non-milestone en parallèle, scope strictement disjoint (docs + UI + doctrine) :
+
+- **THI-211** ([#248](https://github.com/thierryvm/TerminalLearning/pull/248)) — Mobile touch targets Apple HIG 44px compliance. 4 findings ios-medium détectés par `mobile-responsive-auditor` audit production : `tl-sidebar-lesson` (40→44px), `tl-env-pill` (36→44px), GitHub icon nav Landing, "Se connecter" Landing nav mobile. ~10 lignes prod (button.tsx CVA variants + Landing.tsx utilities). Voie A iPhone 14 emulate validée empirique sur preview Vercel. Sourcery fixup : refactor GitHub link via `Button asChild variant="tl-icon-ghost" size="icon-lg"` (senior reverse course vs shadcn `ghost` suggestion verbatim — TL design tokens préservés). Follow-up THI-216 (UserMenu Se connecter 30px, hors scope original).
+
+- **THI-212** ([#249](https://github.com/thierryvm/TerminalLearning/pull/249)) — Sustainability doctrine activation. Audit `sustain-auditor` (première baseline) score **5.5/10 RED côté git patterns** : 47% commits weekend / 31% commits nuit (22h-08h) sur 90 jours glissants, streak max 11 jours consécutifs, Sprint 1 → Sprint 2 pivot immédiat sans jour off. Activation de 3 doctrines déjà documentées mais **jamais appliquées** : (1) `CLAUDE.md` section "Décision sécurité après 22h → report matin sauf prod cassée", (2) `memory/working_discipline_rules.md` Règle 11 "1 jour off mesurable par semaine" + Règle 12 miroir CLAUDE.md, (3) `memory/project_sprint_2_handoff_10juin.md` "Sas obligatoires entre milestones" (48h × 4 transitions = 8j décompression intégrés au plan 24j Sprint 2). Validation factuelle : THI-186 et THI-207 livrés en pleine nuit 00h10-00h30 dimanche auraient pu attendre 8h sans changer leur impact concret.
+
+- **THI-213** ([#247](https://github.com/thierryvm/TerminalLearning/pull/247)) — ROADMAP refactor + README security score sync + agents cosmetic. Le header `docs/ROADMAP.md` était devenu un paragraphe-monstre de ~12 000 caractères concaténant 14 "Previous update" depuis fin avril, illisible pour visiteurs externes (écoles, sponsors). Refactor en bloc "Last updated" concis (<500 chars) + section "Recent Updates Archive" en fin de fichier (chronologique inverse, convention "1 paragraphe = 1 update jamais empilé"). `README.md` ligne 86 obsolète (8.6/10) → 3 scores réels post-audit 16/05 (`security-auditor` 8.8/10, `llm-security-auditor` 9.4/10, `lti-auditor` 9.5/10). Rename cosmétique `.claude/agents/sustain-auditor-spec.md` → `sustain-auditor.md` (cohérence convention `<name>.md` vs 14 autres agents).
+
+- **THI-216** ([#251](https://github.com/thierryvm/TerminalLearning/pull/251)) — UserMenu "Se connecter" touch target 30→44px. Finding hors scope THI-211 (composant différent du Landing nav — UserMenu sidebar mode invité). 1 utility class `min-h-11` ajoutée. Voie A iPhone 14 + desktop 1280×800 validation empirique post-deploy. Entry audit log Voie B THI-207 incluse dans le même commit (scope mixed mea culpa documenté en PR comment — leçon `git status` AVANT chaque checkout).
+
+Doctrine "scope split" backup décisionnaire vs fresh session validée empirique : **0 conflit de fichiers** sur les 5 PRs parallèles (#246 fresh sur `src/lib/ai/*` + `src/app/context/AuthContext.tsx`, backup sur `Landing.tsx` + `button.tsx` + `CLAUDE.md` + `README.md` + `docs/ROADMAP.md` + `UserMenu.tsx`). Le pattern "communication scope explicite dans le startup prompt" tient.
+
+PRs : [#247](https://github.com/thierryvm/TerminalLearning/pull/247) + [#248](https://github.com/thierryvm/TerminalLearning/pull/248) + [#249](https://github.com/thierryvm/TerminalLearning/pull/249) + [#251](https://github.com/thierryvm/TerminalLearning/pull/251). Closes [THI-211](https://linear.app/thierryvm/issue/THI-211) · [THI-212](https://linear.app/thierryvm/issue/THI-212) · [THI-213](https://linear.app/thierryvm/issue/THI-213) · [THI-216](https://linear.app/thierryvm/issue/THI-216).
+
+---
+
 ## 🚨 THI-186 — Critical security fix : progress data leak inter-utilisateurs (localStorage)
 *16-17 mai 2026 · Sprint 2 étape 4/N · Urgent shipped en 2 rounds + cleanup data prod*
 
