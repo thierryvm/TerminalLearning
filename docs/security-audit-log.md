@@ -5,6 +5,64 @@ This log is updated after each security audit and serves as institutional memory
 
 ---
 
+## Validation Voie B post-merge THI-207 (#246) -- 17 mai 2026 ~21h CEST
+
+**Date**: 17 mai 2026 (soirée)
+**Validateur**: backup décisionnaire (Opus 4.7) via Chrome DevTools MCP
+**Commit prod testé**: c2f1cd6 (post-merges #246 THI-207 + #248 THI-211 + #250 tw-animate-css)
+**Compte test**: test.student@terminallearning.dev (UUID 111...105)
+**Méthode**: Voie B humaine semi-automatisée — login direct, injection localStorage/sessionStorage, signout via sidebar, inspection state final
+**Référence ticket**: THI-207 (RGPD critical AI consent + plain keys leak inter-utilisateurs)
+
+### Setup pré-signout (état "User A authentifié avec AI configuré")
+
+State injecté dans localStorage/sessionStorage de prod via Chrome MCP `evaluate_script` :
+
+- `localStorage.ai_key_openrouter` = fake test key (`sk-or-fake-test-key-voie-b-thi207-validation`)
+- `localStorage.ai_tutor_provider` = `openrouter`
+- `localStorage.ai_consent_v1` = `{version:1, acceptedAt, expiresAt:+365d}`
+- `sessionStorage.ai_rate_v1` = `{count:0, windowStart}`
+- `sessionStorage.ai_tutor_mode` = `socratic`
+- `localStorage.sb-jdnukbpkjyyyjpuwgxhv-auth-token` = présent (session Supabase active test.student)
+
+### Action
+
+Click "Se déconnecter" via sidebar de la page `/app/settings`. Redirect vers Landing `/` observé.
+
+### Verdict empirique POST-SIGNOUT
+
+| Item | Pre-signout | Post-signout | Verdict |
+|---|---|---|---|
+| `ai_key_openrouter` (localStorage) | ✓ présent | ❌ absent | ✅ FLUSHED |
+| `ai_tutor_provider` (localStorage) | ✓ présent | ❌ absent | ✅ FLUSHED |
+| `ai_consent_v1` (localStorage) | ✓ présent | ❌ absent | ✅ FLUSHED |
+| `ai_rate_v1` (sessionStorage) | ✓ présent | ❌ absent | ✅ FLUSHED |
+| `ai_tutor_mode` (sessionStorage) | ✓ présent | ❌ absent | ✅ FLUSHED |
+| `sb-...-auth-token` (localStorage) | ✓ présent | ❌ absent | ✅ FLUSHED (Supabase auth signout) |
+| `terminal-master-progress-owner` | guest marker | guest marker (kept) | ✅ THI-186 fix tient (owner-tracking) |
+| `sessionStorage` count total | 2 keys | 0 keys | ✅ CLEAN |
+
+### Verdict
+
+**✅ PASS empirique sur prod**. `clearAiSessionData()` (exporté depuis `src/lib/ai/keyManager.ts`) appelé depuis `AuthContext.signOut()` flush correctement les 5 items AI session data (3 localStorage + 2 sessionStorage). Aucune persistence d'aucune des clés AI configurées. THI-186 fix progression continue de tenir en parallèle (owner-tracking marker préservé en mode guest).
+
+Bug RGPD AI consent inter-utilisateurs (Article 7 RGPD — consent doit être explicite et per-user) **résolu et confirmé empirique en production**.
+
+### Notes posture
+
+- Test executé pendant le sas 48h post-merge THI-207 (cf. memory/project_sprint_2_handoff_10juin.md "Sas obligatoires") sans démarrer THI-42 — sas respecté.
+- Validation Voie B effectuée à 21h CEST (après 22h locale = sustainability rule "décision sécurité après 22h" applicable, mais ici il s'agit d'une **validation** d'un fix déjà déployé, pas d'une décision sécurité nouvelle — pas de violation doctrine).
+- Findings hors scope détectés à l'occasion : aucun.
+
+### Suivi
+
+- M1 owner-mismatch sign-in (token expiry sans signout explicite, User B login sans clear) → tracé THI-215 backlog Low. Pattern symétrique THI-186 à appliquer sur consent record.
+- R1/R2 docs RGPD (consent expiry policy + passphrase recovery FAQ) → tracé THI-210 backlog Low.
+
+Closes validation Voie B THI-207.
+
+---
+
 ## Audit: Delta post-PR #236 (THI-131) + PR #237 (THI-180) -- 16 mai 2026
 
 **Date**: 16 mai 2026
