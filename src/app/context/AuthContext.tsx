@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { clearAiSessionData } from '@/lib/ai/keyManager';
 
 // Dynamic import — defers the 194 kB Supabase SDK chunk from the FCP critical
 // path. The module starts loading immediately in parallel with initial render,
@@ -54,6 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const { supabase } = await supabaseLoader;
     if (!supabase) return;
+    // THI-207 — defense-in-depth + RGPD : purge AI session data BEFORE the UI
+    // reacts to the cleared session. Awaiting guarantees that the next user
+    // who logs in on the same device sees the consent modal again and does not
+    // inherit any plain key, provider preference, rate counter, or tutor mode.
+    // Encrypted IndexedDB keys are preserved by design (passphrase-gated).
+    await clearAiSessionData();
     // Clear local session immediately — the UI reacts instantly.
     // Then revoke the server-side refresh token in the background (fire-and-forget).
     // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the

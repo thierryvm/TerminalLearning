@@ -266,6 +266,41 @@ export async function forgetKey(provider: Provider): Promise<void> {
   }
 }
 
+/**
+ * Clears all AI session data at signout (THI-207, defense-in-depth + RGPD).
+ *
+ * RGPD critical: `ai_consent_v1` survives signout in localStorage by default
+ * — next user on the same device inherits consent without seeing the modal.
+ * Plain API keys, the last selected provider, the rate counter and the tutor
+ * mode are also flushed so a sequential user does not inherit a previous
+ * user's state.
+ *
+ * Encrypted IndexedDB keys are preserved by default: the AES-GCM record is
+ * inert without its passphrase, so keeping it lets a returning user reuse
+ * their own keys instead of being pushed back to plain mode at every signout.
+ * Opt-in `includeEncrypted: true` is reserved for the explicit "Forget all
+ * AI data on this device" UX (THI-208) — never used at automatic signout.
+ */
+export async function clearAiSessionData(opts?: { includeEncrypted?: boolean }): Promise<void> {
+  const ls = getLocalStorage();
+  const ss = (globalThis as { sessionStorage?: Storage }).sessionStorage;
+
+  for (const p of PROVIDERS) ls.removeItem(LS_PREFIX + p);
+  ls.removeItem('ai_tutor_provider');
+  ls.removeItem('ai_consent_v1');
+
+  try {
+    ss?.removeItem('ai_rate_v1');
+    ss?.removeItem('ai_tutor_mode');
+  } catch {
+    // Best effort — sessionStorage may be disabled (privacy mode, embedded WebView).
+  }
+
+  if (opts?.includeEncrypted) {
+    for (const p of PROVIDERS) await forgetKey(p);
+  }
+}
+
 /** True iff an encrypted entry exists for the provider and no plain entry shadows it. */
 export async function isEncrypted(provider: Provider): Promise<boolean> {
   assertProvider(provider);
