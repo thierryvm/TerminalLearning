@@ -193,11 +193,17 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
 - Mention obligatoire dans le message merge : "Voie C — docs-only, scope vérifié, 0 risque runtime"
 
 ### Sécurité tokens bypass — input ET output side (codifié 17 mai 2026)
-- **JAMAIS `curl -I`** sur URL Vercel protégée : la response `Set-Cookie: _vercel_jwt=<JWT>` contient le RAW bypass token dans son payload base64-décodable. Capter ce header en tool result = compromission du contexte conversation.
-- **Pattern obligatoire** smoke test : `curl -sS -o /dev/null -w "HTTP %{http_code}\n" -H "x-vercel-protection-bypass: $bypass" <URL>`
+- **JAMAIS `curl -I`** sur URL Vercel protégée : la response `Set-Cookie: _vercel_jwt=<JWT>` contient le RAW bypass token dans son payload base64-décodable. Capter ce header en tool result = compromission du contexte de conversation.
+- **Pattern obligatoire** smoke test (placeholders : `$bypass` = valeur du token, `<PREVIEW_URL>` = URL `https://terminal-learning-*.vercel.app/...`) :
+  ```bash
+  bypass="<VERCEL_PROTECTION_BYPASS_VALUE>"
+  curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
+       -H "x-vercel-protection-bypass: $bypass" \
+       "<PREVIEW_URL>"
+  ```
 - Si headers nécessaires (debug) : `curl -sS -D /tmp/h -o /tmp/b ...` puis `grep -vi '^set-cookie:\|_vercel_jwt' /tmp/h` puis `rm /tmp/h /tmp/b`
-- **Principe discard-by-default** : afficher uniquement ce qu'on veut, jamais filter ce qu'on ne veut pas (un filter dépend de connaître tous les noms de headers possibles, le discard ne dépend que de savoir ce qu'on demande)
-- Référence détaillée : `~/.claude/projects/.../memory/reference_vercel_bypass.md` — Vecteurs 1 (input 24/04) + 2 (output 17/05)
+- **Principe discard-by-default** : afficher uniquement ce qu'on veut, jamais filtrer ce qu'on ne veut pas (un filtre dépend de connaître tous les noms de headers possibles, le discard ne dépend que de savoir ce qu'on demande)
+- Référence détaillée : `~/.claude/projects/.../memory/reference_vercel_bypass.md` — Vecteurs 1 (input 24/04) + 2 (output 17/05) — *ressource locale développeur (mémoire Claude Code), hors repo*
 
 ### Graduation STOP sécurité (codifié 17 mai 2026)
 - STOP sécurité ≠ rotation automatique. STOP = pause + **évaluation graduée**.
@@ -206,11 +212,17 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
   2. **Durée** : leak conversation-only meurt au prochain `/compact` ou fin de session — pas de fenêtre d'exploitation au-delà
   3. **Coût rotation** : cheap (regen 3 min) vs cher (clé API avec crédit consommé, 5 comptes test liés)
   4. **Pattern reproductible** : FIX pattern d'abord, ROTATE seulement si surface publique
-- Référence : `~/.claude/projects/.../memory/feedback_graduation_stop_security.md`
+- Référence : `~/.claude/projects/.../memory/feedback_graduation_stop_security.md` — *ressource locale développeur (mémoire Claude Code), hors repo*
 
 ### Discipline séquentielle PR ↔ branche
 - **Une PR à la fois jusqu'à merge.** Pas de création de branche pour PR N+1 avant que PR N soit mergée.
-- Exception : si PR N est bloquée par review externe long terme, documenter explicitement dans la session le démarrage en parallèle (sinon dette mentale d'oubli garantie).
+- **Exception 1 — review externe long terme** : si PR N est bloquée par review externe (Sourcery, Vercel, validation visuelle pending), documenter explicitement dans la session le démarrage en parallèle (sinon dette mentale d'oubli garantie).
+- **Exception 2 — hotfix production cassée** : si la prod est down ou un bug critique impacte les utilisateurs, un `fix/hotfix-*` court (≤ 5 fichiers, scope chirurgical) peut être ouvert en parallèle d'une PR feature en cours. Conditions cumulatives :
+  - Branche **depuis `main`** (pas depuis la branche feature en cours)
+  - Une seule responsabilité (le hotfix), pas d'embarquement de polish
+  - Mention explicite dans la PR : `[HOTFIX]` en titre + lien vers incident (Sentry, rapport user, etc.)
+  - Validation Voie A obligatoire (pas Voie C même si docs) sauf si la prod est inaccessible — auquel cas Voie B humaine immédiate
+  - Reprise de la PR feature interrompue documentée à la fin du hotfix (todo + branche checkout explicite)
 
 ### Migrations Supabase — auto-géré
 - Toute nouvelle migration doit être appliquée **sans attendre** via le MCP Supabase ou le CLI
