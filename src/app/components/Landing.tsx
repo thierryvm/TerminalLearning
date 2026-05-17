@@ -99,15 +99,22 @@ export function Landing() {
           <span className="font-mono text-[var(--github-text-primary)] text-sm hidden sm:block whitespace-nowrap">Terminal Learning</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <a
-            href="https://github.com/thierryvm/TerminalLearning"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center min-h-11 min-w-11 -m-2.5 text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
-            aria-label="Voir le projet sur GitHub"
+          {/* Sourcery #248 fixup: use TL design system variant (tl-icon-ghost + icon-lg = 44×44 built-in) via asChild, NOT shadcn ghost+icon which uses default ring-ring/50 tokens incompatible with TL emerald focus rings. Negative margin preserves visual spacing unchanged. */}
+          <Button
+            asChild
+            variant="tl-icon-ghost"
+            size="icon-lg"
+            className="-m-2.5"
           >
-            <Github size={18} aria-hidden="true" />
-          </a>
+            <a
+              href="https://github.com/thierryvm/TerminalLearning"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Voir le projet sur GitHub"
+            >
+              <Github size={18} aria-hidden="true" />
+            </a>
+          </Button>
           {user ? (
             <Suspense fallback={null}>
               <UserMenu syncStatus={syncStatus} variant="compact" />
