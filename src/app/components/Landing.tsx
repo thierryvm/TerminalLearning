@@ -99,15 +99,22 @@ export function Landing() {
           <span className="font-mono text-[var(--github-text-primary)] text-sm hidden sm:block whitespace-nowrap">Terminal Learning</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <a
-            href="https://github.com/thierryvm/TerminalLearning"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors shrink-0"
-            aria-label="Voir le projet sur GitHub"
+          {/* Sourcery #248 fixup: use TL design system variant (tl-icon-ghost + icon-lg = 44×44 built-in) via asChild, NOT shadcn ghost+icon which uses default ring-ring/50 tokens incompatible with TL emerald focus rings. Negative margin preserves visual spacing unchanged. */}
+          <Button
+            asChild
+            variant="tl-icon-ghost"
+            size="icon-lg"
+            className="-m-2.5"
           >
-            <Github size={18} aria-hidden="true" />
-          </a>
+            <a
+              href="https://github.com/thierryvm/TerminalLearning"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Voir le projet sur GitHub"
+            >
+              <Github size={18} aria-hidden="true" />
+            </a>
+          </Button>
           {user ? (
             <Suspense fallback={null}>
               <UserMenu syncStatus={syncStatus} variant="compact" />
@@ -118,7 +125,7 @@ export function Landing() {
               size="link-inline"
               onClick={() => setLoginOpen(true)}
               aria-label="Se connecter"
-              className="gap-1.5 text-sm font-mono"
+              className="gap-1.5 text-sm font-mono min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:h-auto"
             >
               <LogIn size={18} className="sm:hidden" aria-hidden="true" />
               <span className="hidden sm:inline">Se connecter</span>
@@ -175,7 +182,7 @@ export function Landing() {
                     key={envId}
                     type="button"
                     onClick={() => setEnvironment(envId)}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-11 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                       active
                         ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
                         : 'text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] hover:bg-[#21262d] border border-transparent'
@@ -187,9 +194,9 @@ export function Landing() {
                   </button>
                 );
               })}
-              {/* WSL — future only */}
+              {/* WSL — future only — min-h-11 pour alignement visuel avec les 3 buttons interactifs (THI-211) */}
               <span
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-[#484f58] cursor-not-allowed border border-transparent"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-11 rounded-lg text-xs sm:text-sm text-[#484f58] cursor-not-allowed border border-transparent"
                 title="WSL — bientôt disponible"
                 aria-disabled="true"
               >
