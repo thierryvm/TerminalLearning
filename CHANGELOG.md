@@ -51,7 +51,7 @@ Le soir du 17/05, post-deploy `28c50ee` sur prod, validation empirique automatis
 2. Click "Se déconnecter" via sidebar `/app/settings`
 3. Inspection localStorage + sessionStorage
 
-**Verdict** : ✅ 5 AI keys + auth token tous **CLEARED**, sessionStorage vide, seul reste le marker guest `terminal-master-progress-owner` (THI-186 owner-tracking — comportement attendu). Bug RGPD résolu et confirmé en production. Rapport détaillé dans [`docs/security-audit-log.md`](docs/security-audit-log.md) entry 17/05 ~21h CEST.
+**Verdict** : ✅ 5 AI keys + auth token tous **CLEARED**, sessionStorage vide, seul reste le marker guest `terminal-master-progress-owner` (THI-186 owner-tracking — comportement attendu). Bug RGPD résolu et confirmé en production. Rapport détaillé dans [`docs/security-audit-log.md`](https://github.com/thierryvm/TerminalLearning/blob/main/docs/security-audit-log.md) entry 17/05 ~21h CEST.
 
 ### Suivi backlog (Low priority)
 
