@@ -808,5 +808,97 @@ Each medium finding has a dedicated Linear issue (M4 routes to the existing THI-
 
 ---
 
-**Last Updated**: 2 mai 2026
-**Next Review**: Full re-audit before THI-111 ship (Phase 7b AI Tutor) OR Phase 7c LTI activation, whichever comes first.
+## Audit: `lti-auditor` baseline officielle post-merge (17 mai 2026)
+
+**Date**: 17 mai 2026
+**Auditor**: agent `lti-auditor` (Opus 4.7, 10 critical checks MVP, effective-NEXT-session pattern post-création PR #236)
+**Trigger**: Première baseline officielle de l'agent en mode "invokable", post-merge de la séquence complète Phase 7c Auth MVP (PR #236 THI-131 + PR #237 THI-180 + PR #239 migration 015 PUBLIC + PR #240 supabase-js 2.105)
+**Commit baseline**: HEAD `2e7b9f2` (main)
+**Scope**: `src/lib/lti/{verifyJwt,nonceStore,types}.ts` + `api/lti/launch.ts` + `supabase/migrations/{013,014,015}_*.sql` + `vercel.json` + `package.json`
+
+### 10 critical checks LTI 1.3 — tous ✅ VERIFIED
+
+| Check | Status | Source |
+|---|---|---|
+| C1 — RS256 signature verification | ✅ | `verifyJwt.ts:232 algorithms: ['RS256']` strict via `jose@6.2.3` |
+| C2 — `iss` whitelist (anti-SSRF) | ✅ | `verifyJwt.ts:61-65` allowlist + pré-check ligne 215 **AVANT** JWKS fetch |
+| C3 — `aud` match | ✅ | `verifyJwt.ts:231 audience: options.clientId` enforced |
+| H4 — exp/iat strict ≤30s skew | ✅ | `clockTolerance: 30s` + défense `iat`-futur ligne 247 |
+| C5 — nonce store collision | ✅ | In-memory atomic check+set (mono-thread JS) + DB UNIQUE(jti) |
+| H6 — jti uniqueness window | ✅ | TTL 10min ≥ JWT exp LTI standard 5min |
+| H7 — kid matches JWKS | ✅ | `createRemoteJWKSet` cooldown 30s + timeout 5s |
+| C8 — alg ≠ `none` | ✅ | Allowlist strict `['RS256']` — `UnsecuredJWT` rejected |
+| H9 — `deployment_id` présent | ✅ | `verifyJwt.ts:275-281` |
+| C10 — target_link_uri same-origin | ✅ | `verifyJwt.ts:291-308` origin exact-match `terminallearning.dev` |
+
+### CRITICAL — 0
+
+Aucun finding bloquant. La crypto path `verifyJwt()` est propre.
+
+### WARNINGS (à corriger avant flip `LTI_ENABLED=true`)
+
+**[W1] STRONG_INDICATOR — `api/lti/launch.ts:209` décode encore le JWT inline sans appeler `verifyJwt()`**
+SPIKE laissé en place (commentaire ligne 127 reconnaît "PR #2 will wire the SPIKE handler à verifyJwt()"). Aucune vérification signature/exp/aud/jti. Mitigé par `LTI_ENABLED=false` (503 court-circuite). Risque si flag flippé sans PR #2 = **BYPASS TOTAL de la crypto**. Remediation : remplacer lignes 195-248 par `const verified = await verifyJwt(idToken, { clientId: env.LTI_CLIENT_ID })`.
+
+**[W2] SPECULATIVE — `vercel.json:49,70` CSP `connect-src` n'inclut pas les iss LMS**
+Non-bloquant car JWKS fetch = server-side (Node.js Function), pas browser. Si futur fetch client-side discovery ajouté (preview admin panel), CSP bloquera silencieusement. Remediation Phase 9 : étendre `connect-src` ou documenter formellement "JWKS = server-only" dans `docs/lti-install.md`.
+
+**[W3] VERIFIED — `package.json:51 jsonwebtoken@^9.0.3` runtime dependency orpheline**
+Aucun `import jsonwebtoken` runtime (vérifié grep `src/**/*.ts` + `api/**/*.ts`). Surface attaque supply-chain inutile + risque qu'un futur dev `import jwt from 'jsonwebtoken'` et réintroduise alg confusion (CVE-2022-23529 style). Remediation : `npm uninstall jsonwebtoken @types/jsonwebtoken` dans la PR qui câble `verifyJwt()` sur le handler.
+
+### Recommendations (durcissement post-V1)
+
+- **[R1]** OIDC discovery dynamique (ADR-006 V1.1) : valider l'URL discovery elle-même (TLS pin, HSTS check) avant fetch.
+- **[R2]** `nonceStore` in-memory + Vercel Fluid Compute : replay window cross-instance jusqu'à insert DB. Acceptable (DB UNIQUE rattrape), documenter la latence p99 dans `docs/lti-install.md`.
+- **[R3]** Migration `013_lti_launches.sql` : pas de `user_agent` ni `lms_deployment_id_hash`. Forensique post-incident limitée. À ajouter en Phase 9 admin panel.
+
+### Diff baseline vs SPIKE pre-Phase 7c
+
+Réf : `memory/project_lti_spike_state.md` (snapshot pré-7c).
+
+| Aspect | SPIKE pre-7c | Baseline post-PR #236+#237+#239+#240 |
+|---|---|---|
+| Crypto lib | `jsonwebtoken` + `ignoreExpiration:true` + string "public key" placeholder | `jose@6.2.3` + RS256 strict + JWKS remote + clockTolerance 30s |
+| `iss` check | Allowlist OK | Allowlist OK + pré-check **AVANT** JWKS fetch (anti-SSRF renforcé) |
+| `aud` check | Absent | `audience: options.clientId` enforced |
+| Replay protection | Absente | `nonceStore` TTL 10min + DB UNIQUE(jti) |
+| `target_link_uri` | Non validé | Origin exact-match `terminallearning.dev` |
+| Audit log DB | Absent | `lti_launches` RLS-locked, service_role only |
+| Endpoint câblage | Inline decode + log SPIKE | **Inchangé** (TODO PR #2 — voir W1) |
+| Supabase advisor | 6 SECURITY DEFINER exposés via RPC | 3 trigger-only verrouillés (014+015), 3 RLS helpers tracked THI-182 |
+
+### Score
+
+| Métrique | Valeur |
+|---|---|
+| Crypto path (`verifyJwt.ts` + `nonceStore.ts`) | **10/10** |
+| Endpoint integration (`api/lti/launch.ts`) | **6/10** (SPIKE non-câblé, mitigé par flag) |
+| **Score LTI global** | **9.0/10** |
+| Tendance | ✅ Robuste sur la crypto · ⚠ wiring endpoint manquant (PR #2 obligatoire) |
+
+### Verdict release-ready
+
+**⚠ SHIP AVEC MITIGATIONS** (`LTI_ENABLED=false` gate maintenu)
+
+- Tant que `LTI_ENABLED=false` : **SAFE TO MERGE**, aucune surface runtime.
+- Avant flip `LTI_ENABLED=true` : **OBLIGATOIRE** de livrer PR #2 LTI wiring (W1), sinon BYPASS total de la crypto path qui est pourtant propre.
+
+### 3 actions prioritaires
+
+1. **[CRITICAL pré-flip]** PR #2 — câbler `api/lti/launch.ts` sur `verifyJwt()` + persist `lti_launches`. Sans ça, flip `LTI_ENABLED=true` = bypass total (W1).
+2. **[HIGH supply-chain]** `npm uninstall jsonwebtoken @types/jsonwebtoken` dans la même PR. Élimine la surface alg confusion / CVE future (W3).
+3. **[MEDIUM Phase 9]** Étendre `connect-src` CSP ou documenter "JWKS = server-side only" dans `docs/lti-install.md` (W2).
+
+### Linear sync
+
+- THI-131 → Done (PR #236 merged)
+- THI-180 → Done (PR #237 merged)
+- THI-183 (existant) → Backlog High : monitor undici bump ≥6.24.0 (gate `LTI_ENABLED=true`)
+- THI-184 (existant) → Backlog Medium : fusionner ALLOWED_ISSUERS (gate PR #2 LTI)
+- THI-185 (existant) → Backlog Medium : nettoyer PII Sentry `contexts.lti_launch` (gate PR #2 LTI)
+- THI-182 (existant) → Backlog High : private schema RLS helpers (post-deadline 10 juin)
+
+---
+
+**Last Updated**: 17 mai 2026
+**Next Review**: Pre-PR #2 LTI (avant câblage `verifyJwt()` + activation `LTI_ENABLED=true`).
