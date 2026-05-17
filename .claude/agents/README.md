@@ -26,7 +26,7 @@ Cet index liste les **15 agents** spécialisés du projet (12 + `llm-security-au
 | [`route-attack-auditor`](route-attack-auditor.md) | Sonnet | ❌ | Avant PR `api/*` ou nouvel endpoint | ✅ verdict release-ready |
 | [`vercel-firewall-auditor`](vercel-firewall-auditor.md) | Sonnet | ❌ | Avant release majeure ou modif firewall | ⚠️ WARN si rules cassées |
 | [`rbac-flow-tester`](rbac-flow-tester.md) | Haiku | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
-| [`sustain-auditor-spec`](sustain-auditor-spec.md) | Haiku (spec, non instanciée) | ❌ scheduled trimestriel (à instancier) | À la demande (manuel) | ⚠️ score 1-10 |
+| [`sustain-auditor`](sustain-auditor.md) | Sonnet | ❌ scheduled trimestriel (cron à implémenter Phase 9+) | À la demande ou trimestriel | ⚠️ score 1-10 |
 
 ---
 
@@ -64,10 +64,9 @@ rbac-flow-tester  # Si Phase 9+ activée
 ### 4. Trimestriellement (santé du projet long terme)
 
 ```bash
-# ⚠️ NOTE: sustain-auditor est actuellement une spec (sustain-auditor-spec.md),
-# pas un agent invocable. Voir fiche détaillée plus bas pour le statut.
-# Tant que pas instancié → audit manuel par lecture de la spec.
-sustain-auditor  # Quand l'agent sera instancié à partir de la spec
+# sustain-auditor — agent invocable, première run baseline 17 mai 2026.
+# Score initial 5.5/10 (RED côté git patterns weekend/nuit). Voir THI-212.
+sustain-auditor  # Quarterly health check ou à la demande
 ```
 
 ---
@@ -154,12 +153,12 @@ sustain-auditor  # Quand l'agent sera instancié à partir de la spec
 **Créé** : avril 2026 — vérifie le flow complet RBAC pour les 5 test users via Supabase REST API. À invoquer avant chaque release Phase 9+. Confirme login + role assignment + RLS isolation intacts.
 **Lié** : THI-37 (RBAC complet, PR #92).
 
-### `sustain-auditor-spec` — Santé du mainteneur solo
+### `sustain-auditor` — Santé du mainteneur solo
 
-**Modèle** : (spec — pas un agent invocable, c'est une spécification de cron task)
-**Créé** : avril 2026 — quarterly sustainability health check. Document freshness, git pattern analysis (commits weekend/nuit, streaks), Sentry alert load, memory drift. Score 1-10 + warnings + recommendations.
-**Trigger** : manuel via comment, ou scheduled trimestriel.
-**Note** : agent file porte le suffixe `-spec` car la spec attend une implémentation `schedule` qui n'a pas encore été instanciée. À convertir en agent invocable avant Q3 2026.
+**Modèle** : Sonnet (judgment sur signaux santé + recommendations actionables)
+**Créé** : avril 2026 (spec), instancié 17 mai 2026 — quarterly sustainability health check. Document freshness, git pattern analysis (commits weekend/nuit, streaks), Sentry alert load, memory drift. Score 1-10 + warnings + recommendations.
+**Trigger** : manuel via comment, ou scheduled trimestriel (cron auto-trigger à implémenter post-Phase 9).
+**Première baseline** : 17 mai 2026 — score **5.5/10** (RED côté git patterns : 47% weekend, 31% nuit sur 90j). 3 recommendations actionables capturées dans **THI-212** (sustainability doctrine activation).
 
 ---
 
