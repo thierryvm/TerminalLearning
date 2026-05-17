@@ -65,7 +65,7 @@ Cibles d'adoption prioritaires : **AVIQ / Forem / Bruxelles Formation** (agile, 
 | a11y | fix | `<main>` landmark Landing, Ko-fi contraste 1.95→5.3:1, manifest dynamique, aria-label terminal (PR #76) ✅ Done |
 | THI-68 | fix | Supabase auth lock deadlock — defer sync hors onAuthStateChange + abort in-flight (PR #78) ✅ Done |
 | chore | seo | Sitemap — domaine terminallearning.dev, lastmod 11 avril (PR #79) ✅ Done |
-| THI-59 | refactor | Split processCommand en modules — In Progress |
+| THI-59 | refactor | Split processCommand en modules (PR #82, 12 avril 2026) ✅ Done |
 | THI-63 | refactor | Extraire validate() de curriculum.ts vers validators.ts (PR #84) ✅ Done |
 | THI-69 | a11y | label-content-name-mismatch sur module cards Landing ✅ Done |
 | THI-70 | a11y | SEO, accessibilité & balises canoniques — usePageSEO hook Dashboard + Reference (PR #86) ✅ Done |
@@ -76,7 +76,7 @@ Cibles d'adoption prioritaires : **AVIQ / Forem / Bruxelles Formation** (agile, 
 | THI-61 | refactor | Générer getHelpText programmatiquement depuis CMD_HELP (PR #87) ✅ Done |
 | THI-62 | refactor | Extraire données statiques Landing → landingContent.ts (PR #87) ✅ Done |
 | THI-74 | feat | Guide d'installation PWA multi-plateforme (PR #89) ✅ Done |
-| THI-64 | refactor | Refactor cmdPipe (bloqué par THI-59) — Medium |
+| THI-64 | refactor | Refactor cmdPipe — débloqué post-THI-59 (Done avril), Medium Backlog |
 | THI-76 | dev | Kit utilisateurs tests RBAC — 5 rôles complets (migration 006) ✅ Done |
 | THI-80 | test | RBAC integration tests (20) + fix 4 RLS bugs + 6 security fixes (PR #94) ✅ Done |
 | THI-81 | perf | Landing : MODULE_PREVIEWS remplace curriculum.map() — −112 kB eager (PR #96) ✅ Done |
