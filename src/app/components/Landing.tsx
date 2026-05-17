@@ -182,7 +182,7 @@ export function Landing() {
                     key={envId}
                     type="button"
                     onClick={() => setEnvironment(envId)}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-11 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-w-[75px] sm:min-w-[100px] justify-center focus:outline-none focus:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
                       active
                         ? `${meta.bgColor} ${meta.color} ${meta.borderColor} border`
                         : 'text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] hover:bg-[#21262d] border border-transparent'
@@ -194,9 +194,9 @@ export function Landing() {
                   </button>
                 );
               })}
-              {/* WSL — future only */}
+              {/* WSL — future only — min-h-11 pour alignement visuel avec les 3 buttons interactifs (THI-211) */}
               <span
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-[#484f58] cursor-not-allowed border border-transparent"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-11 rounded-lg text-xs sm:text-sm text-[#484f58] cursor-not-allowed border border-transparent"
                 title="WSL — bientôt disponible"
                 aria-disabled="true"
               >
