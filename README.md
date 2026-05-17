@@ -83,7 +83,12 @@ Full architecture, data flow diagrams, and database schema are documented in [do
 
 ## 🔒 Security
 
-Security is built in from day one — current `security-auditor` score: **~8.6/10** (post 1-2 May 2026 sprint, 0 active HIGH).
+Security is built in from day one — multi-agent audit (17 May 2026) :
+- `security-auditor` (app-layer OWASP) : **8.8/10**
+- `llm-security-auditor` (AI Tutor BYOK) : **9.4/10**
+- `lti-auditor` (LTI 1.3 crypto chain) : **9.5/10**
+
+0 active HIGH on any audit surface.
 
 - **Strict CSP** — no `unsafe-eval`, no `unsafe-inline`, SHA-256 hash for critical CSS, no third-party `vercel.live` in prod
 - **Auth** — Supabase Auth with PKCE flow, JWT rotation, built-in rate limiting
