@@ -166,8 +166,51 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
   ```
   Si Sourcery a commenté → corriger dans un commit fixup → repousser → ALORS proposer le merge
   Si Sourcery = SKIPPED (rate limit hebdomadaire atteint) → acceptable, procéder au merge
-- **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile)
+- **Jamais merger sans validation visuelle Vercel explicite de Thierry** (Chrome + mobile) — sauf Voie C ci-dessous
 - Après merge → issue Linear → Done + mettre à jour `docs/plan.md`
+
+### Validation visuelle preview Vercel — matrice 3 voies (codifié 17 mai 2026)
+Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite Voie C. Choix de la voie en fonction du scope :
+
+**Voie A — Chrome DevTools MCP avec bypass header (par défaut)**
+- Quand : PR touche `src/` (UI, composants, routes), `api/`, `vercel.json`, ou tout fichier impactant le runtime
+- Méthode : Chrome MCP `new_page` sur preview URL avec query param unique :
+  `?x-vercel-protection-bypass=<VALEUR>&x-vercel-set-bypass-cookie=samesitenone`
+- Une seule navigation avec query param par hostname (le cookie persiste) — règle anti-leak `reference_vercel_bypass.md`
+- Vérifs obligatoires : `take_snapshot` + `take_screenshot` + `list_console_messages` (zéro erreur rouge) + `list_network_requests` (zéro 4xx/5xx)
+- Pages à tester : selon scope PR (au minimum la page modifiée, idéalement `/` + page modifiée)
+
+**Voie B — Browser utilisateur direct (fallback)**
+- Quand : Chrome MCP coince sur l'injection bypass, ou si validation rapide suffit
+- Méthode : Thierry charge l'URL dans son browser (session Vercel SSO déjà active)
+- Durée : 30 secondes max, pas de babysitting
+- Limite : pas adaptée si scope PR > 1-2 pages à tester en profondeur
+
+**Voie C — Skip validation visuelle (exceptionnel, conditions cumulatives)**
+- PR 100% docs (`*.md` seulement, ou `docs/`)
+- 0 fichier `src/`, `api/`, `supabase/`, `package.json`, `vercel.json`, ou tout fichier impactant runtime
+- CI verte + Sourcery vert (ou SKIPPED rate-limit acceptable)
+- Mention obligatoire dans le message merge : "Voie C — docs-only, scope vérifié, 0 risque runtime"
+
+### Sécurité tokens bypass — input ET output side (codifié 17 mai 2026)
+- **JAMAIS `curl -I`** sur URL Vercel protégée : la response `Set-Cookie: _vercel_jwt=<JWT>` contient le RAW bypass token dans son payload base64-décodable. Capter ce header en tool result = compromission du contexte conversation.
+- **Pattern obligatoire** smoke test : `curl -sS -o /dev/null -w "HTTP %{http_code}\n" -H "x-vercel-protection-bypass: $bypass" <URL>`
+- Si headers nécessaires (debug) : `curl -sS -D /tmp/h -o /tmp/b ...` puis `grep -vi '^set-cookie:\|_vercel_jwt' /tmp/h` puis `rm /tmp/h /tmp/b`
+- **Principe discard-by-default** : afficher uniquement ce qu'on veut, jamais filter ce qu'on ne veut pas (un filter dépend de connaître tous les noms de headers possibles, le discard ne dépend que de savoir ce qu'on demande)
+- Référence détaillée : `~/.claude/projects/.../memory/reference_vercel_bypass.md` — Vecteurs 1 (input 24/04) + 2 (output 17/05)
+
+### Graduation STOP sécurité (codifié 17 mai 2026)
+- STOP sécurité ≠ rotation automatique. STOP = pause + **évaluation graduée**.
+- Grille d'évaluation AVANT toute demande de rotation à l'humain :
+  1. **Surface** : publique (commit, log CI public, URL partagée hors machine) → ROTATE | locale (conversation context, `.secrets/` gitignored) → CLEAR + CONTINUE
+  2. **Durée** : leak conversation-only meurt au prochain `/compact` ou fin de session — pas de fenêtre d'exploitation au-delà
+  3. **Coût rotation** : cheap (regen 3 min) vs cher (clé API avec crédit consommé, 5 comptes test liés)
+  4. **Pattern reproductible** : FIX pattern d'abord, ROTATE seulement si surface publique
+- Référence : `~/.claude/projects/.../memory/feedback_graduation_stop_security.md`
+
+### Discipline séquentielle PR ↔ branche
+- **Une PR à la fois jusqu'à merge.** Pas de création de branche pour PR N+1 avant que PR N soit mergée.
+- Exception : si PR N est bloquée par review externe long terme, documenter explicitement dans la session le démarrage en parallèle (sinon dette mentale d'oubli garantie).
 
 ### Migrations Supabase — auto-géré
 - Toute nouvelle migration doit être appliquée **sans attendre** via le MCP Supabase ou le CLI
