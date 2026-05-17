@@ -15,9 +15,21 @@ export interface KeySaveOpts {
   passphrase?: string;
 }
 
-const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
+/** Single source of truth for the list of supported providers (THI-207). */
+export const PROVIDERS: readonly Provider[] = ['openrouter', 'anthropic', 'openai', 'gemini'];
 
-const LS_PREFIX = 'ai_key_';
+/** Prefix for plain-mode API keys stored in localStorage. */
+export const LS_PREFIX = 'ai_key_';
+
+/**
+ * Storage keys for AI session state — single source of truth (THI-207).
+ * `clearAiSessionData()` purges every entry below at signout to enforce the
+ * per-user RGPD + defense-in-depth contract documented in THI-186/THI-207.
+ */
+export const PROVIDER_KEY = 'ai_tutor_provider';
+export const CONSENT_KEY = 'ai_consent_v1';
+export const RATE_KEY = 'ai_rate_v1';
+export const MODE_KEY = 'ai_tutor_mode';
 const DB_NAME = 'ai_keys_encrypted';
 const DB_VERSION = 1;
 const STORE_NAME = 'keys';
@@ -263,6 +275,41 @@ export async function forgetKey(provider: Provider): Promise<void> {
     await dbDelete(provider);
   } catch {
     // Idempotent — nothing to do if IDB unavailable or entry absent.
+  }
+}
+
+/**
+ * Clears all AI session data at signout (THI-207, defense-in-depth + RGPD).
+ *
+ * RGPD critical: `ai_consent_v1` survives signout in localStorage by default
+ * — next user on the same device inherits consent without seeing the modal.
+ * Plain API keys, the last selected provider, the rate counter and the tutor
+ * mode are also flushed so a sequential user does not inherit a previous
+ * user's state.
+ *
+ * Encrypted IndexedDB keys are preserved by default: the AES-GCM record is
+ * inert without its passphrase, so keeping it lets a returning user reuse
+ * their own keys instead of being pushed back to plain mode at every signout.
+ * Opt-in `includeEncrypted: true` is reserved for the explicit "Forget all
+ * AI data on this device" UX (THI-208) — never used at automatic signout.
+ */
+export async function clearAiSessionData(opts?: { includeEncrypted?: boolean }): Promise<void> {
+  const ls = getLocalStorage();
+  const ss = (globalThis as { sessionStorage?: Storage }).sessionStorage;
+
+  for (const p of PROVIDERS) ls.removeItem(LS_PREFIX + p);
+  ls.removeItem(PROVIDER_KEY);
+  ls.removeItem(CONSENT_KEY);
+
+  try {
+    ss?.removeItem(RATE_KEY);
+    ss?.removeItem(MODE_KEY);
+  } catch {
+    // Best effort — sessionStorage may be disabled (privacy mode, embedded WebView).
+  }
+
+  if (opts?.includeEncrypted) {
+    for (const p of PROVIDERS) await forgetKey(p);
   }
 }
 

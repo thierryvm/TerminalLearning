@@ -26,8 +26,11 @@ import {
   sanitizeUserInput,
 } from './sanitizer';
 import {
+  CONSENT_KEY,
   forgetKey as kmForgetKey,
   getKey as kmGetKey,
+  MODE_KEY,
+  RATE_KEY,
   type Provider,
 } from './keyManager';
 import { chat as providerChat, ChatError } from './providers';
@@ -36,9 +39,11 @@ import { getSystemPrompt, type TutorLang, type TutorMode } from './systemPrompt'
 
 export const RATE_LIMIT_MAX = 30;
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
-export const CONSENT_KEY = 'ai_consent_v1';
-export const RATE_STORAGE_KEY = 'ai_rate_v1';
-export const MODE_STORAGE_KEY = 'ai_tutor_mode';
+
+// THI-207 — centralized in keyManager (single source of truth). Re-exported
+// here for backward compatibility with existing consumers (AiSettings.tsx +
+// AiSettings.test.tsx + consent.test.ts).
+export { CONSENT_KEY };
 
 /**
  * Current shape version of the persisted consent record. Bump when the
@@ -139,7 +144,7 @@ interface RateState {
 
 function readRate(): RateState {
   try {
-    const raw = sessionStorage.getItem(RATE_STORAGE_KEY);
+    const raw = sessionStorage.getItem(RATE_KEY);
     if (!raw) return { count: 0, windowStart: Date.now() };
     const parsed = JSON.parse(raw) as Partial<RateState>;
     if (typeof parsed.count !== 'number' || typeof parsed.windowStart !== 'number') {
@@ -153,7 +158,7 @@ function readRate(): RateState {
 
 function writeRate(state: RateState): void {
   try {
-    sessionStorage.setItem(RATE_STORAGE_KEY, JSON.stringify(state));
+    sessionStorage.setItem(RATE_KEY, JSON.stringify(state));
   } catch {
     /* storage may be disabled — best effort */
   }
@@ -215,7 +220,7 @@ function readConsent(): boolean {
 
 function readMode(fallback: TutorMode): TutorMode {
   try {
-    const v = sessionStorage.getItem(MODE_STORAGE_KEY);
+    const v = sessionStorage.getItem(MODE_KEY);
     if (v === 'direct' || v === 'socratic') return v;
   } catch {
     /* ignore */
@@ -348,7 +353,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
 
   const setMode = useCallback((next: TutorMode) => {
     try {
-      sessionStorage.setItem(MODE_STORAGE_KEY, next);
+      sessionStorage.setItem(MODE_KEY, next);
     } catch {
       /* ignore */
     }

@@ -23,6 +23,7 @@ import { buildPlatformContext } from '@/app/data/platformContext';
 import {
   forgetKey as kmForgetKey,
   hasKey as kmHasKey,
+  PROVIDER_KEY,
   type Provider,
 } from '@/lib/ai/keyManager';
 import { DEFAULT_MODELS } from '@/lib/ai/providers';
@@ -35,8 +36,6 @@ import { AiKeySetup } from './AiKeySetup';
 import { MessageInput } from './parts/MessageInput';
 import { MessageList } from './parts/MessageList';
 import { RateLimitBadge } from './parts/RateLimitBadge';
-
-const PROVIDER_STORAGE_KEY = 'ai_tutor_provider';
 
 interface Props {
   lang?: TutorLang;
@@ -54,7 +53,7 @@ function readEnabled(): boolean {
 
 function readStoredProvider(): Provider {
   try {
-    const v = localStorage.getItem(PROVIDER_STORAGE_KEY);
+    const v = localStorage.getItem(PROVIDER_KEY);
     if (v === 'openrouter' || v === 'anthropic' || v === 'openai' || v === 'gemini') return v;
   } catch {
     /* ignore */
@@ -106,7 +105,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
   const setProvider = useCallback((next: Provider) => {
     setProviderState(next);
     try {
-      localStorage.setItem(PROVIDER_STORAGE_KEY, next);
+      localStorage.setItem(PROVIDER_KEY, next);
     } catch {
       /* ignore */
     }
