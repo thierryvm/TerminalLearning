@@ -1,0 +1,3 @@
+# Lighthouse raw JSON traces are gitignored (too heavy ~500KB-1MB each).
+# Re-run via commands in `docs/perf-baseline-2026-05-18.md` if comparison needed.
+# Only summary markdown files (perf-baseline-*.md, perf-history.md) are committed.

@@ -214,13 +214,10 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
   4. **Pattern reproductible** : FIX pattern d'abord, ROTATE seulement si surface publique
 - Référence : `~/.claude/projects/.../memory/feedback_graduation_stop_security.md` — *ressource locale développeur (mémoire Claude Code), hors repo*
 
-### Décision sécurité après 22h (codifié 17 mai 2026 — sustainability THI-212)
-- **Avant 22h locale (UTC+1/+2)** → décision sécurité normale, suivre les autres règles ci-dessus.
-- **Après 22h locale** → grader d'abord avec la grille `feedback_graduation_stop_security.md` AVANT toute action.
-- Si surface ≠ publique (leak conversation context, fichier `.secrets/` gitignored, etc.) → **committer le fix le lendemain matin, jamais la nuit**.
-- Justification : qualité décisionnelle s'effondre aux heures de fatigue (cf. incident graduation STOP du 17 mai 2026, ticket Opus brûlé sur rotation non nécessaire). THI-186 et THI-207 livrés en pleine nuit 00h10-00h30 dimanche auraient pu attendre 8h sans changer leur impact concret. Mesurable : suivi `sustain-auditor` trimestriel (baseline 17/05 = 5.5/10 RED).
-- **Exception unique** : prod réellement cassée (HTTP 5xx visibles users, leak public confirmé, faille active exploitée) → hotfix immédiat per "Exception 2 — hotfix production cassée" dans "Discipline séquentielle PR ↔ branche" ci-dessous.
-- Références : `~/.../memory/feedback_graduation_stop_security.md` + `~/.../memory/working_discipline_rules.md` Règle 11 + `~/.../memory/project_sprint_2_handoff_10juin.md` sas 48h — *ressources locales développeur (mémoire Claude Code), hors repo*.
+### Décision sécurité après 22h — DOCTRINE RETIRÉE par @thierry le 18 mai 2026
+- **Statut** : codifiée 17 mai 2026 (sustainability THI-212), **explicitement retirée par @thierry le 18 mai 2026 soir** (« sas 48h tu ne dois plus du tout en tenir compte nulle part »).
+- @thierry se déclare résistant à la fatigue mentale et préfère ne pas s'imposer ce cadre. La grille graduation STOP `feedback_graduation_stop_security.md` reste applicable comme évaluation des leaks, mais le cutoff horaire 22h n'est plus une règle.
+- La grille reste pertinente pour la qualité décisionnelle objective ; seul l'auto-déclaration horaire est annulée. `sustain-auditor` peut continuer à reporter des signaux objectifs trimestriellement.
 
 ### Discipline séquentielle PR ↔ branche
 - **Une PR à la fois jusqu'à merge.** Pas de création de branche pour PR N+1 avant que PR N soit mergée.
