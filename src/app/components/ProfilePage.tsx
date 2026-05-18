@@ -24,6 +24,7 @@ import { ArrowLeft, Github, KeyRound, Mail, Monitor, Sliders } from 'lucide-reac
 
 import { useAuth } from '../context/AuthContext';
 import { useEnvironment, ENV_META } from '../context/EnvironmentContext';
+import { RequireAuth } from './auth/RequireAuth';
 import { UserAvatar } from './auth/UserAvatar';
 
 // OAuth provider label + icon — mirrors the subset of providers we currently
@@ -56,34 +57,30 @@ function ProviderBadge({ provider }: { provider: string | undefined }) {
 }
 
 export function ProfilePage() {
-  const { user, initialized } = useAuth();
+  return (
+    <RequireAuth
+      fallback={
+        <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
+          <p className="text-[var(--github-text-secondary)] text-sm font-mono">
+            Vous devez être connecté pour accéder à votre profil.{' '}
+            <Link to="/" className="text-emerald-400 hover:text-emerald-300 underline">
+              Retour à l&apos;accueil
+            </Link>
+          </p>
+        </main>
+      }
+    >
+      <ProfilePageContent />
+    </RequireAuth>
+  );
+}
+
+function ProfilePageContent() {
+  // RequireAuth above guarantees user is non-null and session is initialized.
+  const { user } = useAuth();
   const { selectedEnv } = useEnvironment();
 
-  // Wait for Supabase session resolution before deciding to show the
-  // "not authenticated" message — without this guard, a legitimate user
-  // sees the fallback flash for ~100-300ms while Supabase initialises
-  // (security-auditor H1 finding, THI-42 PR #1).
-  if (!initialized) {
-    return (
-      <main className="flex-1 flex items-center justify-center min-h-[40vh]" aria-busy="true">
-        <p className="text-[var(--github-text-secondary)] text-sm font-mono">Chargement…</p>
-      </main>
-    );
-  }
-
-  // Auth guard — render fallback (no redirect) when initialised but no user.
-  // `AuthProvider` does not redirect on guarded routes — each component
-  // owns its fallback. Centralised <RequireAuth> wrapper at Layout level
-  // tracked as security-auditor follow-up for PR #3.
-  if (!user) {
-    return (
-      <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
-        <p className="text-[var(--github-text-secondary)] text-sm font-mono">
-          Vous devez être connecté pour accéder à votre profil. <Link to="/" className="text-emerald-400 hover:text-emerald-300 underline">Retour à l&apos;accueil</Link>
-        </p>
-      </main>
-    );
-  }
+  if (!user) return null; // type-narrowing for TS — never reached at runtime
 
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ??
