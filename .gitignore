@@ -27,6 +27,11 @@ pnpm-debug.log*
 .claude/screenshots/
 .claude-screenshots/
 
+# Lighthouse raw JSON traces — too heavy (~500KB-1MB each). Summary in markdown
+# docs/perf-baseline-*.md instead. Re-run via commands in baseline.md if needed.
+docs/perf-history/*.json
+!docs/perf-history/.gitkeep
+
 # Supabase CLI temp files
 supabase/.temp/
 
