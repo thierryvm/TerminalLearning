@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /app/admin
 
 # AI crawlers — explicitly allowed (open-source educational project)
 # Allowing indexing helps learners find this tool via AI-powered search engines.

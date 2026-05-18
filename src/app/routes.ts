@@ -71,6 +71,9 @@ const AiSettings = lazyWithRetry(() =>
 const ProfilePage = lazyWithRetry(() =>
   import('./components/ProfilePage').then(({ ProfilePage }) => ({ default: ProfilePage }))
 );
+const AdminPanel = lazyWithRetry(() =>
+  import('./components/AdminPanel').then(({ AdminPanel }) => ({ default: AdminPanel }))
+);
 const Changelog = lazyWithRetry(() =>
   import('./components/Changelog').then(({ Changelog }) => ({ default: Changelog }))
 );
@@ -99,6 +102,7 @@ export const router = createBrowserRouter([
       { path: 'reference', Component: CommandReference },
       { path: 'settings', Component: AiSettings },
       { path: 'profile', Component: ProfilePage },
+      { path: 'admin', Component: AdminPanel },
     ],
   },
 
