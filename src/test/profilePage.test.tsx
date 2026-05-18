@@ -1,0 +1,156 @@
+/**
+ * Tests for ProfilePage — THI-42 PR #1 shell.
+ *
+ * Covers:
+ *  - authenticated user with avatar_url + full_name → renders identity card
+ *  - authenticated user with email-only (no metadata) → falls back to email prefix as display name
+ *  - authenticated user via Google → renders Google provider badge
+ *  - authenticated user via GitHub → renders GitHub provider badge
+ *  - authenticated user via email → renders generic email badge
+ *  - environment switcher section renders current env label + shell preview
+ *  - settings section links to /app/settings (THI-112 existing page)
+ *  - back-link points to /app dashboard
+ *  - unauthenticated user → renders fallback guard message
+ */
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+import { HelmetProvider } from 'react-helmet-async';
+import { describe, it, expect, vi } from 'vitest';
+
+// ── Mocks ────────────────────────────────────────────────────────────────────
+
+type AuthMock = {
+  user: {
+    email?: string;
+    user_metadata?: Record<string, unknown>;
+    app_metadata?: Record<string, unknown>;
+  } | null;
+  initialized: boolean;
+};
+
+const authState: AuthMock = { user: null, initialized: true };
+
+vi.mock('../app/context/AuthContext', () => ({
+  useAuth: () => ({ user: authState.user, initialized: authState.initialized }),
+}));
+
+vi.mock('../app/context/EnvironmentContext', async () => {
+  const actual = await vi.importActual<typeof import('../app/context/EnvironmentContext')>(
+    '../app/context/EnvironmentContext'
+  );
+  return {
+    ...actual,
+    useEnvironment: () => ({
+      selectedEnv: 'linux' as const,
+      setEnvironment: vi.fn(),
+    }),
+  };
+});
+
+import { ProfilePage } from '../app/components/ProfilePage';
+
+function renderProfile() {
+  return render(
+    <HelmetProvider>
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>
+    </HelmetProvider>
+  );
+}
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+
+describe('ProfilePage — auth guard', () => {
+  it('renders loading state while AuthContext is initialising', () => {
+    authState.user = null;
+    authState.initialized = false;
+    renderProfile();
+    expect(screen.getByText('Chargement…')).toBeInTheDocument();
+    // The "vous devez être connecté" fallback must NOT flash for legitimate
+    // users while their session is being resolved (security-auditor H1).
+    expect(screen.queryByText(/vous devez être connecté/i)).not.toBeInTheDocument();
+  });
+
+  it('renders fallback message when initialised but no user is authenticated', () => {
+    authState.user = null;
+    authState.initialized = true;
+    renderProfile();
+    expect(screen.getByText(/vous devez être connecté/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /retour à l'accueil/i })).toBeInTheDocument();
+  });
+});
+
+// ── Authenticated rendering ───────────────────────────────────────────────────
+
+describe('ProfilePage — authenticated user', () => {
+  it('renders display name and email from user_metadata', () => {
+    authState.user = {
+      email: 'thierry@example.com',
+      user_metadata: { full_name: 'Thierry Vanmeeteren', avatar_url: 'https://example.com/avatar.png' },
+      app_metadata: { provider: 'github' },
+    };
+    renderProfile();
+    expect(screen.getByText('Thierry Vanmeeteren')).toBeInTheDocument();
+    expect(screen.getByText('thierry@example.com')).toBeInTheDocument();
+  });
+
+  it('falls back to email prefix when no metadata is present', () => {
+    authState.user = { email: 'fallback@example.com', user_metadata: {}, app_metadata: {} };
+    renderProfile();
+    expect(screen.getByText('fallback')).toBeInTheDocument();
+  });
+
+  it('renders GitHub provider badge when app_metadata.provider is "github"', () => {
+    authState.user = {
+      email: 'gh@example.com',
+      user_metadata: { user_name: 'octocat', avatar_url: 'https://example.com/oc.png' },
+      app_metadata: { provider: 'github' },
+    };
+    renderProfile();
+    expect(screen.getByText(/connecté via github/i)).toBeInTheDocument();
+  });
+
+  it('renders Google provider badge when app_metadata.provider is "google"', () => {
+    authState.user = {
+      email: 'g@example.com',
+      user_metadata: { full_name: 'Google User', picture: 'https://example.com/g.png' },
+      app_metadata: { provider: 'google' },
+    };
+    renderProfile();
+    expect(screen.getByText(/connecté via google/i)).toBeInTheDocument();
+  });
+
+  it('renders generic email badge when app_metadata.provider is "email"', () => {
+    authState.user = {
+      email: 'pure-email@example.com',
+      user_metadata: {},
+      app_metadata: { provider: 'email' },
+    };
+    renderProfile();
+    expect(screen.getByText(/connecté par email/i)).toBeInTheDocument();
+  });
+
+  it('renders active environment section with shell + prompt preview', () => {
+    authState.user = { email: 'env-test@example.com', user_metadata: {}, app_metadata: {} };
+    renderProfile();
+    expect(screen.getByText('Linux')).toBeInTheDocument();
+    expect(screen.getByText(/bash \/ zsh/i)).toBeInTheDocument();
+  });
+
+  it('renders link to /app/settings for AI key + consent management', () => {
+    authState.user = { email: 'settings@example.com', user_metadata: {}, app_metadata: {} };
+    renderProfile();
+    const settingsLink = screen.getByRole('link', { name: /paramètres ia/i });
+    expect(settingsLink).toBeInTheDocument();
+    expect(settingsLink).toHaveAttribute('href', '/app/settings');
+  });
+
+  it('renders back-link to /app dashboard', () => {
+    authState.user = { email: 'back@example.com', user_metadata: {}, app_metadata: {} };
+    renderProfile();
+    const backLink = screen.getByRole('link', { name: /retour au tableau de bord/i });
+    expect(backLink).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', '/app');
+  });
+});

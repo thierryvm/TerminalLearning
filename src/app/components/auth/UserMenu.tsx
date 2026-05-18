@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { LogOut, LogIn, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { LogOut, LogIn, User, CircleUser } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusTrap } from '../../../lib/hooks/useFocusTrap';
 import { Button } from '../ui/button';
+import { UserAvatar } from './UserAvatar';
 
 interface UserMenuProps {
   syncStatus: 'local' | 'synced' | 'syncing' | 'error';
@@ -17,23 +18,14 @@ interface UserMenuProps {
 }
 
 const SYNC_CONFIG: Record<UserMenuProps['syncStatus'], { label: string; dot: string; text: string }> = {
-  local:   { label: 'Local',          dot: 'bg-[#8b949e]',               text: 'text-[var(--github-text-secondary)]' },
+  local:   { label: 'Local',          dot: 'bg-[var(--github-text-secondary)]',               text: 'text-[var(--github-text-secondary)]' },
   syncing: { label: 'Sync…',          dot: 'bg-yellow-400 animate-pulse', text: 'text-yellow-400' },
   synced:  { label: 'Synchronisé',    dot: 'bg-emerald-400',              text: 'text-emerald-400' },
   error:   { label: 'Erreur de sync', dot: 'bg-[var(--github-red)]',               text: 'text-[var(--github-red)]' },
 };
 
-function UserAvatar({ avatarUrl, initials, size }: { avatarUrl?: string; initials: string; size: 'sm' | 'md' }) {
-  const cls = size === 'sm' ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-base';
-  if (avatarUrl) {
-    return <img src={avatarUrl} alt="" aria-hidden="true" className={`${cls} rounded-full shrink-0`} />;
-  }
-  return (
-    <span className={`${cls} rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-mono shrink-0 select-none`}>
-      {initials}
-    </span>
-  );
-}
+// UserAvatar extracted to ./UserAvatar.tsx (THI-42 PR #1) so ProfilePage can
+// reuse the same OAuth avatar rendering with identical sizing semantics.
 
 export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMenuProps) {
   const { user, signOut } = useAuth();
@@ -77,7 +69,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
     return (
       <div className="px-3 py-2.5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)]">
         <div className="flex items-center gap-2.5 mb-2.5">
-          <span className="w-8 h-8 rounded-full bg-[#21262d] border border-[var(--github-border-primary)] flex items-center justify-center shrink-0">
+          <span className="w-8 h-8 rounded-full bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] flex items-center justify-center shrink-0">
             <User size={14} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
           </span>
           <div className="flex-1 min-w-0">
@@ -120,7 +112,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
             <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
             <span
               aria-hidden="true"
-              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#161b22] ${sync.dot}`}
+              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--github-bg-tertiary)] ${sync.dot}`}
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -129,6 +121,17 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
+        <Button
+          asChild
+          variant="emerald-soft"
+          size="link-inline"
+          className="w-full gap-2 min-h-11 py-1.5 mb-1.5 rounded-md text-xs font-mono hover:border-emerald-500/40"
+        >
+          <Link to="/app/profile">
+            <CircleUser size={12} aria-hidden="true" />
+            Mon profil
+          </Link>
+        </Button>
         <Button
           variant="ghost"
           size="link-inline"
@@ -159,7 +162,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
         <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
         <span
           aria-hidden="true"
-          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0d1117] ${sync.dot}`}
+          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--github-bg)] ${sync.dot}`}
         />
       </Button>
 
@@ -183,6 +186,15 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
             </div>
           </div>
           <div className="py-1" role="none">
+            <Link
+              to="/app/profile"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-text-primary)] font-mono hover:bg-[var(--github-border-secondary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+            >
+              <CircleUser size={14} aria-hidden="true" />
+              Mon profil
+            </Link>
             <Button
               variant="ghost"
               size="link-inline"
