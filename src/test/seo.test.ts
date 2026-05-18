@@ -125,6 +125,48 @@ describe('SEO -- JSON-LD structured data (Schema.org)', () => {
     const app = g.find((n) => n['@type'] === 'SoftwareApplication');
     expect(app?.['isAccessibleForFree']).toBe(true);
   });
+
+  // THI-226 enrichissement Schema.org Course — empêche le drift du nombre de leçons
+  // et garantit que chaque module est listé comme sous-cours pour Google + LLM retrievals.
+  it('Course.numberOfLessons === 65 (anti-drift)', () => {
+    const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
+    const course = g.find((n) => n['@type'] === 'Course');
+    expect(course?.['numberOfLessons']).toBe(65);
+  });
+
+  it('Course.hasPart contient 11 modules avec URLs valides', () => {
+    const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
+    const course = g.find((n) => n['@type'] === 'Course');
+    const parts = course?.['hasPart'] as Array<Record<string, unknown>> | undefined;
+    expect(Array.isArray(parts)).toBe(true);
+    expect(parts).toHaveLength(11);
+    for (const part of parts!) {
+      expect(part['@type']).toBe('Course');
+      expect(typeof part['name']).toBe('string');
+      expect((part['url'] as string).startsWith('https://terminallearning.dev/app/learn/')).toBe(true);
+      expect(['Beginner', 'Intermediate', 'Advanced']).toContain(part['educationalLevel']);
+    }
+  });
+
+  it('FAQPage contient au moins 9 questions (cibles écoles + RGPD + gratuité)', () => {
+    const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
+    const faq = g.find((n) => n['@type'] === 'FAQPage');
+    const entities = faq?.['mainEntity'] as Array<Record<string, unknown>> | undefined;
+    expect(Array.isArray(entities)).toBe(true);
+    expect(entities!.length).toBeGreaterThanOrEqual(9);
+    // School-targeted question must be present
+    const schoolQ = entities!.find((q) => /enseignants|établissements|école/i.test(q['name'] as string));
+    expect(schoolQ).toBeDefined();
+    // RGPD question must be present
+    const rgpdQ = entities!.find((q) => /RGPD|données|confidentialité/i.test(q['name'] as string));
+    expect(rgpdQ).toBeDefined();
+  });
+
+  it('Aucune référence orpheline "64 leçons" (anti-drift documentaire)', () => {
+    const html = readHtml();
+    expect(html).not.toContain('64 leçons');
+    expect(html).not.toContain('64 lessons');
+  });
 });
 
 // -- GEO ---------------------------------------------------------------------
