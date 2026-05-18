@@ -157,6 +157,20 @@
             "courseMode": "online",
             "courseWorkload": "PT3H"
           },
+          "numberOfLessons": 65,
+          "hasPart": [
+            { "@type": "Course", "name": "Navigation", "url": "https://terminallearning.dev/app/learn/navigation/orientation", "educationalLevel": "Beginner", "description": "Maîtrisez vos déplacements dans le système de fichiers (pwd, ls, cd)." },
+            { "@type": "Course", "name": "Fichiers & Dossiers", "url": "https://terminallearning.dev/app/learn/fichiers/mkdir", "educationalLevel": "Beginner", "description": "Créez, copiez, déplacez et supprimez fichiers et répertoires." },
+            { "@type": "Course", "name": "Lecture de fichiers", "url": "https://terminallearning.dev/app/learn/lecture/cat", "educationalLevel": "Beginner", "description": "Affichez, recherchez et analysez le contenu des fichiers." },
+            { "@type": "Course", "name": "Permissions", "url": "https://terminallearning.dev/app/learn/permissions/comprendre-permissions", "educationalLevel": "Intermediate", "description": "Contrôlez l'accès aux fichiers et répertoires (chmod, chown, sudo)." },
+            { "@type": "Course", "name": "Processus", "url": "https://terminallearning.dev/app/learn/processus/ps", "educationalLevel": "Intermediate", "description": "Gérez les programmes en cours d'exécution (ps, kill, top, jobs)." },
+            { "@type": "Course", "name": "Redirection & Pipes", "url": "https://terminallearning.dev/app/learn/redirection/redirection-sortie", "educationalLevel": "Intermediate", "description": "Chaînez les commandes et redirigez les flux de données (>, >>, |, tee)." },
+            { "@type": "Course", "name": "Variables & Scripts", "url": "https://terminallearning.dev/app/learn/variables/env-vars", "educationalLevel": "Advanced", "description": "Maîtrisez les variables d'environnement, les fichiers de config et l'automatisation." },
+            { "@type": "Course", "name": "Réseau & SSH", "url": "https://terminallearning.dev/app/learn/reseau/ping", "educationalLevel": "Advanced", "description": "Testez la connectivité, effectuez des requêtes HTTP et connectez-vous à des serveurs distants." },
+            { "@type": "Course", "name": "Git Fondamentaux", "url": "https://terminallearning.dev/app/learn/git/git-init", "educationalLevel": "Advanced", "description": "Maîtrisez le contrôle de version avec Git — l'outil indispensable de tout développeur professionnel." },
+            { "@type": "Course", "name": "GitHub & Collaboration", "url": "https://terminallearning.dev/app/learn/github-collaboration/git-remote", "educationalLevel": "Advanced", "description": "Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise." },
+            { "@type": "Course", "name": "L'IA comme outil dev", "url": "https://terminallearning.dev/app/learn/ia-dev/ia-dev-intro", "educationalLevel": "Advanced", "description": "Maîtrisez l'IA comme amplificateur de vos compétences — du prompt au déploiement." }
+          ],
           "provider": {
             "@type": "Organization",
             "name": "Terminal Learning",
@@ -202,7 +216,7 @@
               "name": "Combien de commandes et de leçons sont disponibles ?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Terminal Learning propose 64 leçons réparties en 11 modules progressifs : navigation, fichiers, lecture, permissions, processus, redirection, variables, réseau/SSH, Git, GitHub et l'IA comme outil dev."
+                "text": "Terminal Learning propose 65 leçons réparties en 11 modules progressifs : navigation, fichiers, lecture, permissions, processus, redirection, variables, réseau/SSH, Git, GitHub et l'IA comme outil dev. Plus de 27 commandes documentées avec syntaxe, exemples et variantes Linux/macOS/Windows."
               }
             },
             {
@@ -210,7 +224,7 @@
               "name": "Terminal Learning fonctionne-t-il sur mobile et tablette ?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Oui. L'application est responsive et fonctionne dans n'importe quel navigateur moderne, sur desktop, tablette et mobile — sans installation requise."
+                "text": "Oui. L'application est responsive et fonctionne dans n'importe quel navigateur moderne, sur desktop, tablette et mobile — sans installation requise. Le simulateur terminal s'adapte aux écrans tactiles."
               }
             },
             {
@@ -219,6 +233,30 @@
               "acceptedAnswer": {
                 "@type": "Answer",
                 "text": "Le curriculum comporte 11 modules progressifs : Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes, Variables & Scripts, Réseau & SSH, Git Fondamentaux, GitHub & Collaboration, et L'IA comme outil dev. Chaque module débloque le suivant."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Terminal Learning est-il adapté aux enseignants et aux établissements scolaires ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui. Terminal Learning est conçu pour être utilisable en classe : ressource gratuite, sans inscription obligatoire pour les élèves, progression locale par navigateur, contenu pédagogique structuré niveau A1 à C1 (CEFR informatique). L'intégration LTI 1.3 est en cours de finalisation pour Moodle, Smartschool et les LMS standards (Phase 7c). Un Admin Panel pour le suivi enseignant est prévu pour juin 2026."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Les données des utilisateurs sont-elles protégées (RGPD) ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui. Terminal Learning respecte le RGPD européen. Aucune donnée personnelle n'est collectée par défaut — la progression est stockée localement dans votre navigateur. Si vous créez un compte (optionnel), seul votre email et un identifiant sont stockés sur Supabase EU-west-1 (Frankfurt). Aucun tracking publicitaire, aucun cookie tiers, aucune revente de données. Détails complets dans notre politique de confidentialité."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Terminal Learning restera-t-il gratuit à long terme ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Oui. Terminal Learning est un projet bénévole, open source (MIT), et restera 100 % gratuit pour les apprenants individuels. Si une édition Établissement payante est introduite à l'avenir pour financer le développement, elle ajoutera des fonctionnalités institutionnelles (suivi classe, intégration LMS avancée) sans jamais paywaller le contenu pédagogique de base."
               }
             }
           ]
