@@ -40,9 +40,10 @@ alter table public.classes
 create index classes_invitation_code_idx on public.classes(invitation_code);
 
 -- ─── 2. Function to generate a fresh invitation code ────────────────────────
--- Uses gen_random_bytes(4) → 8 hex chars (32 bits entropy = 4.3 billion codes,
--- collision probability negligible until ~65k classes per the birthday paradox).
--- Retries up to 10 times if the (extremely unlikely) collision occurs.
+-- Uses gen_random_bytes(6) → 12 hex chars (48 bits entropy ≈ 281 trillion
+-- codes, collision probability < 50% only above ~17M classes per the
+-- birthday paradox). Retries up to 10 times if the extremely unlikely
+-- collision occurs.
 create or replace function public.generate_invitation_code()
 returns text
 language plpgsql
@@ -196,7 +197,7 @@ grant execute on function public.join_class_by_code(text) to authenticated;
 
 -- ─── 5. Documentation ──────────────────────────────────────────────────────
 comment on column public.classes.invitation_code is
-  'THI-235 Sprint 2.A — Unique 8-char hex code teachers share with students. Auto-generated on INSERT via trigger. Used by join_class_by_code() RPC.';
+  'THI-235 Sprint 2.A — Unique 12-char hex code (48 bits entropy) teachers share with students. Auto-generated on INSERT via trigger. Used by join_class_by_code() RPC.';
 
 comment on function public.join_class_by_code(text) is
   'THI-235 Sprint 2.A — Atomic enrollment via invitation_code. Security definer to bypass class_enrollments RLS for the controlled enrollment path. Returns class info + already_enrolled flag for idempotent UX.';
