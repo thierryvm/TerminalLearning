@@ -23,6 +23,8 @@ import { Helmet } from 'react-helmet-async';
 import { Activity, AlertCircle, BarChart3, ExternalLink, ShieldCheck, Users } from 'lucide-react';
 
 import { RequireRole } from './auth/RequireRole';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 export function AdminPanel() {
   return (
@@ -64,15 +66,16 @@ function AdminPanelContent() {
       </div>
 
       <footer className="pt-6 border-t border-[var(--github-border-primary)]">
-        <a
-          href="https://vercel.com/thierry-vanmeeterens-projects/terminal-learning/analytics"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-mono text-[var(--github-text-secondary)] hover:text-emerald-400 transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
-        >
-          Voir analytics détaillées sur Vercel
-          <ExternalLink size={12} aria-hidden="true" />
-        </a>
+        <Button asChild variant="ghost-gh" className="min-h-11 gap-2 font-mono text-sm">
+          <a
+            href="https://vercel.com/thierry-vanmeeterens-projects/terminal-learning/analytics"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Voir analytics détaillées sur Vercel
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
+        </Button>
         <p className="text-xs text-[var(--github-text-secondary)]/70 font-mono mt-2">
           Drains custom analytics widget : Phase 9 v2 (post-deadline 10 juin).
         </p>
@@ -90,23 +93,23 @@ interface WidgetCardProps {
 }
 
 function WidgetCard({ icon, title, description, comingIn, children }: WidgetCardProps) {
+  const headingId = `widget-${title.toLowerCase().replace(/\s+/g, '-')}`;
   return (
-    <section
-      className="px-5 py-5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)]"
-      aria-labelledby={`widget-${title.toLowerCase().replace(/\s+/g, '-')}`}
+    <Card
+      variant="tl-surface"
+      className="px-5 py-5 gap-3"
+      role="region"
+      aria-labelledby={headingId}
     >
-      <header className="flex items-center gap-3 mb-3">
+      <header className="flex items-center gap-3">
         <span className="text-emerald-400" aria-hidden="true">
           {icon}
         </span>
-        <h2
-          id={`widget-${title.toLowerCase().replace(/\s+/g, '-')}`}
-          className="text-base font-medium text-[var(--github-text-primary)]"
-        >
+        <h2 id={headingId} className="text-base font-medium text-[var(--github-text-primary)]">
           {title}
         </h2>
       </header>
-      <p className="text-sm text-[var(--github-text-secondary)] mb-3">{description}</p>
+      <p className="text-sm text-[var(--github-text-secondary)]">{description}</p>
       {children ?? (
         <div className="px-4 py-3 rounded-md bg-[var(--github-bg)]/40 border border-dashed border-[var(--github-border-primary)]">
           <p className="text-xs text-[var(--github-text-secondary)]/70 font-mono">
@@ -114,7 +117,7 @@ function WidgetCard({ icon, title, description, comingIn, children }: WidgetCard
           </p>
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -161,7 +164,7 @@ function WidgetStudentHeatmap() {
     >
       {/* Skeleton heatmap placeholder — emerald grid pattern */}
       <div
-        className="grid grid-cols-13 gap-1 mt-2"
+        className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 mt-2"
         role="img"
         aria-label="Heatmap placeholder — données live disponibles Sprint S3"
       >

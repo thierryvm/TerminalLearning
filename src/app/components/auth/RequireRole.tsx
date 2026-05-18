@@ -22,6 +22,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import type { UserRole } from '../../types/database';
 import { useUserRole } from '@/lib/hooks/useUserRole';
+import { Button } from '../ui/button';
 
 interface RequireRoleProps {
   /** The component(s) to render when the user is authenticated AND has an allowed role. */
@@ -69,12 +70,12 @@ export function RequireRole({
       <>
         {unauthenticatedFallback ?? (
           <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
-            <p className="text-[var(--github-text-secondary)] text-sm font-mono">
-              Vous devez être connecté pour accéder à cette page.{' '}
-              <Link to="/" className="text-emerald-400 hover:text-emerald-300 underline">
-                Retour à l&apos;accueil
-              </Link>
+            <p className="text-[var(--github-text-secondary)] text-sm font-mono mb-4">
+              Vous devez être connecté pour accéder à cette page.
             </p>
+            <Button asChild variant="emerald-soft" className="min-h-11">
+              <Link to="/">Retour à l&apos;accueil</Link>
+            </Button>
           </main>
         )}
       </>
@@ -91,11 +92,11 @@ export function RequireRole({
               Accès réservé
             </h1>
             <p className="text-[var(--github-text-secondary)] text-sm font-mono mb-4">
-              Cette page est accessible aux administrateurs uniquement.{' '}
-              <Link to="/app" className="text-emerald-400 hover:text-emerald-300 underline">
-                Retour au tableau de bord
-              </Link>
+              Cette page est accessible aux administrateurs uniquement.
             </p>
+            <Button asChild variant="emerald-soft" className="min-h-11">
+              <Link to="/app">Retour au tableau de bord</Link>
+            </Button>
           </main>
         )}
       </>
