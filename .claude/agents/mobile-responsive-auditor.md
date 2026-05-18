@@ -58,6 +58,9 @@ Run this agent after modifications to:
 - `src/app/components/CommandReference.tsx` (searchable reference)
 - `src/app/components/MarkdownPage.tsx` (changelog + story rendering)
 - `src/app/components/LoginModal.tsx`, `UserMenu.tsx`, `PrivacyPolicy.tsx`
+- `src/app/components/ProfilePage.tsx` (Profile Hub `/app/profile` THI-42 PR #1 — 3 sections Identité/Environnement/Paramètres, RequireAuth wrapper)
+- `src/app/components/auth/UserAvatar.tsx` (OAuth avatar render sm/md/lg + isValidAvatarUrl allow-list THI-220)
+- `src/app/components/auth/RequireAuth.tsx` (opt-in auth guard wrapper THI-221, anonymous-friendly UX préservée)
 - `src/app/components/ui/**` (shadcn primitives: button, dialog, input, sheet, badge, card, progress)
 - `src/styles/{index,fonts,tailwind,theme}.css` (root styles, tokens, focus rings, safe-area utilities)
 - `index.html` (viewport meta, theme-color, apple-touch-icon)

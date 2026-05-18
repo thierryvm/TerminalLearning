@@ -43,7 +43,8 @@ IMPORTANT : ne jamais rapporter un finding "fichier absent" si le fichier existe
 - src/lib/supabase.ts — client Supabase, exposition cle anon
 - api/ — edge functions Vercel (endpoints publics)
 - src/app/context/AuthContext.tsx — gestion de session
-- src/app/components/auth/ — LoginModal, AuthCallback, UserMenu
+- src/app/components/auth/ — LoginModal, AuthCallback, UserMenu, UserAvatar (avec isValidAvatarUrl allow-list THI-220), RequireAuth (opt-in wrapper THI-221)
+- src/app/components/ProfilePage.tsx — Profile Hub `/app/profile` route (THI-42 PR #1, custom RequireAuth fallback)
 - src/app/lib/progressSync.ts — sync Supabase
 - src/app/data/terminalEngine.ts — simulation de commandes
 - src/app/data/curriculum.ts — contenu des lecons
