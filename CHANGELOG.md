@@ -5,6 +5,92 @@
 
 ---
 
+## 🚀 Sprint 2.5 / S1 — SEO/GEO/AEO foundation + Phase 9 Admin Panel scoping + sas 48h drop
+*18 mai 2026 soir · Post-reset session · 3 PRs séquentielles, 7 tickets Linear créés, 1 doctrine retirée*
+
+Deuxième partie de la journée du 18 mai (après le hat-trick sécurité du matin). @thierry partage une analyse SEO de Google IA Gemini et demande un plan stratégique pour transformer Terminal Learning en « plateforme pédagogique incontournable et performante » pour la cible B2B écoles + centres de formation (deadline 10 juin 2026). Posture orchestrateur générale validée, agent challenge `general-purpose` lancé pour stress-tester le plan.
+
+### Doctrine retirée — sas 48h
+
+@thierry explicitement : « sas 48h tu ne dois plus du tout en tenir compte nulle part ». La doctrine codifiée la veille (17/05, sustainability THI-212) qui imposait 48h entre milestones Sprint 2 + cutoff 22h pour décisions sécurité est **retirée intégralement**. Cleanup 6 fichiers : `CLAUDE.md`, `working_discipline_rules.md` Règles 11+12, 3 memos CC + MEMORY.md. La grille graduation STOP (`feedback_graduation_stop_security.md`) reste applicable comme évaluation objective des leaks ; seul le cadre horaire est annulé.
+
+### PR #260 — Schema.org Course enrichissement (THI-226 child)
+
+Reconnaissance pré-code a révélé que TL avait DÉJÀ Schema.org `Course` + `SoftwareApplication` + `FAQPage` dans `index.html` (audit initial superficiel avait raté ça). Scope révisé en **enrichissement de l'existant** plutôt que création redundante :
+
+- `Course.numberOfLessons: 65` (était implicite dans `teaches[]` seulement)
+- `Course.hasPart` array : 11 sous-cours (1 par module) avec URLs canoniques `/app/learn/<moduleId>/<firstLessonId>` et `educationalLevel` Beginner/Intermediate/Advanced
+- `FAQPage` 6 → 9 questions (3 nouvelles ciblées B2B écoles + RGPD + gratuité long-terme)
+- Anti-drift documentaire : `64 leçons` → `65 leçons` dans FAQ + `public/llms.txt` (drift depuis Module 11 IA ajouté avril 2026)
+- 4 nouveaux tests `seo.test.ts` (68 total) garantissant `numberOfLessons === 65`, `hasPart.length === 11`, FAQ contient questions écoles + RGPD, no "64 leçons" anywhere
+
+**Validation empirique** Chrome MCP preview : Course 65 lessons + 11 hasPart, FAQPage 9 Questions, 0 référence "64 leçons", 0 console error.
+
+### Spike Vercel Analytics — finding critique
+
+30 min spike pour valider si Phase 9 Admin Panel peut consommer Vercel Analytics. **Finding** : Vercel **Drains = Pro plan obligatoire** ($20/mois) — blocker pour budget bénévole 0€. Schema riche `vercel.analytics.v2` (NDJSON/JSON HTTPS forwarding) parfait techniquement mais inaccessible Hobby plan. Failure mode P=50% anticipé par agent challenge confirmé.
+
+**Plan révisé Phase 9 v1** (post-spike) : pas de Drains. Widgets gratuits uniquement : Supabase health (data déjà dans `progress` + `auth.users`), Sentry events (free tier 5K events/mois), Vercel dashboard externe via lien. v2 post-deadline si écoles paient ($20/mois auto-finançable).
+
+### Performance baseline Lighthouse — anti-régression
+
+Snapshot Lighthouse 12.6.1 sur 3 routes prod capturé dans `docs/perf-baseline-2026-05-18.md` :
+
+| Route | Perf | A11y | BP | SEO | LCP | TBT |
+|---|---|---|---|---|---|---|
+| `/` Landing | **91** | **100** | **100** | **100** | 2935ms | 93ms |
+| `/app` Dashboard | **92** | **100** | **100** | **100** | 2866ms | 72ms |
+| `/changelog` | 74 | **100** | **100** | 92 | 3013ms | 701ms 🔴 |
+
+TBT 701ms sur `/changelog` confirme la nécessité du pre-render Vite (THI-228 prévu Sprint 4) — `react-markdown` parsing client-side bloque le main thread sur les longs markdown.
+
+### PR #261 — Docs Voie C (sas 48h drop + perf baseline + spike + marketing kit)
+
+Cleanup `CLAUDE.md` + `docs/perf-baseline-2026-05-18.md` + `docs/spike-vercel-analytics-2026-05-18.md` + `docs/marketing/kit-2026-05-18.md` (descriptions Class Central + OER Commons + MERLOT + 4 Awesome lists PRs + 3 templates Instagram + 2 templates LinkedIn prêts-à-coller pour @thierry actions humaines parallèles). `.gitignore` ajoute `docs/perf-history/*.json` (Lighthouse traces ~2MB chacune, reproductibles via commandes documentées).
+
+### Retour Google IA Gemini — cross-validation externe
+
+@thierry partage l'analyse Google IA en fin de session pour cross-validation. **3 insights actionnables identifiés** (mes manqués) :
+
+1. **Schema.org TechArticle + HowTo combiné** pour pages `/commandes/<cmd>` (THI-227) — wrapper éditorial avec auteur/date
+2. **THI-229 NL landing bloqué par THI-228** pre-render Vite — sinon cannibalisation FR↔NL hreflang
+3. **Angle SEO "Outil pédagogique RGPD"** pour `/privacy/schools` (THI-230) — keywords "souveraineté numérique éducation", "alternative GAFAM enseignement"
+4. **Marketing angle "Souveraineté numérique"** LinkedIn — différencie TL des alternatives US sous CLOUD Act (Codecademy, freeCodeCamp, repl.it)
+5. **Annonce "LTI integration coming June 2026"** dans catalogs sans attendre le ship — momentum directeurs programmes rentrée
+
+### PR #262 — Marketing kit enrichi Google IA insights
+
+Insight propagation : nouveau template LinkedIn #3 "Souveraineté numérique" (hashtags `#SouveraineteNumerique #DigitalSovereignty #RGPD`) + option B description Class Central avec mention LTI June 2026 + 3 commentaires d'enrichissement Linear (THI-227 pattern Schema, THI-229 dépendance bloquante THI-228, THI-230 keywords SEO RGPD).
+
+### Plan Sprint 2.5 — 5 sessions × 5h vers 10 juin
+
+| Sprint | Scope | Status |
+|---|---|---|
+| **S1** (cette session) | SEO P1 quick wins + perf baseline + spike Vercel + Phase 9 umbrella scoping | ✅ Livré |
+| S2 (session +1) | Phase 9 skeleton (route `/admin` + RBAC role-gated v1 super_admin only) | 🔜 |
+| S3 (session +2) | Phase 9 widgets analytics gratuits (Supabase health + Sentry events) | 🔜 |
+| S4 (session +3) | Programmatic SEO commandes + Vite pre-render | 🔜 |
+| S5 (session +4 = D-3 démo) | NL landing + DPA + visual regression Playwright | 🔜 |
+
+**7 tickets Linear créés** : THI-225 (Phase 9 umbrella), THI-226 (SEO/GEO/AEO umbrella), THI-227 (programmatic SEO), THI-228 (Vite pre-render), THI-229 (NL landing), THI-230 (DPA + `/privacy/schools`), THI-231 (pricing page gated).
+
+### Méthode marquante — cross-validation externe
+
+Après ma plan stratégique + agent challenge `general-purpose`, le retour Google IA Gemini a apporté 3 insights manqués réels (TechArticle wrapper, hreflang cannibalisation, angle souveraineté). Posture validée : **après chaque finalisation de plan stratégique, partager pour cross-validation externe** (Google IA / agent challenge / @cowork si trio actif). Méthode à reproduire systématiquement avant gros chantiers.
+
+### Métriques cumulées
+
+| Indicateur | Avant session | Après session |
+|---|---|---|
+| Tests | 1475 | **1479** (+4 anti-drift Schema.org) |
+| Score sécurité | 9.2/10 | **9.2/10 hold** |
+| Score Landing SEO Lighthouse | 100/100 | **100/100 préservé** |
+| Issues Linear créées | — | **+7** (THI-225 à 231) |
+| Doctrines retirées | — | **+1** (sas 48h) |
+| Main commit | `ff4343d` matin | **`26eb500`** soir |
+
+---
+
 ## 👤 THI-42 PR #1 — Profile Hub shell + hat-trick sécurité defense-in-depth
 *18 mai 2026 · Sprint 2 étape 6/N · 4 PRs séquentielles, 1 PR scope chirurgical, anonymous-friendly UX préservée*
 
