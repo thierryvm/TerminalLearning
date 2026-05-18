@@ -5,14 +5,10 @@
 
 ---
 
-## 🚀 Sprint 2.5 / S1 — SEO/GEO/AEO foundation + Phase 9 Admin Panel scoping + sas 48h drop
-*18 mai 2026 soir · Post-reset session · 3 PRs séquentielles, 7 tickets Linear créés, 1 doctrine retirée*
+## 🚀 Sprint 2.5 / S1 — SEO/GEO/AEO foundation + Phase 9 Admin Panel scoping
+*18 mai 2026 soir · Post-reset session · 3 PRs séquentielles, 7 tickets Linear créés*
 
 Deuxième partie de la journée du 18 mai (après le hat-trick sécurité du matin). @thierry partage une analyse SEO de Google IA Gemini et demande un plan stratégique pour transformer Terminal Learning en « plateforme pédagogique incontournable et performante » pour la cible B2B écoles + centres de formation (deadline 10 juin 2026). Posture orchestrateur générale validée, agent challenge `general-purpose` lancé pour stress-tester le plan.
-
-### Doctrine retirée — sas 48h
-
-@thierry explicitement : « sas 48h tu ne dois plus du tout en tenir compte nulle part ». La doctrine codifiée la veille (17/05, sustainability THI-212) qui imposait 48h entre milestones Sprint 2 + cutoff 22h pour décisions sécurité est **retirée intégralement**. Cleanup 6 fichiers : `CLAUDE.md`, `working_discipline_rules.md` Règles 11+12, 3 memos CC + MEMORY.md. La grille graduation STOP (`feedback_graduation_stop_security.md`) reste applicable comme évaluation objective des leaks ; seul le cadre horaire est annulé.
 
 ### PR #260 — Schema.org Course enrichissement (THI-226 child)
 
@@ -44,7 +40,7 @@ Snapshot Lighthouse 12.6.1 sur 3 routes prod capturé dans `docs/perf-baseline-2
 
 TBT 701ms sur `/changelog` confirme la nécessité du pre-render Vite (THI-228 prévu Sprint 4) — `react-markdown` parsing client-side bloque le main thread sur les longs markdown.
 
-### PR #261 — Docs Voie C (sas 48h drop + perf baseline + spike + marketing kit)
+### PR #261 — Docs Voie C (perf baseline + spike Vercel + marketing kit + doctrine cleanup)
 
 Cleanup `CLAUDE.md` + `docs/perf-baseline-2026-05-18.md` + `docs/spike-vercel-analytics-2026-05-18.md` + `docs/marketing/kit-2026-05-18.md` (descriptions Class Central + OER Commons + MERLOT + 4 Awesome lists PRs + 3 templates Instagram + 2 templates LinkedIn prêts-à-coller pour @thierry actions humaines parallèles). `.gitignore` ajoute `docs/perf-history/*.json` (Lighthouse traces ~2MB chacune, reproductibles via commandes documentées).
 
@@ -86,7 +82,6 @@ Après ma plan stratégique + agent challenge `general-purpose`, le retour Googl
 | Score sécurité | 9.2/10 | **9.2/10 hold** |
 | Score Landing SEO Lighthouse | 100/100 | **100/100 préservé** |
 | Issues Linear créées | — | **+7** (THI-225 à 231) |
-| Doctrines retirées | — | **+1** (sas 48h) |
 | Main commit | `ff4343d` matin | **`26eb500`** soir |
 
 ---
