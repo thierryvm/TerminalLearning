@@ -107,7 +107,7 @@ export function ProfilePage() {
 
       <Link
         to="/app"
-        className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors mb-6 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+        className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)] transition-colors mb-4 -mx-2 px-2 py-3 min-h-11 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
       >
         <ArrowLeft size={12} aria-hidden="true" />
         Retour au tableau de bord
