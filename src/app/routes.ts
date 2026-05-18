@@ -68,6 +68,9 @@ const CommandReference = lazyWithRetry(() =>
 const AiSettings = lazyWithRetry(() =>
   import('./components/AiSettings').then(({ AiSettings }) => ({ default: AiSettings }))
 );
+const ProfilePage = lazyWithRetry(() =>
+  import('./components/ProfilePage').then(({ ProfilePage }) => ({ default: ProfilePage }))
+);
 const Changelog = lazyWithRetry(() =>
   import('./components/Changelog').then(({ Changelog }) => ({ default: Changelog }))
 );
@@ -95,6 +98,7 @@ export const router = createBrowserRouter([
       { path: 'learn/:moduleId/:lessonId', Component: LessonPage },
       { path: 'reference', Component: CommandReference },
       { path: 'settings', Component: AiSettings },
+      { path: 'profile', Component: ProfilePage },
     ],
   },
 
