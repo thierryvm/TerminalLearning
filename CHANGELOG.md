@@ -5,6 +5,86 @@
 
 ---
 
+## 👤 THI-42 PR #1 — Profile Hub shell + hat-trick sécurité defense-in-depth
+*18 mai 2026 · Sprint 2 étape 6/N · 4 PRs séquentielles, 1 PR scope chirurgical, anonymous-friendly UX préservée*
+
+Première PR du chantier Profile Hub (3 PRs verrouillées D1-D4), suivie immédiatement de 3 PRs sécurité fermant les findings du `security-auditor` sur la PR #1. Toutes les modifications sont chirurgicales (1 PR à la fois, scope unique, 0 régression).
+
+### PR #255 — Profile Hub shell (THI-42 PR #1)
+
+5 fichiers, +418/-17 lignes :
+- `src/app/components/ProfilePage.tsx` (nouveau, 186L) — Profile Hub minimal sous `/app/profile`, 3 sections (Identité avec avatar OAuth + display name + provider badge / Environnement actif read-only / Paramètres avec lien `/app/settings`)
+- `src/app/components/auth/UserAvatar.tsx` (nouveau, 43L) — extract DRY OAuth avatar rendering (GitHub `avatar_url` / Google `picture`), 3 tailles
+- `src/app/components/auth/UserMenu.tsx` (refactor) — "Mon profil" link variants `card` (sidebar) + `compact` (dropdown) AVANT "Se déconnecter"
+- `src/app/routes.ts` (+4L) — route `/app/profile` + `lazyWithRetry`
+- `src/test/profilePage.test.tsx` (nouveau, 156L) — 10 tests
+
+**Audits cascade pré-merge** :
+- `ui-auditor` : 4 CRITICAL pré-existantes fixées (hex hardcodés `#8b949e`, `#21262d`, `#161b22`, `#0d1117` → CSS vars) + W1 focus-visible back-link
+- `security-auditor` 9.2/10 : **H1 race condition auth guard FIXÉ** — sans `initialized` check + loading state, le fallback flash ~100-300ms pour user légitime pendant résolution Supabase session
+
+**Voie A** (desktop 1280×800 + iPhone 14 emul) :
+- Login `test.student`, profile render, sidebar Mon profil, settings link, back-link, signout
+- **THI-207 régression PASS** : auth token + 6 `ai_*` localStorage + 2 `ai_*` sessionStorage wiped sur signout
+- iPhone 14 : 0 horizontal overflow, **tap target back-link fixé** 198×16 → 214×44 (`min-h-11 py-3 -mx-2 px-2` commit `504554c` avant merge)
+
+### PR #256 — THI-219 CSP img-src lh1-lh6 explicit
+
+`vercel.json` `img-src` : `lh3.googleusercontent.com` → `lh1.googleusercontent.com` ... `lh6.googleusercontent.com` (énumération stricte, pas wildcard `*.googleusercontent.com`).
+
+Le `security-auditor` a **rejeté l'approche wildcard initiale** (M1 finding) : `*.googleusercontent.com` expose `uc.googleusercontent.com` qui héberge Drive/Gmail user uploads (vector content injection low-severity). L'énumération explicite couvre les variants Google avatar CDN (lh4-lh6 utilisés sporadiquement) sans exposer les hosts user-content.
+
+**Validation empirique Chrome MCP** (Voie A) :
+- `lh1`-`lh6` → allowed (0 CSP violation)
+- `lh7` → blocked (`violatedDirective: img-src`)
+- `uc.googleusercontent.com` → blocked
+
+Sourcery review : 2 suggestions valides (CSP duplication entre blocs `/app/*` et `/(.*)` + commentaire inline rationale) mais impossibles dans `vercel.json` strict JSON. Ticket follow-up [THI-223](https://github.com/thierryvm/TerminalLearning/issues) créé — migration `vercel.json` → `vercel.ts` (pattern Vercel 2026) qui résout les 2 ensemble via constantes TypeScript + commentaires natifs.
+
+### PR #257 — THI-220 Avatar URL validation defense-in-depth
+
+`isValidAvatarUrl(raw: string): boolean` exporté dans `UserAvatar.tsx`, mirror la CSP `img-src` :
+- HTTPS scheme only
+- Hostname dans allow-list (GitHub avatars + Google lh1-lh6)
+- Silent fallback initials si validation échoue (compromised IdP, manual user_metadata tampering, future OAuth provider sans update CSP)
+
+25 tests unitaires couvrant : tous les hosts allow-listed acceptés, schémas rejected (`http://`, `javascript:`, `data:`, `file://`, protocol-relative), hosts rejected (`uc.googleusercontent.com`, `lh7+`, subdomain hijack `avatars.githubusercontent.com.evil.com`).
+
+### PR #258 — THI-221 RequireAuth opt-in wrapper
+
+**Scope revision majeure** : ticket initial supposait pattern guard homogène `/app/*`. Reconnaissance révèle uniquement `ProfilePage` a le full pattern. `Dashboard`, `LessonPage`, `AiSettings`, `CommandReference` n'ont **pas** de guard — l'app est **anonymous-friendly by design**. Un blanket Layout-level wrap aurait cassé cette UX.
+
+Refactor en **wrapper opt-in** :
+```tsx
+<RequireAuth fallback={<CustomMessage />}>
+  <ProfilePageContent />
+</RequireAuth>
+```
+- `src/app/components/auth/RequireAuth.tsx` (nouveau, 75L)
+- 6 tests `requireAuth.test.tsx` + `beforeEach` reset (security-auditor L2)
+- L1 JSDoc : fallback ne doit pas contenir user input non sanitisé (Phase 9 callers role-mismatch)
+
+**Voie A** :
+- `/app/profile` anonyme → fallback custom "Vous devez être connecté pour accéder à votre profil." ✅
+- `/app` Dashboard anonyme → fully accessible, sidebar "Mode invité" + bouton "Se connecter" ✅ (**anonymous-friendly UX préservée**)
+
+Pattern prêt pour Phase 9 routes role-gated (admin, teacher dashboard).
+
+### Métriques cumulées 18 mai
+
+| Indicateur | Avant session | Après session |
+|---|---|---|
+| Tests | 1444 | **1475** (+31) |
+| Lint + type-check | clean | clean |
+| Score sécurité | 9.2/10 | **9.2/10 hold** |
+| Issues Linear Done | — | +4 (THI-42, 219, 220, 221) |
+| Tickets backlog créés | — | +5 (THI-219 à 223) |
+| Main commit | `95fbad4` | **`ff4343d`** |
+
+**Posture** : tous les findings security-auditor de THI-42 PR #1 traités en defense-in-depth en moins de 3h, scope chirurgical, 0 régression, 0 scope creep (Sourcery suggestions valides redirigées vers ticket follow-up dédié). Sprint 2 essentiellement clos en avance — THI-118 / THI-153 / THI-131 / THI-42 PR #1 livrés bien avant deadline 10 juin. Reste THI-77/78 (admin heatmaps) bloqués par Phase 9 Admin Panel (umbrella à créer).
+
+---
+
 ## 🔐 THI-207 — RGPD critical : AI consent + plain keys persistent au signout (clearAiSessionData)
 *17 mai 2026 · Sprint 2 étape 5/N · Empirical proof avant fix + Voie B PROD validée post-merge*
 
