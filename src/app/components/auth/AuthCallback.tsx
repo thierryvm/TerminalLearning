@@ -29,6 +29,16 @@ export function AuthCallback() {
   const navigate = useNavigate();
   const { session, initialized } = useAuth();
   const redirected = useRef(false);
+  // Track unmount to avoid `navigate()` calls after the component is gone
+  // (security-auditor L1 cleanup — async RPC may resolve after a fast
+  // user navigation; React 18 tolerates but emits a dev warning).
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!initialized || redirected.current) return;
@@ -50,12 +60,16 @@ export function AuthCallback() {
     // 2. No explicit returnTo → adaptive route per role.
     //    Async block : we cannot await directly inside useEffect, so wrap
     //    in an IIFE. The redirected.current guard above already protects
-    //    against double-fires.
+    //    against double-fires; isMounted.current guards against post-unmount navigate.
     void (async () => {
+      const safeNavigate = (target: string) => {
+        if (!isMounted.current) return;
+        navigate(target, { replace: true });
+      };
       try {
         const { supabase } = await import('@/lib/supabase');
         if (!supabase) {
-          navigate('/app', { replace: true });
+          safeNavigate('/app');
           return;
         }
         const { data, error } = await supabase.rpc('get_my_role');
@@ -63,12 +77,12 @@ export function AuthCallback() {
           // RPC failed (RLS recursion, network, etc.) — safe fallback.
           // Don't expose the technical error to the user; AuthContext logs
           // RPC failures separately in useUserRole.
-          navigate('/app', { replace: true });
+          safeNavigate('/app');
           return;
         }
-        navigate(defaultRouteForRole(data as UserRole | null), { replace: true });
+        safeNavigate(defaultRouteForRole(data as UserRole | null));
       } catch {
-        navigate('/app', { replace: true });
+        safeNavigate('/app');
       }
     })();
   }, [initialized, session, navigate]);
