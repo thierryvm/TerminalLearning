@@ -5,6 +5,56 @@
 
 ---
 
+## 🎯 Sprint 2.A étape 2.ter — Adaptive default route post-login per role
+*19 mai 2026 soirée · PR #270 · Sprint 2.5 Phase 9 multi-role*
+
+Fix UX empirique post-PR #269 : @thierry s'est logged via GitHub OAuth comme super_admin et a atterri sur `/app` (Dashboard student) au lieu de `/app/admin` (sa panneau de contrôle). Il a clairement énoncé le pattern attendu : "je ne suis pas teacher de base, je suis super-admin, à la limite, c'est sur mon dashboard de contrôle que je devrais arriver". C'était la décision E (adaptive routing per role) que j'avais deferred à Sprint 2.B comme "opinionated v2". Sa validation empirique confirme le ship Sprint 2.A.
+
+### Algorithme AuthCallback (precedence)
+
+1. **`consumeReturnTo()` returns a valid path** → use it (user came from a gated route fallback "Se connecter", explicit intent)
+2. **No explicit returnTo** → lookup role via `get_my_role()` RPC + `defaultRouteForRole(role)` :
+   - `super_admin` → `/app/admin` (supervision panel)
+   - `teacher` → `/app/teacher` (Mes classes)
+   - `institution_admin` → `/app` (Sprint 2.B extension `/app/institution`)
+   - `pending_teacher` → `/app` (Sprint 2.B extension `/app/teacher/pending`)
+   - `student` → `/app` (Dashboard standard)
+3. **RPC failure / no role** → safe fallback `/app`
+
+### Refactor consumeReturnTo API (`string` → `string | null`)
+
+Avant : retournait `/app` comme fallback safe → AuthCallback ne pouvait pas distinguer "user voulait /app" de "fallback safe par défaut". Maintenant : retourne `null` si aucune intention explicite OU validation fail → AuthCallback applique adaptive routing per role.
+
+Edge case préservé : si user stocke explicitement `/app`, on retourne `/app` (respect intent). Defense-in-depth : XSS-injected values → null (jamais conflated avec `/app`).
+
+### Industry pattern 2026 alignment
+
+- **DAR Design — Multi-Role B2B Product UX** : "preference, not restriction" → default view adapts to role naturally, no setup wizard
+- **Orbix — B2B Dashboard Design** : role-mapping = 2-3 décisions par persona → super_admin's daily concerns (Sentry, Supabase health, deployments) centralized in /app/admin
+
+### Sécurité
+
+7 défense layers open-redirect (PR #269) **préservés intact**. Refactor change uniquement comment AuthCallback DISTINGUE "no intent" de "invalid intent" — les deux mènent à la route role-adaptive safe. Worst case XSS scenario : student logged in via storage poisoned → lands on /app (default anyway), aucune privilege escalation possible.
+
+### Validation empirique
+
+- `npm run test` ✅ 1604 passed
+- `npm run type-check + lint + build` ✅ clean
+- `security-auditor` ✅ **9.4/10 SHIP** (0 CRITICAL/HIGH, 1 MEDIUM cosmétique L1 AbortController fixé en commit fixup, 4 LOW infos)
+- `rbac-flow-tester` ✅ **11/11 PASS** (5 personas login + workflow Sprint 2.A complet + RLS isolation + cleanup) sur prod Supabase
+- Test empirique RPC `join_class_by_code('a4368184d202')` impersonate student 105 → success sans bug 42702 (confirme migration 019 fix solide)
+- Voie A Chrome MCP anonymous `/app/admin` → fallback "Se connecter" + "Retour à l'accueil" rendu, 0 console error
+- Sourcery PASS
+
+### Tests Vitest +9
+
+- `defaultRouteForRole.test.ts` (9 tests) : staff routes, Sprint 2.B placeholders, student/null/undefined fallbacks, defensive unknown future role
+- `returnToStorage.test.ts` refactored pour nouvelle API `string | null` (9 tests)
+
+**Cf.** PR [#270](https://github.com/thierryvm/TerminalLearning/pull/270), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella.
+
+---
+
 ## 🧭 Sprint 2.A étape 2.bis — Role-aware nav hub + login redirect safe (`/app` Dashboard)
 *19 mai 2026 fin de journée · PR #269 · Sprint 2.5 Phase 9 multi-role*
 
