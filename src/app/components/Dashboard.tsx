@@ -10,6 +10,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Progress } from './ui/progress';
 import { AiTutorPanel } from './ai/AiTutorPanel';
+import { StaffQuickActions } from './dashboard/StaffQuickActions';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -117,6 +118,12 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sprint 2.A étape 2.bis — Role-gated quick actions for staff users.
+          Renders nothing for anonymous + student (anonymous-friendly UX).
+          Discoverability fix : @thierry himself did not notice the Sidebar
+          "Mes classes" entry, confirming the empirical need (cf. THI-243). */}
+      <StaffQuickActions />
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4 mb-8">
