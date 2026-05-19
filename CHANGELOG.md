@@ -5,6 +5,53 @@
 
 ---
 
+## 🧭 Sprint 2.A étape 2.bis — Role-aware nav hub + login redirect safe (`/app` Dashboard)
+*19 mai 2026 fin de journée · PR #269 · Sprint 2.5 Phase 9 multi-role*
+
+Fix UX empirique post-PR #268 : @thierry himself a confirmé qu'il n'avait pas vu l'entrée Sidebar "Mes classes" pour son propre profil super_admin ("je n'avais même pas vu le lien dans la sidebar mdr"). Si l'auteur du design ne discover pas, un nouveau teacher d'école va galérer pareil. Industry research 2026 (DAR Design, Orbix, Lollypop) confirme : role-specific quick-action cards sur la default landing = canonical B2B SaaS pattern (onboarding wizards = anti-pattern 2026).
+
+### Cards quick actions sur `/app` Dashboard
+Composant `StaffQuickActions.tsx` insert entre "Progression globale" et "Stats row". Section "MES OUTILS" visible **uniquement pour staff roles** (teacher/super_admin) — anonymous et student ne voient rien (preserves anonymous-friendly UX). Cards :
+- teacher / super_admin → "Mes classes" → `/app/teacher`
+- super_admin → "Administration" → `/app/admin`
+
+### Sidebar entry "Administration" pour super_admin
+Visible entre "Mes classes" et "Paramètres IA". Pattern identique à "Mes classes" (NavLink + useUserRole gate). Fold dans collapsible "Mes outils" Sprint 2.B+ via THI-240 si 3+ entries cumulées.
+
+### Login redirect flow avec open-redirect protection (OWASP A01:2021)
+Fix gap UX réel : auparavant le fallback unauthenticated proposait juste "Retour à l'accueil". Maintenant :
+- Bouton "Se connecter" (primary) stocke `location.pathname` en sessionStorage + navigate `/?login=open`
+- Landing détecte le query param + auto-ouvre LoginModal + strip le param (URL clean)
+- AuthCallback post-OAuth lit + valide + redirect vers le path stocké, fallback `/app`
+
+**Sécurité — 7 défense layers** :
+1. `validateReturnTo` allowlist regex stricte `/^\/app(\/[a-zA-Z0-9_-]+)*\/?$/`
+2. Length cap 200 chars (defensive)
+3. Pre-checks rejettent backslash, null byte, whitespace, `%`, `..`, `~`, `//`
+4. sessionStorage (tab-scoped, pas URL query param) — vector réduit de "shareable link" à "XSS-only"
+5. `consumeReturnTo()` one-shot read+clear — replay impossible
+6. Validation at READ time (pas write) — XSS-injected value rejected at consume
+7. NEVER log l'input (could be attacker payload — Sentry caching éviter)
+
+### Tests Vitest +72
+- `validateReturnTo.test.ts` (51 tests) : safe paths, rejected URLs/protocols/traversal/encoding/whitespace, non-string inputs, length boundaries, adversarial input
+- `returnToStorage.test.ts` (11 tests) : happy path, one-shot semantics, validation at consume, defensive when storage unavailable, storage key isolation
+- `staffQuickActions.test.tsx` (10 tests) : role-gated rendering 4 personas, accessibility
+- `requireRole.test.tsx` (+4 tests) : Se connecter button + sessionStorage flow
+
+**Tests** 1545 → 1645 (+100 dans la PR — 50 nouveaux Sprint 2.A étape 2.bis + 50 hérités étape 2). **Bundle** : Dashboard chunk inchangé (StaffQuickActions inline, pas de chunk séparé).
+
+### Cascade pré-merge
+- `npm run type-check + lint + test + build` ✅ vert
+- `ui-auditor` ✅ SHIP-READY (0 CRITICAL/HIGH/MEDIUM)
+- `security-auditor` **9.5/10 ✅ SHIP** (0 CRITICAL/HIGH, 1 MEDIUM M1 cosmétique fixé en commit fixup, 5 LOW infos)
+- Sourcery review ✅
+- Voie A Chrome MCP preview validation à venir
+
+**Cf.** PR [#269](https://github.com/thierryvm/TerminalLearning/pull/269), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella.
+
+---
+
 ## 🎓 Sprint 2.A étape 2 — Teacher Dashboard CRUD (`/app/teacher`)
 *19 mai 2026 après-midi · PR #268 · Sprint 2.5 Phase 9 multi-role*
 
