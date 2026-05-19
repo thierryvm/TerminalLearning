@@ -1,10 +1,14 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 16 mai 2026 (ajout `lti-auditor` MVP 10 checks pour Phase 7c LTI 1.3 — gate-zéro avant PR #236 THI-131)
+> **Dernière mise à jour** : 19 mai 2026 (validation `session-orchestrator` usage shutdown Sprint 2.A étape 2.ter — agent fait exactement le job de freshness check docs vitaux + recommandations actions prioritaires, count agent corrigé 15 → 16)
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 
-Cet index liste les **15 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **16 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2 + `mobile-responsive-auditor`), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+
+**Patterns récurrents** :
+- **Début de session** : invoquer `linear-sync` (status PR↔Linear) puis optionnellement `session-orchestrator` mode `startup` pour récap freshness + tickets In Progress
+- **Fin de session** : invoquer `session-orchestrator` mode `shutdown` pour audit complet (git, Linear, docs vitaux freshness, agent coverage gaps, orphan cleanup, recommandations actions prioritaires) — évite à @thierry de répéter les process à chaque shutdown
 
 > **Référence cycle de vie** : ce README doit être mis à jour à chaque ajout/modification d'agent. Voir `maintenance_docs_checklist.md` (mémoire interne) section "Agents".
 
