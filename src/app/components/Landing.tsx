@@ -62,18 +62,22 @@ export function Landing() {
   // sessionStorage (`auth_return_to`) and consumed by AuthCallback post-login.
   // We immediately strip the query param to keep the URL clean + avoid the
   // modal reopening on history.back navigation.
+  // security-auditor M1 fix : the cleanup runs whenever the param is present,
+  // even for already-authenticated users — keeps the URL clean rather than
+  // leaving `?login=open` stuck in the address bar.
   useEffect(() => {
-    if (searchParams.get('login') === 'open' && !user) {
-      // Synchronous setState within an effect is acceptable here because it
-      // runs once per query-param transition and is bracketed by setSearchParams
-      // which also schedules its own batched update (no cascading renders).
-      /* eslint-disable react-hooks/set-state-in-effect -- intentional one-shot trigger on query param entry */
+    if (searchParams.get('login') !== 'open') return;
+    // Synchronous setState within an effect is acceptable here because it
+    // runs once per query-param transition and is bracketed by setSearchParams
+    // which also schedules its own batched update (no cascading renders).
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional one-shot trigger on query param entry */
+    if (!user) {
       setLoginOpen(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete('login');
-      setSearchParams(next, { replace: true });
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
+    const next = new URLSearchParams(searchParams);
+    next.delete('login');
+    setSearchParams(next, { replace: true });
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [searchParams, setSearchParams, user]);
 
   const handleShare = async () => {
