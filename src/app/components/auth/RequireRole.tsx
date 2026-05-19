@@ -17,11 +17,12 @@
  * blanket. Cohérent avec la doctrine THI-221.
  */
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 
 import { useAuth } from '../../context/AuthContext';
 import type { UserRole } from '../../types/database';
 import { useUserRole } from '@/lib/hooks/useUserRole';
+import { setReturnTo } from '@/lib/auth/returnToStorage';
 import { Button } from '../ui/button';
 
 interface RequireRoleProps {
@@ -51,6 +52,16 @@ export function RequireRole({
 }: RequireRoleProps) {
   const { user, initialized } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Sprint 2.A étape 2.bis — store the intended route + navigate to Landing
+  // with ?login=open to auto-open the LoginModal. After OAuth callback,
+  // AuthCallback reads + validates the stored path and redirects back here.
+  const handleLogin = () => {
+    setReturnTo(location.pathname);
+    navigate('/?login=open');
+  };
 
   // Wait for auth and role resolution before deciding. Critical for UX :
   // without this guard, a legitimate admin sees the "Accès réservé" flash
@@ -73,9 +84,19 @@ export function RequireRole({
             <p className="text-[var(--github-text-secondary)] text-sm font-mono mb-4">
               Vous devez être connecté pour accéder à cette page.
             </p>
-            <Button asChild variant="emerald-soft" className="min-h-11">
-              <Link to="/">Retour à l&apos;accueil</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="emerald-soft"
+                className="min-h-11"
+                onClick={handleLogin}
+              >
+                Se connecter
+              </Button>
+              <Button asChild variant="ghost-gh" className="min-h-11">
+                <Link to="/">Retour à l&apos;accueil</Link>
+              </Button>
+            </div>
           </main>
         )}
       </>

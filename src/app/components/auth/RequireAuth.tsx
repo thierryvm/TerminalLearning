@@ -20,9 +20,11 @@
  * (e.g. <RequireAuth fallback={<TeacherUpgradeCTA />}> in Phase 9).
  */
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 
 import { useAuth } from '../../context/AuthContext';
+import { setReturnTo } from '@/lib/auth/returnToStorage';
+import { Button } from '../ui/button';
 
 interface RequireAuthProps {
   /** The component(s) to render once the user is authenticated. */
@@ -38,6 +40,14 @@ interface RequireAuthProps {
 
 export function RequireAuth({ children, fallback }: RequireAuthProps) {
   const { user, initialized } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Sprint 2.A étape 2.bis — same returnTo flow as RequireRole.
+  const handleLogin = () => {
+    setReturnTo(location.pathname);
+    navigate('/?login=open');
+  };
 
   // Wait for Supabase session resolution before deciding to show the
   // fallback. Without this guard a legitimate user sees the fallback
@@ -55,12 +65,22 @@ export function RequireAuth({ children, fallback }: RequireAuthProps) {
       <>
         {fallback ?? (
           <main className="flex-1 px-6 py-12 max-w-4xl mx-auto">
-            <p className="text-[var(--github-text-secondary)] text-sm font-mono">
-              Vous devez être connecté pour accéder à cette page.{' '}
-              <Link to="/" className="text-emerald-400 hover:text-emerald-300 underline">
-                Retour à l&apos;accueil
-              </Link>
+            <p className="text-[var(--github-text-secondary)] text-sm font-mono mb-4">
+              Vous devez être connecté pour accéder à cette page.
             </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="emerald-soft"
+                className="min-h-11"
+                onClick={handleLogin}
+              >
+                Se connecter
+              </Button>
+              <Button asChild variant="ghost-gh" className="min-h-11">
+                <Link to="/">Retour à l&apos;accueil</Link>
+              </Button>
+            </div>
           </main>
         )}
       </>

@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -27,6 +27,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { selectedEnv, setEnvironment } = useEnvironment();
   const { role } = useUserRole();
   const canSeeTeacherEntry = role === 'teacher' || role === 'super_admin';
+  const canSeeAdminEntry = role === 'super_admin';
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -176,6 +177,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             >
               <School size={16} />
               Mes classes
+            </NavLink>
+          )}
+          {/* THI-235 Sprint 2.A étape 2.bis — Administration entry for super_admin.
+              Will move into a "Mes outils" collapsible section (THI-240) once
+              Sprint 2.B adds 3+ role-gated entries (institution_admin, pending_teacher). */}
+          {canSeeAdminEntry && (
+            <NavLink
+              to="/app/admin"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                  isActive
+                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                }`
+              }
+            >
+              <ShieldCheck size={16} />
+              Administration
             </NavLink>
           )}
           <NavLink

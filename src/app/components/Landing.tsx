@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { FadeIn } from './landing/FadeIn';
 import {
   Terminal, ChevronRight, Github, BookOpen,
@@ -48,12 +48,37 @@ export function Landing() {
   const { isInstalled } = usePWAInstall();
   const [showPWAModal, setShowPWAModal] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 600);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // THI-235 Sprint 2.A étape 2.bis — open LoginModal automatically when a
+  // guest is redirected here from a role-gated route (RequireRole/RequireAuth
+  // fallback `Se connecter` button). The intended destination is stored in
+  // sessionStorage (`auth_return_to`) and consumed by AuthCallback post-login.
+  // We immediately strip the query param to keep the URL clean + avoid the
+  // modal reopening on history.back navigation.
+  // security-auditor M1 fix : the cleanup runs whenever the param is present,
+  // even for already-authenticated users — keeps the URL clean rather than
+  // leaving `?login=open` stuck in the address bar.
+  useEffect(() => {
+    if (searchParams.get('login') !== 'open') return;
+    // Synchronous setState within an effect is acceptable here because it
+    // runs once per query-param transition and is bracketed by setSearchParams
+    // which also schedules its own batched update (no cascading renders).
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional one-shot trigger on query param entry */
+    if (!user) {
+      setLoginOpen(true);
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete('login');
+    setSearchParams(next, { replace: true });
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [searchParams, setSearchParams, user]);
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';

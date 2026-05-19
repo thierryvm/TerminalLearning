@@ -56,6 +56,20 @@ function renderGuarded(
   );
 }
 
+// Variant that lets a test set the initial pathname so we can assert
+// the "Se connecter" handler stores the right returnTo path.
+function renderGuardedAtRoute(
+  allowed: UserRole[],
+  children: React.ReactNode,
+  initialPath: string,
+) {
+  return render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <RequireRole allowed={allowed}>{children}</RequireRole>
+    </MemoryRouter>,
+  );
+}
+
 beforeEach(() => {
   authState.user = null;
   authState.initialized = true;
@@ -91,6 +105,10 @@ describe('RequireRole — loading state', () => {
 });
 
 describe('RequireRole — unauthenticated fallback', () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
   it('renders default "Vous devez être connecté" when no user', () => {
     authState.user = null;
     authState.initialized = true;
@@ -99,7 +117,22 @@ describe('RequireRole — unauthenticated fallback', () => {
     expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
   });
 
-  it('uses custom unauthenticated fallback when provided', () => {
+  it('default fallback shows BOTH "Se connecter" and "Retour à l\'accueil" buttons', () => {
+    authState.user = null;
+    renderGuarded(['super_admin'], <p>Admin content</p>);
+    expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /retour à l'accueil/i })).toBeInTheDocument();
+  });
+
+  it('clicking "Se connecter" stores the current pathname in sessionStorage', async () => {
+    authState.user = null;
+    renderGuardedAtRoute(['super_admin'], <p>Admin content</p>, '/app/admin');
+    const loginBtn = screen.getByRole('button', { name: /se connecter/i });
+    loginBtn.click();
+    expect(window.sessionStorage.getItem('auth_return_to')).toBe('/app/admin');
+  });
+
+  it('uses custom unauthenticated fallback when provided (no "Se connecter" button)', () => {
     authState.user = null;
     renderGuarded(
       ['super_admin'],
@@ -109,6 +142,7 @@ describe('RequireRole — unauthenticated fallback', () => {
     );
     expect(screen.getByText('Custom login prompt')).toBeInTheDocument();
     expect(screen.queryByText(/vous devez être connecté/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /se connecter/i })).not.toBeInTheDocument();
   });
 });
 
