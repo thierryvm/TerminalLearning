@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
+import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -24,6 +25,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const { selectedEnv, setEnvironment } = useEnvironment();
+  const { role } = useUserRole();
+  const canSeeTeacherEntry = role === 'teacher' || role === 'super_admin';
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -156,6 +159,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <BookOpen size={16} />
             Référence
           </NavLink>
+          {/* THI-235 Sprint 2.A étape 2 — flat role-gated entry. Will be
+              regrouped into a "Mes outils" collapsible section per THI-240
+              if Sprint 2.B adds 2+ more role-gated entries. */}
+          {canSeeTeacherEntry && (
+            <NavLink
+              to="/app/teacher"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                  isActive
+                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                }`
+              }
+            >
+              <School size={16} />
+              Mes classes
+            </NavLink>
+          )}
           <NavLink
             to="/app/settings"
             onClick={onClose}

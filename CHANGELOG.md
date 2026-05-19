@@ -5,6 +5,61 @@
 
 ---
 
+## 🎓 Sprint 2.A étape 2 — Teacher Dashboard CRUD (`/app/teacher`)
+*19 mai 2026 après-midi · PR #268 · Sprint 2.5 Phase 9 multi-role*
+
+Première brique de l'interface enseignant : un dashboard où le prof crée ses classes et récupère le code d'invitation à partager avec ses élèves. Étape 2 du Sprint 2.A (étape 1 = migrations 016-019 invitation_code workflow PR #266, étape 3 = page `/app/join` à venir 20-22 mai).
+
+### Route `/app/teacher` role-gated
+
+`<RequireRole allowed={['teacher', 'super_admin']}>` wrap la route. Anonymous → fallback "Vous devez être connecté". Student/pending_teacher → fallback "Accès réservé". Anonymous-friendly UX préservée (la sidebar reste accessible aux invités sur les autres routes — pattern THI-221 confirmé).
+
+### Sidebar entry conditionnelle "Mes classes"
+
+Visible uniquement si role ∈ {teacher, super_admin}. Refactor en section "Mes outils" collapsible prévu Sprint 2.B+ via THI-240 (si 3+ entries role-gated cumulées).
+
+### Inline expandable form (Shadcn-free, intentionnel)
+
+`@radix-ui/react-dialog` n'est pas installé, AdminPanel.tsx n'a pas de modale non plus. Pour 1 input (nom de classe, institution_id auto-inherited from profile), l'inline expandable form garde deps + complexity low. Shadcn Dialog sera installé Sprint 2.B+ si 2+ modales justifient l'ajout.
+
+### ClassCard avec copy URL d'invitation
+
+Affiche nom, code 12-hex, count élèves enrôlés (PostgREST embedded aggregate `class_enrollments(count)`), date création, bouton "Copier l'URL d'invitation" avec feedback inline "Copié" / "Copie impossible" (no toast/sonner dep). URL générée : `${window.location.origin}/app/join?code=<12-hex>` — page `/app/join` lande à l'étape 3 (24-72h délai acceptable).
+
+### Hardening DB defense-in-depth (security-auditor 8.7/10 + fixes)
+
+`security-auditor` agent flag 2 HIGH avant merge, fixés dans la même PR :
+
+- **Migration 020** `classes_hardening` : CHECK `length(name) BETWEEN 1 AND 80` (H1 — bypass maxLength=80 client via direct REST impossible) + CHECK `invitation_code ~ '^[0-9a-f]{12}$'` (H2 — entropie 48 bits garantie au niveau DB) + trigger `set_invitation_code_before_insert` ALWAYS regenerates (H2 defense-in-depth, ignore client-supplied codes)
+- **Migration 021** `invitation_code_qualify_extensions` (FIX CRITICAL) : `generate_invitation_code()` raised `42883 function gen_random_bytes(integer) does not exist` parce que pgcrypto est dans le schéma `extensions` alors que migration 017 avait set `search_path = public` pour fixer l'advisor warning. Découvert empiriquement via INSERT test post-020 (le rbac-flow-tester avait flag, dismissed initially par moi → mea culpa). Fix : qualify call `extensions.gen_random_bytes(6)`. Mirrors la leçon process du bug 42702 PR #266 : tester le happy path empiriquement avant déclarer une migration verte.
+
+3 MEDIUM findings → tickets follow-up (THI-241 error message sanitization, THI-242 institution_admin invitation_code visibility ADR).
+
+### Tests Vitest +25
+
+`teacherDashboard.test.tsx` (14 tests : RBAC 5 personas + states loading/empty/list + flow create + cancel + erreur + autoFocus) et `classCard.test.tsx` (11 tests : display + clipboard API success/failure/unavailable + plural/singular + SSR-safe URL build).
+
+**Tests** 1520 → 1545 (+25). **Score sécurité** 8.7/10 (post-fixes inclus). **Bundle** : TeacherDashboard chunk 8.88 kB / 3.24 kB gzip, 0 régression Landing.
+
+### Cascade pré-merge
+
+- `npm run type-check + lint + test + build` ✅ vert
+- `ui-auditor` ✅ SHIP-READY (0 CRITICAL/HIGH/MEDIUM)
+- `security-auditor` 8.7/10 → 2 HIGH fixés en PR
+- `rbac-flow-tester` flag pgcrypto schema → fix migration 021 (validation empirique INSERT direct via Supabase MCP post-fix)
+- Voie A Chrome MCP anonymous /app/teacher → fallback rendu, 0 console error
+- Sourcery review SKIPPED (rate-limit hebdomadaire, acceptable)
+
+### Tickets Linear créés
+
+- **THI-240** UI Sidebar refactor "Mes outils" collapsible (Sprint 2.B+ si 3+ entries)
+- **THI-241** Security M1 PostgREST error message sanitization (info disclosure)
+- **THI-242** Security M3 institution_admin invitation_code visibility ADR
+
+**Cf.** PR [#268](https://github.com/thierryvm/TerminalLearning/pull/268), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella.
+
+---
+
 ## 🧹 Repo hygiene — `.env.example` complet pour fork & onboarding
 *19 mai 2026 midi · Suite setup Resend Sprint 2.C*
 

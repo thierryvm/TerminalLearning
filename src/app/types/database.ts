@@ -124,6 +124,13 @@ export interface Database {
           teacher_id: string;
           institution_id: string | null;
           created_at: string;
+          /**
+           * Unique 12-char hex code (48 bits entropy via gen_random_bytes(6)).
+           * Auto-generated on INSERT via trigger `set_invitation_code_before_insert`.
+           * Used by `join_class_by_code()` RPC for atomic student enrollment.
+           * THI-235 Sprint 2.A étape 1 (migrations 016/017/018/019).
+           */
+          invitation_code: string;
         };
         Insert: {
           id?: string;
@@ -131,6 +138,10 @@ export interface Database {
           teacher_id: string;
           institution_id?: string | null;
           created_at?: string;
+          // invitation_code is NOT exposed in Insert: migration 020 hardens the
+          // trigger to ALWAYS regenerate, ignoring any client-supplied value
+          // (security-auditor H2 — prevent client-forced reduced-entropy codes).
+          // For test fixtures needing a fixed code, INSERT then UPDATE.
         };
         Update: {
           id?: string;
@@ -138,6 +149,7 @@ export interface Database {
           teacher_id?: string;
           institution_id?: string | null;
           created_at?: string;
+          invitation_code?: string;
         };
         Relationships: [
           {
@@ -280,6 +292,22 @@ export interface Database {
       is_teacher_of_class: {
         Args: { p_class_id: string };
         Returns: boolean;
+      };
+      /**
+       * THI-235 Sprint 2.A étape 1 — atomic student enrollment via invitation code.
+       * Security definer, trim()-normalizes input, raises 42501 (not authed),
+       * 22023 (empty code), 02000 (invalid code). Returns class info + already_enrolled
+       * flag for idempotent UX. Consumed by `/app/join?code=XXX` page (étape 3).
+       */
+      join_class_by_code: {
+        Args: { code: string };
+        Returns: {
+          class_id: string;
+          class_name: string;
+          teacher_id: string;
+          joined_at: string;
+          already_enrolled: boolean;
+        }[];
       };
     };
     Enums: { [_ in never]: never };
