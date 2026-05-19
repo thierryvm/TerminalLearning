@@ -5,6 +5,15 @@
 
 ---
 
+## 🧹 Repo hygiene — `.env.example` complet pour fork & onboarding
+*19 mai 2026 midi · Suite setup Resend Sprint 2.C*
+
+`.env.example` ne listait que 3 variables sur les 12+ utilisées en Production. Conséquence : un fork ou un fresh clone avait un setup incomplet (AI Tutor + Sentry server-side + Resend invisibles). Fix : template exhaustif avec sections commentées (Supabase, Sentry client/server, AI Tutor BYOK ADR-005, Resend Phase 9 Sprint 2.C, Vercel OIDC auto-injecté) + conventions explicites VITE_* (public client) vs server-side (jamais bundlé) + warning Production-only design pour `RESEND_API_KEY` (pas de vrais emails depuis local dev).
+
+Aussi : `.gitignore` complété avec `.vercel/` (dossier de link) et `.env*.local` (redondant mais explicite) suite à `vercel link` pour le setup Resend.
+
+---
+
 ## 🚀 Sprint 2.5 / S1 — SEO/GEO/AEO foundation + Phase 9 Admin Panel scoping
 *18 mai 2026 soir · Post-reset session · 3 PRs séquentielles, 7 tickets Linear créés*
 
