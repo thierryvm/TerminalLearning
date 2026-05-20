@@ -1,11 +1,27 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 20 mai 2026 (ajout `classroom-workflow-auditor` THI-237 — gate-zero workflow teacher↔student E2E via Supabase MCP JWT impersonation, 14 checks structurés en 5 sections, modèle Sonnet, complémentaire à `rbac-flow-tester` Haiku baseline)
+> **Dernière mise à jour** : 20 mai 2026 (création `institution-rbac-auditor` THI-238 cross-institution boundary + upgrade modèles agents sécurité post-incident 24/04/2026 downgrade silencieux : `rbac-flow-tester` Haiku → Sonnet + ajout section client-state lifecycle THI-186, `prompt-guardrail-auditor` Haiku → Sonnet, `sustain-auditor` frontmatter `model:` ajouté)
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 > 🧠 **Limitation technique connue** : les agents `.md` créés en cours de session ne sont disponibles qu'à la session suivante (rechargement framework). Pattern : si un agent doit gater une PR créé pendant la même session, faire l'audit empirique inline avec exactement la méthode documentée dans l'agent, l'agent prendra le relais aux PRs suivantes.
 
-Cet index liste les **17 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2 + `mobile-responsive-auditor` + `classroom-workflow-auditor` Sprint 2.A étape 3), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **18 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+
+## 🛡 Doctrine modèles agents — post-incident 24/04/2026
+
+L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push direct main + CSP retiré + secret exposé URL MCP + HTTP 504 prod ~5h) a établi que **Haiku est l'attractor par défaut** quand Claude Code downgrade silencieusement un modèle. Conséquence : un agent en `model: haiku` ne peut PAS être trusted pour des scopes critiques sécurité/RBAC parce qu'au moindre downgrade, le scope critique tombe sans avertissement visible.
+
+**Doctrine de mapping modèle → scope agent** (effective 20/05/2026, post-audit Sprint 2.A) :
+
+| Modèle | Scope acceptable | Exemples |
+|---|---|---|
+| **Haiku** | Scope déterministe, validation structure, exécution tests, audit design system, contenu pédagogique | `test-runner`, `curriculum-validator`, `ui-auditor`, `content-auditor` |
+| **Sonnet** *(minimum)* | Audit sécurité, RBAC, multi-personas, raisonnement edge cases, audit LLM, mobile responsive | `security-auditor`, `rbac-flow-tester`, `classroom-workflow-auditor`, `institution-rbac-auditor`, `prompt-guardrail-auditor`, `route-attack-auditor`, `mobile-responsive-auditor`, `vercel-firewall-auditor`, `linear-sync`, `sustain-auditor` |
+| **Opus 4.7** | Audits critiques cross-couches (LLM security multi-layered, LTI crypto end-to-end, orchestration session complexe) | `llm-security-auditor`, `lti-auditor`, `session-orchestrator` |
+
+**Garde-fou utilisateur** : épingler `"model": "claude-opus-4-7"` dans `.claude/settings.local.json` du projet (cf. CLAUDE.md global ligne 82) — évite que la main session bascule en Haiku/Sonnet sans notification.
+
+**Pattern auto-apprentissage** : les leçons des bugs passés s'intègrent dans le **scope** des agents existants (ex : section "Client-state lifecycle" ajoutée à `rbac-flow-tester` après THI-186), pas dans des memos CC isolés que personne ne re-lit. Trimestriellement, re-audit des modèles agents (script `audit_agent_models.sh` à créer post-deadline).
 
 **Patterns récurrents** :
 - **Début de session** : invoquer `linear-sync` (status PR↔Linear) puis optionnellement `session-orchestrator` mode `startup` pour récap freshness + tickets In Progress
