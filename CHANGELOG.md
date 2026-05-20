@@ -55,6 +55,66 @@ Edge case préservé : si user stocke explicitement `/app`, on retourne `/app` (
 
 ---
 
+## 🎓 Sprint 2.A étape 3 — Page `/app/join` + invitation flow E2E (Sprint 2.A complet à 100%)
+*20 mai 2026 après-midi · PR #274 · Sprint 2.5 Phase 9 multi-role*
+
+Boucle le happy path teacher↔student du Sprint 2.A : teacher partage URL `/app/join?code=<12-hex>`, student rejoint via RPC `join_class_by_code` (security definer, migrations 016-021), enrollment atomique idempotent. **Sprint 2.A complet à 100%** : étape 1 (migrations) + étape 2 (Teacher Dashboard CRUD) + étape 2.bis (role-aware nav hub) + étape 2.ter (adaptive default route) + étape 3 (page join). Critère release-ready empirique : chaîne teacher → URL → student → enrollment → progression visible fonctionne sans bug 42702/42883.
+
+### Composants livrés
+
+- `src/app/components/JoinClass.tsx` — page form simple wrappée par `<RequireAuth>` opt-in (n'importe quel auth user peut rejoindre, pas role-gated). États UX complets : empty / loading "Rejoindre…" / success persistent card (vs toast) / already_enrolled subtitle adapté / error alert `role="alert"`. Pre-fill du code depuis `?code=` query param + autoFocus submit si pre-filled (1 clic pour confirmer). HTML5 `pattern="[0-9a-f]{12}"` + `maxLength={12}` côté client en miroir de la CHECK constraint DB.
+- `src/lib/hooks/useJoinClass.ts` — RPC consume + error code mapping FR inline (42501 → "Connectez-vous…", 22023 → "Entrez le code…", 02000 → "Ce code est invalide ou expiré…", default → message générique safe). Fallback substring match si error.code missing. Trim défensif côté client (RPC re-trim aussi, defense-in-depth). **NEVER log raw error code** (THI-241 doctrine — payload could be attacker-controlled).
+- `.claude/agents/classroom-workflow-auditor.md` — agent THI-237 gate-zero pour Sprint 2.A workflow E2E (modèle Sonnet). Pattern Supabase MCP JWT impersonation documenté (`set_config('request.jwt.claims', ...)`). 14 checks structurés en 5 sections : teacher INSERT classes + RLS hardening, student RPC join, teacher classroom data visibility, cross-class isolation, cleanup empirique. Complémentaire à `rbac-flow-tester` (Haiku, baseline auth) — ce nouvel agent valide le **business flow** Sprint 2.A.
+
+### Routes & types
+
+- `src/app/routes.ts` — ajout route `/app/join` lazy import + dans children de `/app` Layout.
+
+### Fix sécurité critique pendant la PR — security-auditor H1
+
+Le JSDoc du composant promettait que `auth_return_to=/app/join?code=…` survive le login round-trip, mais le code de `RequireAuth.tsx` ligne 48 ne stockait que `location.pathname` — sans `location.search`. Le scenario UX principal (élève arrive sur URL avec `?code=`, login, doit retrouver le code pré-rempli) cassait silencieusement.
+
+Fix en commit fixup (avant push PR) :
+- `src/lib/auth/validateReturnTo.ts` — regex étendue pour accepter `?code=[0-9a-f]{12}` strict allowlist (scope-limité au invitation_code format guarantee de la CHECK constraint migration 020). Tout autre query param ou format hex rejected (uppercase, wrong length, multiple params).
+- `src/app/components/auth/RequireAuth.tsx` + `RequireRole.tsx` — `setReturnTo(location.pathname + location.search)` au lieu de pathname seul.
+- Tests `validateReturnTo.test.ts` +5 rejected (uppercase hex, wrong length, non-hex chars, multiple params) + 2 accepted (`?code=` valide).
+- Test `requireRole.test.tsx` +1 preserve search.
+
+Voie A Chrome MCP empirique post-fix : clic « Se connecter » depuis `/app/join?code=a4368184d202` → `sessionStorage.getItem('auth_return_to')` retourne `/app/join?code=a4368184d202` ✅.
+
+### Tests Vitest +36
+
+- `useJoinClass.test.ts` (18 tests) : happy path, trim, empty validation, error code mapping (42501/22023/02000/default), message-based fallback, defensive states (empty array, RPC throws), reset()
+- `joinClass.test.tsx` (10 tests) : RequireAuth guard, query param pre-fill, submit flow, success state (welcome vs already_enrolled), error state, CTA links
+- `validateReturnTo.test.ts` (+7 cases) + `requireRole.test.tsx` (+1 test)
+
+**Tests** 1604 → **1640** (+36). **Bundle** : JoinClass chunk inline dans main bundle (composant léger).
+
+### Cascade pré-merge
+
+- `npm run type-check + lint + test + build` ✅ clean
+- `ui-auditor` ✅ SHIP-READY (0 CRITICAL/HIGH/MEDIUM)
+- `security-auditor` **9.2/10** initial → **H1+M1 fixés** dans la PR (preserve search + maxLength 12 + pattern hex), M2/M3 en tickets backlog
+- Test E2E empirique via Supabase MCP : 4 scénarios dans un DO block (anonymous 42501, student happy path success, retry idempotent, invalid code 02000) + cleanup empirique prod (0 enrollment restant post-test)
+- Voie A Chrome MCP : anonymous `/app/join?code=` fallback rendered + 0 console error + sessionStorage `?code=` preservation confirmée
+- Sourcery review SKIPPED (rate-limit hebdomadaire, acceptable)
+
+### Tickets backlog créés (suite security-auditor M2/M3)
+
+- **THI-258** (Medium) : Rate limit Edge Middleware sur `/rest/v1/rpc/join_class_by_code` par JWT sub (10 req/min), gated quand plan Vercel évolue
+- **THI-259** (Low) : Standardiser `isMounted` ref pattern dans hooks async (useJoinClass, useTeacherClasses, futurs Sprint 2.B-E), considérer extraction helper `useSafeState`
+
+### Cleanup Linear
+
+- **THI-237** Done : agent `classroom-workflow-auditor.md` créé dans cette PR
+- **THI-239** Done : tests Vitest + E2E empirique via Supabase MCP couvrent l'intent regression net bug 42702
+
+**Sprint 2.A — toutes étapes Done** : PRs #266 (étape 1) + #268 (étape 2) + #269 (étape 2.bis) + #270 (étape 2.ter) + **#274 (étape 3)**.
+
+**Cf.** PR [#274](https://github.com/thierryvm/teerminalLearning/pull/274), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella, [STORY.md](STORY.md) chapitre Sprint 2.A étape 3 narratif 1ère personne.
+
+---
+
 ## 🧭 Sprint 2.A étape 2.bis — Role-aware nav hub + login redirect safe (`/app` Dashboard)
 *19 mai 2026 fin de journée · PR #269 · Sprint 2.5 Phase 9 multi-role*
 
