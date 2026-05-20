@@ -1,10 +1,11 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 19 mai 2026 (validation `session-orchestrator` usage shutdown Sprint 2.A étape 2.ter — agent fait exactement le job de freshness check docs vitaux + recommandations actions prioritaires, count agent corrigé 15 → 16)
+> **Dernière mise à jour** : 20 mai 2026 (ajout `classroom-workflow-auditor` THI-237 — gate-zero workflow teacher↔student E2E via Supabase MCP JWT impersonation, 14 checks structurés en 5 sections, modèle Sonnet, complémentaire à `rbac-flow-tester` Haiku baseline)
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
+> 🧠 **Limitation technique connue** : les agents `.md` créés en cours de session ne sont disponibles qu'à la session suivante (rechargement framework). Pattern : si un agent doit gater une PR créé pendant la même session, faire l'audit empirique inline avec exactement la méthode documentée dans l'agent, l'agent prendra le relais aux PRs suivantes.
 
-Cet index liste les **16 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2 + `mobile-responsive-auditor`), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **17 agents** spécialisés du projet (12 + `llm-security-auditor` post-Sprint 1 + `session-orchestrator` + `lti-auditor` Sprint 2 + `mobile-responsive-auditor` + `classroom-workflow-auditor` Sprint 2.A étape 3), **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
 **Patterns récurrents** :
 - **Début de session** : invoquer `linear-sync` (status PR↔Linear) puis optionnellement `session-orchestrator` mode `startup` pour récap freshness + tickets In Progress
