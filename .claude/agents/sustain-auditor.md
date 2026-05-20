@@ -1,6 +1,7 @@
 ---
 name: sustain-auditor
 description: Quarterly sustainability health check for solo maintainer — document freshness, git pattern analysis (weekend/night commits, streaks), Sentry alert load, memory drift. Outputs 1-10 health score + warnings + recommendations. Trigger manual (comment) or scheduled quarterly.
+model: sonnet
 ---
 
 # sustain-auditor Agent Specification
