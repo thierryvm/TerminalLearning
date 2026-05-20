@@ -30,6 +30,9 @@ describe('validateReturnTo - accepted paths', () => {
     ['/app/teacher/'],
     ['/app/teacher/classes'],
     ['/app/some-module/lesson_id'],
+    // THI-235 Sprint 2.A étape 3 — invitation_code query param allowlist
+    ['/app/join?code=a4368184d202'],
+    ['/app/join/?code=abcdef012345'],
   ])('accepts safe path %s', (input) => {
     expect(validateReturnTo(input)).toBe(input);
   });
@@ -57,8 +60,13 @@ describe('validateReturnTo - rejected inputs (returns safe fallback)', () => {
     ['newline injection', '/app\n/teacher'],
     ['URL-encoded slash', '/app%2Fevil'],
     ['URL-encoded dotdot', '/app%2e%2e/etc'],
-    ['query string (not allowed v1)', '/app/teacher?foo=bar'],
-    ['fragment (not allowed v1)', '/app/teacher#section'],
+    ['unknown query param', '/app/teacher?foo=bar'],
+    ['code query with uppercase hex (regex strict lowercase)', '/app/join?code=A4368184D202'],
+    ['code query 11 chars (too short)', '/app/join?code=a436818d20'],
+    ['code query 13 chars (too long)', '/app/join?code=a4368184d2020'],
+    ['code query non-hex chars', '/app/join?code=ghijklmnopqr'],
+    ['multiple query params', '/app/join?code=a4368184d202&evil=1'],
+    ['fragment not allowed', '/app/teacher#section'],
     ['double slash inside', '/app//teacher'],
     ['empty string', ''],
   ])('rejects %s (input: %s)', (_label, input) => {

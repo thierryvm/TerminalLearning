@@ -132,6 +132,14 @@ describe('RequireRole — unauthenticated fallback', () => {
     expect(window.sessionStorage.getItem('auth_return_to')).toBe('/app/admin');
   });
 
+  it('"Se connecter" preserves location.search for invitation URLs (THI-235 étape 3)', async () => {
+    authState.user = null;
+    renderGuardedAtRoute(['student'], <p>Join page</p>, '/app/join?code=a4368184d202');
+    const loginBtn = screen.getByRole('button', { name: /se connecter/i });
+    loginBtn.click();
+    expect(window.sessionStorage.getItem('auth_return_to')).toBe('/app/join?code=a4368184d202');
+  });
+
   it('uses custom unauthenticated fallback when provided (no "Se connecter" button)', () => {
     authState.user = null;
     renderGuarded(

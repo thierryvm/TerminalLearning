@@ -39,13 +39,17 @@ const MAX_LENGTH = 200;
  *   /app/admin
  *   /app/learn/navigation/orientation
  *   /app/teacher/
+ *   /app/join?code=a4368184d202   (THI-235 Sprint 2.A étape 3)
  *
- * The regex is intentionally strict — no query params, no fragments
- * (those are not preserved across login redirects in this MVP). If a
- * caller needs to preserve query/fragment, extend this helper with a
- * test-covered allowlist of query params.
+ * The regex is intentionally strict — no fragments. Query params are
+ * whitelisted per use case : only `?code=<12-hex>` is allowed (the
+ * invitation_code format guaranteed by migration 020 CHECK constraint
+ * `^[0-9a-f]{12}$`). Any other query param is rejected to keep the
+ * open-redirect surface minimal. Future use cases that need extra
+ * query params must extend this allowlist explicitly with their own
+ * format check (e.g. `?ref=[a-z]{1,16}` for analytics referral codes).
  */
-const SAFE_PATH_RX = /^\/app(\/[a-zA-Z0-9_-]+)*\/?$/;
+const SAFE_PATH_RX = /^\/app(\/[a-zA-Z0-9_-]+)*\/?(\?code=[0-9a-f]{12})?$/;
 
 export function validateReturnTo(input: unknown): string {
   // Type guard — only strings are valid input

@@ -44,8 +44,11 @@ export function RequireAuth({ children, fallback }: RequireAuthProps) {
   const navigate = useNavigate();
 
   // Sprint 2.A étape 2.bis — same returnTo flow as RequireRole.
+  // étape 3 fix : preserve location.search so invitation links like
+  // /app/join?code=<12-hex> survive the login round-trip (security-auditor H1).
+  // validateReturnTo allowlist regex restricts to `?code=[0-9a-f]{12}` only.
   const handleLogin = () => {
-    setReturnTo(location.pathname);
+    setReturnTo(location.pathname + location.search);
     navigate('/?login=open');
   };
 

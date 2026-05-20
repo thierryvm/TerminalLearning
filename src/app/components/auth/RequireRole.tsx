@@ -58,8 +58,10 @@ export function RequireRole({
   // Sprint 2.A étape 2.bis — store the intended route + navigate to Landing
   // with ?login=open to auto-open the LoginModal. After OAuth callback,
   // AuthCallback reads + validates the stored path and redirects back here.
+  // étape 3 fix : preserve location.search so invitation links like
+  // /app/join?code=<12-hex> survive the login round-trip (security-auditor H1).
   const handleLogin = () => {
-    setReturnTo(location.pathname);
+    setReturnTo(location.pathname + location.search);
     navigate('/?login=open');
   };
 
