@@ -26,7 +26,7 @@ import {
   PROVIDER_KEY,
   type Provider,
 } from '@/lib/ai/keyManager';
-import { DEFAULT_MODELS } from '@/lib/ai/providers';
+import { getModelLabel, resolveModel } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
@@ -70,23 +70,11 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // Allow each provider's default model to be overridden at deploy time via
-  // a Vercel env var, e.g. `VITE_AI_TUTOR_OPENROUTER_MODEL=meta-llama/llama-
-  // 3.3-70b-instruct` to escape the `:free` rate-limit pool. Falls back to
-  // DEFAULT_MODELS when the var is unset. The full picker UI lands in
-  // THI-112 V1.5 — this is the V1 escape hatch.
-  const envOverride = useMemo<string | undefined>(() => {
-    switch (provider) {
-      case 'openrouter':
-        return import.meta.env.VITE_AI_TUTOR_OPENROUTER_MODEL as string | undefined;
-      case 'anthropic':
-        return import.meta.env.VITE_AI_TUTOR_ANTHROPIC_MODEL as string | undefined;
-      case 'openai':
-        return import.meta.env.VITE_AI_TUTOR_OPENAI_MODEL as string | undefined;
-      case 'gemini':
-        return import.meta.env.VITE_AI_TUTOR_GEMINI_MODEL as string | undefined;
-    }
-  }, [provider]);
+  // Single source of truth for "which model is actually used" — `resolveModel`
+  // reads the Vercel env override `VITE_AI_TUTOR_<PROVIDER>_MODEL` first and
+  // falls back to `DEFAULT_MODELS` only when the var is unset. Same helper is
+  // used by `AiSettings` so the two surfaces never disagree.
+  const model = useMemo(() => resolveModel(provider), [provider]);
 
   // THI-148 V1.0.1 — static, public-only platform overview injected as
   // <platform_context>. Same trust class as lessonContext (curriculum data,
@@ -96,7 +84,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
 
   const tutor = useAiTutor({
     provider,
-    model: envOverride && envOverride.length > 0 ? envOverride : DEFAULT_MODELS[provider],
+    model,
     lang,
     lessonContext,
     platformContext,
@@ -242,7 +230,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                 // close button off-screen.
                 className="min-w-0 truncate text-sm font-semibold text-[var(--github-text-primary)]"
               >
-                Tuteur IA — {PROVIDER_LABELS[provider]}
+                Tuteur IA — {PROVIDER_LABELS[provider]} • {getModelLabel(model)}
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 <RateLimitBadge

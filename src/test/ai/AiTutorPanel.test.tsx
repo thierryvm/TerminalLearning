@@ -231,3 +231,34 @@ describe('AiTutorPanel — conversation', () => {
     expect(localStorage.getItem('ai_key_openrouter')).toBeNull();
   });
 });
+
+// Transparency: every user (any role, even anonymous) must see which model
+// is actually answering their prompts. No gating. The model secret is not a
+// security boundary — the guardrail is system prompt + sanitizer + post-filter.
+describe('AiTutorPanel — header displays the active model (transparency)', () => {
+  it('header includes the model label when an env override is set', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const heading = await screen.findByRole('heading', { level: 2 });
+    expect(heading.textContent).toContain('OpenRouter');
+    expect(heading.textContent).toContain('Sonnet 4.6');
+  });
+
+  it('header falls back to the default model label when no env override is set', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const heading = await screen.findByRole('heading', { level: 2 });
+    expect(heading.textContent).toContain('OpenRouter');
+    // The OpenRouter default is the free Llama; label = "Llama 3.3 70B".
+    expect(heading.textContent).toContain('Llama 3.3 70B');
+  });
+});
