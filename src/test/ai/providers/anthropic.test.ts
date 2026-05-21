@@ -61,7 +61,7 @@ describe('Anthropic chat — request shape', () => {
     await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -76,7 +76,7 @@ describe('Anthropic chat — request shape', () => {
     await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -95,7 +95,7 @@ describe('Anthropic chat — request shape', () => {
     await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'SYS',
         messages: [
           { role: 'user', content: 'q1' },
@@ -125,7 +125,7 @@ describe('Anthropic chat — request shape', () => {
     await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -152,7 +152,7 @@ describe('Anthropic chat — streaming + errors', () => {
     const out = await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -171,7 +171,7 @@ describe('Anthropic chat — streaming + errors', () => {
     const out = await collect(
       await chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -184,7 +184,7 @@ describe('Anthropic chat — streaming + errors', () => {
     await expect(
       chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),
@@ -196,7 +196,7 @@ describe('Anthropic chat — streaming + errors', () => {
     await expect(
       chat({
         apiKey: FAKE_KEY,
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         systemPrompt: 'sys',
         messages: [{ role: 'user', content: 'hi' }],
       }),

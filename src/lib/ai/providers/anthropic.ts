@@ -20,7 +20,7 @@ import { safeCancel, streamSseEvents } from './_sse';
 
 export const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 export const ANTHROPIC_VERSION = '2023-06-01';
-export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5';
+export const ANTHROPIC_DEFAULT_MODEL = 'claude-sonnet-4-6';
 export const ANTHROPIC_MAX_TOKENS = 1024;
 
 interface ContentBlockDelta {
