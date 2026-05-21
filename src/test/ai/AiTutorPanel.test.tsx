@@ -261,4 +261,20 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
     // The OpenRouter default is the free Llama; label = "Llama 3.3 70B".
     expect(heading.textContent).toContain('Llama 3.3 70B');
   });
+
+  it('header `title` attribute exposes the full string for truncated viewports', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const heading = await screen.findByRole('heading', { level: 2 });
+    // Tooltip mirrors the visible text so hover/long-press reveals the full
+    // model name when the title is clipped by `truncate`.
+    expect(heading.getAttribute('title')).toBe(
+      'Tuteur IA — OpenRouter • Sonnet 4.6',
+    );
+  });
 });

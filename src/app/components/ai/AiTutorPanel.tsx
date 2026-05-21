@@ -227,8 +227,11 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                 // THI-152 brick 6/9: `min-w-0 truncate` lets the title
                 // shrink and clip on narrow viewports (iPhone SE) when
                 // the provider label is long, instead of pushing the
-                // close button off-screen.
+                // close button off-screen. The `title` attribute exposes
+                // the full string on hover (desktop) / long-press (mobile)
+                // so the model name stays discoverable when truncated.
                 className="min-w-0 truncate text-sm font-semibold text-[var(--github-text-primary)]"
+                title={`Tuteur IA — ${PROVIDER_LABELS[provider]} • ${getModelLabel(model)}`}
               >
                 Tuteur IA — {PROVIDER_LABELS[provider]} • {getModelLabel(model)}
               </h2>
