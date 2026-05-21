@@ -174,7 +174,7 @@ const COMPLETION_COMMANDS = [
   'pwd', 'ls', 'cd', 'mkdir', 'touch', 'cat', 'echo', 'rm', 'cp', 'mv',
   'grep', 'head', 'tail', 'wc', 'chmod', 'whoami', 'hostname', 'date',
   'uname', 'history', 'ps', 'kill', 'clear', 'help', 'man', 'exit',
-  'about', 'donate', 'support', 'hall-of-fame',
+  'about', 'hall-of-fame',
   'export', 'env', 'printenv', 'source', 'crontab',
   'chown', 'chgrp', 'sudo', 'top', 'htop', 'jobs', 'fg', 'bg', 'tee',
   'git',
@@ -1216,7 +1216,6 @@ function getHelpText(env: TerminalEnv = 'linux'): string {
       `  ${'man [commande]'.padEnd(COL)}Manuel d'une commande`,
       `  ${'help [commande]'.padEnd(COL)}Aide sur une commande`,
       `  ${'about'.padEnd(COL)}Informations sur le projet`,
-      `  ${'donate / support'.padEnd(COL)}Soutenir le projet`,
       `  ${'hall-of-fame'.padEnd(COL)}Liste des contributeurs`,
     ],
     macos: [
@@ -1604,32 +1603,6 @@ export function processCommand(state: TerminalState, input: string, env: Termina
         newState,
       };
 
-    case 'donate':
-    case 'support':
-      return {
-        lines: [
-          { text: '╔══════════════════════════════════════════════════╗', type: 'success' },
-          { text: '║        Soutenir Terminal Learning  ♥             ║', type: 'success' },
-          { text: '╠══════════════════════════════════════════════════╣', type: 'success' },
-          { text: '║  Ce projet est 100% gratuit et open source.      ║', type: 'success' },
-          { text: '║  Si l\'app t\'a aidé, tu peux soutenir :           ║', type: 'success' },
-          { text: '║                                                  ║', type: 'success' },
-          { text: '║  ⭐ Star le repo GitHub                          ║', type: 'success' },
-          { text: '║     github.com/thierryvm/TerminalLearning        ║', type: 'output' },
-          { text: '║                                                  ║', type: 'success' },
-          { text: '║  💜 GitHub Sponsors — bientôt disponible         ║', type: 'success' },
-          { text: '║     github.com/sponsors/thierryvm               ║', type: 'output' },
-          { text: '║  ☕ Ko-fi — bientôt disponible                   ║', type: 'success' },
-          { text: '║     ko-fi.com/thierryvm                          ║', type: 'output' },
-          { text: '║                                                  ║', type: 'success' },
-          { text: '║  ⏳ En attente d\'accord mutuelle (RIZIV/INAMI)  ║', type: 'info' },
-          { text: '║                                                  ║', type: 'success' },
-          { text: '║  Merci pour ton soutien !                        ║', type: 'success' },
-          { text: '╚══════════════════════════════════════════════════╝', type: 'success' },
-        ],
-        newState,
-      };
-
     case 'hall-of-fame':
       return {
         lines: [
@@ -1637,7 +1610,7 @@ export function processCommand(state: TerminalState, input: string, env: Termina
           { text: '║           Hall of Fame — Contributeurs           ║', type: 'info' },
           { text: '╠══════════════════════════════════════════════════╣', type: 'info' },
           { text: '║  Aucun contributeur pour le moment.              ║', type: 'info' },
-          { text: '║  Sois le premier ! → tapez "donate"              ║', type: 'info' },
+          { text: '║  Star le repo GitHub pour soutenir le projet.    ║', type: 'info' },
           { text: '╚══════════════════════════════════════════════════╝', type: 'info' },
         ],
         newState,

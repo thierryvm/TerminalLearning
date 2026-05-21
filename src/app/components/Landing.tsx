@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { FadeIn } from './landing/FadeIn';
 import {
   Terminal, ChevronRight, Github, BookOpen,
-  CheckCircle2, Zap, Clock, Star, Coffee, Heart,
+  CheckCircle2, Zap, Clock, Star, Heart,
   Compass, Monitor, LogIn, Share2, Check, Download, ArrowUp,
 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -530,90 +530,41 @@ export function Landing() {
         </FadeIn>
       </section>
 
-      {/* ── ABOUT + SUPPORT ─────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
-        <FadeIn direction="none" className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Left — About (SEO) */}
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-xs font-mono mb-6">
-              <Star size={12} className="text-amber-400" aria-hidden="true" />
-              Projet bénévole · Belgique
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--github-text-primary)] mb-4">À propos du projet</h2>
-            <p className="text-[var(--github-text-secondary)] leading-relaxed mb-4">
-              Terminal Learning est un projet open source créé avec passion pour rendre
-              l'apprentissage du terminal accessible à tous. L'application restera
-              <strong className="text-[var(--github-text-primary)]"> toujours gratuite</strong> — sans publicité,
-              sans données vendues, sans friction.
-            </p>
-            <p className="text-[var(--github-text-secondary)] leading-relaxed">
-              Si l'application t'a été utile, tu peux soutenir le développement. Chaque contribution
-              aide à couvrir les frais d'hébergement et de maintenance.
-            </p>
+      {/* ── ABOUT ───────────────────────────────────────────────── */}
+      <section className="max-w-3xl mx-auto px-6 py-16 border-t border-[var(--github-border-primary)]/50">
+        <FadeIn direction="none">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-xs font-mono mb-6">
+            <Star size={12} className="text-amber-400" aria-hidden="true" />
+            Projet bénévole · Belgique
           </div>
-
-          {/* Right — Support cards */}
-          <div className="space-y-4">
-            {/* Ko-fi — on hold pending Solidaris authorization */}
-            <div
-              role="group"
-              aria-disabled="true"
-              aria-label="Ko-fi — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
-              className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] opacity-60 cursor-not-allowed"
-              title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
+          <h2 className="text-2xl font-bold text-[var(--github-text-primary)] mb-4">À propos du projet</h2>
+          <p className="text-[var(--github-text-secondary)] leading-relaxed mb-4">
+            Terminal Learning est un projet open source créé avec passion pour rendre
+            l'apprentissage du terminal accessible à tous. L'application restera
+            <strong className="text-[var(--github-text-primary)]"> toujours gratuite</strong> — sans publicité,
+            sans données vendues, sans friction.
+          </p>
+          <p className="text-[var(--github-text-secondary)] leading-relaxed">
+            Si l'application t'a été utile, tu peux contribuer autrement :{' '}
+            <a
+              href="https://github.com/thierryvm/TerminalLearning"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--github-text-primary)] underline decoration-dotted hover:decoration-solid"
             >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-[var(--github-bg)] border border-[var(--github-border-primary)] shrink-0">
-                  <Coffee size={16} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[var(--github-text-primary)] text-sm font-semibold">Ko-fi — Don ponctuel</p>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] font-mono">
-                      bientôt
-                    </span>
-                  </div>
-                  <p className="text-[var(--github-text-secondary)] text-xs leading-relaxed mt-0.5">
-                    Offre un café. En attente d'accord mutuelle — bientôt disponible.
-                  </p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-sm font-medium select-none">
-                <Coffee size={14} aria-hidden="true" />
-                Bientôt disponible
-              </span>
-            </div>
-
-            {/* GitHub Sponsors — on hold pending Solidaris authorization */}
-            <div
-              role="group"
-              aria-disabled="true"
-              aria-label="GitHub Sponsors — bientôt disponible (en attente d'accord de la mutuelle Solidaris)"
-              className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] opacity-60 cursor-not-allowed"
-              title="En attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI)"
+              ajouter une étoile sur GitHub
+            </a>
+            ,{' '}
+            <a
+              href="https://github.com/thierryvm/TerminalLearning/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--github-text-primary)] underline decoration-dotted hover:decoration-solid"
             >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-[var(--github-bg)] border border-[var(--github-border-primary)] shrink-0">
-                  <Github size={16} className="text-[var(--github-text-secondary)]" aria-hidden="true" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[var(--github-text-primary)] text-sm font-semibold">GitHub Sponsors</p>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] font-mono">
-                      bientôt
-                    </span>
-                  </div>
-                  <p className="text-[var(--github-text-secondary)] text-xs leading-relaxed mt-0.5">
-                    Sponsoring mensuel récurrent — en attente d'accord mutuelle.
-                  </p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--github-border-primary)] text-[var(--github-text-secondary)] text-sm font-medium select-none">
-                <Github size={14} aria-hidden="true" />
-                Bientôt disponible
-              </span>
-            </div>
-          </div>
+              signaler un bug
+            </a>
+            {' '}ou contribuer au code, au curriculum, aux traductions.
+          </p>
         </FadeIn>
       </section>
 
@@ -666,13 +617,6 @@ export function Landing() {
             >
               GitHub
             </a>
-            <span
-              className="inline-flex items-center min-h-11 px-2 text-[#7d8590] cursor-not-allowed"
-              title="Bientôt disponible"
-              aria-disabled="true"
-            >
-              Ko-fi
-            </span>
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/changelog')}>Changelog</Button>
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/story')}>Notre histoire</Button>
             <Button variant="nav-link" size="footer-link" onClick={() => navigate('/privacy')}>Confidentialité</Button>

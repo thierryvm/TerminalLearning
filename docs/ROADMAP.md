@@ -66,7 +66,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Custom domain terminallearning.dev live (PR #74)
 - [x] iOS zoom fix on terminal input — `font-size: 16px` mobile (PR #74)
 - [x] Quick wins refactor: cmdHead/Tail merged, moduleIcons centralized, useLessonSEO hook (PR #75)
-- [x] a11y: `<main>` landmark, Ko-fi contrast 5.3:1, manifest dynamic injection, aria-label terminal (PR #76)
+- [x] a11y: `<main>` landmark, contrast fixes, manifest dynamic injection, aria-label terminal (PR #76)
 - [x] Lazy-load curriculum — main bundle 140kB → 16kB, FCP 2.96s → 0.6s (PR #77)
 - [x] Sitemap — terminallearning.dev domain, 42 URLs (PR #79)
 
@@ -334,7 +334,6 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [x] Project story page `/story` — living narrative journal, human+AI collaboration (PR #101–102)
 - [x] Trust badges on landing — A+ Security Rating, 876 tests CI green (PR #100)
 - [ ] Hall of Fame (opt-in contributors list)
-- [ ] GitHub Sponsors + Ko-fi (pending RIZIV/INAMI authorization)
 - [ ] School/university partnership program
 
 ## Phase 11b — Career Branches + Open Credentials 🔮

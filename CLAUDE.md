@@ -7,8 +7,6 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **Live** : https://terminallearning.dev
 - **Repo** : https://github.com/thierryvm/TerminalLearning
 - **Vercel** : https://vercel.com/thierry-vanmeeterens-projects/terminal-learning
-- **Ko-fi** : https://ko-fi.com/thierryvm (dons suspendus dans l'UI — en attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI))
-- **GitHub Sponsors** : https://github.com/sponsors/thierryvm (compte activé le 9 avril 2026 — dons suspendus dans l'UI, en attente de l'accord de la mutuelle Solidaris (RIZIV/INAMI))
 
 ## Règles Git — NON NÉGOCIABLES
 - **Jamais de commit direct sur `main`** — toujours `feature/xxx` ou `fix/xxx`
@@ -245,5 +243,4 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
 - Chaque préoccupation = son propre commit (feature ≠ chore ≠ fix)
 
 ## Décisions en attente
-- **Ko-fi + GitHub Sponsors** — dons suspendus dans l'UI jusqu'à l'accord de la mutuelle Solidaris (RIZIV/INAMI). GitHub Sponsors est activé sur la plateforme (9 avril 2026) mais les boutons dans l'app restent désactivés. Quand l'accord arrive : réactiver les cartes dans `Landing.tsx`, le lien footer, et mettre à jour le `donate` dans `terminalEngine.ts`.
 - **Playwright** — e2e/ ajouté (3 suites : accessibility, mobile, seo). Exclure de vitest (`exclude: ['node_modules/**', 'e2e/**']` dans vitest.config.ts — ne jamais retirer).

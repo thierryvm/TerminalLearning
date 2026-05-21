@@ -55,14 +55,6 @@ describe('Landing — hero section', () => {
     expect(primaryCTA).toBeInTheDocument();
   });
 
-  it('Ko-fi card is visible but on hold (no active link)', () => {
-    renderLanding();
-    // Ko-fi is on hold pending Solidaris/RIZIV authorization — rendered as disabled div, not a link
-    const kofiCard = screen.getByText(/don ponctuel/i);
-    expect(kofiCard).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /soutenir terminal learning sur ko-fi/i })).toBeNull();
-  });
-
   it('hero section is centered (text-center class present)', () => {
     const { container } = renderLanding();
     // The hero <section> must keep text-center for the original design
@@ -116,33 +108,13 @@ describe('Landing — module grid', () => {
   });
 });
 
-// ── Support cards (Ko-fi + GitHub Sponsors — on hold) ────────────────────────
-
-describe('Landing — support cards on hold', () => {
-  // Ko-fi and GitHub Sponsors are both disabled pending Solidaris/RIZIV-INAMI authorization.
-  // When the authorization is obtained, re-enable the cards in Landing.tsx and update these tests.
-
-  it('Ko-fi card shows "Bientôt disponible"', () => {
-    renderLanding();
-    expect(screen.getByText(/don ponctuel/i)).toBeInTheDocument();
-    // No active link — disabled div only
-    expect(screen.queryByRole('link', { name: /soutenir terminal learning sur ko-fi/i })).toBeNull();
-  });
-
-  it('GitHub Sponsors card shows "Bientôt disponible"', () => {
-    renderLanding();
-    expect(screen.getByText('GitHub Sponsors')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /github sponsors/i })).toBeNull();
-  });
-});
-
 // ── Footer ────────────────────────────────────────────────────────────────────
 
 describe('Landing — footer', () => {
-  it('renders Ko-fi text in footer (disabled, no link)', () => {
+  it('renders GitHub link in footer', () => {
     renderLanding();
-    // Ko-fi is on hold — footer shows text, not a link
-    expect(screen.getByText('Ko-fi')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /ko-fi/i })).toBeNull();
+    // Exact match avoids collision with About section links containing "GitHub" in their text
+    const githubLink = screen.getByRole('link', { name: 'GitHub' });
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/thierryvm/TerminalLearning');
   });
 });
