@@ -34,7 +34,7 @@ import {
   isEncrypted as kmIsEncrypted,
   type Provider,
 } from '@/lib/ai/keyManager';
-import { DEFAULT_MODELS } from '@/lib/ai/providers';
+import { resolveModel } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import {
   CONSENT_KEY,
@@ -199,9 +199,9 @@ export function AiSettings() {
                   <div className="min-w-0">
                     <p className="font-medium">{PROVIDER_LABELS[s.provider]}</p>
                     <p className="mt-1 text-xs text-[var(--github-text-secondary)]">
-                      Modèle par défaut :{' '}
+                      Modèle utilisé :{' '}
                       <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5">
-                        {DEFAULT_MODELS[s.provider]}
+                        {resolveModel(s.provider)}
                       </code>
                     </p>
                     <p className="mt-2 text-sm">

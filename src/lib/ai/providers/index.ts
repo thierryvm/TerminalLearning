@@ -37,6 +37,57 @@ export const DEFAULT_MODELS: Readonly<Record<Provider, string>> = {
   gemini: GEMINI_DEFAULT_MODEL,
 };
 
+/**
+ * Single source of truth for "which model is actually used" — reads the
+ * deploy-time Vercel env override `VITE_AI_TUTOR_<PROVIDER>_MODEL` first,
+ * falls back to `DEFAULT_MODELS` only when the env var is unset/empty.
+ *
+ * Settings page and Drawer panel must use this helper to avoid the bug
+ * where Settings showed the hardcoded fallback (e.g. Llama 3.3 70B free)
+ * while the Drawer used the env override (e.g. Sonnet 4.6 paid).
+ */
+export function resolveModel(provider: Provider): string {
+  const envKeys: Readonly<Record<Provider, string>> = {
+    openrouter: 'VITE_AI_TUTOR_OPENROUTER_MODEL',
+    anthropic: 'VITE_AI_TUTOR_ANTHROPIC_MODEL',
+    openai: 'VITE_AI_TUTOR_OPENAI_MODEL',
+    gemini: 'VITE_AI_TUTOR_GEMINI_MODEL',
+  };
+  const override = import.meta.env[envKeys[provider]] as string | undefined;
+  return override && override.length > 0 ? override : DEFAULT_MODELS[provider];
+}
+
+/**
+ * Normalises a provider model id (e.g. `anthropic/claude-sonnet-4-6`) to a
+ * short, human-friendly label (e.g. `Sonnet 4.6`) for display in the Drawer
+ * header. Falls back to the raw id when the pattern is unknown — keeps the
+ * UI honest rather than hiding mysterious models behind a generic label.
+ *
+ * Transparency principle: every authenticated or anonymous user must see
+ * which model is actually answering their prompts (BYOK consent, EU AI Act,
+ * RGPD, CNIL Éducation). No role gating.
+ */
+export function getModelLabel(modelId: string): string {
+  const lower = modelId.toLowerCase();
+  // Claude family
+  if (lower.includes('sonnet-4-6')) return 'Sonnet 4.6';
+  if (lower.includes('sonnet-4-5')) return 'Sonnet 4.5';
+  if (lower.includes('haiku-4-5')) return 'Haiku 4.5';
+  if (lower.includes('opus-4-7')) return 'Opus 4.7';
+  // OpenAI family
+  if (lower.includes('gpt-4o-mini')) return 'GPT-4o mini';
+  if (lower.includes('gpt-4o')) return 'GPT-4o';
+  // Gemini family
+  if (lower.includes('gemini-2.0-flash')) return 'Gemini 2.0 Flash';
+  if (lower.includes('gemini-1.5-pro')) return 'Gemini 1.5 Pro';
+  if (lower.includes('gemini-1.5-flash')) return 'Gemini 1.5 Flash';
+  // Llama family
+  if (lower.includes('llama-3.3-70b')) return 'Llama 3.3 70B';
+  if (lower.includes('llama-3.1-70b')) return 'Llama 3.1 70B';
+  // Fallback: return raw id so the user still sees something honest.
+  return modelId;
+}
+
 export function chat(provider: Provider, params: ChatParams): Promise<ChatStream> {
   switch (provider) {
     case 'openrouter':

@@ -8,7 +8,7 @@
  * what the test runner already pre-loads.
  */
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -18,6 +18,7 @@ import {
   forgetKey as kmForgetKey,
   saveKey as kmSaveKey,
 } from '@/lib/ai/keyManager';
+import { OPENROUTER_DEFAULT_MODEL } from '@/lib/ai/providers';
 import { CONSENT_KEY, CONSENT_TTL_MS, CONSENT_VERSION } from '@/lib/ai/useAiTutor';
 
 const FAKE_OPENROUTER = 'sk-or-v1-FAKE_TEST_KEY_DO_NOT_USE_0123456789';
@@ -176,5 +177,42 @@ describe('AiSettings — accessibility landmarks', () => {
     await screen.findByText('OpenRouter');
     const region = screen.getByRole('region', { name: /Clés API par provider/i });
     expect(within(region).getByText('OpenRouter')).toBeInTheDocument();
+  });
+});
+
+// Regression test for the Settings ↔ Drawer model inconsistency bug.
+// Pre-fix: AiSettings read DEFAULT_MODELS[provider] (hardcoded fallback,
+// e.g. Llama 3.3 70B free for OpenRouter) while AiTutorPanel used the
+// Vercel env override (e.g. Sonnet 4.6 paid). A user could read the
+// Settings page, believe they were paying for the free fallback, and be
+// billed for the paid model the Drawer was actually calling.
+// Post-fix: both surfaces resolve the same model via `resolveModel()`.
+describe('AiSettings — Settings/Drawer model consistency (regression)', () => {
+  it('displays the env override value when set (not the hardcoded fallback)', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+    try {
+      renderSettings();
+      await screen.findByText('OpenRouter');
+      // The env override must be visible inside the OpenRouter row.
+      expect(await screen.findByText('anthropic/claude-sonnet-4-6')).toBeInTheDocument();
+      // The hardcoded fallback must NOT be visible when override is set.
+      expect(screen.queryByText(OPENROUTER_DEFAULT_MODEL)).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('falls back to the hardcoded default when no env override is set', async () => {
+    renderSettings();
+    await screen.findByText('OpenRouter');
+    expect(await screen.findByText(OPENROUTER_DEFAULT_MODEL)).toBeInTheDocument();
+  });
+
+  it('uses the "Modèle utilisé" label (transparency wording, not "défaut")', async () => {
+    renderSettings();
+    await screen.findByText('OpenRouter');
+    expect(screen.getAllByText(/Modèle utilisé/i).length).toBeGreaterThan(0);
+    // The pre-fix wording must NOT appear anymore on the page.
+    expect(screen.queryByText(/Modèle par défaut/i)).not.toBeInTheDocument();
   });
 });
