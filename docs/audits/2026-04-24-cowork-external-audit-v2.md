@@ -56,10 +56,6 @@ Pas une implémentation prod. Objectif : **dérisquer Phase 7c** avant qu'elle c
 
 **Implication** : **pas de pair humain**. Le sustain plan doit être **reframé autour d'IA + process + docs**.
 
-### Q4 — RIZIV / GitHub Sponsors
-**Réponse @thierry** : démarches en cours. Psychologue a signé la lettre pour Solidaris demandant accès à un revenu partiel lié au projet (sans perte de revenus actuels). Rendez-vous Solidaris à prendre.
-**Impact Terminal Learning** : zéro technique. **Impact communication publique** : la phrase actuelle du README *"GitHub Sponsors — activated, donations on hold (pending Solidaris / RIZIV-INAMI authorization)"* est un red flag externe (recruteur/école qui lit sans contexte peut interpréter "projet bloqué"). À reformuler.
-
 ---
 
 ## 4. Sustain plan REFRAMÉ (sans pair humain)
@@ -72,7 +68,7 @@ Formaliser dans un ADR les règles :
 - **Rest cycle hebdo** — 1 jour off minimum (typiquement dimanche), pas de commit ni review
 - **Alerts Sentry fine-tuned** — jamais un bug prod ne doit réveiller @thierry la nuit (severity-based routing)
 - **Documentation vivante** — toute décision humaine critique doit vivre dans `docs/processes/`, pas uniquement dans la tête de @thierry
-- **Bus factor mitigation** — si @thierry pause forcée (santé, Solidaris, etc.), les docs permettent relève par lecture (future co-maintainer ou continuité @cc-terminal + @cowork)
+- **Bus factor mitigation** — si @thierry pause forcée (santé, etc.), les docs permettent relève par lecture (future co-maintainer ou continuité @cc-terminal + @cowork)
 - **Limite PR-par-jour** — pas plus de 2 PRs mergées/jour en moyenne sur 7j glissant (indicateur de fatigue)
 
 ### (b) Nouvel agent `.claude/agents/sustain-auditor.md`
@@ -100,9 +96,7 @@ Depuis un audit externe de `github.com/thierryvm/TerminalLearning` :
 
 **(c) Badge CI dynamique** dans README → GitHub Actions status (`shields.io/github/actions/workflow/status/...`). Le README annonce "all PRs must pass CI" mais rien ne le prouve publiquement.
 
-**(d) Reformuler la phrase RIZIV** → avant : *"GitHub Sponsors — activated, donations on hold (pending Solidaris / RIZIV-INAMI authorization)"*. Après : *"Open-source by choice — sponsor support available once regulatory setup is complete."* Plus pro, retire le jargon belge, reste honnête.
-
-**(e) Badge Lighthouse** (optionnel, si CI Lighthouse run) → preuve visuelle de qualité perf/a11y.
+**(d) Badge Lighthouse** (optionnel, si CI Lighthouse run) → preuve visuelle de qualité perf/a11y.
 
 ---
 
@@ -133,11 +127,9 @@ Contexte : Ton rapport critique a été analysé par @thierry et @cowork. Tes ch
 
 2. CURRICULUM — Ton alternative validée : Phase A CSV (1 semaine), Phase B YAML = BACKLOG avec DEADLINE fin Q3 2026 (pas vague).
 
-3. SUSTAIN PLAN — Réponse @thierry : PAS de co-maintainer humain prévu. Il travaille seul par choix + contrainte (Solidaris/RIZIV). Il forme un combo IA+agents satisfaisant. Le sustain plan est REFRAMÉ autour d'IA + process + docs, pas d'humain. Voir section 4 du V2.
+3. SUSTAIN PLAN — Réponse @thierry : PAS de co-maintainer humain prévu. Il travaille seul par choix. Il forme un combo IA+agents satisfaisant. Le sustain plan est REFRAMÉ autour d'IA + process + docs, pas d'humain. Voir section 4 du V2.
 
-4. RIZIV — Démarches en cours (psychologue a signé lettre Solidaris). Impact technique : zéro. Impact public : reformuler la phrase du README (voir section 5d du V2).
-
-5. POLISH GITHUB PUBLIC — 5 quick wins ~2h total (OG image, release tag v0.1.0, badge CI dynamique, reformulation RIZIV, badge Lighthouse optionnel).
+4. POLISH GITHUB PUBLIC — 4 quick wins ~2h total (OG image, release tag v0.1.0, badge CI dynamique, badge Lighthouse optionnel).
 
 === Ta mission ===
 

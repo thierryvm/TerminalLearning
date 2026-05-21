@@ -96,25 +96,6 @@ describe('about', () => {
   });
 });
 
-// ─── donate / support ─────────────────────────────────────────────────────────
-
-describe('donate', () => {
-  it('displays support block', () => {
-    const result = processCommand(makeState(), 'donate');
-    const text = result.lines.map((l) => l.text).join('\n');
-    expect(text).toContain('Soutenir');
-    expect(text).toContain('GitHub');
-  });
-});
-
-describe('support', () => {
-  it('is an alias of donate', () => {
-    const donate = processCommand(makeState(), 'donate');
-    const support = processCommand(makeState(), 'support');
-    expect(support.lines.map((l) => l.text)).toEqual(donate.lines.map((l) => l.text));
-  });
-});
-
 // ─── hall-of-fame ─────────────────────────────────────────────────────────────
 
 describe('hall-of-fame', () => {
@@ -132,8 +113,6 @@ describe('help', () => {
     const result = processCommand(makeState(), 'help');
     const text = result.lines.map((l) => l.text).join('\n');
     expect(text).toContain('about');
-    expect(text).toContain('donate');
-    expect(text).toContain('support');
     expect(text).toContain('hall-of-fame');
   });
 });
@@ -187,7 +166,6 @@ describe('getTabCompletions — command name (no space)', () => {
 
   it('includes new commands', () => {
     expect(getTabCompletions('ab', state)).toContain('about');
-    expect(getTabCompletions('don', state)).toContain('donate');
     expect(getTabCompletions('hall', state)).toContain('hall-of-fame');
   });
 
@@ -398,7 +376,6 @@ describe('help — no args, env-specific command list', () => {
     expect(text).toContain('grep');
     expect(text).toContain('chmod');
     expect(text).toContain('uname');
-    expect(text).toContain('donate');
   });
 
   it('windows: contains PowerShell commands', () => {

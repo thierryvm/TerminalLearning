@@ -186,7 +186,7 @@ Test user password (`TerminalLearning2026!`) was committed in clear in a SQL mig
 ## Out of Scope
 
 - Social engineering, physical attacks
-- Issues in third-party services (Supabase, Vercel, GitHub, Ko-fi)
+- Issues in third-party services (Supabase, Vercel, GitHub)
 - Denial of service against Vercel/Supabase infrastructure
 
 ## Disclosure Policy

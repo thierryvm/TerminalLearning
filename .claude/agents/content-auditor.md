@@ -24,7 +24,7 @@ Analyse en profondeur l'ensemble du curriculum + les docs narratifs et produis u
 ### 1. Couverture des environnements
 Pour chaque leçon, vérifier la présence de `instructionByEnv`, `hintByEnv` et `contentByEnv` couvrant `linux`, `macos`, `windows`.
 - CRITICAL si un env manque sans raison légitime
-- **INFO (pas CRITICAL)** si la commande de l'exercice est une **commande simulée identique sur tous les OS** (ex: `ai-help`, `about`, `donate`, `hall-of-fame`, `help`). Ces commandes n'ont pas besoin d'`instructionByEnv` car elles fonctionnent pareil partout.
+- **INFO (pas CRITICAL)** si la commande de l'exercice est une **commande simulée identique sur tous les OS** (ex: `ai-help`, `about`, `hall-of-fame`, `help`). Ces commandes n'ont pas besoin d'`instructionByEnv` car elles fonctionnent pareil partout.
 - WARNING si une leçon est volontairement mono-OS. Heuristique : classer en WARNING (pas CRITICAL) si la commande appartient à l'une des listes suivantes :
   - Windows-only : `taskkill`, `Get-Help`, `Get-Command`, `Get-Member`, `Get-ChildItem`, `Invoke-WebRequest`, `iwr`, `Resolve-DnsName`, `wevtutil`, `Get-EventLog`
   - Linux/macOS-only : `man`, `whatis`, `apropos`, `brew`, `apt`, `dpkg`

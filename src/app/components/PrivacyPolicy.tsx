@@ -6,8 +6,7 @@ import { Button } from './ui/button';
 /**
  * @component PrivacyPolicy
  * @description Politique de confidentialité conforme RGPD belge/européen.
- * Aucune collecte de données personnelles directe — liens vers Ko-fi/GitHub Sponsors
- * dont les politiques de confidentialité sont référencées.
+ * Aucune collecte de données personnelles directe.
  */
 export function PrivacyPolicy() {
   const navigate = useNavigate();
@@ -87,25 +86,6 @@ export function PrivacyPolicy() {
                 </p>
               </div>
 
-              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
-                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">GitHub Sponsors (donations)</h3>
-                <p className="text-sm">
-                  Les boutons de don renvoient vers GitHub Sponsors
-                  (<code className="text-emerald-400 text-sm">github.com/sponsors/thierryvm</code>).
-                  Toute donnée collectée lors d'un don (nom, email, paiement) est traitée
-                  exclusivement par GitHub, Inc. Terminal Learning n'a pas accès à ces données.
-                  Consulte la politique de confidentialité de GitHub pour plus d'informations.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
-                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Ko-fi (donations)</h3>
-                <p className="text-sm">
-                  Les boutons Ko-fi renvoient vers le service Ko-fi (ko-fi.com).
-                  Toute donnée collectée lors d'un don est traitée exclusivement par Ko-fi.
-                  Terminal Learning n'a pas accès à ces données.
-                </p>
-              </div>
             </div>
           </section>
 
