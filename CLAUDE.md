@@ -198,11 +198,14 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
 - Durée : 30 secondes max, pas de babysitting
 - Limite : pas adaptée si scope PR > 1-2 pages à tester en profondeur
 
-**Voie C — Skip validation visuelle (exceptionnel, conditions cumulatives)**
+**Voie C — Skip validation visuelle PROFONDE (exceptionnel, conditions cumulatives)**
 - PR 100% docs (`*.md` seulement, ou `docs/`)
 - 0 fichier `src/`, `api/`, `supabase/`, `package.json`, `vercel.json`, ou tout fichier impactant runtime
 - CI verte + Sourcery vert (ou SKIPPED rate-limit acceptable)
-- Mention obligatoire dans le message merge : "Voie C — docs-only, scope vérifié, 0 risque runtime"
+- **Smoke test preview OBLIGATOIRE** (≠ validation visuelle profonde) — codifié 23 mai 2026 : `curl` HTTP 200 sur 4-8 endpoints clés (`/`, `/app`, `/sitemap.xml` + page modifiée si applicable) via pattern bypass header. Confirme que le deploy n'a pas cassé l'app et qu'aucune régression silencieuse n'est introduite (cf. PR #283 où sitemap servi ≠ sitemap committé à cause d'un script prebuild caché).
+- Mention obligatoire dans le message merge : "Voie C — docs-only, scope vérifié, 0 risque runtime, smoke test preview PASS"
+
+**Règle d'or préview** : TOUJOURS vérifier la preview Vercel quand cela se justifie, même en Voie C. Le smoke test minimal (`curl` HTTP 200 + spot-check du contenu modifié) prend 10 secondes et attrape des régressions silencieuses qu'aucun check CI ne détecte (cf. incident sitemap PR #283 — CI verte + Vercel SUCCESS mais contenu obsolète servi à cause d'un build script qui écrasait le fichier).
 
 ### Sécurité tokens bypass — input ET output side (codifié 17 mai 2026)
 - **JAMAIS `curl -I`** sur URL Vercel protégée : la response `Set-Cookie: _vercel_jwt=<JWT>` contient le RAW bypass token dans son payload base64-décodable. Capter ce header en tool result = compromission du contexte de conversation.
