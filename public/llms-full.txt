@@ -9,6 +9,9 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 - **Live app**: https://terminallearning.dev
 - **Source code**: https://github.com/thierryvm/TerminalLearning
 - **Command reference**: https://terminallearning.dev/app/reference
+- **Changelog (public)**: https://terminallearning.dev/changelog
+- **Story (narrative timeline)**: https://terminallearning.dev/story
+- **Privacy policy**: https://terminallearning.dev/privacy
 - **Author**: Thierry Vanmeeteren (Belgium)
 - **UI language**: French — commands are universal (Linux/macOS/Windows)
 - **License**: MIT
@@ -16,7 +19,7 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 
 ## Curriculum Structure
 
-11 modules, 64 lessons total. Modules unlock progressively as the learner completes prerequisites.
+11 modules, 65 lessons total. Modules unlock progressively as the learner completes prerequisites.
 
 ---
 
@@ -147,7 +150,7 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 
 ---
 
-### Module 10 — GitHub & Collaboration (6 lessons)
+### Module 10 — GitHub & Collaboration (7 lessons)
 
 **Goal**: Work with remote repositories and collaborate effectively using GitHub.
 
@@ -156,7 +159,8 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 | git remote — Connecter au dépôt distant | `git remote add`, `git remote -v` | /app/learn/github-collaboration/git-remote |
 | git push & pull — Synchroniser avec GitHub | `git push`, `git pull`, `git push -u origin` | /app/learn/github-collaboration/git-push-pull |
 | git fetch & clone — Récupérer et cloner | `git fetch`, `git clone` | /app/learn/github-collaboration/git-fetch-clone |
-| Pull Requests — Code Review & Collaboration | GitHub PR workflow, review, merge strategies | /app/learn/github-collaboration/pull-requests |
+| Pull Requests — Code Review & Collaboration | GitHub PR workflow, review, approvals | /app/learn/github-collaboration/pull-requests |
+| Merge strategies — merge vs rebase vs squash | fast-forward, merge commits, `git rebase`, squash strategy | /app/learn/github-collaboration/merge-strategies |
 | Conflits de merge — Les résoudre comme un pro | conflict markers, `git mergetool`, resolution strategies | /app/learn/github-collaboration/conflicts |
 | GitHub Actions — CI/CD automatisé | `.github/workflows/`, YAML syntax, triggers, jobs | /app/learn/github-collaboration/github-actions |
 
@@ -194,15 +198,45 @@ Users select their OS once at lesson start; the entire curriculum adapts automat
 
 ---
 
+## Multi-role Classroom (RBAC)
+
+Terminal Learning supports collaborative learning through a Role-Based Access Control model with five distinct roles:
+
+| Role | Capabilities |
+|------|--------------|
+| **student** | Default for any signed-in learner. Tracks personal progress, joins a class via invitation code, accesses the AI tutor (BYOK) on lesson pages. |
+| **teacher** | Creates classes, generates invitation codes, lists enrolled students, monitors per-student progress. Bounded to their own classes by RLS. |
+| **pending_teacher** | Self-declared teacher awaiting approval from an institution administrator before gaining `teacher` capabilities. |
+| **institution_admin** | Approves pending teachers within their institution, monitors all classes and students under their institution scope. Cross-institution data is blocked at the database layer. |
+| **super_admin** | Global oversight role reserved for the platform maintainer. Read-only admin panel with platform-wide metrics. |
+
+All role-based queries are enforced by **Supabase Row Level Security (RLS)** policies — UI gating is a usability convenience, not the security boundary. Cross-institution isolation is empirically validated by a dedicated audit agent (`institution-rbac-auditor`).
+
+---
+
+## AI Tutor (BYOK — Bring Your Own Key)
+
+An optional, opt-in conversational tutor available on lesson pages, the dashboard, and the command reference. Designed to help when the learner is stuck without giving away the answer.
+
+- **BYOK only**: users supply their own API key for one of the supported providers — **OpenRouter**, **Anthropic**, **OpenAI**, or **Google Gemini**. No key is ever stored or proxied through any Terminal Learning server. There is no shared backend cost and no rate-limiting beyond what the upstream provider applies to the user's key.
+- **Client-side storage**: keys are stored in **encrypted IndexedDB** (AES-GCM via the Web Crypto API, PBKDF2 key derivation) or, if the user prefers ephemerality, in session-scoped localStorage. The user can revoke and forget the key at any moment from the tutor settings page.
+- **Lesson-grounded context**: the model is told which lesson the learner is on, what command(s) the lesson covers, and what target environment (Linux/macOS/Windows) is active.
+- **Defense in depth against prompt injection**: input sanitizer (heuristic + length cap), system prompt v1.1.0 with XML-delimited untrusted blocks, post-filter on model output, audited by a dedicated `prompt-guardrail-auditor` agent before every release.
+- **Transparency**: the active model identifier is visible in the tutor header for every user role. This is a deliberate product decision aligned with EU AI Act, RGPD, and CNIL Education guidance — learners and institutions have a right to know which model is processing their prompts. The guardrail is the system prompt + sanitizer + post-filter stack, not the secrecy of the model name.
+
+---
+
 ## Technical Architecture
 
 - **Frontend**: Vite 6 + React 18 + React Router v7 + TypeScript strict
-- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Styling**: Tailwind CSS v4 + shadcn/ui (Radix UI primitives)
 - **Terminal emulator**: custom browser-based engine (`terminalEngine.ts`) — validates real command syntax per OS
 - **Progress tracking**: localStorage (no account) + Supabase PostgreSQL (optional cloud sync)
-- **Auth**: Supabase Auth — GitHub OAuth + Google OAuth
-- **Hosting**: Vercel (EU region, GDPR compliant)
-- **Tests**: Vitest (530+ unit tests on terminal engine)
+- **Auth**: Supabase Auth — GitHub OAuth + Google OAuth + email/password
+- **Access control**: Role-Based Access Control (RBAC) with 5 roles — student, teacher, pending_teacher, institution_admin, super_admin — enforced by Supabase Row Level Security (RLS) policies
+- **AI tutor (optional)**: BYOK (Bring Your Own Key) — client-side only, supports OpenRouter / Anthropic / OpenAI / Google Gemini. Keys are encrypted in IndexedDB (AES-GCM via WebCrypto) or stored session-scoped in localStorage. Streaming via Server-Sent Events. Input/output sanitizers + post-filter for prompt injection defense
+- **Hosting**: Vercel (EU region, GDPR compliant) — HSTS preload, Content Security Policy, automatic DDoS mitigation
+- **Tests**: Vitest unit + integration tests + Playwright E2E suites (accessibility, mobile, SEO)
 
 ---
 
@@ -222,6 +256,12 @@ Yes. The app is fully responsive and works on phones and tablets.
 
 **Is cloud sync available?**
 Yes, optionally. Sign in with GitHub or Google to sync progress across devices. Fully GDPR compliant.
+
+**Is there an AI tutor?**
+Yes, optional and BYOK (Bring Your Own Key). Bring your own OpenRouter, Anthropic, OpenAI, or Google Gemini API key — it stays on your device (encrypted IndexedDB or session-scoped localStorage) and never transits any Terminal Learning server. The tutor is grounded in the current lesson context and refuses requests that try to bypass that scope.
+
+**Can teachers create classrooms?**
+Yes. Approved teachers can create classes, share an invitation code, list enrolled students, and monitor per-student progress. Institutions can group multiple teachers and classes under an institution administrator. Cross-institution data is blocked at the database layer (Row Level Security).
 
 **Can I contribute?**
 Yes. The project is MIT licensed. Issues and PRs welcome at https://github.com/thierryvm/TerminalLearning.
