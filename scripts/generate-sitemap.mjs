@@ -28,13 +28,16 @@ const SITEMAP_URLS = [
   { path: '/',              changefreq: 'weekly',  priority: '1.0', isLanding: true },
   { path: '/app',           changefreq: 'weekly',  priority: '0.9' },
   { path: '/app/reference', changefreq: 'monthly', priority: '0.7' },
+  { path: '/changelog',     changefreq: 'weekly',  priority: '0.6' },
+  { path: '/story',         changefreq: 'weekly',  priority: '0.6' },
   { path: '/privacy',       changefreq: 'yearly',  priority: '0.3' },
 
   // Module: Navigation
-  { path: '/app/learn/navigation/pwd',   changefreq: 'monthly', priority: '0.8' },
-  { path: '/app/learn/navigation/ls',    changefreq: 'monthly', priority: '0.8' },
-  { path: '/app/learn/navigation/ls-la', changefreq: 'monthly', priority: '0.8' },
-  { path: '/app/learn/navigation/cd',    changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/orientation', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/pwd',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/ls',          changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/ls-la',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/cd',          changefreq: 'monthly', priority: '0.8' },
 
   // Module: Fichiers & Dossiers
   { path: '/app/learn/fichiers/mkdir', changefreq: 'monthly', priority: '0.8' },
@@ -83,6 +86,38 @@ const SITEMAP_URLS = [
   { path: '/app/learn/reseau/dns',  changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/reseau/ssh',  changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/reseau/scp',  changefreq: 'monthly', priority: '0.8' },
+
+  // Module: Git Fondamentaux
+  { path: '/app/learn/git/git-init',             changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-config',           changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-add-commit',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-status-log',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-diff-gitignore',   changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-branch',           changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/git/git-merge',            changefreq: 'monthly', priority: '0.8' },
+
+  // Module: GitHub & Collaboration
+  { path: '/app/learn/github-collaboration/git-remote',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/git-push-pull',    changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/git-fetch-clone',  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/pull-requests',    changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/merge-strategies', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/conflicts',        changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/github-collaboration/github-actions',   changefreq: 'monthly', priority: '0.8' },
+
+  // Module: L'IA comme outil dev
+  { path: '/app/learn/ia-dev/ia-dev-intro',           changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-capacites',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-limites',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-prompts-basics',  changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-prompts-avances', changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-valider',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-debug',           changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-securite',        changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-claude-cli',      changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-metiers',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-posture',         changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/ia-dev/ia-dev-workflow',        changefreq: 'monthly', priority: '0.8' },
 ];
 
 function renderUrl({ path, changefreq, priority, isLanding }) {

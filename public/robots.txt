@@ -12,7 +12,13 @@ Allow: /
 User-agent: ChatGPT-User
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
 Allow: /
 
 User-agent: anthropic-ai
@@ -21,7 +27,28 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
+User-agent: GoogleOther
+Allow: /
+
 User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Diffbot
 Allow: /
 
 User-agent: Bytespider
@@ -30,7 +57,11 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
+User-agent: cohere-ai
+Allow: /
+
 Sitemap: https://terminallearning.dev/sitemap.xml
 
-# LLM context file
-# https://terminallearning.dev/llms.txt
+# LLM context files (llms.txt convention — https://llmstxt.org/)
+# https://terminallearning.dev/llms.txt       (short overview)
+# https://terminallearning.dev/llms-full.txt  (extended curriculum + features)

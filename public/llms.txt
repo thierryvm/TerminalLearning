@@ -87,11 +87,12 @@ Environment variables, `$PATH`, `.env`, shell config, bash scripts, `cron`
 - https://terminallearning.dev/app/learn/git/git-merge
 
 ### Module 10 — GitHub & Collaboration
-`git remote`, `git push`, `git pull`, `git fetch`, `git clone`, pull requests, merge conflicts, GitHub Actions
+`git remote`, `git push`, `git pull`, `git fetch`, `git clone`, pull requests, merge strategies, merge conflicts, GitHub Actions
 - https://terminallearning.dev/app/learn/github-collaboration/git-remote
 - https://terminallearning.dev/app/learn/github-collaboration/git-push-pull
 - https://terminallearning.dev/app/learn/github-collaboration/git-fetch-clone
 - https://terminallearning.dev/app/learn/github-collaboration/pull-requests
+- https://terminallearning.dev/app/learn/github-collaboration/merge-strategies
 - https://terminallearning.dev/app/learn/github-collaboration/conflicts
 - https://terminallearning.dev/app/learn/github-collaboration/github-actions
 
@@ -121,6 +122,8 @@ Every lesson covers **Linux**, **macOS**, and **Windows** (PowerShell) with envi
 - Multi-OS support: Linux, macOS, Windows (PowerShell)
 - No account required to start — progress saved in localStorage
 - Optional cloud sync via GitHub or Google OAuth (Supabase Auth)
+- Multi-role classroom (RBAC): students, teachers (class management + invitation codes), institution administrators, super admin — Row Level Security enforced at the database layer
+- Optional AI tutor (BYOK — Bring Your Own Key): contextual help on the current lesson via OpenRouter, Anthropic, OpenAI, or Google Gemini. Keys are stored client-side only (encrypted IndexedDB or session-scoped localStorage), never relayed through any Terminal Learning server
 - GDPR/RGPD compliant, hosted on Vercel (EU region)
 - Fully open source — contributions welcome
 
@@ -130,7 +133,10 @@ Beginners who want to learn the terminal for the first time: developers switchin
 
 ## Optional
 
+- [Extended LLM context](https://terminallearning.dev/llms-full.txt): full curriculum reference with lesson-by-lesson commands, multi-role classroom details, AI tutor architecture, FAQ
 - [Full README](https://github.com/thierryvm/TerminalLearning/blob/main/README.md): complete project documentation, setup instructions, contributing guide
 - [Command reference](https://terminallearning.dev/app/reference): all commands covered, with syntax and examples per environment
+- [Changelog](https://terminallearning.dev/changelog): public release notes and metrics — what shipped and when
+- [Story](https://terminallearning.dev/story): narrative timeline of the project's decisions, debates, and human↔AI collaboration milestones
 - [Privacy policy](https://terminallearning.dev/privacy): GDPR-compliant data usage details
 - [GitHub source](https://github.com/thierryvm/TerminalLearning): full source code, issues, pull requests
