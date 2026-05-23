@@ -2,7 +2,7 @@
 name: test-runner
 description: Run vitest + type-check + lint, detect leaked .only/.skip isolation, flag code-vs-test delta imbalance, and surface missing coverage (commands & validators). Invoke after any modification to curriculum.ts, terminalEngine.ts, validators.ts, or test files. Filters verbose output — only surfaces failures and gaps.
 tools: Bash, Read, Grep
-model: haiku
+model: sonnet
 ---
 
 Tu es un analyseur de résultats de tests + qualité statique pour Terminal Learning.

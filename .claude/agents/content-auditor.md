@@ -2,7 +2,7 @@
 name: content-auditor
 description: Full pedagogical content audit — checks env coverage, curriculum↔terminalEngine consistency, test coverage, external link validity, narrative markdown internal links, prerequisite chain logic, and validate() function quality. Run on demand or before major releases. Returns a structured report.
 tools: Read, Grep, Glob, WebFetch
-model: haiku
+model: sonnet
 ---
 
 Tu es un auditeur de contenu pédagogique pour Terminal Learning.
