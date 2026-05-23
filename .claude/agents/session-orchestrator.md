@@ -45,15 +45,25 @@ Convention : tu produis une section « ## Sous-agents à lancer (par le main age
 
 Trigger : « démarrage », « début de session », « reprise », « bonjour », ou explicite.
 
-Process à exécuter :
+Process à exécuter (refondu 23 mai 2026 — codifié PR #284) :
 1. **Lire** `session_startup_process.md` dans la mémoire CC du projet courant (chemin : `~/.claude/projects/<projet>/memory/session_startup_process.md` ou équivalent localisable via `Glob`)
 2. **Phase 0 model check** : vérifier le modèle courant (Opus 4.7 attendu pour TL après l'incident Haiku 24/04/2026)
-3. **Phase 1 contexte** : lire CLAUDE.md global + projet, MEMORY.md index, 3 memos critiques (`feedback_session_protocol`, `security_new_session_rules`, `user_health_signals` ou équivalent du projet)
-4. **Phase 2 état projet** : `git status`, `git log --oneline -5`, `git branch --show-current`, **recommander `linear-sync` agent** au main agent
-5. **Phase 3 challenge personnel** : poser les 5 questions du process avant tout code
-6. **Phase 4 lancer le travail** : recommander `EnterPlanMode` si tâche complexe multi-fichiers
-7. **Lecture handoffs Obsidian** (si vault accessible) : sources-of-truth + handoffs @cowork pending
-8. **Lecture mini-prompts reprise** : `docs/sessions/next-session-*.md` si présent
+3. **Phase 1 contexte** : lire CLAUDE.md global + projet, MEMORY.md index, 3 memos critiques (`feedback_session_protocol`, `security_new_session_rules`, `user_health_signals` ou équivalent du projet), + memo session récent (event principal MEMORY.md)
+4. **Phase 1.bis sync Obsidian** : recommander au main agent d'invoquer le skill `/obsidian-session-sync` en parallèle (lit vault Athenaeum via MCP `claude-code-mcp` port 22360 : daily note + sources of truth + handoffs @cowork pending). Critique en mode trio binôme. Fallback Read direct sur `<vault path>` documenté dans CLAUDE.md global si pont MCP off.
+5. **Phase 2 état projet** : `git status`, `git log --oneline -5`, `git branch --show-current`, `gh pr list --state open --limit 20`, **recommander `linear-sync` agent** au main agent
+6. **Phase 2.bis health check projet (NOUVEAU)** :
+   - Prod 4 endpoints : `curl -sS -o /dev/null -w "%{http_code}"` sur `/`, `/app`, `/privacy`, `/changelog` (cache-buster `?cb=$(date +%s)`)
+   - CI sur main : `gh run list --branch main --limit 3` — attendu 3× SUCCESS
+   - LTI feature flag : vérifier `LTI_ENABLED=false` toujours actif (gate PR #3 LTI activation)
+   - AI Tutor feature flag : vérifier `VITE_AI_TUTOR_ENABLED=true` toujours actif
+   - Si un check FAIL : flagger immédiatement, possible régression silencieuse
+7. **Phase 2.ter banner scan (NOUVEAU)** : lecture ciblée des banners statut (économie tokens) :
+   - Read **lignes 1-5 uniquement** de `docs/plan.md` (banner "Dernière mise à jour" + statut sprint courant)
+   - Read **lignes 1-5 uniquement** de `docs/ROADMAP.md` (banner vision long-terme)
+   - Read **lignes 1-3 uniquement** de `docs/README.md` (freshness marker — détecte stale > 14 jours)
+8. **Phase 3 challenge personnel** : poser les 6 questions du process avant tout code (dont la question "ai-je vérifié qu'un fichier dans `public/` n'est pas généré par un script `prebuild` ?" — cf. incident PR #283 du 23 mai 2026 et `feedback_check_generated_files_before_edit.md`)
+9. **Phase 4 lancer le travail** : recommander `EnterPlanMode` si tâche complexe multi-fichiers
+10. **Lecture mini-prompts reprise** : `docs/sessions/next-session-*.md` si présent
 
 ### Mode `shutdown` (fin de session)
 
@@ -168,6 +178,42 @@ grep -rn "Last updated\|Last update\|Dernière mise à jour" \
 ```
 
 Comparer dates aux derniers commits — flagger les markers stale > 14 jours.
+
+### Health check projet (mode startup uniquement, AJOUTÉ 23 mai 2026)
+
+Détecte les régressions silencieuses en prod entre 2 sessions (cf. incident `VITE_AI_TUTOR_ENABLED=""` non détecté 17 jours en mai 2026).
+
+```bash
+# 1. Prod endpoints
+for path in "/" "/app" "/privacy" "/changelog"; do
+  code=$(curl -sS -o /dev/null -w "%{http_code}" "https://terminallearning.dev$path?cb=$(date +%s)")
+  echo "$path → HTTP $code"
+done
+# Attendu : 4× HTTP 200. Si ≠ 200 → flagger immédiatement.
+
+# 2. CI sur main
+gh run list --branch main --limit 3 --json status,conclusion,name,createdAt \
+  --jq '.[] | "\(.createdAt[:16]) | \(.name): \(.status) \(.conclusion // "")"'
+# Attendu : 3× SUCCESS. Si FAILURE non addressé → flag.
+
+# 3. Feature flags (vérification optionnelle via curl HTML)
+# - LTI_ENABLED : devrait être false en prod (gate PR #3 activation)
+# - VITE_AI_TUTOR_ENABLED : devrait être true (smoke test : ouvrir / et confirmer FAB drawer présent dans le HTML)
+```
+
+**Repli** : si `curl` ne répond pas (timeout, DNS issue) → signaler « réseau indisponible, health check incomplet ».
+
+### Banner scan plan.md / ROADMAP.md (mode startup uniquement, AJOUTÉ 23 mai 2026)
+
+Lecture ciblée des banners statut (économie tokens — 4 lignes vs 200) :
+
+```
+Read docs/plan.md lignes 1-5    → banner "Dernière mise à jour" + statut sprint
+Read docs/ROADMAP.md lignes 1-5 → banner vision long-terme
+Read docs/README.md lignes 1-3  → freshness marker
+```
+
+Si le banner ne reflète plus l'état actuel (livraison récente non mentionnée) → flagger : « plan.md banner stale, à mettre à jour en fin de session ».
 
 ### ADR numérotation
 
