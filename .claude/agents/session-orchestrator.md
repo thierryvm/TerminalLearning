@@ -57,7 +57,7 @@ Process à exécuter (refondu 23 mai 2026 — codifié PR #284) :
    - LTI feature flag : vérifier `LTI_ENABLED=false` toujours actif (gate PR #3 LTI activation)
    - AI Tutor feature flag : vérifier `VITE_AI_TUTOR_ENABLED=true` toujours actif
    - Si un check FAIL : flagger immédiatement, possible régression silencieuse
-7. **Phase 2.ter banner scan (NOUVEAU)** : lecture ciblée des banners statut (économie tokens) :
+7. **Phase 2.ter banner scan (NOUVEAU)** : lecture ciblée des banners de statut (économie tokens) :
    - Read **lignes 1-5 uniquement** de `docs/plan.md` (banner "Dernière mise à jour" + statut sprint courant)
    - Read **lignes 1-5 uniquement** de `docs/ROADMAP.md` (banner vision long-terme)
    - Read **lignes 1-3 uniquement** de `docs/README.md` (freshness marker — détecte stale > 14 jours)
@@ -194,7 +194,7 @@ done
 # 2. CI sur main
 gh run list --branch main --limit 3 --json status,conclusion,name,createdAt \
   --jq '.[] | "\(.createdAt[:16]) | \(.name): \(.status) \(.conclusion // "")"'
-# Attendu : 3× SUCCESS. Si FAILURE non addressé → flag.
+# Attendu : 3× SUCCESS. Si FAILURE non adressé → flag.
 
 # 3. Feature flags (vérification optionnelle via curl HTML)
 # - LTI_ENABLED : devrait être false en prod (gate PR #3 activation)
@@ -205,7 +205,7 @@ gh run list --branch main --limit 3 --json status,conclusion,name,createdAt \
 
 ### Banner scan plan.md / ROADMAP.md (mode startup uniquement, AJOUTÉ 23 mai 2026)
 
-Lecture ciblée des banners statut (économie tokens — 4 lignes vs 200) :
+Lecture ciblée des banners de statut (économie tokens — 4 lignes vs 200) :
 
 ```
 Read docs/plan.md lignes 1-5    → banner "Dernière mise à jour" + statut sprint
