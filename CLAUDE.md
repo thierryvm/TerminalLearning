@@ -106,13 +106,27 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`vercel-firewall-auditor`** — lit la config Vercel Firewall active (WAF, managed rules, custom rules) et exécute une batterie de tests HTTP live contre `terminallearning.dev` pour confirmer que les rules bloquent bien les patterns d'attaque et laissent passer les users légitimes. Nécessite `$VERCEL_TOKEN` en session. Lancer avant chaque release majeure ou après toute modification firewall. Détails : `docs/vercel-firewall.md`.
 - **`prompt-guardrail-auditor`** — audit sécurité LLM (OWASP LLM Top 10) du Tuteur IA (BYOK OpenRouter — ADR-002 + ADR-005) : prompt injection, jailbreaks, prompt leaks, role enforcement, bypass sanitizer, XSS sur rendu réponse, fuite clé API. **Obligatoire avant toute PR touchant `src/lib/ai/*` ou `src/app/components/ai/*`.** CRITICAL = bloque le merge. Créé AVANT implémentation (THI-109, gate zéro ADR-005) pour éviter la surprise en fin de chantier.
 - **`route-attack-auditor`** — audit HTTP-level black-hat des endpoints `api/*` : status code fingerprinting, verb tampering, cache poisoning via 503, slowloris, side-channel timing, header smuggling, CORS edge cases, body guards, rate limit bypass, info disclosure. Tests live via `curl`. **Obligatoire avant toute PR touchant `api/*` ou après création d'un nouvel endpoint.** Complémentaire à `security-auditor` (qui couvre l'app layer) et `vercel-firewall-auditor` (qui couvre WAF). Créé suite au sprint sécurité 1-2 mai (lacune route-level identifiée).
+- **`session-orchestrator`** — orchestrateur de session, exécute les phases startup et shutdown dans son contexte isolé (économie tokens main agent). Lit les memos CC `session_startup_process.md` et `session_shutdown_process.md`, fait les checks d'état (git + GitHub + Linear + health check prod + banner scan plan.md/ROADMAP.md + freshness markers), met à jour les .md vitaux en shutdown, et produit un rapport structuré 8 sections avec recommandation des sous-agents à lancer ensuite par le main agent. **À invoquer en début de chaque session (mode `startup`) ET en fin (mode `shutdown`)**. Ne peut pas invoquer d'autres agents (limitation runtime CC) — il RECOMMANDE leurs prompts prêts-à-coller.
 
 ### Début de chaque session
+**Méthode primaire (en parallèle)** :
+1. Invoquer l'agent **`session-orchestrator`** mode `startup`. Il lit `session_startup_process.md`, exécute les Phases 0→4 (model check + contexte/mémoire + état projet + **health check prod** + **banner scan plan/ROADMAP** + challenge personnel), recommande `linear-sync` au main agent, et produit un rapport go/no-go.
+2. Invoquer le skill **`/obsidian-session-sync`** mode startup. Il lit le vault Athenaeum via MCP `claude-code-mcp` : daily note + sources of truth + handoffs @cowork pending. Critique en mode trio binôme (@cowork ↔ @cc-tl ↔ @thierry).
+
+**Méthode dégradée** (fallback si les outils ne sont pas invoqués) :
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
-2. `git status` + `git log --oneline -5` → état de la branche courante
-3. Lire l'issue Linear active avant d'écrire la moindre ligne
+2. `git status` + `git log --oneline -5` + `gh pr list --state open` → état de la branche courante + scope projet
+3. Health check prod (4× `curl https://terminallearning.dev/...`) + CI main (`gh run list --branch main --limit 3`)
+4. Read **lignes 1-5 uniquement** de `docs/plan.md` + `docs/ROADMAP.md` (banner statut)
+5. Lire l'issue Linear active avant d'écrire la moindre ligne
+6. Si vault Athenaeum accessible : lire daily note + handoffs @cowork manuellement (fallback du skill Obsidian)
 
 ### Fin de chaque session — récap obligatoire avant "stop"
+**Méthode primaire (en parallèle)** :
+1. Invoquer l'agent **`session-orchestrator`** mode `shutdown`. Il lit `session_shutdown_process.md`, exécute les 10 phases (état local + PRs ouvertes début ET final + audit agents par fichier modifié + mémoires CC + Linear sync exhaustif + .md vitaux + freshness markers + ADR libre + rapport 8 sections).
+2. Invoquer le skill **`/obsidian-session-sync`** mode shutdown. Il écrit dans le vault Athenaeum : décisions/learnings/blockers, crée des Zettels si pattern réutilisable, dépose un rapport pour @cowork (symbiose multi-agents).
+
+**Méthode dégradée** (fallback) :
 1. ✅ `git status` clean (rien d'uncommit ou stagé sans raison documentée)
 2. ✅ `gh pr list --state open` → **lister TOUTES les PRs ouvertes**, pas seulement celles de la session
 3. Pour chaque PR ouverte > 7 jours : la mentionner explicitement avec date + statut CI/Sourcery/Vercel + action attendue (validation utilisateur, merge, etc.)
