@@ -117,7 +117,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 1. Invoquer l'agent **`linear-sync`** → analyser son rapport, corriger les statuts Linear signalés
 2. `git status` + `git log --oneline -5` + `gh pr list --state open` → état de la branche courante + scope projet
 3. Health check prod (4× `curl https://terminallearning.dev/...`) + CI main (`gh run list --branch main --limit 3`)
-4. Read **lignes 1-5 uniquement** de `docs/plan.md` + `docs/ROADMAP.md` (banner statut)
+4. Lire **lignes 1-5 uniquement** de `docs/plan.md` + `docs/ROADMAP.md` (banner statut)
 5. Lire l'issue Linear active avant d'écrire la moindre ligne
 6. Si vault Athenaeum accessible : lire daily note + handoffs @cowork manuellement (fallback du skill Obsidian)
 
