@@ -111,7 +111,7 @@ Voie A Chrome MCP empirique post-fix : clic « Se connecter » depuis `/app/join
 
 **Sprint 2.A — toutes étapes Done** : PRs #266 (étape 1) + #268 (étape 2) + #269 (étape 2.bis) + #270 (étape 2.ter) + **#274 (étape 3)**.
 
-**Cf.** PR [#274](https://github.com/thierryvm/teerminalLearning/pull/274), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella, [STORY.md](STORY.md) chapitre Sprint 2.A étape 3 narratif 1ère personne.
+**Cf.** PR [#274](https://github.com/thierryvm/TerminalLearning/pull/274), [THI-235](https://linear.app/thierryvm/issue/THI-235) umbrella, [STORY.md](STORY.md) chapitre Sprint 2.A étape 3 narratif 1ère personne.
 
 ---
 
