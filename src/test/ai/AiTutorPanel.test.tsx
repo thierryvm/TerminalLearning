@@ -431,6 +431,34 @@ describe('AiTutorPanel — encrypted mode passphrase prompt (THI-263)', () => {
     expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
   });
 
+  // THI-271 (Sourcery PR #287 overall comment, 2026-05-24): the unlock flow
+  // must NOT trim the user-supplied passphrase. AiKeySetup saves the raw
+  // passphrase (no trim) into PBKDF2 — silent trimming on unlock would
+  // break round-trip for any user whose passphrase contains intentional
+  // leading/trailing whitespace.
+  it('preserves leading and trailing whitespace in the passphrase (round-trip)', async () => {
+    const passphraseWithSpaces = '  correct horse battery staple  ';
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: passphraseWithSpaces,
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Type the passphrase exactly as saved — whitespace included.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, passphraseWithSpaces);
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+
+    // Decryption must succeed — conversation surface appears.
+    expect(
+      await screen.findByLabelText(/Question pour le tuteur IA/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Passphrase$/i)).toBeNull();
+  });
+
   // Sourcery thread #3 (2026-05-24): explicit coverage of the `forgetKey`
   // path, which also clears `isEncryptedMode` and `passphrase` in state.
   // Symmetric to "forgets the key and returns to the key-entry block" but
