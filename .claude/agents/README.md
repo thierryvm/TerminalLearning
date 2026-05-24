@@ -1,11 +1,11 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 20 mai 2026 (création `institution-rbac-auditor` THI-238 cross-institution boundary + upgrade modèles agents sécurité post-incident 24/04/2026 downgrade silencieux : `rbac-flow-tester` Haiku → Sonnet + ajout section client-state lifecycle THI-186, `prompt-guardrail-auditor` Haiku → Sonnet, `sustain-auditor` frontmatter `model:` ajouté)
+> **Dernière mise à jour** : 24 mai 2026 (création `legal-compliance-auditor` Opus 4.7 méthode 5 couches RGPD/AI Act/DSA/CNIL/DPA-BE avec auto-update WebSearch — THI-265, suite findings audit nuit 23/05 + qualité premium @thierry. Pattern Haiku-KO-counts confirmé empiriquement → `content-auditor` + `test-runner` upgrade Haiku → Sonnet via PR #286).
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 > 🧠 **Limitation technique connue** : les agents `.md` créés en cours de session ne sont disponibles qu'à la session suivante (rechargement framework). Pattern : si un agent doit gater une PR créé pendant la même session, faire l'audit empirique inline avec exactement la méthode documentée dans l'agent, l'agent prendra le relais aux PRs suivantes.
 
-Cet index liste les **18 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **19 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
 ## 🛡 Doctrine modèles agents — post-incident 24/04/2026
 
@@ -15,9 +15,13 @@ L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push di
 
 | Modèle | Scope acceptable | Exemples |
 |---|---|---|
-| **Haiku** | Scope déterministe, validation structure, exécution tests, audit design system, contenu pédagogique | `test-runner`, `curriculum-validator`, `ui-auditor`, `content-auditor` |
-| **Sonnet** *(minimum)* | Audit sécurité, RBAC, multi-personas, raisonnement edge cases, audit LLM, mobile responsive | `security-auditor`, `rbac-flow-tester`, `classroom-workflow-auditor`, `institution-rbac-auditor`, `prompt-guardrail-auditor`, `route-attack-auditor`, `mobile-responsive-auditor`, `vercel-firewall-auditor`, `linear-sync`, `sustain-auditor` |
-| **Opus 4.7** | Audits critiques cross-couches (LLM security multi-layered, LTI crypto end-to-end, orchestration session complexe) | `llm-security-auditor`, `lti-auditor`, `session-orchestrator` |
+| **Haiku** | Scope **cite file:line mécanique** (grep + reproduction exacte), validation structurelle simple | `curriculum-validator`, `ui-auditor` |
+| **Sonnet** *(minimum)* | Audit sécurité, RBAC, multi-personas, raisonnement edge cases, audit LLM, mobile responsive, **dénombrement/extrapolation** (counts précis 0.1%) | `security-auditor`, `rbac-flow-tester`, `classroom-workflow-auditor`, `institution-rbac-auditor`, `prompt-guardrail-auditor`, `route-attack-auditor`, `mobile-responsive-auditor`, `vercel-firewall-auditor`, `linear-sync`, `sustain-auditor`, `content-auditor`, `test-runner` |
+| **Opus 4.7** | Audits critiques cross-couches stratégiques (LLM security multi-layered, LTI crypto end-to-end, orchestration session complexe, conformité juridique multi-règlementations) | `llm-security-auditor`, `lti-auditor`, `session-orchestrator`, `legal-compliance-auditor` |
+
+**Distinction Haiku-OK vs Haiku-KO codifiée (PR #286 du 23/05)** : pattern empirique validé sur 3/3 agents Haiku testés nuit du 23/05 :
+- ✅ Haiku **OK pour scope "cite file:line exact"** (`ui-auditor` 8.5/10 sur claims tous EXACTS post-vérif `sed -n`)
+- ❌ Haiku **KO pour scope "compte/extrapole"** (content-auditor "356+ describes" → réel 62 ; test-runner "56 files" → réel 77). Donc upgrade Sonnet justifié pour ces 2 agents.
 
 **Garde-fou utilisateur** : épingler `"model": "claude-opus-4-7"` dans `.claude/settings.local.json` du projet (cf. CLAUDE.md global ligne 82) — évite que la main session bascule en Haiku/Sonnet sans notification.
 
@@ -37,17 +41,22 @@ L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push di
 |---|---|---|---|---|
 | [`linear-sync`](linear-sync.md) | Sonnet | ✅ Début session | À la demande | ❌ |
 | [`curriculum-validator`](curriculum-validator.md) | Haiku | ✅ Avant edit `curriculum.ts` | Avant PR curriculum | ✅ CRITICAL |
-| [`test-runner`](test-runner.md) | Haiku | ✅ Après edit code/tests | Avant push | ✅ CRITICAL |
-| [`content-auditor`](content-auditor.md) | Haiku | ❌ | Avant release majeure | ⚠️ WARN seulement |
+| [`test-runner`](test-runner.md) | **Sonnet** *(upgrade PR #286)* | ✅ Après edit code/tests | Avant push | ✅ CRITICAL |
+| [`content-auditor`](content-auditor.md) | **Sonnet** *(upgrade PR #286)* | ❌ | Avant release majeure | ⚠️ WARN seulement |
 | [`security-auditor`](security-auditor.md) | Sonnet | ❌ | Avant PR auth/RBAC/RLS/API/crypto + release majeure | ✅ CRITICAL/HIGH |
 | [`ui-auditor`](ui-auditor.md) | Haiku | ❌ | Avant PR composant UI | ✅ CRITICAL |
 | [`mobile-responsive-auditor`](mobile-responsive-auditor.md) | Sonnet | ❌ | Avant PR layout/nav/sidebar/drawer/forms/theme.css | ⚠️ verdict PASS/PASS_WITH_NOTES/BLOCK |
-| [`prompt-guardrail-auditor`](prompt-guardrail-auditor.md) | Haiku | ❌ | Avant PR `src/lib/ai/*` ou `src/app/components/ai/*` | ✅ CRITICAL |
+| [`prompt-guardrail-auditor`](prompt-guardrail-auditor.md) | Sonnet | ❌ | Avant PR `src/lib/ai/*` ou `src/app/components/ai/*` | ✅ CRITICAL |
 | [`lti-auditor`](lti-auditor.md) | **Opus 4.7** | ❌ | Avant PR `src/lib/lti/*`, `api/lti/*`, `supabase/migrations/*lti*` | ✅ CRITICAL/HIGH |
 | [`route-attack-auditor`](route-attack-auditor.md) | Sonnet | ❌ | Avant PR `api/*` ou nouvel endpoint | ✅ verdict release-ready |
 | [`vercel-firewall-auditor`](vercel-firewall-auditor.md) | Sonnet | ❌ | Avant release majeure ou modif firewall | ⚠️ WARN si rules cassées |
-| [`rbac-flow-tester`](rbac-flow-tester.md) | Haiku | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
+| [`rbac-flow-tester`](rbac-flow-tester.md) | Sonnet | ❌ | Avant chaque release Phase 9+ | ✅ pass/fail |
 | [`sustain-auditor`](sustain-auditor.md) | Sonnet | ❌ scheduled trimestriel (cron à implémenter Phase 9+) | À la demande ou trimestriel | ⚠️ score 1-10 |
+| [`classroom-workflow-auditor`](classroom-workflow-auditor.md) | Sonnet | ❌ | Avant PR `classes`/`class_enrollments`/`join_class_by_code` | ✅ CRITICAL |
+| [`institution-rbac-auditor`](institution-rbac-auditor.md) | Sonnet | ❌ | Avant PR `profiles.institution_id`/`institutions`/`approve_teacher` | ✅ CRITICAL |
+| [`llm-security-auditor`](llm-security-auditor.md) | **Opus 4.7** | ❌ | Avant release majeure IA + après modif architecturale | ✅ CRITICAL/HIGH |
+| [`session-orchestrator`](session-orchestrator.md) | **Opus 4.7** | ✅ Début et fin session | À la demande | ❌ (méta-orchestration) |
+| [`legal-compliance-auditor`](legal-compliance-auditor.md) | **Opus 4.7** | ❌ scheduled trimestriel | Avant release B2B écoles / publication AI Tutor / activation LTI / traitement mineurs | ⚠️ HIGH = avocat humain requis |
 
 ---
 
