@@ -69,19 +69,35 @@ export function resolveModel(provider: Provider): string {
  */
 export function getModelLabel(modelId: string): string {
   const lower = modelId.toLowerCase();
-  // Claude family
-  if (lower.includes('sonnet-4-6')) return 'Sonnet 4.6';
-  if (lower.includes('sonnet-4-5')) return 'Sonnet 4.5';
-  if (lower.includes('haiku-4-5')) return 'Haiku 4.5';
-  if (lower.includes('opus-4-7')) return 'Opus 4.7';
-  // OpenAI family
+  // Claude family (incl. OpenRouter naming with `.` vs Anthropic direct with `-`)
+  if (lower.includes('opus-4-7') || lower.includes('opus-4.7')) return 'Opus 4.7';
+  if (lower.includes('sonnet-4-6') || lower.includes('sonnet-4.6')) return 'Sonnet 4.6';
+  if (lower.includes('sonnet-4-5') || lower.includes('sonnet-4.5')) return 'Sonnet 4.5';
+  if (lower.includes('haiku-4-5') || lower.includes('haiku-4.5')) return 'Haiku 4.5';
+  // OpenAI frontier 2025-2026
+  if (lower.includes('gpt-5.5') || lower.includes('gpt-5-5')) return 'GPT-5.5';
+  if (lower.includes('gpt-5-mini')) return 'GPT-5 mini';
+  if (lower.includes('gpt-5-nano')) return 'GPT-5 nano';
+  if (lower.includes('gpt-5')) return 'GPT-5';
+  // Gemini frontier 2025-2026
+  if (lower.includes('gemini-3.5-flash')) return 'Gemini 3.5 Flash';
+  if (lower.includes('gemini-2.5-flash-lite')) return 'Gemini 2.5 Flash Lite';
+  if (lower.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
+  if (lower.includes('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
+  // Qwen frontier 2026
+  if (lower.includes('qwen3.7-max')) return 'Qwen 3.7 Max';
+  if (lower.includes('qwen3.5-plus')) return 'Qwen 3.5 Plus';
+  // DeepSeek 2025
+  if (lower.includes('deepseek-v3.2')) return 'DeepSeek V3.2';
+  if (lower.includes('deepseek-chat-v3.1')) return 'DeepSeek V3.1';
+  // Legacy display fallback (modèles legacy 2024 retirés Stage B1 24/05/2026 —
+  // gardés pour ne pas casser l'affichage si une env override pointe encore
+  // sur ces ids le temps de la transition).
   if (lower.includes('gpt-4o-mini')) return 'GPT-4o mini';
   if (lower.includes('gpt-4o')) return 'GPT-4o';
-  // Gemini family
   if (lower.includes('gemini-2.0-flash')) return 'Gemini 2.0 Flash';
   if (lower.includes('gemini-1.5-pro')) return 'Gemini 1.5 Pro';
   if (lower.includes('gemini-1.5-flash')) return 'Gemini 1.5 Flash';
-  // Llama family
   if (lower.includes('llama-3.3-70b')) return 'Llama 3.3 70B';
   if (lower.includes('llama-3.1-70b')) return 'Llama 3.1 70B';
   // Fallback: return raw id so the user still sees something honest.

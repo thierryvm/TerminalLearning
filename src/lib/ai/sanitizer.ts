@@ -19,8 +19,11 @@
  *
  * **Streaming caveat.** `sanitizeModelChunk` operates on a single chunk in
  * isolation. A pattern split across two chunks (`<scri` + `pt>`) is not caught
- * here — the rehype-sanitize layer in `MessageList.tsx` is the second line of
- * defence on the assembled DOM. Keep both layers in place.
+ * here — the **`react-markdown` configuration in `MessageList.tsx` (without
+ * `rehype-raw`) is the second line of defence** on the assembled DOM: raw HTML
+ * from the model is treated as text, not parsed as DOM. Keep both layers in
+ * place. (Defense-in-depth verified by llm-security-auditor 2026-05-24 — finding
+ * I1-AI corrected wording.)
  */
 
 const MAX_USER_INPUT_LENGTH = 2000;

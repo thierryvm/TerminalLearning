@@ -20,7 +20,19 @@ import { ChatError, type ChatErrorCode, type ChatParams, type ChatStream } from 
 import { safeCancel, streamSseEvents } from './_sse';
 
 export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-export const OPENROUTER_DEFAULT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+/**
+ * Default OpenRouter model when `VITE_AI_TUTOR_OPENROUTER_MODEL` env override
+ * is unset (local dev, CI, preview without env). Bumped 2026-05-24 to align
+ * with prod Vercel env (Sonnet 4.6, sync via API REST PR #279) and the Stage
+ * B1 eval matrix verdict (THI-260 — `docs/audits/eval-tutor-matrix-2026-05-24.md`).
+ *
+ * Previous default `meta-llama/llama-3.3-70b-instruct:free` is legacy 2024,
+ * hallucinatoire FR (cf. `feedback_llm_hallucinations_inter_phrase.md`), rate-
+ * limited Venice provider (14/14 ERROR Stage B1 first run 24/05). Switched to
+ * Sonnet 4.6 (default prod, 7/8 PASS, $0.054/run, stable) as VERIFIED finding
+ * H2-AI of `llm-security-auditor` 2026-05-24 audit.
+ */
+export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.6';
 
 const APP_TITLE = 'Terminal Learning Tutor';
 const APP_REFERER = 'https://terminallearning.dev';
