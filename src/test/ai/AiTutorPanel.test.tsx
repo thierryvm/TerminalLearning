@@ -430,4 +430,33 @@ describe('AiTutorPanel — encrypted mode passphrase prompt (THI-263)', () => {
     await user.click(screen.getByRole('radio', { name: /OpenRouter/i }));
     expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
   });
+
+  // Sourcery thread #3 (2026-05-24): explicit coverage of the `forgetKey`
+  // path, which also clears `isEncryptedMode` and `passphrase` in state.
+  // Symmetric to "forgets the key and returns to the key-entry block" but
+  // starting from the encrypted-unlocked state.
+  it('clears the passphrase when the user forgets the encrypted key', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Unlock first.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Click "Oublier ma clé" — both the encrypted IDB record AND the
+    // in-memory passphrase must be cleared, routing back to AiKeySetup
+    // (no_key state). Passphrase prompt must NOT reappear — the key is gone.
+    await user.click(screen.getByRole('button', { name: /Oublier ma clé/i }));
+    expect(await screen.findByLabelText(/Clé API/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Passphrase$/i)).toBeNull();
+    expect(screen.queryByLabelText(/Question pour le tuteur IA/i)).toBeNull();
+  });
 });

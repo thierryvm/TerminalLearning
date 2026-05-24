@@ -91,7 +91,11 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
         )}
         <button
           type="submit"
-          disabled={passphrase.length === 0}
+          // Sourcery thread #2 (2026-05-24): align the disabled state with
+          // the validation performed in `handleSubmit` (which trims). If we
+          // only checked `.length === 0`, a user typing only spaces would
+          // see an enabled button that then errors out — inconsistent UX.
+          disabled={passphrase.trim().length === 0}
           className="mt-1 rounded bg-[var(--github-accent)] px-3 py-2 text-sm font-medium text-white transition hover:bg-[var(--github-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
         >
           Déverrouiller
