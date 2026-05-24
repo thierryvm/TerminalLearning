@@ -23,6 +23,7 @@ import { buildPlatformContext } from '@/app/data/platformContext';
 import {
   forgetKey as kmForgetKey,
   hasKey as kmHasKey,
+  isEncrypted as kmIsEncrypted,
   PROVIDER_KEY,
   type Provider,
 } from '@/lib/ai/keyManager';
@@ -33,6 +34,7 @@ import { useAiTutor } from '@/lib/ai/useAiTutor';
 
 import { AiConsentModal } from './AiConsentModal';
 import { AiKeySetup } from './AiKeySetup';
+import { AiPassphrasePrompt } from './AiPassphrasePrompt';
 import { MessageInput } from './parts/MessageInput';
 import { MessageList } from './parts/MessageList';
 import { RateLimitBadge } from './parts/RateLimitBadge';
@@ -66,6 +68,17 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
   const [open, setOpen] = useState(false);
   const [provider, setProviderState] = useState<Provider>(() => readStoredProvider());
   const [hasStoredKey, setHasStoredKey] = useState(false);
+  // THI-263 — encrypted mode awareness:
+  //   - `isEncryptedMode` reflects whether the current provider's stored key
+  //     is in IndexedDB (AES-GCM/PBKDF2) rather than plain localStorage.
+  //   - `passphrase` is the user-supplied secret for the current panel session,
+  //     never persisted (no localStorage, no sessionStorage). It lives only in
+  //     React state and is cleared when the panel closes, the provider changes,
+  //     or the user forgets the key. Fixes A1 finding from llm-security-auditor
+  //     audit 2026-05-23: AiTutorPanel previously omitted `passphrase` from the
+  //     `useAiTutor` call, making encrypted-mode users hit `no_key` forever.
+  const [isEncryptedMode, setIsEncryptedMode] = useState(false);
+  const [passphrase, setPassphrase] = useState('');
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -88,10 +101,18 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
     lang,
     lessonContext,
     platformContext,
+    // THI-263 — passphrase only sent when needed. `undefined` for plain mode
+    // keeps `keyManager.getKey()` on its happy path (localStorage read).
+    passphrase: isEncryptedMode && passphrase.length > 0 ? passphrase : undefined,
   });
 
   const setProvider = useCallback((next: Provider) => {
     setProviderState(next);
+    // THI-263 — switching provider invalidates the passphrase: the new
+    // provider may use a different storage mode (plain vs encrypted), or
+    // simply require its own secret. Drop the in-memory value rather than
+    // leak it across keys.
+    setPassphrase('');
     try {
       localStorage.setItem(PROVIDER_KEY, next);
     } catch {
@@ -99,18 +120,34 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
     }
   }, []);
 
-  // Refresh `hasStoredKey` whenever the provider changes or the panel opens,
-  // so the conversation/onboarding switch reflects current key storage.
+  // Refresh `hasStoredKey` and `isEncryptedMode` whenever the provider
+  // changes or the panel opens. Both flags drive the onboarding ↔ passphrase
+  // prompt ↔ conversation switch in the render tree.
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
-    void kmHasKey(provider).then((v) => {
-      if (!cancelled) setHasStoredKey(v);
-    });
+    void Promise.all([kmHasKey(provider), kmIsEncrypted(provider)]).then(
+      ([keyPresent, encrypted]) => {
+        if (cancelled) return;
+        setHasStoredKey(keyPresent);
+        setIsEncryptedMode(encrypted);
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, [provider, open, enabled]);
+
+  // THI-263 — closing the panel must drop the in-memory passphrase so that
+  // a re-open forces a fresh unlock. We do this synchronously inside a
+  // dedicated `closePanel` callback rather than via a useEffect that watches
+  // `open` (that would trigger `react-hooks/set-state-in-effect`). Every
+  // existing close path (X button, overlay click, Escape key) routes
+  // through this callback below.
+  const closePanel = useCallback(() => {
+    setOpen(false);
+    setPassphrase('');
+  }, []);
 
   // Ctrl+I / Cmd+I global shortcut. Skip when the focus is on a form field
   // outside the panel itself, so typing 'i' in another input is unaffected.
@@ -138,13 +175,13 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        setOpen(false);
+        closePanel();
         triggerRef.current?.focus();
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [open, closePanel]);
 
   if (!enabled) return null;
 
@@ -198,7 +235,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
               the panel is open, nothing else competes for the corner. */}
           <div
             className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
+            onClick={closePanel}
             aria-hidden="true"
           />
           <div
@@ -242,7 +279,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                 />
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closePanel}
                   aria-label="Fermer le tuteur IA"
                   // THI-152 brick 5/9: 44×44 mobile (Apple HIG floor) / 36
                   // desktop (compact density preserved). The previous
@@ -261,8 +298,18 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
             ) : !hasStoredKey ? (
               <AiKeySetup
                 provider={provider}
-                onSaved={() => setHasStoredKey(true)}
+                onSaved={() => {
+                  setHasStoredKey(true);
+                  // THI-263 — recheck encryption status: AiKeySetup may have
+                  // saved an encrypted record, in which case the next render
+                  // should route to AiPassphrasePrompt rather than straight
+                  // to the conversation (the panel still has no passphrase
+                  // in memory at this point).
+                  void kmIsEncrypted(provider).then(setIsEncryptedMode);
+                }}
               />
+            ) : isEncryptedMode && passphrase.length === 0 ? (
+              <AiPassphrasePrompt onSubmit={setPassphrase} />
             ) : (
               <>
                 {tutor.error && <ErrorBanner code={tutor.error.code} message={tutor.error.safeMessage} />}
@@ -284,6 +331,10 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
                     onClick={() => {
                       void tutor.forgetKey();
                       setHasStoredKey(false);
+                      // THI-263 — `forgetKey` removes both plain and encrypted
+                      // entries, so reset the matching UI state too.
+                      setIsEncryptedMode(false);
+                      setPassphrase('');
                     }}
                     className="underline hover:text-[var(--github-text-primary)]"
                   >
