@@ -259,8 +259,10 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
 
     const heading = await screen.findByRole('heading', { level: 2 });
     expect(heading.textContent).toContain('OpenRouter');
-    // The OpenRouter default is the free Llama; label = "Llama 3.3 70B".
-    expect(heading.textContent).toContain('Llama 3.3 70B');
+    // The OpenRouter default was bumped to Sonnet 4.6 on 2026-05-24 (THI-260,
+    // H2-AI finding) — previously Llama 3.3 70B free (legacy 2024, hallucinatoire
+    // FR + rate-limited Venice provider).
+    expect(heading.textContent).toContain('Sonnet 4.6');
   });
 
   it('header `title` attribute exposes the full string for truncated viewports', async () => {

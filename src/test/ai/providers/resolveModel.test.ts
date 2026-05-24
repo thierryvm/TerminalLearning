@@ -78,8 +78,40 @@ describe('getModelLabel — short human-friendly labels', () => {
     expect(getModelLabel('google/gemini-1.5-pro')).toBe('Gemini 1.5 Pro');
   });
 
-  it('normalises Llama 3.3 70B', () => {
+  it('normalises Llama 3.3 70B (legacy display fallback)', () => {
     expect(getModelLabel('meta-llama/llama-3.3-70b-instruct:free')).toBe('Llama 3.3 70B');
+  });
+
+  // Frontier 2025-2026 — Stage B1 whitelist (THI-260, 24/05/2026).
+  it('normalises OpenAI GPT-5 family (frontier 2025-2026)', () => {
+    expect(getModelLabel('openai/gpt-5.5')).toBe('GPT-5.5');
+    expect(getModelLabel('openai/gpt-5-mini')).toBe('GPT-5 mini');
+    expect(getModelLabel('openai/gpt-5-nano')).toBe('GPT-5 nano');
+    expect(getModelLabel('openai/gpt-5')).toBe('GPT-5');
+  });
+
+  it('normalises Gemini frontier (2.5 Flash Lite + 3.5 Flash + 2.5 Pro)', () => {
+    expect(getModelLabel('google/gemini-3.5-flash')).toBe('Gemini 3.5 Flash');
+    expect(getModelLabel('google/gemini-2.5-flash-lite')).toBe('Gemini 2.5 Flash Lite');
+    expect(getModelLabel('google/gemini-2.5-flash')).toBe('Gemini 2.5 Flash');
+    expect(getModelLabel('google/gemini-2.5-pro')).toBe('Gemini 2.5 Pro');
+  });
+
+  it('normalises Qwen frontier (3.7 Max + 3.5 Plus)', () => {
+    expect(getModelLabel('qwen/qwen3.7-max')).toBe('Qwen 3.7 Max');
+    expect(getModelLabel('qwen/qwen3.5-plus')).toBe('Qwen 3.5 Plus');
+  });
+
+  it('normalises DeepSeek frontier (V3.1 + V3.2)', () => {
+    expect(getModelLabel('deepseek/deepseek-v3.2')).toBe('DeepSeek V3.2');
+    expect(getModelLabel('deepseek/deepseek-chat-v3.1')).toBe('DeepSeek V3.1');
+  });
+
+  it('handles both `-` and `.` naming for Claude (Anthropic direct vs OpenRouter)', () => {
+    // OpenRouter naming officiel utilise le point ; Anthropic direct utilise le tiret.
+    expect(getModelLabel('anthropic/claude-sonnet-4.6')).toBe('Sonnet 4.6');
+    expect(getModelLabel('anthropic/claude-opus-4.7')).toBe('Opus 4.7');
+    expect(getModelLabel('claude-haiku-4.5')).toBe('Haiku 4.5');
   });
 
   it('returns the raw id when the pattern is unknown (honest fallback)', () => {
