@@ -80,12 +80,22 @@ export interface SystemPromptOpts {
 
 const VALID_LANGS: ReadonlySet<TutorLang> = new Set<TutorLang>(['fr', 'nl', 'en', 'de']);
 const VALID_MODES: ReadonlySet<TutorMode> = new Set<TutorMode>(['socratic', 'direct']);
-const VALID_ROLES: ReadonlySet<TutorRole> = new Set<TutorRole>([
-  'student',
-  'teacher',
-  'institution_admin',
-  'super_admin',
-]);
+
+/**
+ * Single source of truth for "is this value one of the 4 dispatcher-known
+ * tutor roles?". Used both by the dispatcher (`getSystemPrompt`) and by
+ * `roleForPrompt()` in `useAiTutor` to avoid duplicating the role list in
+ * two places — adding/renaming a `TutorRole` member only requires updating
+ * the literal type and this guard. (Sourcery PR #291 review 2026-05-24.)
+ */
+export function isTutorRole(value: unknown): value is TutorRole {
+  return (
+    value === 'student' ||
+    value === 'teacher' ||
+    value === 'institution_admin' ||
+    value === 'super_admin'
+  );
+}
 
 export function getSystemPrompt(opts: SystemPromptOpts): string {
   if (!VALID_LANGS.has(opts.lang)) {
@@ -99,7 +109,7 @@ export function getSystemPrompt(opts: SystemPromptOpts): string {
   // future role added to UserRole but not wired into TutorRole will get the
   // most restrictive prompt by default rather than e.g. accidentally leaking
   // staff scope.
-  const role: TutorRole = opts.role && VALID_ROLES.has(opts.role) ? opts.role : 'student';
+  const role: TutorRole = isTutorRole(opts.role) ? opts.role : 'student';
 
   switch (role) {
     case 'teacher':

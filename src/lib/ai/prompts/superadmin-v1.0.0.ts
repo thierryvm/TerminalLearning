@@ -83,10 +83,20 @@ Règles d'affinage :
 /**
  * Build the super_admin prompt for the given language. Currently FR only —
  * NL/EN/DE fallback to FR (the LLM is multilingual and will answer in the
- * user's language even with a French system prompt).
+ * user's language even with a French system prompt). Sub-task THI-275
+ * post-merge will populate the missing locales.
  */
-export function buildSuperadminPromptV1_0_0(_lang: TutorLang): string {
-  const sections = FR;
+export function buildSuperadminPromptV1_0_0(lang: TutorLang): string {
+  // Explicit fallback rather than silent ignore — Sourcery PR #291 review.
+  const sections = (() => {
+    switch (lang) {
+      case 'fr':
+      case 'nl':
+      case 'en':
+      case 'de':
+        return FR;
+    }
+  })();
   return [
     sections.scope,
     sections.delimiters,

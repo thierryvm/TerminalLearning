@@ -75,12 +75,22 @@ Règles d'affinage :
 /**
  * Build the teacher prompt for the given language. Currently FR only —
  * NL/EN/DE fallback to FR (the LLM is multilingual and will answer in the
- * user's language even with a French system prompt).
+ * user's language even with a French system prompt). Sub-task THI-275
+ * post-merge will populate the missing locales.
  */
-export function buildTeacherPromptV1_0_0(_lang: TutorLang): string {
-  // Future: switch on lang once NL/EN/DE sections are added. For now FR is
-  // the canonical version and the LLM handles language-matching naturally.
-  const sections = FR;
+export function buildTeacherPromptV1_0_0(lang: TutorLang): string {
+  // Explicit fallback rather than silent ignore — makes it obvious to a
+  // future reader that NL/EN/DE intentionally reuse FR until the
+  // translations land. Sourcery PR #291 review 2026-05-24 (general 2).
+  const sections = (() => {
+    switch (lang) {
+      case 'fr':
+      case 'nl':
+      case 'en':
+      case 'de':
+        return FR;
+    }
+  })();
   return [
     sections.scope,
     sections.delimiters,

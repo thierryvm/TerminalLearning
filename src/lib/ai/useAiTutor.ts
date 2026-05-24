@@ -37,6 +37,7 @@ import { chat as providerChat, ChatError } from './providers';
 import type { ChatMessage } from './providers/types';
 import {
   getSystemPrompt,
+  isTutorRole,
   type TutorLang,
   type TutorMode,
   type TutorRole,
@@ -257,15 +258,9 @@ function readMode(fallback: TutorMode): TutorMode {
 function roleForPrompt(
   role: UserRole | TutorRole | null | undefined,
 ): TutorRole | undefined {
-  if (
-    role === 'student' ||
-    role === 'teacher' ||
-    role === 'institution_admin' ||
-    role === 'super_admin'
-  ) {
-    return role;
-  }
-  return undefined;
+  // Reuse the dispatcher's type guard so the role list lives in one place
+  // (`systemPrompt.ts:isTutorRole`). Sourcery PR #291 review 2026-05-24.
+  return isTutorRole(role) ? role : undefined;
 }
 
 // TRUST BOUNDARY: lessonContext + platformContext fields are internal
@@ -317,13 +312,20 @@ function buildUserMessage(
 ): string {
   // Canonical order matches the system prompt's `delimiters` clause:
   // platform overview first, optional staff role marker, lesson detail
-  // (student only — staff prompts ignore <lesson_context>), then the
-  // user question. Role context comes BEFORE the user question so any
+  // (student only — staff prompts don't reference <lesson_context>), then
+  // the user question. Role context comes BEFORE the user question so any
   // attacker-supplied <role_context> in the question is overridden by
   // a legitimate one (defence-in-depth alongside DELIMITER_RX escape).
+  //
+  // We actively omit <lesson_context> for staff roles even when `lessonCtx`
+  // is provided — the staff system prompts don't declare this block in
+  // their delimiters clause, so injecting it would mislead the LLM and
+  // expand the attacker-controlled surface unnecessarily. Sourcery PR #291
+  // review 2026-05-24 (comment 1).
   const platformPrefix = platformCtx ? formatPlatformContext(platformCtx) : '';
   const rolePrefix = role && role !== 'student' ? formatRoleContext(role) : '';
-  const lessonPrefix = lessonCtx ? formatLessonContext(lessonCtx) : '';
+  const isStudentScope = !role || role === 'student';
+  const lessonPrefix = isStudentScope && lessonCtx ? formatLessonContext(lessonCtx) : '';
   return `${platformPrefix}${rolePrefix}${lessonPrefix}<user_question>\n${sanitized}\n</user_question>`;
 }
 
