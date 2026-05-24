@@ -35,7 +35,13 @@ import {
 } from './keyManager';
 import { chat as providerChat, ChatError } from './providers';
 import type { ChatMessage } from './providers/types';
-import { getSystemPrompt, type TutorLang, type TutorMode } from './systemPrompt';
+import {
+  getSystemPrompt,
+  type TutorLang,
+  type TutorMode,
+  type TutorRole,
+} from './systemPrompt';
+import type { UserRole } from '@/app/types/database';
 
 export const RATE_LIMIT_MAX = 30;
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
@@ -100,6 +106,14 @@ export interface UseAiTutorOpts {
   platformContext?: string;
   /** Required only when the stored key is encrypted. */
   passphrase?: string;
+  /**
+   * THI-275 Stage B2 — RBAC role of the authenticated user. Forwarded to
+   * `getSystemPrompt` so the per-role prompt is picked (student / teacher /
+   * institution_admin / super_admin). When omitted or `null`, the dispatcher
+   * falls back to the student prompt — defense in depth for anonymous,
+   * pending_teacher, or any unrecognised future role.
+   */
+  role?: UserRole | TutorRole | null;
 }
 
 export type UseAiTutorErrorCode =
@@ -226,6 +240,32 @@ function readMode(fallback: TutorMode): TutorMode {
     /* ignore */
   }
   return fallback;
+}
+
+/**
+ * THI-275 Stage B2 — map an arbitrary `UserRole | TutorRole | null | undefined`
+ * (the prop accepted by the hook) to a value the prompt dispatcher understands.
+ *
+ * `TutorRole` is the strict subset of `UserRole` recognised by the dispatcher
+ * (student / teacher / institution_admin / super_admin). Any other value —
+ * `pending_teacher`, anonymous (null/undefined), or a future role added to
+ * `UserRole` but not yet wired here — collapses to `undefined`, which the
+ * dispatcher resolves to the most restrictive student prompt (defense in
+ * depth). Keeping this conversion explicit avoids a silent `as TutorRole`
+ * cast leaking a future role into staff scope.
+ */
+function roleForPrompt(
+  role: UserRole | TutorRole | null | undefined,
+): TutorRole | undefined {
+  if (
+    role === 'student' ||
+    role === 'teacher' ||
+    role === 'institution_admin' ||
+    role === 'super_admin'
+  ) {
+    return role;
+  }
+  return undefined;
 }
 
 // TRUST BOUNDARY: lessonContext + platformContext fields are internal
@@ -450,7 +490,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
         const stream = await providerChat(provider, {
           apiKey,
           model,
-          systemPrompt: getSystemPrompt({ lang, mode }),
+          systemPrompt: getSystemPrompt({ lang, mode, role: roleForPrompt(opts.role) }),
           messages: conversationBeforeAssistant,
           signal: ac.signal,
         });
@@ -523,6 +563,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
       lessonContext,
       platformContext,
       passphrase,
+      opts.role,
     ],
   );
 

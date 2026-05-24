@@ -6,6 +6,7 @@ import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { AiTutorPanel } from './ai/AiTutorPanel';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 interface CommandEntry {
   /** Command name shown — can be overridden per env */
@@ -649,6 +650,7 @@ const ENV_LABELS: Record<string, { label: string; color: string }> = {
 
 export function CommandReference() {
   const { selectedEnv } = useEnvironment();
+  const { role } = useUserRole();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -690,7 +692,7 @@ export function CommandReference() {
     <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
       {/* AI tutor panel — surfaced on the command reference too because it's
           a natural place to ask "how does X compare to Y?" follow-up questions. */}
-      <AiTutorPanel lang="fr" />
+      <AiTutorPanel lang="fr" role={role} />
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">

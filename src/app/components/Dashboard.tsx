@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from './ui/card';
 import { Progress } from './ui/progress';
 import { AiTutorPanel } from './ai/AiTutorPanel';
 import { StaffQuickActions } from './dashboard/StaffQuickActions';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 const MODULE_GRADIENTS: Record<string, string> = {
   navigation: 'from-emerald-500/20 to-emerald-500/5',
@@ -45,6 +46,10 @@ type ModuleProgressStyle = React.CSSProperties & {
 export function Dashboard() {
   const navigate = useNavigate();
   const { overallProgress, totalCompleted, totalLessons, getModuleProgress, isLessonCompleted, isModuleUnlocked, unlockTree } = useProgress();
+  // THI-275 Stage B2 — forward the authenticated user's RBAC role so the
+  // AI tutor picks the right per-role system prompt. `null` for anonymous
+  // (the dispatcher falls back to the student prompt).
+  const { role } = useUserRole();
 
   usePageSEO({
     title: 'Tableau de bord — Terminal Learning',
@@ -81,7 +86,7 @@ export function Dashboard() {
     <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
       {/* AI tutor panel — no lessonContext on the dashboard, the user can still
           ask "what should I learn next?" style questions. */}
-      <AiTutorPanel lang="fr" />
+      <AiTutorPanel lang="fr" role={role} />
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
