@@ -69,27 +69,33 @@ export const ROADMAP_AVAILABLE = [
   'Parcours guidé par niveaux',
   'Partage natif (Web Share API)',
   'Accessibilité mobile & clavier (WCAG 2.2 AAA, safe-area iOS, focus-visible)',
-  'Sécurité durcie — endpoints LTI gated, rate limiting partagé, CSP SHA-256 (THI-133/134/135)',
-  'Audit sécurité fresh — score 8.1/10, 0 critique (1 mai 2026)',
-  'Tuteur IA V1 (BYOK OpenRouter / Anthropic / Gemini, sanitizer + 287 tests, derrière feature flag) — THI-111',
+  'Sécurité durcie — endpoints LTI gated, rate limiting partagé, CSP SHA-256, audit IA security 9.2/10 (24 mai 2026)',
+  'Tuteur IA — multi-rôles cloisonnés (élève / enseignant / institution / super-admin) avec 4 providers BYOK (OpenRouter / Anthropic / OpenAI / Gemini) — Stage B1 eval matrix frontier 2025-2026 + Stage B2 system prompts par rôle',
+  'Onboarding tuteur IA — configuration clé (mode chiffré AES-GCM/PBKDF2 opt-in) + consent RGPD versionné + page /app/settings',
+  'LTI 1.3 Phase 7c — RS256 JWK validation + nonceStore replay protection + audit log Supabase (THI-131)',
+  'Espace enseignant — création de classe, partage code invitation, dashboard élèves (Sprint 2.A)',
+  'Panel super-admin — supervision plateforme + agents Claude Code (20 agents spécialisés sécurité, RBAC, AI, juridique, forensique)',
 ];
 
 export const ROADMAP_IN_PROGRESS = [
   "Extension du curriculum — nouveaux modules & exercices",
   "Plus d'exercices pratiques & quiz par section",
   'Guide d\'installation PWA (iOS / Android / Desktop)',
-  'Tuteur IA V1.5 — picker modèle (allow-list curated) + onboarding clé chiffrée + AiKeySetup tutoriel — THI-112',
-  'Terminal Sentinel — audit sécurité automatisé',
-  'LTI 1.3 — Phase 7c (RS256 JWK validation, persistence Supabase, grade passback)',
+  'Tuteur IA Stage B3 — picker UI modèle filtré par rôle (whitelist data-driven Stage B1)',
+  'Tuteur IA Stage B1.b — eval matrix multi-turn × 4 rôles (gate audit Opus 7 couches final)',
+  'Phase 9 Admin Panel — widgets analytics gratuits (GitHub Insights + Vercel + Supabase + Sentry, budget 0€)',
+  'Sprint 2.B — institution_admin lite + InstitutionAdminPanel + approve_teacher RPC (deadline 10 juin)',
+  'SEO/GEO/AEO foundation — Schema.org enrichi + landing NL pré-i18n + DPA template B2B écoles (Sprint 2.5)',
 ];
 
 export const ROADMAP_PLANNED = [
   'Mode histoire narratif',
-  'Multilingue (FR / NL / EN / DE) — Belgique tri-lingue',
+  'Multilingue complet (FR / NL / EN / DE) — Belgique tri-lingue, traductions tuteur IA staff + curriculum',
   'Badges & Open Badges 3.0 (CEFR + EQF)',
   'Révisions intelligentes',
-  'Dashboards par rôle — étudiant / professeur / formateur / institution / super-admin',
+  'Web Worker isolation tuteur IA — vraie défense vs extension navigateur malveillante (V1.5, THI-114)',
   'Parcours avancés (Docker, scripting, IA augmentée)',
+  'Tuteur IA chat assistant contextualisé par rôle — usage opérationnel teacher/admin pour gestion classes (Phase 9+)',
 ];
 
 // ── Supporters (Hall of Fame) ─────────────────────────────────────────────────
