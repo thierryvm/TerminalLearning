@@ -20,6 +20,8 @@
  */
 import { useId, useState, type FormEvent } from 'react';
 
+import { validatePassphrase } from '@/lib/ai/passphrase';
+
 interface Props {
   /** Called when the user submits a non-empty passphrase. */
   onSubmit: (passphrase: string) => void;
@@ -32,13 +34,16 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const trimmed = passphrase.trim();
-    if (trimmed.length === 0) {
-      setError('Passphrase requise pour déverrouiller la clé chiffrée.');
+    // THI-271 — validation centralisée dans `lib/ai/passphrase` pour empêcher
+    // la drift save/unlock. Mode `unlock` = raw length only, no trim
+    // (leading/trailing whitespace est un caractère valide d'un secret).
+    const result = validatePassphrase(passphrase, 'unlock');
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
     setError(null);
-    onSubmit(trimmed);
+    onSubmit(passphrase);
   }
 
   return (
@@ -91,11 +96,11 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
         )}
         <button
           type="submit"
-          // Sourcery thread #2 (2026-05-24): align the disabled state with
-          // the validation performed in `handleSubmit` (which trims). If we
-          // only checked `.length === 0`, a user typing only spaces would
-          // see an enabled button that then errors out — inconsistent UX.
-          disabled={passphrase.trim().length === 0}
+          // THI-271 — disabled state mirrors `handleSubmit` validation
+          // (raw length, no trim). A passphrase of `"    "` is valid here
+          // only if `AiKeySetup` accepted it on save: AiKeySetup uses raw
+          // `passphrase.length` against MIN_PASSPHRASE, so both sides agree.
+          disabled={passphrase.length === 0}
           className="mt-1 rounded bg-[var(--github-accent)] px-3 py-2 text-sm font-medium text-white transition hover:bg-[var(--github-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
         >
           Déverrouiller
