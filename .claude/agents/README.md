@@ -1,11 +1,11 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 24 mai 2026 (création `legal-compliance-auditor` Opus 4.7 méthode 5 couches RGPD/AI Act/DSA/CNIL/DPA-BE avec auto-update WebSearch — THI-265, suite findings audit nuit 23/05 + qualité premium @thierry. Pattern Haiku-KO-counts confirmé empiriquement → `content-auditor` + `test-runner` upgrade Haiku → Sonnet via PR #286).
+> **Dernière mise à jour** : 24 mai 2026 soir (création `user-forensics-auditor` Sonnet méthode 6 sections RGPD-compliant — THI-274, suite cas Jimmy Pez premier user organique identifié 24/05 + besoin RGPD Art. 15 / anti-abuse / observation drop-off. Création même journée : `legal-compliance-auditor` Opus 4.7 — THI-270.).
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 > 🧠 **Limitation technique connue** : les agents `.md` créés en cours de session ne sont disponibles qu'à la session suivante (rechargement framework). Pattern : si un agent doit gater une PR créé pendant la même session, faire l'audit empirique inline avec exactement la méthode documentée dans l'agent, l'agent prendra le relais aux PRs suivantes.
 
-Cet index liste les **19 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
+Cet index liste les **20 agents** spécialisés du projet, **quand les invoquer**, et **pourquoi ils ont été créés**. Il complète le frontmatter individuel de chaque fichier `.md` en apportant une vue d'ensemble que les frontmatters ne peuvent pas donner.
 
 ## 🛡 Doctrine modèles agents — post-incident 24/04/2026
 
@@ -57,6 +57,7 @@ L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push di
 | [`llm-security-auditor`](llm-security-auditor.md) | **Opus 4.7** | ❌ | Avant release majeure IA + après modif architecturale | ✅ CRITICAL/HIGH |
 | [`session-orchestrator`](session-orchestrator.md) | **Opus 4.7** | ✅ Début et fin session | À la demande | ❌ (méta-orchestration) |
 | [`legal-compliance-auditor`](legal-compliance-auditor.md) | **Opus 4.7** | ❌ scheduled trimestriel | Avant release B2B écoles / publication AI Tutor / activation LTI / traitement mineurs | ⚠️ HIGH = avocat humain requis |
+| [`user-forensics-auditor`](user-forensics-auditor.md) | Sonnet | ❌ | Incident sécurité user / RGPD Art. 15 / anti-abuse / observation drop-off | ⚠️ verdict 4 niveaux (LÉGITIME/SUSPECT/RGPD/ABUS) |
 
 ---
 
