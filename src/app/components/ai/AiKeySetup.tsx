@@ -37,6 +37,11 @@ import {
   type Provider,
 } from '@/lib/ai/keyManager';
 import {
+  MIN_PASSPHRASE,
+  validatePassphrase,
+  validatePassphraseConfirm,
+} from '@/lib/ai/passphrase';
+import {
   PROVIDER_LABELS,
   PROVIDER_PREFIX_HINT,
   PROVIDER_QUICK_HELP,
@@ -49,8 +54,6 @@ export interface AiKeySetupProps {
   /** Optional: CSS class overrides for embedding contexts (panel vs settings page). */
   className?: string;
 }
-
-const MIN_PASSPHRASE = 8;
 
 export function AiKeySetup({ provider, onSaved, className }: AiKeySetupProps) {
   const [value, setValue] = useState('');
@@ -83,12 +86,11 @@ export function AiKeySetup({ provider, onSaved, className }: AiKeySetupProps) {
   const passphraseProblem = useMemo<string | null>(() => {
     if (!encryptOpt) return null;
     if (passphrase.length === 0) return null; // not yet typed → no error
-    if (passphrase.length < MIN_PASSPHRASE) {
-      return `La passphrase doit faire au moins ${MIN_PASSPHRASE} caractères.`;
-    }
-    if (passphraseConfirm.length > 0 && passphrase !== passphraseConfirm) {
-      return 'Les deux passphrases ne correspondent pas.';
-    }
+    // THI-271 — délégation à `lib/ai/passphrase` pour cohérence save/unlock
+    const main = validatePassphrase(passphrase, 'save');
+    if (!main.ok) return main.error;
+    const confirm = validatePassphraseConfirm(passphrase, passphraseConfirm);
+    if (!confirm.ok) return confirm.error;
     return null;
   }, [encryptOpt, passphrase, passphraseConfirm]);
 
@@ -109,12 +111,15 @@ export function AiKeySetup({ provider, onSaved, className }: AiKeySetupProps) {
       return;
     }
     if (encryptOpt) {
-      if (passphrase.length < MIN_PASSPHRASE) {
-        setError(`La passphrase doit faire au moins ${MIN_PASSPHRASE} caractères.`);
+      // THI-271 — validation centralisée dans `lib/ai/passphrase`
+      const main = validatePassphrase(passphrase, 'save');
+      if (!main.ok) {
+        setError(main.error);
         return;
       }
-      if (passphrase !== passphraseConfirm) {
-        setError('Les deux passphrases ne correspondent pas.');
+      const confirm = validatePassphraseConfirm(passphrase, passphraseConfirm);
+      if (!confirm.ok) {
+        setError(confirm.error);
         return;
       }
     }

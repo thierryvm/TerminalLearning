@@ -20,6 +20,8 @@
  */
 import { useId, useState, type FormEvent } from 'react';
 
+import { validatePassphrase } from '@/lib/ai/passphrase';
+
 interface Props {
   /** Called when the user submits a non-empty passphrase. */
   onSubmit: (passphrase: string) => void;
@@ -32,13 +34,12 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // THI-271 — do NOT trim. Leading/trailing whitespace is a valid part of
-    // the secret. `AiKeySetup` saves the passphrase as-is (no trim) into
-    // PBKDF2, so the unlock side must echo that byte-for-byte. Trimming
-    // here would silently break unlock for users with whitespace-padded
-    // passphrases. Validate raw length only.
-    if (passphrase.length === 0) {
-      setError('Passphrase requise pour déverrouiller la clé chiffrée.');
+    // THI-271 — validation centralisée dans `lib/ai/passphrase` pour empêcher
+    // la drift save/unlock. Mode `unlock` = raw length only, no trim
+    // (leading/trailing whitespace est un caractère valide d'un secret).
+    const result = validatePassphrase(passphrase, 'unlock');
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
     setError(null);
