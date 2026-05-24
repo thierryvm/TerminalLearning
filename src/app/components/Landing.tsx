@@ -477,54 +477,81 @@ export function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Available */}
             <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-5">
                 <CheckCircle2 size={16} className="text-emerald-400" aria-hidden="true" />
                 <span className="text-emerald-400 text-sm font-semibold">Disponible</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">live</span>
               </div>
-              <ul className="space-y-2">
-                {ROADMAP_AVAILABLE.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
-                    <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-                    {item}
-                  </li>
+              <div className="space-y-4">
+                {ROADMAP_AVAILABLE.map((group) => (
+                  <div key={group.group}>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-400/80 mb-1.5">
+                      {group.group}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {group.items.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)] leading-snug">
+                          <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* In progress */}
             <div className="p-5 rounded-xl border border-blue-500/20 bg-blue-500/5">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-5">
                 <span className="w-4 h-4 flex items-center justify-center shrink-0" aria-hidden="true">
                   <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
                 </span>
                 <span className="text-blue-400 text-sm font-semibold">En cours</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">beta</span>
               </div>
-              <ul className="space-y-2">
-                {ROADMAP_IN_PROGRESS.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
-                    <Zap size={12} className="text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
-                    {item}
-                  </li>
+              <div className="space-y-4">
+                {ROADMAP_IN_PROGRESS.map((group) => (
+                  <div key={group.group}>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-400/80 mb-1.5">
+                      {group.group}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {group.items.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)] leading-snug">
+                          <Zap size={12} className="text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* Planned */}
             <div className="p-5 rounded-xl border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-5">
                 <Clock size={16} className="text-amber-400" aria-hidden="true" />
                 <span className="text-[var(--github-text-secondary)] text-sm font-semibold">Plus tard</span>
               </div>
-              <ul className="space-y-2">
-                {ROADMAP_PLANNED.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)]">
-                    <span className="w-3 h-3 rounded-full border border-[var(--github-border-primary)] mt-0.5 shrink-0" aria-hidden="true" />
-                    {item}
-                  </li>
+              <div className="space-y-4">
+                {ROADMAP_PLANNED.map((group) => (
+                  <div key={group.group}>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400/80 mb-1.5">
+                      {group.group}
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {group.items.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-xs text-[var(--github-text-secondary)] leading-snug">
+                          <span className="w-3 h-3 rounded-full border border-[var(--github-border-primary)] mt-0.5 shrink-0" aria-hidden="true" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </FadeIn>
