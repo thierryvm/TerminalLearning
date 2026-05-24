@@ -550,7 +550,7 @@ export function Landing() {
               href="https://github.com/thierryvm/TerminalLearning"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--github-text-primary)] underline decoration-dotted hover:decoration-solid"
+              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-300 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--github-bg)]"
             >
               ajouter une étoile sur GitHub
             </a>
@@ -559,7 +559,7 @@ export function Landing() {
               href="https://github.com/thierryvm/TerminalLearning/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--github-text-primary)] underline decoration-dotted hover:decoration-solid"
+              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-300 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--github-bg)]"
             >
               signaler un bug
             </a>
