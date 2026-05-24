@@ -67,39 +67,61 @@ export function resolveModel(provider: Provider): string {
  * which model is actually answering their prompts (BYOK consent, EU AI Act,
  * RGPD, CNIL Éducation). No role gating.
  */
+/**
+ * Per-pattern label entries. Order matters — more specific patterns MUST
+ * come before generic ones (e.g. `gpt-5-mini` before `gpt-5`, otherwise
+ * the mini variant is swallowed by the generic GPT-5 entry).
+ *
+ * Patterns are matched against a normalised id where `digit-digit` is
+ * rewritten to `digit.digit` — this lets a single pattern like `sonnet-4.6`
+ * catch both `anthropic/claude-sonnet-4.6` (OpenRouter naming) and
+ * `anthropic/claude-sonnet-4-6` (Anthropic direct + test fixtures).
+ */
+const MODEL_LABELS: ReadonlyArray<readonly [string, string]> = [
+  // Claude family
+  ['opus-4.7', 'Opus 4.7'],
+  ['sonnet-4.6', 'Sonnet 4.6'],
+  ['sonnet-4.5', 'Sonnet 4.5'],
+  ['haiku-4.5', 'Haiku 4.5'],
+  // OpenAI frontier 2025-2026 (more specific first)
+  ['gpt-5.5', 'GPT-5.5'],
+  ['gpt-5-mini', 'GPT-5 mini'],
+  ['gpt-5-nano', 'GPT-5 nano'],
+  ['gpt-5', 'GPT-5'],
+  // Gemini frontier 2025-2026 (more specific first)
+  ['gemini-3.5-flash', 'Gemini 3.5 Flash'],
+  ['gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite'],
+  ['gemini-2.5-flash', 'Gemini 2.5 Flash'],
+  ['gemini-2.5-pro', 'Gemini 2.5 Pro'],
+  // Qwen + DeepSeek frontier
+  ['qwen3.7-max', 'Qwen 3.7 Max'],
+  ['qwen3.5-plus', 'Qwen 3.5 Plus'],
+  ['deepseek-v3.2', 'DeepSeek V3.2'],
+  ['deepseek-chat-v3.1', 'DeepSeek V3.1'],
+  // Legacy display fallback (modèles legacy 2024 retirés Stage B1 24/05/2026
+  // — gardés pour ne pas casser l'affichage si une env override pointe encore
+  // sur ces ids le temps de la transition)
+  ['gpt-4o-mini', 'GPT-4o mini'],
+  ['gpt-4o', 'GPT-4o'],
+  ['gemini-2.0-flash', 'Gemini 2.0 Flash'],
+  ['gemini-1.5-pro', 'Gemini 1.5 Pro'],
+  ['gemini-1.5-flash', 'Gemini 1.5 Flash'],
+  ['llama-3.3-70b', 'Llama 3.3 70B'],
+  ['llama-3.1-70b', 'Llama 3.1 70B'],
+];
+
 export function getModelLabel(modelId: string): string {
-  const lower = modelId.toLowerCase();
-  // Claude family (incl. OpenRouter naming with `.` vs Anthropic direct with `-`)
-  if (lower.includes('opus-4-7') || lower.includes('opus-4.7')) return 'Opus 4.7';
-  if (lower.includes('sonnet-4-6') || lower.includes('sonnet-4.6')) return 'Sonnet 4.6';
-  if (lower.includes('sonnet-4-5') || lower.includes('sonnet-4.5')) return 'Sonnet 4.5';
-  if (lower.includes('haiku-4-5') || lower.includes('haiku-4.5')) return 'Haiku 4.5';
-  // OpenAI frontier 2025-2026
-  if (lower.includes('gpt-5.5') || lower.includes('gpt-5-5')) return 'GPT-5.5';
-  if (lower.includes('gpt-5-mini')) return 'GPT-5 mini';
-  if (lower.includes('gpt-5-nano')) return 'GPT-5 nano';
-  if (lower.includes('gpt-5')) return 'GPT-5';
-  // Gemini frontier 2025-2026
-  if (lower.includes('gemini-3.5-flash')) return 'Gemini 3.5 Flash';
-  if (lower.includes('gemini-2.5-flash-lite')) return 'Gemini 2.5 Flash Lite';
-  if (lower.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
-  if (lower.includes('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
-  // Qwen frontier 2026
-  if (lower.includes('qwen3.7-max')) return 'Qwen 3.7 Max';
-  if (lower.includes('qwen3.5-plus')) return 'Qwen 3.5 Plus';
-  // DeepSeek 2025
-  if (lower.includes('deepseek-v3.2')) return 'DeepSeek V3.2';
-  if (lower.includes('deepseek-chat-v3.1')) return 'DeepSeek V3.1';
-  // Legacy display fallback (modèles legacy 2024 retirés Stage B1 24/05/2026 —
-  // gardés pour ne pas casser l'affichage si une env override pointe encore
-  // sur ces ids le temps de la transition).
-  if (lower.includes('gpt-4o-mini')) return 'GPT-4o mini';
-  if (lower.includes('gpt-4o')) return 'GPT-4o';
-  if (lower.includes('gemini-2.0-flash')) return 'Gemini 2.0 Flash';
-  if (lower.includes('gemini-1.5-pro')) return 'Gemini 1.5 Pro';
-  if (lower.includes('gemini-1.5-flash')) return 'Gemini 1.5 Flash';
-  if (lower.includes('llama-3.3-70b')) return 'Llama 3.3 70B';
-  if (lower.includes('llama-3.1-70b')) return 'Llama 3.1 70B';
+  // Normalise version-style `digit-digit` → `digit.digit` so we maintain
+  // a single set of patterns rather than duplicating each entry for both
+  // OpenRouter (`.`) and Anthropic direct (`-`) naming conventions. The
+  // negative lookahead `(?!\d)` guarantees we only touch single-digit
+  // version markers (e.g. `4-6` → `4.6`) and never multi-digit sequences
+  // like `3-70b` in `llama-3.3-70b` (where `70` is one number).
+  // Sourcery PR #290 review.
+  const normalized = modelId.toLowerCase().replace(/(\d)-(\d)(?!\d)/g, '$1.$2');
+  for (const [pattern, label] of MODEL_LABELS) {
+    if (normalized.includes(pattern)) return label;
+  }
   // Fallback: return raw id so the user still sees something honest.
   return modelId;
 }

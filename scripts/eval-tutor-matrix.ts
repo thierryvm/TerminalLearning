@@ -376,7 +376,10 @@ function formatSynthesisReport(
   lines.push(`- **Total tokens** : ${totalTokens.toLocaleString()}`);
   lines.push(`- **Total cost** : $${totalCost.toFixed(4)} USD`);
   lines.push(
-    `- **Marge cap key terminal-learning** : $4.91 dispo → restant ~$${(4.91 - totalCost).toFixed(2)}`,
+    // Budget restant non hardcodé : la cap key OpenRouter peut évoluer
+    // (recharge, rotation, modif Vercel env). Le total cost ci-dessus est
+    // suffisant pour décider si un run rentre dans la marge ; le restant
+    // exact reste consultable via `openrouter.ai/settings/keys`.
   );
 
   lines.push('');

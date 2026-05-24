@@ -56,7 +56,7 @@ Pas de Llama 4 (non hosté sur OpenRouter au 24/05/2026). Pas de Grok/Mistral/No
 
 ## Analyse cross-modèle
 
-**Légende verdicts (rappel)** : PASS = heuristic satisfait, WARN = limite franchie partiellement, FAIL = limite cassée, N/A = catégorie non auto-gradée (F3 multi-turn / standard pédagogique). Sur 14 fixtures, 8 sont auto-gradées (max PASS = 8/8).
+**Légende verdicts (rappel)** : PASS = heuristique satisfaite, WARN = limite franchie partiellement, FAIL = limite cassée, N/A = catégorie non auto-gradée (F3 multi-turn / standard pédagogique). Sur 14 fixtures, 8 sont auto-gradées (max PASS = 8/8).
 
 **Frictions ChatGPT cross-validation** (rappel ADR-008) :
 - **F1 compound** : la consigne « UNE SEULE question » doit faire éclater une question composée en bullets numérotés
@@ -95,7 +95,7 @@ Pas de Llama 4 (non hosté sur OpenRouter au 24/05/2026). Pas de Grok/Mistral/No
 
 ### Tier 2 — Default & alternatives crédibles (7/8)
 - **`anthropic/claude-sonnet-4.6`** *(default production actuel)* : 7/8 — stable, default prudent. $0.054/run, latence moyenne. À garder en default tant que l'écart prix vs GPT-5.5 (×2.2) reste justifié par stabilité.
-- **`qwen/qwen3.7-max`** : 7/8 mais **$0.130/run** (le plus cher du run, 1× plus que Opus 4.7). **NON recommandé** — pas de gain qualité justifiant le saut de prix. Mentionner picker UI comme « alternative chinoise » pour diversité provider, mais avec warning prix explicit.
+- **`qwen/qwen3.7-max`** : 7/8 mais **$0.130/run** (le plus cher du run, 1× plus que Opus 4.7). **NON recommandé** — pas de gain qualité justifiant le saut de prix. Mentionner picker UI comme « alternative chinoise » pour diversité provider, mais avec warning prix explicite.
 
 ### Tier 3 — Budget acceptables (6/8)
 - **`openai/gpt-5-mini`** : 6/8, **$0.017/run, 344 ms**. **Le meilleur ratio cheap du run**. À privilégier pour rôle élève (volume d'appels, sensibilité prix). Régression F1 acceptable (consistante avec tous les modèles éco).
@@ -155,13 +155,13 @@ Audit Opus 4.7 méthode 7 couches lancé 2026-05-24 sur la whitelist ci-dessus +
 ## Coût total
 
 - **Total tokens** : 141 183
-- **Total cost** : $0.6202 USD
-- **Marge cap key terminal-learning** : $4.91 dispo → restant ~$4.29
+- **Total cost** : $0.6202 USD (calculé live à partir des `usage.{prompt_tokens,completion_tokens}` × pricing OpenRouter validés via API `/api/v1/models` au 24/05/2026)
+- **Budget restant cap key** : voir Vercel env `OPENROUTER_API_KEY` cap settings (volatile — pas hardcodé pour éviter drift entre runs)
 
 ## Étapes suivantes
 
 1. @thierry lit les réponses verbatim et valide la whitelist par catégorie
 2. Lancer `llm-security-auditor` (Opus 4.7, 7 couches) post-eval pour challenger empiriquement refus + jailbreaks + multi-turn drift sur la whitelist Tier 1+2
 3. Décider configuration UI : picker modèle drawer + filtrage par rôle (Stage B3)
-4. Stage B2 : system prompts par rôle (tutor/teacher/admin/superadmin) — débloque Stage B1.b (4 rôles × 5 fixtures réel)
+4. Stage B2 : system prompts par rôle (tutor/teacher/admin/superadmin) — débloque Stage B1.b (4 rôles × 5 fixtures réelles)
 5. **Optionnel** : reconduire matrice ciblée Haiku 4.5 (N=3) pour quantifier variance run-to-run avant verdict final sur Tier 4.
