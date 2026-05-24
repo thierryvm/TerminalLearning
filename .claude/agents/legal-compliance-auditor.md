@@ -30,7 +30,7 @@ L'audit progresse en 5 couches séquentielles. Couche 1 = inventory existant (Co
 
 **Lire systématiquement** :
 - `src/app/components/PrivacyPolicy.tsx` (politique de confidentialité publique, route `/privacy`)
-- `index.html` (JSON-LD structured data, meta legales)
+- `index.html` (JSON-LD structured data, meta légales)
 - `vercel.json` (CSP, headers sécurité, frame-ancestors)
 - `supabase/migrations/*` (audit RLS pour data minimization + tables PII)
 - `src/lib/ai/keyManager.ts` + `src/app/components/ai/AiKeySetup.tsx` + `AiConsentModal.tsx` (consentement BYOK + stockage clés)
