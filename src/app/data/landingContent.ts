@@ -58,44 +58,116 @@ export const FEATURES = [
 
 // ── Roadmap ───────────────────────────────────────────────────────────────────
 
-export const ROADMAP_AVAILABLE = [
-  '11 modules progressifs (navigation → IA pour dev)',
-  'Terminal interactif avec validation',
-  'Dashboard de progression',
-  'Sauvegarde locale + cloud (optionnel)',
-  `Référence enrichie (${TOTAL_COMMANDS}+ commandes)`,
-  "Sélection d'environnement Linux / macOS / Windows",
-  'Adaptation des commandes par OS',
-  'Parcours guidé par niveaux',
-  'Partage natif (Web Share API)',
-  'Accessibilité mobile & clavier (WCAG 2.2 AAA, safe-area iOS, focus-visible)',
-  'Sécurité durcie — endpoints LTI gated, rate limiting partagé, CSP SHA-256, audit IA security 9.2/10 (24 mai 2026)',
-  'Tuteur IA — multi-rôles cloisonnés (élève / enseignant / institution / super-admin) avec 4 providers BYOK (OpenRouter / Anthropic / OpenAI / Gemini) — Stage B1 eval matrix frontier 2025-2026 + Stage B2 system prompts par rôle',
-  'Onboarding tuteur IA — configuration clé (mode chiffré AES-GCM/PBKDF2 opt-in) + consent RGPD versionné + page /app/settings',
-  'LTI 1.3 Phase 7c — RS256 JWK validation + nonceStore replay protection + audit log Supabase (THI-131)',
-  'Espace enseignant — création de classe, partage code invitation, dashboard élèves (Sprint 2.A)',
-  'Panel super-admin — supervision plateforme + agents Claude Code (20 agents spécialisés sécurité, RBAC, AI, juridique, forensique)',
+/**
+ * Roadmap structure — pattern premium 2026 (Stripe / Linear / Vercel
+ * changelog) avec sous-groupes sémantiques au lieu d'une flat list.
+ *
+ * - `group` : libellé court du pilier (ex: "Tuteur IA")
+ * - `items` : 2-4 features livrées dans ce pilier, chaque item ≤ 1 ligne
+ *   (les détails THI-XXX et versions vont en parenthèses fin de ligne)
+ *
+ * Refonte UX 24/05/2026 soir suite feedback @thierry (PR #295 → screenshot
+ * asymétrie 16/8/7 + items 3-5 lignes pas premium 2026 → cette PR).
+ */
+export interface RoadmapGroup {
+  group: string;
+  items: readonly string[];
+}
+
+export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
+  {
+    group: 'Curriculum',
+    items: [
+      '11 modules progressifs (navigation → IA pour dev)',
+      'Terminal interactif avec validation',
+      `Référence enrichie (${TOTAL_COMMANDS}+ commandes)`,
+      'Parcours guidé par niveaux + Dashboard de progression',
+    ],
+  },
+  {
+    group: 'Multi-OS',
+    items: [
+      'Linux / macOS / Windows — sélection + adaptation par OS',
+      'Partage natif (Web Share API)',
+    ],
+  },
+  {
+    group: 'Tuteur IA',
+    items: [
+      'Multi-rôles cloisonnés (élève / enseignant / institution / super-admin)',
+      '4 providers BYOK (OpenRouter / Anthropic / OpenAI / Gemini)',
+      'Onboarding clé chiffrée (AES-GCM opt-in) + consent RGPD',
+      'Audit IA security 9.2/10 (24 mai 2026)',
+    ],
+  },
+  {
+    group: 'Plateforme B2B',
+    items: [
+      'Espace enseignant — classes, code invitation, dashboard élèves',
+      'Panel super-admin + 20 agents Claude Code spécialisés',
+      'LTI 1.3 Phase 7c — JWK validation + replay protection',
+    ],
+  },
+  {
+    group: 'Qualité',
+    items: [
+      'Accessibilité WCAG 2.2 AAA (safe-area iOS, focus-visible)',
+      'Sécurité durcie (CSP SHA-256, rate limiting, endpoints gated)',
+      'Sauvegarde locale + cloud (optionnel)',
+    ],
+  },
 ];
 
-export const ROADMAP_IN_PROGRESS = [
-  "Extension du curriculum — nouveaux modules & exercices",
-  "Plus d'exercices pratiques & quiz par section",
-  'Guide d\'installation PWA (iOS / Android / Desktop)',
-  'Tuteur IA Stage B3 — picker UI modèle filtré par rôle (whitelist data-driven Stage B1)',
-  'Tuteur IA Stage B1.b — eval matrix multi-turn × 4 rôles (gate audit Opus 7 couches final)',
-  'Phase 9 Admin Panel — widgets analytics gratuits (GitHub Insights + Vercel + Supabase + Sentry, budget 0€)',
-  'Sprint 2.B — institution_admin lite + InstitutionAdminPanel + approve_teacher RPC (deadline 10 juin)',
-  'SEO/GEO/AEO foundation — Schema.org enrichi + landing NL pré-i18n + DPA template B2B écoles (Sprint 2.5)',
+export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
+  {
+    group: 'Tuteur IA V1.5',
+    items: [
+      'Stage B3 — picker UI modèle filtré par rôle',
+      'Stage B1.b — eval matrix multi-turn × 4 rôles',
+    ],
+  },
+  {
+    group: 'Plateforme B2B',
+    items: [
+      'Phase 9 Admin Panel — widgets gratuits (GitHub + Vercel + Supabase + Sentry)',
+      'Sprint 2.B — institution_admin (deadline 10 juin)',
+      'SEO/GEO/AEO — Schema.org + landing NL + DPA template écoles',
+    ],
+  },
+  {
+    group: 'Curriculum',
+    items: [
+      'Extension nouveaux modules & exercices',
+      'Plus d\'exercices pratiques & quiz par section',
+      'Guide d\'installation PWA (iOS / Android / Desktop)',
+    ],
+  },
 ];
 
-export const ROADMAP_PLANNED = [
-  'Mode histoire narratif',
-  'Multilingue complet (FR / NL / EN / DE) — Belgique tri-lingue, traductions tuteur IA staff + curriculum',
-  'Badges & Open Badges 3.0 (CEFR + EQF)',
-  'Révisions intelligentes',
-  'Web Worker isolation tuteur IA — vraie défense vs extension navigateur malveillante (V1.5, THI-114)',
-  'Parcours avancés (Docker, scripting, IA augmentée)',
-  'Tuteur IA chat assistant contextualisé par rôle — usage opérationnel teacher/admin pour gestion classes (Phase 9+)',
+export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
+  {
+    group: 'Internationalisation',
+    items: [
+      'FR / NL / EN / DE — Belgique tri-lingue',
+      'Traductions tuteur IA staff + curriculum',
+    ],
+  },
+  {
+    group: 'Gamification & UX',
+    items: [
+      'Mode histoire narratif',
+      'Badges & Open Badges 3.0 (CEFR + EQF)',
+      'Révisions intelligentes',
+    ],
+  },
+  {
+    group: 'Architecture & V2',
+    items: [
+      'Web Worker isolation tuteur IA (V1.5, THI-114)',
+      'Parcours avancés (Docker, scripting, IA augmentée)',
+      'Tuteur IA chat assistant role-based (Phase 9+)',
+    ],
+  },
 ];
 
 // ── Supporters (Hall of Fame) ─────────────────────────────────────────────────
