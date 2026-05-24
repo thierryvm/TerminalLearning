@@ -148,8 +148,17 @@ export function PrivacyPolicy() {
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-sm ml-2">
                   <li><strong className="text-[var(--github-text-primary)]">Mode par défaut</strong> : localStorage en clair (suffisant pour les clés `:free` sans risque financier).</li>
-                  <li><strong className="text-[var(--github-text-primary)]">Mode chiffré opt-in</strong> : IndexedDB + AES-GCM 256 bits + PBKDF2 ≥ 210 000 itérations dérivées d'une passphrase que tu choisis. Recommandé pour les clés payantes.</li>
+                  <li><strong className="text-[var(--github-text-primary)]">Mode chiffré opt-in</strong> : IndexedDB + AES-GCM 256 bits + PBKDF2 ≥ 210 000 itérations dérivées d'une passphrase que tu choisis. Recommandé pour les clés payantes. La passphrase est demandée à chaque <em>réouverture</em> du tuteur (jamais persistée — uniquement en mémoire React tant que le panel reste ouvert ; effacée à la fermeture).</li>
                   <li>Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé » dans le panel ou la page <code className="text-emerald-400 text-sm">/app/settings</code>.</li>
+                </ul>
+                <h4 className="text-[var(--github-text-primary)] font-medium mt-4 mb-2 text-sm">Modèle de menace du mode chiffré (transparence)</h4>
+                <p className="text-sm mb-2">
+                  Le mode chiffré protège contre certains scénarios, pas tous. Voici précisément ce qu'il couvre :
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                  <li><strong className="text-emerald-400">Couvert</strong> — <strong>XSS</strong> : un script malveillant injecté via une vulnérabilité ne lit qu'un IndexedDB chiffré, inutilisable sans ta passphrase.</li>
+                  <li><strong className="text-emerald-400">Couvert</strong> — <strong>Inspection DevTools</strong> : un curieux qui ouvre l'onglet Application → IndexedDB ne voit que des bytes chiffrés ; la passphrase n'est jamais persistée et disparaît à la fermeture du panel.</li>
+                  <li><strong className="text-[var(--github-red)]">Non couvert</strong> — <strong>Extension navigateur avec permission <code className="text-[var(--github-red)]">{'<all_urls>'}</code></strong> : ce type d'extension peut lire l'IndexedDB déchiffré au moment où tu utilises le tuteur (clé en mémoire active). La vraie défense pour ce scénario est l'isolation par <strong>Web Worker</strong>, planifiée pour la V1.5 du tuteur (ticket <a href="https://linear.app/thierryvm/issue/THI-114" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">THI-114</a>). En attendant, si ta clé a une valeur monétaire élevée, utilise un profil navigateur dédié sans extension tierce pour utiliser le tuteur.</li>
                 </ul>
               </div>
 

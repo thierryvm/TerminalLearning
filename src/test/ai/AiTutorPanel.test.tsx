@@ -21,6 +21,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
 import { AiTutorPanel } from '@/app/components/ai/AiTutorPanel';
+import { saveKey as kmSaveKey } from '@/lib/ai/keyManager';
 
 /**
  * Wrap any subtree under a MemoryRouter so child components that use
@@ -276,5 +277,186 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
     expect(heading.getAttribute('title')).toBe(
       'Tuteur IA — OpenRouter • Sonnet 4.6',
     );
+  });
+});
+
+// THI-263 fix (A1 from llm-security-auditor 23/05/2026 audit) — encrypted
+// mode opt-in was unusable: AiTutorPanel never forwarded `passphrase` to
+// useAiTutor, so kmGetKey returned null and users hit `no_key` forever.
+// Option A retained: prompt the passphrase lazily when the panel mounts
+// against an encrypted key, keep it in React state only (no persistence),
+// pass it to useAiTutor, and clear it on close / provider switch / forget.
+describe('AiTutorPanel — encrypted mode passphrase prompt (THI-263)', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+    localStorage.setItem('ai_consent_v1', 'true');
+  });
+
+  it('shows the passphrase prompt when the stored key is encrypted', async () => {
+    // Save an encrypted key directly via the keyManager API — bypasses the
+    // setup form and lets us assert on the unlock flow in isolation.
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // The passphrase prompt replaces the conversation surface until the
+    // user unlocks. The "Question pour le tuteur IA" textarea must NOT be
+    // visible at this point — only the passphrase input.
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Question pour le tuteur IA/i),
+    ).toBeNull();
+    // No plain entry should have leaked into localStorage.
+    expect(localStorage.getItem('ai_key_openrouter')).toBeNull();
+  });
+
+  it('routes to the conversation view after the passphrase is submitted', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+
+    // After submit, the conversation textarea appears and the passphrase
+    // prompt is gone.
+    expect(
+      await screen.findByLabelText(/Question pour le tuteur IA/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Passphrase$/i)).toBeNull();
+  });
+
+  it('clears the passphrase when the user closes the panel', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Unlock once.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Close via Escape — passphrase must be dropped from in-memory state.
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    // Re-open: the passphrase prompt should be back, conversation gone.
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Question pour le tuteur IA/i),
+    ).toBeNull();
+  });
+
+  // THI-263 W2 fix (prompt-guardrail-auditor 2026-05-24): symetric coverage of
+  // the close-via-overlay-click path. Future refactor that drops
+  // `onClick={closePanel}` on the overlay would silently regress A1.
+  it('clears the passphrase when the user closes via overlay click', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Close via overlay click. The overlay is the only `aria-hidden="true"`
+    // div with `z-[60]` in the rendered tree — match unambiguously.
+    const overlay = container.querySelector(
+      'div[aria-hidden="true"].fixed.inset-0',
+    );
+    if (!overlay) throw new Error('Overlay not found in rendered tree');
+    await user.click(overlay);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    // Re-open: passphrase prompt must be back (state cleared).
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Question pour le tuteur IA/i),
+    ).toBeNull();
+  });
+
+  // THI-263 R1 fix (prompt-guardrail-auditor 2026-05-24): switching provider
+  // must drop the in-memory passphrase to avoid cross-key reuse (a plain
+  // provider does not need it; an encrypted provider needs its own secret).
+  it('clears the passphrase when the user switches provider', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Unlock OpenRouter.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Switch to Anthropic — different storage state (no key configured),
+    // passphrase must be dropped so it cannot be reused on another provider.
+    await user.click(screen.getByRole('radio', { name: /Anthropic/i }));
+
+    // Anthropic has no stored key → setup form returns; importantly the
+    // OpenRouter passphrase is no longer accessible. Switch back to
+    // OpenRouter and the passphrase prompt should reappear.
+    await screen.findByLabelText(/Clé API/i);
+    await user.click(screen.getByRole('radio', { name: /OpenRouter/i }));
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+  });
+
+  // Sourcery thread #3 (2026-05-24): explicit coverage of the `forgetKey`
+  // path, which also clears `isEncryptedMode` and `passphrase` in state.
+  // Symmetric to "forgets the key and returns to the key-entry block" but
+  // starting from the encrypted-unlocked state.
+  it('clears the passphrase when the user forgets the encrypted key', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Unlock first.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Click "Oublier ma clé" — both the encrypted IDB record AND the
+    // in-memory passphrase must be cleared, routing back to AiKeySetup
+    // (no_key state). Passphrase prompt must NOT reappear — the key is gone.
+    await user.click(screen.getByRole('button', { name: /Oublier ma clé/i }));
+    expect(await screen.findByLabelText(/Clé API/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Passphrase$/i)).toBeNull();
+    expect(screen.queryByLabelText(/Question pour le tuteur IA/i)).toBeNull();
   });
 });
