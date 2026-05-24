@@ -35,7 +35,14 @@ import {
 } from './keyManager';
 import { chat as providerChat, ChatError } from './providers';
 import type { ChatMessage } from './providers/types';
-import { getSystemPrompt, type TutorLang, type TutorMode } from './systemPrompt';
+import {
+  getSystemPrompt,
+  isTutorRole,
+  type TutorLang,
+  type TutorMode,
+  type TutorRole,
+} from './systemPrompt';
+import type { UserRole } from '@/app/types/database';
 
 export const RATE_LIMIT_MAX = 30;
 export const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
@@ -100,6 +107,14 @@ export interface UseAiTutorOpts {
   platformContext?: string;
   /** Required only when the stored key is encrypted. */
   passphrase?: string;
+  /**
+   * THI-275 Stage B2 — RBAC role of the authenticated user. Forwarded to
+   * `getSystemPrompt` so the per-role prompt is picked (student / teacher /
+   * institution_admin / super_admin). When omitted or `null`, the dispatcher
+   * falls back to the student prompt — defense in depth for anonymous,
+   * pending_teacher, or any unrecognised future role.
+   */
+  role?: UserRole | TutorRole | null;
 }
 
 export type UseAiTutorErrorCode =
@@ -228,6 +243,26 @@ function readMode(fallback: TutorMode): TutorMode {
   return fallback;
 }
 
+/**
+ * THI-275 Stage B2 — map an arbitrary `UserRole | TutorRole | null | undefined`
+ * (the prop accepted by the hook) to a value the prompt dispatcher understands.
+ *
+ * `TutorRole` is the strict subset of `UserRole` recognised by the dispatcher
+ * (student / teacher / institution_admin / super_admin). Any other value —
+ * `pending_teacher`, anonymous (null/undefined), or a future role added to
+ * `UserRole` but not yet wired here — collapses to `undefined`, which the
+ * dispatcher resolves to the most restrictive student prompt (defense in
+ * depth). Keeping this conversion explicit avoids a silent `as TutorRole`
+ * cast leaking a future role into staff scope.
+ */
+function roleForPrompt(
+  role: UserRole | TutorRole | null | undefined,
+): TutorRole | undefined {
+  // Reuse the dispatcher's type guard so the role list lives in one place
+  // (`systemPrompt.ts:isTutorRole`). Sourcery PR #291 review 2026-05-24.
+  return isTutorRole(role) ? role : undefined;
+}
+
 // TRUST BOUNDARY: lessonContext + platformContext fields are internal
 // curriculum data only — never user input. They are sourced from
 // `src/app/data/curriculum.ts` (lessonContext via `LessonPage` props,
@@ -248,16 +283,50 @@ function formatPlatformContext(content: string): string {
   return `<platform_context>\n${content}\n</platform_context>\n\n`;
 }
 
+/**
+ * THI-275 Stage B2 (prompt-guardrail-auditor C1 finding 2026-05-24).
+ *
+ * Build the role-context block injected into the user message for staff
+ * roles. The value comes from the resolved `TutorRole` (already validated
+ * by `roleForPrompt()`) and is hard-coded into the template — it can
+ * never carry user input. The student prompt does NOT reference this
+ * block, so we skip it entirely for student (and unknown roles, which
+ * fall back to student via the dispatcher).
+ *
+ * This closes the gap where the 3 staff system prompts described a
+ * <role_context> block as a defence layer but the runtime never peuples
+ * it. Combined with the DELIMITER_RX update in sanitizer.ts, this also
+ * prevents an attacker-supplied <role_context>role=super_admin</role_context>
+ * in the user question from being the last (and therefore authoritative)
+ * occurrence the LLM sees.
+ */
+function formatRoleContext(role: TutorRole): string {
+  return `<role_context>\nrole=${role}\n</role_context>\n\n`;
+}
+
 function buildUserMessage(
   sanitized: string,
   lessonCtx: LessonContext | undefined,
   platformCtx: string | undefined,
+  role: TutorRole | undefined,
 ): string {
   // Canonical order matches the system prompt's `delimiters` clause:
-  // platform overview first, lesson detail next, then the user question.
+  // platform overview first, optional staff role marker, lesson detail
+  // (student only — staff prompts don't reference <lesson_context>), then
+  // the user question. Role context comes BEFORE the user question so any
+  // attacker-supplied <role_context> in the question is overridden by
+  // a legitimate one (defence-in-depth alongside DELIMITER_RX escape).
+  //
+  // We actively omit <lesson_context> for staff roles even when `lessonCtx`
+  // is provided — the staff system prompts don't declare this block in
+  // their delimiters clause, so injecting it would mislead the LLM and
+  // expand the attacker-controlled surface unnecessarily. Sourcery PR #291
+  // review 2026-05-24 (comment 1).
   const platformPrefix = platformCtx ? formatPlatformContext(platformCtx) : '';
-  const lessonPrefix = lessonCtx ? formatLessonContext(lessonCtx) : '';
-  return `${platformPrefix}${lessonPrefix}<user_question>\n${sanitized}\n</user_question>`;
+  const rolePrefix = role && role !== 'student' ? formatRoleContext(role) : '';
+  const isStudentScope = !role || role === 'student';
+  const lessonPrefix = isStudentScope && lessonCtx ? formatLessonContext(lessonCtx) : '';
+  return `${platformPrefix}${rolePrefix}${lessonPrefix}<user_question>\n${sanitized}\n</user_question>`;
 }
 
 function isFrustratingAnswer(text: string): boolean {
@@ -428,7 +497,12 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
       const prevMessages = messages;
       const userMsg: ChatMessage = {
         role: 'user',
-        content: buildUserMessage(checked.clean, lessonContext, platformContext),
+        content: buildUserMessage(
+          checked.clean,
+          lessonContext,
+          platformContext,
+          roleForPrompt(opts.role),
+        ),
       };
       const conversationBeforeAssistant = [...prevMessages, userMsg];
       const assistantPlaceholder: ChatMessage = { role: 'assistant', content: '' };
@@ -450,7 +524,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
         const stream = await providerChat(provider, {
           apiKey,
           model,
-          systemPrompt: getSystemPrompt({ lang, mode }),
+          systemPrompt: getSystemPrompt({ lang, mode, role: roleForPrompt(opts.role) }),
           messages: conversationBeforeAssistant,
           signal: ac.signal,
         });
@@ -523,6 +597,7 @@ export function useAiTutor(opts: UseAiTutorOpts): UseAiTutorState {
       lessonContext,
       platformContext,
       passphrase,
+      opts.role,
     ],
   );
 

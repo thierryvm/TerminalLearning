@@ -31,6 +31,7 @@ import { getModelLabel, resolveModel } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
+import type { UserRole } from '@/app/types/database';
 
 import { AiConsentModal } from './AiConsentModal';
 import { AiKeySetup } from './AiKeySetup';
@@ -47,6 +48,16 @@ interface Props {
     env: 'linux' | 'macos' | 'windows';
     goal: string;
   };
+  /**
+   * Current user RBAC role (THI-275 Stage B2). The caller (Layout / page that
+   * renders this panel) is expected to resolve via `useUserRole()` and pass
+   * the result here. When omitted (anonymous users, tests, or the future
+   * landing-page tutor surface), the dispatcher in `getSystemPrompt` falls
+   * back to the student prompt — the most restrictive and the safest
+   * default. `pending_teacher` is explicitly mapped to student by the
+   * dispatcher (defense-in-depth: pending teachers are not yet approved).
+   */
+  role?: UserRole | null;
 }
 
 function readEnabled(): boolean {
@@ -63,7 +74,7 @@ function readStoredProvider(): Provider {
   return 'openrouter';
 }
 
-export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
+export function AiTutorPanel({ lang = 'fr', lessonContext, role }: Props) {
   const [enabled] = useState<boolean>(() => readEnabled());
   const [open, setOpen] = useState(false);
   const [provider, setProviderState] = useState<Provider>(() => readStoredProvider());
@@ -104,6 +115,10 @@ export function AiTutorPanel({ lang = 'fr', lessonContext }: Props) {
     // THI-263 — passphrase only sent when needed. `undefined` for plain mode
     // keeps `keyManager.getKey()` on its happy path (localStorage read).
     passphrase: isEncryptedMode && passphrase.length > 0 ? passphrase : undefined,
+    // THI-275 Stage B2 — RBAC role forwarded so `getSystemPrompt` can pick
+    // the per-role prompt. `undefined` (anonymous, tests) falls back to the
+    // student prompt — the safest default per the dispatcher contract.
+    role: role ?? undefined,
   });
 
   const setProvider = useCallback((next: Provider) => {

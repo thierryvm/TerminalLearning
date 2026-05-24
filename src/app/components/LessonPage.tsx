@@ -17,6 +17,7 @@ import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
 import { AiTutorPanel } from './ai/AiTutorPanel';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: EnvId }) {
   // Resolve env-specific content/label, falling back to defaults
@@ -372,6 +373,8 @@ export function LessonPage() {
   const navigate = useNavigate();
   const { isModuleUnlocked } = useProgress();
   const { selectedEnv } = useEnvironment();
+  // THI-275 Stage B2 — RBAC role forwarded to AiTutorPanel for per-role prompt
+  const { role } = useUserRole();
 
   const mod = getModuleById(moduleId);
   const lesson = getLessonById(moduleId, lessonId);
@@ -428,6 +431,7 @@ export function LessonPage() {
       />
       <AiTutorPanel
         lang="fr"
+        role={role}
         lessonContext={{
           moduleSlug: moduleId,
           lessonSlug: lessonId,
