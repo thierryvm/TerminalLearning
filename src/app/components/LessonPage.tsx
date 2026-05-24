@@ -184,9 +184,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           <span className="hidden sm:inline">Tableau de bord</span>
         </Button>
 
-        <div className="text-[#30363d]">/</div>
+        <div className="text-[var(--github-border-primary)]">/</div>
         <span className="text-[var(--github-text-secondary)] text-sm hidden sm:inline">{mod.title}</span>
-        <div className="text-[#30363d] hidden sm:block">/</div>
+        <div className="text-[var(--github-border-primary)] hidden sm:block">/</div>
         <span className="text-[var(--github-text-primary)] text-sm truncate flex-1">{lesson.title}</span>
 
         <span className="text-[var(--github-text-secondary)] text-xs font-mono shrink-0">
