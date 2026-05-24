@@ -364,4 +364,70 @@ describe('AiTutorPanel — encrypted mode passphrase prompt (THI-263)', () => {
       screen.queryByLabelText(/Question pour le tuteur IA/i),
     ).toBeNull();
   });
+
+  // THI-263 W2 fix (prompt-guardrail-auditor 2026-05-24): symetric coverage of
+  // the close-via-overlay-click path. Future refactor that drops
+  // `onClick={closePanel}` on the overlay would silently regress A1.
+  it('clears the passphrase when the user closes via overlay click', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Close via overlay click. The overlay is the only `aria-hidden="true"`
+    // div with `z-[60]` in the rendered tree — match unambiguously.
+    const overlay = container.querySelector(
+      'div[aria-hidden="true"].fixed.inset-0',
+    );
+    if (!overlay) throw new Error('Overlay not found in rendered tree');
+    await user.click(overlay);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    // Re-open: passphrase prompt must be back (state cleared).
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Question pour le tuteur IA/i),
+    ).toBeNull();
+  });
+
+  // THI-263 R1 fix (prompt-guardrail-auditor 2026-05-24): switching provider
+  // must drop the in-memory passphrase to avoid cross-key reuse (a plain
+  // provider does not need it; an encrypted provider needs its own secret).
+  it('clears the passphrase when the user switches provider', async () => {
+    await kmSaveKey('openrouter', FAKE_OPENROUTER, {
+      encrypt: true,
+      passphrase: 'correct horse battery staple',
+    });
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    // Unlock OpenRouter.
+    const passphraseInput = await screen.findByLabelText(/^Passphrase$/i);
+    await user.type(passphraseInput, 'correct horse battery staple');
+    await user.click(screen.getByRole('button', { name: /Déverrouiller/i }));
+    await screen.findByLabelText(/Question pour le tuteur IA/i);
+
+    // Switch to Anthropic — different storage state (no key configured),
+    // passphrase must be dropped so it cannot be reused on another provider.
+    await user.click(screen.getByRole('radio', { name: /Anthropic/i }));
+
+    // Anthropic has no stored key → setup form returns; importantly the
+    // OpenRouter passphrase is no longer accessible. Switch back to
+    // OpenRouter and the passphrase prompt should reappear.
+    await screen.findByLabelText(/Clé API/i);
+    await user.click(screen.getByRole('radio', { name: /OpenRouter/i }));
+    expect(await screen.findByLabelText(/^Passphrase$/i)).toBeInTheDocument();
+  });
 });

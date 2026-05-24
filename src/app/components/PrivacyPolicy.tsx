@@ -148,7 +148,7 @@ export function PrivacyPolicy() {
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-sm ml-2">
                   <li><strong className="text-[var(--github-text-primary)]">Mode par défaut</strong> : localStorage en clair (suffisant pour les clés `:free` sans risque financier).</li>
-                  <li><strong className="text-[var(--github-text-primary)]">Mode chiffré opt-in</strong> : IndexedDB + AES-GCM 256 bits + PBKDF2 ≥ 210 000 itérations dérivées d'une passphrase que tu choisis. Recommandé pour les clés payantes. La passphrase est demandée à chaque ouverture du tuteur (jamais persistée — uniquement en mémoire React tant que le panel reste ouvert).</li>
+                  <li><strong className="text-[var(--github-text-primary)]">Mode chiffré opt-in</strong> : IndexedDB + AES-GCM 256 bits + PBKDF2 ≥ 210 000 itérations dérivées d'une passphrase que tu choisis. Recommandé pour les clés payantes. La passphrase est demandée à chaque <em>réouverture</em> du tuteur (jamais persistée — uniquement en mémoire React tant que le panel reste ouvert ; effacée à la fermeture).</li>
                   <li>Tu peux supprimer ta clé à tout moment via le bouton « Oublier ma clé » dans le panel ou la page <code className="text-emerald-400 text-sm">/app/settings</code>.</li>
                 </ul>
                 <h4 className="text-[var(--github-text-primary)] font-medium mt-4 mb-2 text-sm">Modèle de menace du mode chiffré (transparence)</h4>

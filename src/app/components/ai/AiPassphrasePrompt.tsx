@@ -62,7 +62,13 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
         <input
           id={inputId}
           type="password"
-          autoComplete="current-password"
+          // THI-263 W1 fix (prompt-guardrail-auditor 2026-05-24):
+          // `one-time-code` instead of `current-password` so password managers
+          // (1Password, Bitwarden, LastPass) do not auto-fill from previously
+          // saved entries on shared devices (school computer lab scenario from
+          // ADR-005 audience). Signals to the browser that the value is
+          // ephemeral and project-specific.
+          autoComplete="one-time-code"
           spellCheck={false}
           value={passphrase}
           onChange={(e) => {
@@ -93,9 +99,8 @@ export function AiPassphrasePrompt({ onSubmit }: Props) {
       </form>
 
       <p className="text-xs text-[var(--github-text-tertiary)]">
-        Si la passphrase est incorrecte, le tuteur retournera une erreur
-        <code className="mx-1 rounded bg-[var(--github-bg-secondary)] px-1">no_key</code>
-        au premier envoi. Re-clique « Oublier ma clé » pour reconfigurer.
+        Si la passphrase est incorrecte, le tuteur ne pourra pas répondre.
+        Clique alors sur « Oublier ma clé » pour en reconfigurer une nouvelle.
       </p>
     </div>
   );
