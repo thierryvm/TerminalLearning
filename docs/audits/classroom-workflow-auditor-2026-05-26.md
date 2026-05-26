@@ -124,7 +124,7 @@ Le pattern Supabase CLI `set_config('role', 'authenticated', true)` documenté d
 
 **Ground truth = REST API**.
 
-**Impact** : Le pattern CLI fonctionne bien pour tester les **RPC functions** (qui ont des `auth.uid()` explicites dans leur body, comme `join_class_by_code` ou `approve_teacher`), mais **n'est pas fiable** pour tester les **RLS SELECT isolation** purs.
+**Impact** : Le pattern CLI fonctionne bien pour tester les **RPC functions** (qui ont des `auth.uid()` explicites dans leur body, comme `join_class_by_code` ou `approve_teacher`), mais **n'est pas fiable** pour tester l'**isolation RLS SELECT pure**.
 
 **Fix — codifier dans les agents** :
 

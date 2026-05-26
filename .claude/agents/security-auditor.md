@@ -181,7 +181,7 @@ Verifier dans vercel.json :
 Lister toutes les tables depuis src/app/types/database.ts et vérifier :
 - RLS active sur chaque table ?
 - Politiques couvrant SELECT, INSERT, UPDATE, DELETE ?
-- Utilisation de auth.uid() (jamais d'un parametre client) ?
+- Utilisation de auth.uid() (jamais d'un paramètre client) ?
 - CRITICAL si une table est lisible/modifiable par anon sans restriction
 
 ---
