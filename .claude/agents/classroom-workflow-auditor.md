@@ -35,7 +35,13 @@ PROJECT_ID=jdnukbpkjyyyjpuwgxhv
 
 Fixture class: `Terminal 101`, id `43960369-ad83-49dd-87a8-8627d45b2410`, teacher_id 103, invitation_code `a4368184d202`.
 
-## Impersonation pattern (Supabase MCP)
+## Impersonation pattern (Supabase MCP) — caveat critique
+
+> ⚠ **Caveat F-C empirique 26/05/2026** : le pattern `set_config('role', 'authenticated', true)` ci-dessous fonctionne pour tester les **RPC functions** (qui re-lisent `auth.uid()` dans leur body — `join_class_by_code`, `approve_teacher`), mais **n'est PAS fiable pour tester les RLS SELECT isolation purs**. Le `session_user` reste `postgres`, et selon PG privilege resolution order, certaines tables peuvent bypass RLS via session owner → faux positifs ("semble voir cross-institution alors qu'en réalité non").
+>
+> **Pour tester RLS isolation, OBLIGATOIRE utiliser REST API + JWT réel** (cf. mémoire CC `feedback_rls_isolation_test_rest_only.md`). Le pattern CLI ci-dessous reste valide UNIQUEMENT pour les tests d'RPC.
+
+### Pour tester RPC functions (CLI OK)
 
 ```sql
 DO $$
@@ -48,13 +54,43 @@ BEGIN
   );
   PERFORM set_config('role', 'authenticated', true);
 
-  -- Now call the RPC / SELECT as this user
-  -- Any auth.uid() resolves to <USER_UUID>
-  -- Any RLS policy checks against this identity
+  -- Now call the RPC — auth.uid() resolves to <USER_UUID>
+  PERFORM public.join_class_by_code('<code>');
 END $$;
 ```
 
-Always wrap state mutations in a transaction with rollback OR DELETE the test rows after the test (the prod DB has 1 fixture row — never accept polluting it with E2E test data).
+### Pour tester RLS SELECT isolation (REST API + JWT obligatoire)
+
+```bash
+# 1. Login persona via REST API
+body=$(python -c "import json,sys; print(json.dumps({'email':sys.argv[1],'password':sys.argv[2]}))" "$EMAIL" "$PWD")
+curl -sS -X POST "${VITE_SUPABASE_URL}/auth/v1/token?grant_type=password" \
+  -H "apikey: ${VITE_SUPABASE_ANON_KEY}" \
+  -H "Content-Type: application/json" \
+  --data "$body" > .tmp/session.json
+
+# 2. Extract token without dumping to stdout
+token=$(python -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" < .tmp/session.json)
+
+# 3. SELECT under that persona's RLS scope
+curl -sS "${VITE_SUPABASE_URL}/rest/v1/classes?select=*" \
+  -H "apikey: ${VITE_SUPABASE_ANON_KEY}" \
+  -H "Authorization: Bearer $token"
+
+# 4. Cleanup token file
+rm .tmp/session.json
+```
+
+## E2E test data cleanup (mandatory)
+
+> **Pattern F-B codifié 26/05/2026** suite à 4 classes orphelines détectées au début du run (`E2E_TEST_*`, `E2E_DEBUG_*` polluant la DB).
+
+1. **Naming convention** : tout test data créé par cet agent doit commencer par `E2E_` (ex : `E2E_AUDITOR_<timestamp>`, `E2E_CROSS_INSTITUTION_<scenario>`)
+2. **Cleanup startup** : avant de créer les fixtures, `DELETE FROM public.classes WHERE name LIKE 'E2E_%'` (idempotent re-run safe)
+3. **Cleanup teardown** : fin de run, même `DELETE` pour ne pas laisser de traces
+4. **Crash safety** : utiliser BEGIN..EXCEPTION..ROLLBACK ou guard DELETE au startup
+
+Always wrap state mutations in a transaction with rollback OR DELETE the test rows after the test (the prod DB has 1 fixture row `Terminal 101` — never accept polluting it with E2E test data).
 
 ## Test plan (14 checks)
 
