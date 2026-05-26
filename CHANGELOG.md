@@ -5,6 +5,95 @@
 
 ---
 
+## 🏁 26 mai 2026 — Sprint 2.B CLOS : institution_admin lite livré 100%
+*PRs #297 → #299 · THI-280 umbrella · Sprint 2.B · 1 session ~5h*
+
+Le palier B2B écoles cross-institution est posé. Une institution_admin connectée voit uniquement son institution (RLS auto-scoped), peut approuver les enseignants en attente via une RPC `SECURITY DEFINER` race-safe, et chaque promotion `pending_teacher → teacher` est tracée dans `admin_audit_log` quel que soit le chemin (RPC ou direct PATCH). Sprint 2.B livré en 1 session avec autonomie déléguée par @thierry (« je m'absente, tu appliques tes règles et discipline en vigueur dans tes fichiers claude.md »).
+
+### Étape 1 — Migrations institution B + RLS hardening (PR #297)
+
+- **022b** : 3 personas test École B (`institution_admin_b`, `teacher_b`, `pending_teacher_b`) + 1 institution "Ecole B Test". Ces personas existent en parallèle des 5 personas École A (Sprint 2.A) pour valider empiriquement l'isolation cross-institution.
+- **023** : hardening `profiles UPDATE` policy avec `WITH CHECK using get_my_institution_id()` (SECURITY DEFINER bypass pour éviter récursion). Ferme [H1] security-auditor : un utilisateur ne peut plus s'auto-assigner à n'importe quelle institution_id via `PATCH /profiles?id=eq.me`.
+- **024** : GoTrue NULL strings global fix (instance_id + email_change variants + confirmation_token + recovery_token + reauthentication_token + phone_change) — réponse à un Sourcery comm flaggant la fragilité du pattern partial-NULL.
+- **Apply rétroactif 011 + 012** : drift production 4+ semaines détecté par le **premier break-in empirique** de l'agent `institution-rbac-auditor` (créé 20 mai, jamais invoqué empiriquement avant ce jour). Fuite cross-institution sur la table `institutions` corrigée. 8/8 validations empiriques REST API + 12/12 validations H1 hopping bloqué.
+
+**Score isolation** : 7.5 → **9.5/10**.
+
+**Doctrine codifiée** (mémoire `feedback_agent_dormant_full_audit.md`) : « agent dormant = agent qui rouille ». Un agent créé mais jamais invoqué empiriquement accumule silencieusement de la dette. L'agent `institution-rbac-auditor` aurait pu trouver ce finding HIGH le 21 mai si lancé juste après création — au lieu de quoi le drift est resté invisible 6 jours. Règle adoptée : tout nouvel agent doit être break-in empiriquement dans les 48h max.
+
+### Étape 3 — RPC approve_teacher + audit defense in depth (PR #298)
+
+**Migration 025** — `approve_teacher(target_user_id uuid)` SECURITY DEFINER :
+
+1. Caller doit être `institution_admin` + avoir un `institution_id` non-null
+2. Target doit exister dans la même institution
+3. **`SELECT ... FOR UPDATE`** sur le profil cible : row-level lock sérialise les approvals concurrents sur le même utilisateur (Sourcery review « overall A »)
+4. Target doit être en `pending_teacher` state
+5. **`UPDATE ... WHERE id = target_user_id AND role = 'pending_teacher'`** : compare-and-swap atomique. Si une transaction concurrente a déjà promu entre `SELECT FOR UPDATE` et `UPDATE` (théoriquement impossible avec le lock, pratiquement vrai en belt + suspenders), `IF NOT FOUND → INVALID_STATE` plutôt qu'overwrite silencieux (Sourcery review « C1 »)
+6. Insert dans `admin_audit_log` avec `actor_id = auth.uid()`, `action = 'approve_teacher'`, metadata complet (caller_institution_id + previous_role + new_role)
+
+**Hardening** :
+- `REVOKE EXECUTE FROM PUBLIC` + **`REVOKE EXECUTE FROM anon`** explicite (closes F-002 institution-rbac-auditor : PostgREST grant `EXECUTE` au rôle `anon` indépendamment de PUBLIC, le revoke seul depuis PUBLIC laisse le anon caller exécuter le corps de la fonction au lieu d'être refusé au layer GRANT en 42501)
+- `GRANT EXECUTE TO authenticated` only
+- `RAISE EXCEPTION 'INVALID_STATE: target not in pending_teacher state'` sans interpoler le `target_role` réel (closes M1 security-auditor : pas de leak du label de state machine interne dans le payload PostgREST)
+
+**Migration 026** — trigger AFTER UPDATE `audit_pending_teacher_promotion` defense in depth :
+
+Closes F-001 institution-rbac-auditor (HIGH). Précédemment, une institution_admin pouvait bypasser la RPC et promouvoir un `pending_teacher` directement via `PATCH /rest/v1/profiles?id=eq.X` (autorisé par la RLS policy migration 009 + le trigger `prevent_role_escalation` migration 010 enforce l'autorisation). Le profil était promu **sans audit_log row**, créant un trou forensique : impossible de distinguer post-incident un teacher approuvé via RPC vs via direct PATCH.
+
+Le trigger fire AFTER UPDATE sur `profiles WHEN (old.role IS DISTINCT FROM new.role)`, ne s'exécute que sur les transitions `pending_teacher → teacher`, lit le flag transactionnel `app.in_approve_teacher_rpc` (positionné par la RPC via `perform set_config('app.in_approve_teacher_rpc', 'true', true)`), skip si flag présent (sinon double insertion), insert sinon avec `action = 'approve_teacher_direct_patch'` + `metadata->>'path' = 'direct_patch'`. Résultat : single audit row par promotion, `action` distinguable entre RPC path et bypass path.
+
+**8 tests vitest intégration empirique PROD** :
+1. Happy path institution_admin_b → pending_teacher_b
+2. Cross-institution institution_admin_b → pending_teacher A (École A) → `PERMISSION_DENIED` + role unchanged
+3. Wrong caller role teacher_b → `PERMISSION_DENIED`
+4. Wrong target state (already approved) → `INVALID_STATE`
+5. Audit log row integrity (action + target_type + metadata complet)
+6. Anonymous EXECUTE blocked at GRANT layer (F-002 closure)
+7. Direct PATCH inserts trigger audit row (F-001 closure)
+8. RPC path does NOT double-insert (flag suppresses trigger)
+
+### Étape 4 — InstitutionAdminPanel.tsx + route + sidebar (PR #299)
+
+- Composant `InstitutionAdminPanel` gated `<RequireRole allowed={['institution_admin', 'super_admin']}>`. Route `/app/institution` lazy-loaded.
+- Hook `usePendingTeachers` : fetch (RLS auto-scope filtre les profiles à l'institution du caller, pas besoin de WHERE manuel) + approve via `supabase.rpc('approve_teacher', { target_user_id })` + refresh manual. Mapping FR des exceptions PostgreSQL (`PERMISSION_DENIED` → « Vous n'avez pas la permission d'approuver ce profil. », `INVALID_STATE` → « Ce profil n'est plus en attente d'approbation. », `NOT_FOUND` → « Profil introuvable. »).
+- Optimistic UI : sur succès RPC, row retirée localement (la RLS view exclurait le user désormais teacher du SELECT WHERE role='pending_teacher' anyway).
+- Sidebar entry "Mon institution" gated `canSeeInstitutionEntry = role === 'institution_admin' || role === 'super_admin'`, icône `ShieldUser`.
+- **12 tests vitest** : 5 RBAC fallback (anonymous + student + pending_teacher + teacher + render OK pour institution_admin + super_admin) + 7 comportement (empty state, list rendering avec count badge, click "Approuver {nom}" appelle `approve(id)` avec le bon target, error message dans `role=alert` aria-live, loading state, approving state disabled, fallback display_name → username → "Profil sans nom").
+
+**Audits cascade** :
+
+| Audit | Score | Findings |
+|---|---|---|
+| `security-auditor` Étape 3 | **9.5/10** 🟢 SHIP | 0 CRITICAL · 0 HIGH · 1 MED (M1 fixé in-PR) · 10 INFO L1-L10 |
+| `institution-rbac-auditor` Étape 3 | ⚠ SHIP WITH NOTES | 0 CRITICAL · 1 HIGH F-001 + 1 LOW F-002 + M1 **tous fixés in-PR** (migration 026 + revoke anon + suppression interpolation) |
+| `ui-auditor` Étape 4 | 🟡 SHIP WITH FIX | 0 CRITICAL · 0 HIGH · 1 MED (aria-live scope) + 1 LOW (touch target 44px) **fixés in-PR** |
+
+**Validation E2E PROD Chrome MCP** (post-merge, JWT injection éphémère 1h compte test isolé, discipline anti-leak respectée per `feedback_anti_leak_discipline_jwt_short_lived.md`) :
+
+1. Anonymous `/app/institution` → fallback "Vous devez être connecté" + sidebar n'affiche pas "Mon institution" ✅
+2. Login institutionadmin_b via `localStorage.setItem('sb-...-auth-token', JWT)` + reload → sidebar entry visible (active), panel header "Mon institution", section "Enseignants en attente (1)", card "Test Pending Teacher Ecole B" avec date FR ✅
+3. **Cross-institution isolation empirique** : pending_teacher A (École A) **PAS visible** — seul pending_teacher B (École B) listé ✅
+4. Click "Approuver Test Pending Teacher Ecole B" → RPC success + optimistic UI (row disparu) + count "(1)" → "(0)" + empty state "Aucune demande en attente." ✅
+5. DB-side : profile role=teacher + 1 nouvelle row `admin_audit_log action='approve_teacher'` metadata `{previous_role: 'pending_teacher', new_role: 'teacher', caller_institution_id: '82adcd5a-...'}` + **PAS de row `approve_teacher_direct_patch`** (le flag transactionnel fonctionne en runtime réel) ✅
+6. 0 console errors throughout ✅
+
+### Rotation Sentry secrets (side effect)
+
+Pendant la session, 2 vars `SENTRY_AUTH_TOKEN` + `SENTRY_DSN` étaient flaggées "Needs Attention" dans Vercel (managées par l'intégration native Vercel↔Sentry, age > 7 semaines). Rotation déclenchée via le bouton "Rotate Sentry Secrets" du dashboard Vercel (delay expiration 1h, rotation reason traçable « Periodic Sentry secret rotation — Sprint 2.B closure (post-PR #298 merge) »). 7 vars Sentry rotated à 17:37:58. Redeploy production READY immédiat picke up le nouveau `SENTRY_AUTH_TOKEN` côté build (sourcemap upload). `VITE_SENTRY_DSN` (client bundle) unchanged — Sentry ne rotate pas les DSN public, juste les AUTH tokens. Badges "Needs Attention" disparus après refresh dashboard.
+
+### Tests + métriques
+
+- **Tests 1721 PASS** + 20 skipped (rbac.integration.test.ts requires CI secret) — +12 nouveaux vs Sprint 2.A close
+- **Lint OK · type-check OK · build OK** sur les 3 PRs
+- **3 PRs mergées en 1 session** (~5h) — 0 régression, 0 incident
+- **Score isolation cross-institution** : 7.5 → **9.5/10**
+- **3 nouvelles mémoires CC** consolidées : `feedback_anti_leak_discipline_jwt_short_lived.md`, `reference_supabase_plan_free.md`, `feedback_agent_dormant_full_audit.md`
+
+**Sprint 2.C** prochaine session : périmètre à scoper (rejection workflow `reject_teacher`, statistiques institution-wide, page status pending_teacher, etc.).
+
+---
+
 ## 🧠 24 mai 2026 — AI Tutor par rôle : Stage B1 eval matrix frontier + Stage B2 system prompts cloisonnés
 *PRs #287 → #291 · THI-260 + THI-263 + THI-270 + THI-271 + THI-275 · Sprint 2.5 Phase 7b clôture*
 
