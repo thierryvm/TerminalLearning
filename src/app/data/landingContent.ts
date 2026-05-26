@@ -104,6 +104,7 @@ export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
     group: 'Plateforme B2B',
     items: [
       'Espace enseignant — classes, code invitation, dashboard élèves',
+      'Espace institution_admin — approbation enseignants + isolation cross-institution',
       'Panel super-admin + 20 agents Claude Code spécialisés',
       'LTI 1.3 Phase 7c — JWK validation + replay protection',
     ],
@@ -130,7 +131,7 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
     group: 'Plateforme B2B',
     items: [
       'Phase 9 Admin Panel — widgets gratuits (GitHub + Vercel + Supabase + Sentry)',
-      'Sprint 2.B — institution_admin (deadline 10 juin)',
+      'Sprint 2.C — workflow rejection enseignants + statistiques institution',
       'SEO/GEO/AEO — Schema.org + landing NL + DPA template écoles',
     ],
   },
