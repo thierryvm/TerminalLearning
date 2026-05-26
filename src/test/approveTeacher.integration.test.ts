@@ -80,13 +80,22 @@ let teacherBClient:     SupabaseClient;
 /**
  * Reset pending_teacher_b to 'pending_teacher' state.
  * Uses super_admin (bypass RLS via prevent_role_escalation super_admin branch).
+ *
+ * [Sourcery overall B] Surface UPDATE errors so tests don't silently run
+ * against an unexpected initial role state. We log but don't throw — a reset
+ * failure inside afterAll/beforeEach should not mask the real test outcome,
+ * but it must be visible in CI output.
  */
 async function resetPendingB(): Promise<void> {
   if (!superAdminClient) return;
-  await superAdminClient
+  const { error } = await superAdminClient
     .from('profiles')
     .update({ role: 'pending_teacher' })
     .eq('id', PENDING_B_UUID);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.warn(`[approveTeacher.integration.test] resetPendingB failed: ${error.message}`);
+  }
 }
 
 beforeAll(async () => {

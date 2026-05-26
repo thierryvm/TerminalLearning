@@ -29,10 +29,16 @@ begin
   end if;
 
   -- 3. Target doit exister + appartenir à la même institution
+  --    [Sourcery overall] FOR UPDATE pose un row-level lock pendant toute la
+  --    transaction : si deux institution_admins tentent d'approuver le même
+  --    pending_teacher en parallèle, le second blocque jusqu'au commit du
+  --    premier puis re-lit l'état (qui sera alors 'teacher' → INVALID_STATE
+  --    déclenché par le compare-and-swap UPDATE plus bas).
   select role, institution_id
     into target_role, target_institution_id
     from public.profiles
-   where id = target_user_id;
+   where id = target_user_id
+   for update;
 
   if not found then
     raise exception 'NOT_FOUND: target user does not exist';
@@ -59,11 +65,22 @@ begin
   --    [F-001 institution-rbac-auditor] On positionne un flag transactionnel
   --    pour signaler au trigger audit_pending_teacher_promotion (migration 026)
   --    que l'audit row sera inséré ici par la suite — évite la double insertion.
+  --
+  --    [Sourcery C1] Compare-and-swap : on inclut role='pending_teacher' dans
+  --    le WHERE. Si une transaction concurrente a déjà promu le user entre le
+  --    SELECT FOR UPDATE et ce UPDATE (théoriquement impossible avec le lock,
+  --    pratiquement vrai même si le lock est relâché ailleurs), 0 rows seront
+  --    affectées et on lève INVALID_STATE plutôt que d'écraser silencieusement.
   perform set_config('app.in_approve_teacher_rpc', 'true', true);
 
   update public.profiles
      set role = 'teacher'
-   where id = target_user_id;
+   where id = target_user_id
+     and role = 'pending_teacher';
+
+  if not found then
+    raise exception 'INVALID_STATE: target not in pending_teacher state';
+  end if;
 
   -- 6. Audit log
   insert into public.admin_audit_log (actor_id, action, target_type, target_id, metadata)
