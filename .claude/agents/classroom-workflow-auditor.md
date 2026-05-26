@@ -37,11 +37,11 @@ Fixture class: `Terminal 101`, id `43960369-ad83-49dd-87a8-8627d45b2410`, teache
 
 ## Impersonation pattern (Supabase MCP) — caveat critique
 
-> 📌 **Source canonique cross-agent** : mémoire CC `feedback_rls_isolation_test_rest_only.md`. Cette section résume le caveat applicable à cet agent ; pour la doctrine complète (autres agents, exemples shell complets, anti-leak combiné), se référer à la mémoire.
+> 📌 **Source canonique cross-agent** : mémoire CC interne `feedback_rls_isolation_test_rest_only.md` (notes développeur locales — chemin `~/.claude/projects/.../memory/`, non versionnées dans ce repo). Cette section résume le caveat applicable à cet agent ; pour la doctrine complète (autres agents, exemples shell, anti-leak combiné), demander à un mainteneur ayant accès à la mémoire ou se référer aux résumés contextuels présents dans chaque agent concerné.
 
 > ⚠ **Caveat F-C empirique 26/05/2026** : le pattern `set_config('role', 'authenticated', true)` ci-dessous fonctionne pour tester les **RPC functions** (qui re-lisent `auth.uid()` dans leur body — `join_class_by_code`, `approve_teacher`), mais **n'est PAS fiable pour tester l'isolation RLS SELECT pure**. Le `session_user` reste `postgres`, et selon PG privilege resolution order, certaines tables peuvent bypass RLS via session owner → faux positifs ("semble voir cross-institution alors qu'en réalité non").
 >
-> **Pour tester RLS isolation, OBLIGATOIRE utiliser REST API + JWT réel**. Le pattern CLI ci-dessous reste valide UNIQUEMENT pour les tests d'RPC.
+> **Pour tester l'isolation RLS SELECT pure, OBLIGATOIRE d'utiliser REST API + JWT réel**. Le pattern CLI ci-dessous reste valide UNIQUEMENT pour les tests d'RPC.
 
 ### Pour tester RPC functions (CLI OK)
 
@@ -61,7 +61,7 @@ BEGIN
 END $$;
 ```
 
-### Pour tester RLS SELECT isolation (REST API + JWT obligatoire)
+### Pour tester l'isolation RLS SELECT pure (REST API + JWT obligatoire)
 
 ```bash
 # 1. Login persona via REST API

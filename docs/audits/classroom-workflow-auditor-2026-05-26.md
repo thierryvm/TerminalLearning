@@ -128,7 +128,7 @@ Le pattern Supabase CLI `set_config('role', 'authenticated', true)` documenté d
 
 **Fix — codifier dans les agents** :
 
-1. **Pour tester RLS SELECT isolation** : OBLIGATOIRE utiliser REST API avec JWT real obtenu via `/auth/v1/token?grant_type=password`
+1. **Pour tester l'isolation RLS SELECT pure** : OBLIGATOIRE d'utiliser REST API avec JWT réel obtenu via `/auth/v1/token?grant_type=password`
 2. **Pour tester RPC functions** : CLI impersonation reste OK (les fonctions checkent `auth.uid()` indépendamment)
 3. **Anti-leak discipline** : JWT en variable shell, jamais dumpé en stdout (cf. mémoire `feedback_anti_leak_discipline_jwt_short_lived.md`)
 
