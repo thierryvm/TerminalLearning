@@ -49,9 +49,48 @@ PROJECT_ID=jdnukbpkjyyyjpuwgxhv
 
 Si ces 3 users + l'institution École B n'existent pas en prod, **bloque l'audit** avec verdict `🔴 BLOCK — pre-requisite missing : 3 test users École B`. Ne génère JAMAIS ces users via un INSERT dans `auth.users` automatique — c'est une opération sensible qui doit passer par une migration auditée (cf. pattern THI-76 migration 006).
 
-## Impersonation pattern (Supabase MCP)
+## Impersonation pattern (Supabase MCP) — caveat critique
 
-Identique au pattern documenté dans `classroom-workflow-auditor.md` (set_config request.jwt.claims + role authenticated, scope local transaction).
+> ⚠ **Caveat F-C empirique 26/05/2026** (cross-agent doctrine codifiée par `classroom-workflow-auditor` premier break-in) : le pattern `set_config('role', 'authenticated', true)` fonctionne pour tester les **RPC functions** (qui re-lisent `auth.uid()` dans leur body — `approve_teacher`, `get_my_role`, `get_my_institution_id`), MAIS **n'est PAS fiable pour tester les RLS SELECT isolation purs**. Le `session_user` reste `postgres` et selon PG privilege resolution order, certaines tables peuvent bypass RLS via session owner → faux positifs.
+>
+> **Symptôme empirique mesuré 26/05** : via CLI impersonation institution_admin_b → `SELECT * FROM classes` retourne 7 classes (faux positif). Via REST API + JWT réel → 0 classes (correct). Ground truth = REST API.
+
+### Pour tester les RPC functions (CLI Supabase MCP OK)
+
+Pattern identique à `classroom-workflow-auditor.md` : `set_config('request.jwt.claims', ...)` + `set_config('role', 'authenticated', true)` scopé local transaction. Les fonctions `SECURITY DEFINER` checkent `auth.uid()` indépendamment → résultats fiables.
+
+### Pour tester RLS SELECT isolation cross-institution (REST API + JWT obligatoire)
+
+Le scope de cet agent (cross-institution data leak detection) est précisément le cas où le CLI génère des faux positifs. **OBLIGATOIRE** utiliser REST API :
+
+```bash
+# Login institution_admin_b via REST API
+body=$(python -c "import json,sys; print(json.dumps({'email':sys.argv[1],'password':sys.argv[2]}))" "$TEST_INSTITUTIONADMIN_B_EMAIL" "$TEST_INSTITUTIONADMIN_B_PASSWORD")
+curl -sS -X POST "${VITE_SUPABASE_URL}/auth/v1/token?grant_type=password" \
+  -H "apikey: ${VITE_SUPABASE_ANON_KEY}" \
+  -H "Content-Type: application/json" --data "$body" > .tmp/session.json
+
+token=$(python -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" < .tmp/session.json)
+
+# Test cross-institution SELECT — DOIT retourner 0 rows pour École A data
+curl -sS "${VITE_SUPABASE_URL}/rest/v1/profiles?select=id&institution_id=eq.<école_A_uuid>" \
+  -H "apikey: ${VITE_SUPABASE_ANON_KEY}" \
+  -H "Authorization: Bearer $token"
+
+rm .tmp/session.json
+```
+
+Cf. mémoire CC `feedback_rls_isolation_test_rest_only.md` pour la doctrine complète.
+
+## E2E test data cleanup (mandatory)
+
+> **Pattern F-B codifié 26/05/2026** suite à 4 classes orphelines `E2E_*` détectées par `classroom-workflow-auditor`.
+
+Toute donnée de test créée par cet agent doit :
+1. **Naming convention** : préfixe `E2E_` obligatoire (ex : `E2E_INST_RBAC_<timestamp>`)
+2. **Cleanup startup** : `DELETE FROM <table> WHERE name LIKE 'E2E_%'` AVANT de créer les fixtures
+3. **Cleanup teardown** : même `DELETE` en fin de run
+4. **Crash safety** : BEGIN..EXCEPTION..ROLLBACK ou guard DELETE au startup
 
 ## Test plan (16 checks)
 

@@ -135,7 +135,7 @@ Executer : npm audit --audit-level=high 2>/dev/null
 
 ## Content Security Policy (CSP Level 3)
 
-Analyser vercel.json et verifier chaque directive :
+Analyser vercel.json et vérifier chaque directive :
 
 | Directive           | Verification                                           |
 |---------------------|-------------------------------------------------------|
@@ -178,7 +178,7 @@ Verifier dans vercel.json :
 
 ## Supabase RLS
 
-Lister toutes les tables depuis src/app/types/database.ts et verifier :
+Lister toutes les tables depuis src/app/types/database.ts et vérifier :
 - RLS active sur chaque table ?
 - Politiques couvrant SELECT, INSERT, UPDATE, DELETE ?
 - Utilisation de auth.uid() (jamais d'un parametre client) ?
