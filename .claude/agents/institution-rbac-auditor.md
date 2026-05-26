@@ -51,7 +51,9 @@ Si ces 3 users + l'institution École B n'existent pas en prod, **bloque l'audit
 
 ## Impersonation pattern (Supabase MCP) — caveat critique
 
-> ⚠ **Caveat F-C empirique 26/05/2026** (cross-agent doctrine codifiée par `classroom-workflow-auditor` premier break-in) : le pattern `set_config('role', 'authenticated', true)` fonctionne pour tester les **RPC functions** (qui re-lisent `auth.uid()` dans leur body — `approve_teacher`, `get_my_role`, `get_my_institution_id`), MAIS **n'est PAS fiable pour tester les RLS SELECT isolation purs**. Le `session_user` reste `postgres` et selon PG privilege resolution order, certaines tables peuvent bypass RLS via session owner → faux positifs.
+> 📌 **Source canonique cross-agent** : mémoire CC `feedback_rls_isolation_test_rest_only.md`. Cette section résume le caveat applicable à cet agent ; pour la doctrine complète (autres agents, exemples shell complets, anti-leak combiné), se référer à la mémoire.
+
+> ⚠ **Caveat F-C empirique 26/05/2026** (cross-agent doctrine codifiée par `classroom-workflow-auditor` premier break-in) : le pattern `set_config('role', 'authenticated', true)` fonctionne pour tester les **RPC functions** (qui re-lisent `auth.uid()` dans leur body — `approve_teacher`, `get_my_role`, `get_my_institution_id`), MAIS **n'est PAS fiable pour tester l'isolation RLS SELECT pure**. Le `session_user` reste `postgres` et selon PG privilege resolution order, certaines tables peuvent bypass RLS via session owner → faux positifs.
 >
 > **Symptôme empirique mesuré 26/05** : via CLI impersonation institution_admin_b → `SELECT * FROM classes` retourne 7 classes (faux positif). Via REST API + JWT réel → 0 classes (correct). Ground truth = REST API.
 
