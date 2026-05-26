@@ -121,7 +121,16 @@ begin
   alter table public.profiles enable trigger prevent_role_escalation_trigger;
 
   -- ── 7. Test institution B ────────────────────────────────────────────────────
-  -- Idempotent : ON CONFLICT sur (name, admin_id) via name lookup first.
+  -- Idempotent via lookup (name, admin_id) avant INSERT. Trade-off accepté :
+  -- si quelqu'un UPDATE manuellement `institutions.admin_id` puis re-run la
+  -- migration, un doublon "École B Test" serait créé. Scénario extrêmement rare
+  -- (admin_id ne change pas en mode normal — la migration le hardcode à u2_b).
+  -- Une alternative serait de hardcoder un institution_id fixe avec
+  -- ON CONFLICT (id), mais l'institution existe déjà en prod (id généré
+  -- dynamiquement le 26/05/2026) — refactor nécessiterait migration de migration.
+  -- Si jamais le doublon se produit en pratique, nettoyer manuellement via
+  -- DELETE FROM institutions WHERE id NOT IN (select institution_id from profiles
+  -- where institution_id is not null). Sourcery review PR #297 (26/05/2026).
   select id into inst2 from public.institutions
     where name = 'École B Test' and admin_id = u2_b;
   if inst2 is null then
