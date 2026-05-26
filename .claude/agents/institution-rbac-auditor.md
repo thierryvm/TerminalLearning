@@ -87,7 +87,7 @@ Cf. mémoire CC `feedback_rls_isolation_test_rest_only.md` pour la doctrine comp
 > **Pattern F-B codifié 26/05/2026** suite à 4 classes orphelines `E2E_*` détectées par `classroom-workflow-auditor`.
 
 Toute donnée de test créée par cet agent doit :
-1. **Naming convention** : préfix `E2E_` obligatoire (ex : `E2E_INST_RBAC_<timestamp>`)
+1. **Naming convention** : préfixe `E2E_` obligatoire (ex : `E2E_INST_RBAC_<timestamp>`)
 2. **Cleanup startup** : `DELETE FROM <table> WHERE name LIKE 'E2E_%'` AVANT de créer les fixtures
 3. **Cleanup teardown** : même `DELETE` en fin de run
 4. **Crash safety** : BEGIN..EXCEPTION..ROLLBACK ou guard DELETE au startup

@@ -101,7 +101,7 @@ Toutes avec `institution_id = NULL`, polluant la DB de test fixtures non-cleané
 
 **Fix — pattern à codifier cross-agent** :
 
-1. **Naming convention** : préfix `E2E_` obligatoire pour toute donnée de test créée par un agent
+1. **Naming convention** : préfixe `E2E_` obligatoire pour toute donnée de test créée par un agent
 2. **Cleanup startup** : début de chaque run, `DELETE FROM <table> WHERE name LIKE 'E2E_%'` AVANT de créer les fixtures (idempotent re-run safe)
 3. **Cleanup teardown** : fin de chaque run, même `DELETE` pour ne pas laisser de traces
 4. **Crash safety** : utiliser `BEGIN ... EXCEPTION ... ROLLBACK` ou guard `DELETE` au startup même si crash mid-run
@@ -135,7 +135,7 @@ Le pattern Supabase CLI `set_config('role', 'authenticated', true)` documenté d
 **Files à update** :
 - `.claude/agents/classroom-workflow-auditor.md` — ajouter caveat dans section impersonation pattern
 - `.claude/agents/institution-rbac-auditor.md` — ajouter caveat (ce pattern a possiblement aussi des faux positifs dans son scope)
-- `.claude/agents/rbac-flow-tester.md` — verifier que le pattern utilise déjà REST API
+- `.claude/agents/rbac-flow-tester.md` — vérifier que le pattern utilise déjà REST API
 - Mémoire CC : `feedback_rls_isolation_test_rest_only.md`
 
 ### F-D — INFO : Classe `Bash 101` manuelle de @thierry
@@ -155,6 +155,6 @@ L'agent `classroom-workflow-auditor` dormant 6 jours a généré **2 findings ME
 
 C'est la 2ème validation empirique cross-session de la doctrine `feedback_agent_dormant_full_audit.md` (la 1ère étant `institution-rbac-auditor` qui avait trouvé 1 HIGH drift au premier break-in le 26 mai matin).
 
-**Renforcement de la doctrine** : tout nouvel agent créé doit être invoqué empiriquement dans les 48h max post-création, ET les agents existants doivent être audités récurremment (trimestriel ou par cycle Sprint).
+**Renforcement de la doctrine** : tout nouvel agent créé doit être invoqué empiriquement dans les 48h max post-création, ET les agents existants doivent être audités de façon récurrente (trimestriel ou par cycle Sprint).
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
