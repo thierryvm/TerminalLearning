@@ -74,6 +74,9 @@ const ProfilePage = lazyWithRetry(() =>
 const AdminPanel = lazyWithRetry(() =>
   import('./components/AdminPanel').then(({ AdminPanel }) => ({ default: AdminPanel }))
 );
+const InstitutionAdminPanel = lazyWithRetry(() =>
+  import('./components/InstitutionAdminPanel').then(({ InstitutionAdminPanel }) => ({ default: InstitutionAdminPanel }))
+);
 const TeacherDashboard = lazyWithRetry(() =>
   import('./components/TeacherDashboard').then(({ TeacherDashboard }) => ({ default: TeacherDashboard }))
 );
@@ -109,6 +112,7 @@ export const router = createBrowserRouter([
       { path: 'settings', Component: AiSettings },
       { path: 'profile', Component: ProfilePage },
       { path: 'admin', Component: AdminPanel },
+      { path: 'institution', Component: InstitutionAdminPanel },
       { path: 'teacher', Component: TeacherDashboard },
       { path: 'join', Component: JoinClass },
     ],

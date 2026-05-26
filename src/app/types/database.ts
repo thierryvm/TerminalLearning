@@ -309,6 +309,19 @@ export interface Database {
           already_enrolled: boolean;
         }[];
       };
+      /**
+       * THI-280 Sprint 2.B Étape 3 — institution_admin promotes pending_teacher → teacher
+       * within their own institution. SECURITY DEFINER with FOR UPDATE row lock +
+       * compare-and-swap UPDATE (race-safe Sourcery review). Raises :
+       *  - PERMISSION_DENIED : caller not institution_admin, or cross-institution target
+       *  - NOT_FOUND         : target user does not exist
+       *  - INVALID_STATE     : target is not in pending_teacher state
+       * Inserts admin_audit_log row; migration 026 trigger covers direct PATCH bypass.
+       */
+      approve_teacher: {
+        Args: { target_user_id: string };
+        Returns: void;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

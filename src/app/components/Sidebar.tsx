@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -27,6 +27,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { selectedEnv, setEnvironment } = useEnvironment();
   const { role } = useUserRole();
   const canSeeTeacherEntry = role === 'teacher' || role === 'super_admin';
+  const canSeeInstitutionEntry = role === 'institution_admin' || role === 'super_admin';
   const canSeeAdminEntry = role === 'super_admin';
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -177,6 +178,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             >
               <School size={16} />
               Mes classes
+            </NavLink>
+          )}
+          {/* THI-280 Sprint 2.B étape 4 — Institution admin entry. Visible
+              for institution_admin (own institution scope) and super_admin
+              (any institution, via fallback in RequireRole). */}
+          {canSeeInstitutionEntry && (
+            <NavLink
+              to="/app/institution"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                  isActive
+                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                }`
+              }
+            >
+              <ShieldUser size={16} />
+              Mon institution
             </NavLink>
           )}
           {/* THI-235 Sprint 2.A étape 2.bis — Administration entry for super_admin.
