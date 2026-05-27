@@ -1,8 +1,8 @@
 ---
 name: ui-auditor
-description: Audit UI component usage — detects custom HTML/Tailwind patterns where shadcn/ui components should be used, finds unused dependencies, and verifies design system consistency. Run before major releases or after UI changes.
+description: Audit UI component usage — detects custom HTML/Tailwind patterns where shadcn/ui components should be used, finds unused dependencies, and verifies design system consistency. Run before major releases or after UI changes. **Scope strict shadcn lint + design tokens** ; pour UX strategy ad-hoc (diagnostic chiffré layout, patterns SaaS référencés, options refactor trade-offs), invoquer un Agent general-purpose Sonnet/Opus à la place.
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: sonnet
 ---
 
 Tu es un auditeur de composants UI pour Terminal Learning.
