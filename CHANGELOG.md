@@ -5,6 +5,82 @@
 
 ---
 
+## 🔧 27 mai 2026 — Sprint 2.B reliquats : super_admin approve + UX feedback (validation E2E PROD)
+*PRs #305 + #306 · THI-280 hotfix · 1 session matinale ~3h*
+
+Lendemain de la clôture Sprint 2.B umbrella, @thierry valide visuellement en super_admin réel sur `/app/institution`. **Découverte empirique** : le bouton « Approuver » échoue avec « Vous n'avez pas la permission » — la RPC body check `caller_role = 'institution_admin'` strict rejette super_admin, alors que le RequireRole UI lui accordait l'accès au panel. Divergence UX entre layer 1 (UI permissif) et layer 3 (RPC strict).
+
+Le bug avait été documenté hier soir comme follow-up (`memory/project_sprint_2b_super_admin_approve_bug.md` Option A retenue). Traité matin du 27 mai en double hotfix backend + frontend.
+
+### PR #305 — Migration 027 hotfix super_admin RPC (matin)
+
+`approve_teacher` étendu pour accepter `institution_admin` OR `super_admin` :
+- institution_admin path : check same-institution (logic 025 préservée intégralement)
+- super_admin path : skip institution check (cross-institution allowed pour supervision globale)
+- Audit log enrichi : nouveau `metadata.scope = 'global'` (super_admin) ou `'institution'` (institution_admin), `metadata.caller_role`, `metadata.caller_institution_id` (null pour super_admin), `metadata.target_institution_id` (toujours présent pour forensic)
+
+Patterns préservés intégralement (migration 025 hardening + Sourcery PR #298) : FOR UPDATE row lock + compare-and-swap WHERE role + IF NOT FOUND (race-safe), flag transactionnel `app.in_approve_teacher_rpc` (évite double insert trigger 026), REVOKE FROM PUBLIC + anon + GRANT TO authenticated only.
+
+**Audits cascade ALL GREEN** :
+- `security-auditor` Sonnet : **9.4/10 🟢 SHIP**, 0 CRITICAL / 0 HIGH. 1 MED (opacité forensique intentionnelle pour super_admin) **fixé in-PR** via `scope: 'global'|'institution'` metadata distinguishes paths. 3 LOW fixés in-PR (TEST_PENDINGTEACHER_UUID env var + afterAll cleanup robustness + scope clarification).
+- `institution-rbac-auditor` Sonnet : **🟢 SHIP**, 0 CRITICAL / 0 HIGH. 16/16 static code checks + 4/4 cross-institution isolation REST API + 2/2 super_admin new path + 2/2 race-safety + 2/2 audit log discipline + RLS.
+
+**3 nouveaux tests vitest empirique PROD** (11/11 PASS) : super_admin approves pending_teacher_b (cross-role success) · super_admin approves pending_teacher_a (cross-institution allowed pour supervision) · audit log enriched validation (caller_role + scope + target_institution_id présents).
+
+### PR #306 — Sprint 2.B.2 UX feedback frontend (midi)
+
+Le hotfix backend fonctionnait mais @thierry remontait une lacune : « où est l'info qui prouve que j'ai approuvé un user avec le rôle adapté ? » Le panel actuel n'affichait aucun feedback visuel post-approve ni indicateur du rôle/path utilisé. L'info forensique existait en DB (`admin_audit_log.metadata.scope`) mais pas surfacée UI.
+
+**Badge scope permanent dans le header** :
+- super_admin → badge emerald `🌐 scope: global` + subtitle "Tu agis en super_admin — visibilité et approbations cross-institution"
+- institution_admin → badge neutre `scope: institution` + subtitle standard
+- `aria-label="Périmètre d'action {scope}"` pour lecteurs d'écran
+
+**Success status post-approve** (toast inline non-bloquant) :
+- Card emerald `role="status"` (ARIA assertive announce)
+- Texte : `{displayName} approuvé · scope {scope}`
+- Bouton X dismiss `size="icon-lg"` = 44×44 Apple HIG (audit ui-auditor 🔴 → 🟢 in-PR : initial 32×32 bouton X CRITICAL fixé via Button variant)
+- Auto-clear timer 8s dans le hook (cleanup sur unmount + sur new approve)
+- `clearLastSuccess()` exposé pour dismiss manuel
+
+**Séparation concerns** :
+- Hook `usePendingTeachers` expose `lastSuccess: { displayName } | null` simple
+- Composant `InstitutionAdminPanel` enrichit avec scope via `useUserRole` (pas de round-trip SELECT admin_audit_log — RLS restreint super_admin only + latence inutile)
+
+**5 nouveaux tests** (17/17 panel PASS) : scope badge institution rendered for institution_admin · scope badge global rendered for super_admin · subtitle mentions cross-institution for super_admin · success status renders displayName + scope · dismiss X calls clearLastSuccess.
+
+### Validation E2E PROD finale
+
+Après merge, @thierry connecté en super_admin réel sur `/app/institution` :
+1. Header affiche `🛡 Mon institution` + badge `🌐 scope: global` permanent ✅
+2. Subtitle explicite "Tu agis en super_admin — visibilité et approbations cross-institution" ✅
+3. Click "Approuver" sur pending_teacher_b → success status vert "✅ Test Pending Teacher Ecole B approuvé · scope global" apparaît au-dessus de la liste ✅
+4. Auto-disparition après 8s confirmée ✅
+5. Row optimistic UI disparue + pending_teacher_a (École A) reste visible (autre target) ✅
+6. Forensic trace en DB : `admin_audit_log` row avec `metadata.scope = 'global'` + `caller_role = 'super_admin'` + `actor_id = a0c4a8cd-fb77-403a-bbaa-b2fc7094e84b` (compte Thierry réel) ✅
+
+### Investigation logs console — finding side
+
+Pendant la validation, 11 erreurs Chrome DevTools console détectées et triées : **TOUTES proviennent de l'extension Brave Kwift Wallet** (`chrome-extension://fdjamakpfbbddfjaooikfcpapjohcfmg/content/contentScripts/kwift.CHROM...`), pas de Terminal Learning. Notre code = 0 erreur silencieuse côté ton flow réel. Pattern Web3 wallet generic "asynchronous response after port closed". Solutions cleanup DevTools optionnelles (block extension permission terminallearning.dev, profil dev dédié, filter DevTools).
+
+### Doctrine UX validation empirique reconfirmée
+
+`feedback_agent_dormant_full_audit.md` validée 3× cette semaine :
+- 26 mai matin : `institution-rbac-auditor` 6j dormant → 1 HIGH drift trouvé
+- 26 mai après-midi : `classroom-workflow-auditor` 6j dormant → 2 MED latents trouvés
+- 27 mai matin : @thierry validation visuelle réelle → 1 bug UX latent trouvé que ni `security-auditor` ni `institution-rbac-auditor` n'avaient flaggé (les audits sont structurels, pas UX comportementaux). Validation humaine reste irremplaçable pour le **comportement utilisateur final** complémentaire des audits agents.
+
+### Tests + métriques
+
+- **Tests 1729 PASS** (+5 vs Sprint 2.B closure 1724, dont 17 panel × 11 RPC integration)
+- **2 PRs mergées même session matinale ~3h** : 0 régression, 0 incident
+- **Score security stable** : 9.4/10 maintenu sur RPC + RBAC isolation préservée intégralement
+- **2 mémoires CC updates** : `feedback_anti_leak_discipline_jwt_short_lived.md` + `project_sprint_2b_super_admin_approve_bug.md` marqué `RÉSOLU`
+
+**Sprint 2.B TOTALEMENT clos** avec validation E2E PROD humaine confirmée. Sprint 2.C (Support System Resend) reste prochaine session sur signal explicite @thierry.
+
+---
+
 ## 🏁 26 mai 2026 — Sprint 2.B CLOS : institution_admin lite livré 100%
 *PRs #297 → #299 · THI-280 umbrella · Sprint 2.B · 1 session ~5h*
 
