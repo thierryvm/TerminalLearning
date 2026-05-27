@@ -5,8 +5,8 @@
 
 ---
 
-## 🔧 27 mai 2026 — Sprint 2.B reliquats : super_admin approve + UX feedback (validation E2E PROD)
-*PRs #305 + #306 · THI-280 hotfix · 1 session matinale ~3h*
+## 🔧 27 mai 2026 — Sprint 2.B reliquats + UX session marathon : 6 PRs livrées matin/midi
+*PRs #305 → #310 · THI-280 hotfix + THI-240 sidebar + doctrine agents · 1 session ~6h*
 
 Lendemain de la clôture Sprint 2.B umbrella, @thierry valide visuellement en super_admin réel sur `/app/institution`. **Découverte empirique** : le bouton « Approuver » échoue avec « Vous n'avez pas la permission » — la RPC body check `caller_role = 'institution_admin'` strict rejette super_admin, alors que le RequireRole UI lui accordait l'accès au panel. Divergence UX entre layer 1 (UI permissif) et layer 3 (RPC strict).
 
@@ -77,7 +77,67 @@ Pendant la validation, 11 erreurs Chrome DevTools console détectées et triées
 - **Score security stable** : 9.4/10 maintenu sur RPC + RBAC isolation préservée intégralement
 - **2 mémoires CC updates** : `feedback_anti_leak_discipline_jwt_short_lived.md` + `project_sprint_2b_super_admin_approve_bug.md` marqué `RÉSOLU`
 
-**Sprint 2.B TOTALEMENT clos** avec validation E2E PROD humaine confirmée. Sprint 2.C (Support System Resend) reste prochaine session sur signal explicite @thierry.
+**Sprint 2.B TOTALEMENT clos** avec validation E2E PROD humaine confirmée.
+
+### PR #308 — UserMenu hover Mon profil restauré (midi)
+
+Bug UI remonté empiriquement @thierry après cycle initial : « ce menu n'a plus son effet de survol sur Mon profil ». Root cause : pattern `<Button asChild variant="emerald-soft">` + `<Link>` enfant — propagation des classes hover en cascade (Radix Slot + variant merge + className inline). Le hover bg-emerald-500/20 + border-emerald-500/40 du variant étaient subtle/invisibles empiriquement.
+
+Solution : abandon du pattern Button asChild → Link direct avec classes explicites cohérent NavLink sidebar. Triple effet hover (bg + text + border) plus visible que le subtle 10%→20% precedent. Cohérence design avec "Se déconnecter" qui suit le même pattern triple-effet sur palette red.
+
+@thierry délègue refonte role-aware menu : « menu amélioré peut être réfléchi à la fin du projet ou quand il sera assez avancé pour être utilisé par les écoles ». Décision orchestrateur : fix hover seulement aujourd'hui, refonte role-aware (badge rôle dans header, lien "Mon espace" role-aware) → backlog post-écoles.
+
+### PR #309 — Sidebar refactor "Mes outils" collapsible + ui-auditor Sonnet upgrade (midi)
+
+@thierry empiriquement : « la sidebar de gauche commence à être surchargée et peu lisible sur la partie la plus importante les leçons ». Sprint 2.A + 2.B ont accumulé 3 entries role-gated pour super_admin (Mes classes + Mon institution + Administration) → seuls ~2 modules visibles sans scroll sur viewport 900px. Modules (cœur pédagogique) écrasés par les nav role-gated.
+
+Délégation à `ui-auditor` pour challenge UX. @thierry questionne ensuite la performance de l'agent lui-même. **Diagnostic** : ui-auditor (Haiku, frontmatter scope strict shadcn lint) a été invoqué hors scope déclaré pour une mission UX strategy. Audit livré utile mais format rigide non suivi + mesures px approximatives.
+
+**Double décision** :
+1. **Upgrade `ui-auditor` Haiku → Sonnet** (alignement doctrine modèles agents 20/05 : Sonnet minimum sur "audit a11y, design review, UX")
+2. **Scope strict shadcn lint + design tokens** clarifié dans frontmatter. Pour UX strategy ad-hoc → invoquer `Agent` general-purpose Sonnet/Opus à la place.
+
+Mémoire CC `feedback_ui_auditor_scope_strict.md` codifie le seuil création d'un agent `ui-ux-strategist` dédié (≥ 1 audit UX strategy/semaine pendant Phase 9 ou onboarding écoles).
+
+**Sprint 2.B.3 — Implémentation Option A audit** :
+- Règle empirique : ≥ 2 entries role-gated → collapsible. ≤ 1 entry → flat (pas de friction inutile)
+- **super_admin (3 entries)** : "Mes outils [3]" collapsible avec Briefcase icon + count + Chevron rotate + section indentée (ml-3 pl-3 border-l) cohérent pattern modules
+- Persist `tl-sidebar-mes-outils-open` localStorage (default closed pour maximiser espace modules immédiat)
+- **Gain mesuré** : ~132px modules space → +2-3 modules visibles avant scroll
+- aria-expanded + aria-controls + focus-visible:ring-emerald-500/60 (a11y préservé)
+- Touch target 44px (`size="tl-sidebar-row"` = min-h-11)
+
+**Audit ui-auditor cascade post-upgrade Sonnet** : 1ère invocation immédiatement trouvé **1 CRITICAL** (raw `<button>` au lieu de `<Button variant="tl-sidebar-row">`) — un finding Haiku aurait probablement raté. **Fixé in-PR**. Bénéfice durable Sonnet upgrade confirmé.
+
+### PR #310 — Doctrine modèles agents 27 mai (midi)
+
+@thierry challenge la doctrine globale : « passer tous nos agents Haiku sur Sonnet, et évaluer Sonnet → Opus 4.7 sans toucher les Opus existants ». Audit complet 19 agents.
+
+**1 Haiku → Sonnet** : `curriculum-validator` (validation curriculum.ts mêle déterministe + sémantique chain logic).
+
+**3 Sonnet → Opus** (critères : impact incident prod $$$ + gate-zero PR + méthode adversariale Opus) :
+- `security-auditor` : OWASP Top 10 + RLS + supply chain, gate-zero release
+- `prompt-guardrail-auditor` : OWASP LLM Top 10 + jailbreaks, gate per-PR Tuteur IA
+- `institution-rbac-auditor` : cross-institution isolation B2B écoles (1er break-in 26/05 trouvait HIGH drift invisible — Opus = défense supérieure edge cases)
+
+**11 Sonnet inchangés** + **4 Opus inchangés** (per consigne @thierry "sans toucher les Opus existants").
+
+**Distribution post-update** : 0 Haiku / 12 Sonnet / 7 Opus = 19 agents. Bien équilibré.
+
+**ROI estimé** : +~$10-25/mois pour les 3 upgrades Opus (~7-12 invocations supplémentaires/mois). Bénéfice : 1 incident sécurité B2B école évité (RLS leak OU IA prompt injection) = $1000+ damage control + brand + AI Act EU compliance. ROI très favorable.
+
+Annexe `docs/reports/agents-doctrine-2026-05-20.md` documentée avec rationale par agent + critères futurs de re-évaluation (trimestriel).
+
+### Métriques globales session 27 mai
+
+- **6 PRs mergées** session ~6h (5 features/fixes + 1 docs)
+- **1729/1749 tests** PASS (stable, 0 régression sur tous les merges)
+- **Prod 3/3** HTTP 200 maintenu (smoke après chaque merge)
+- **Validation E2E PROD @thierry confirmée** sur Sprint 2.B.2 + Sprint 2.B.3 sidebar
+- **0 incident, 0 régression**
+- **3 mémoires CC nouvelles** : `feedback_anti_leak_discipline_jwt_short_lived.md` (mention validation antécédente), `feedback_ui_auditor_scope_strict.md` (codifié 27/05), `feedback_rls_isolation_test_rest_only.md` (mention antécédente)
+
+Sprint 2.C (Support System Resend) reste prochaine session sur signal explicite @thierry.
 
 ---
 
