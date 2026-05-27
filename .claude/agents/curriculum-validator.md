@@ -2,7 +2,7 @@
 name: curriculum-validator
 description: Validate curriculum.ts structure before any modification — checks env coverage (Linux/macOS/Windows), duplicate lesson IDs, prerequisites chain integrity, validator import/export sync, orphan validators, missing tests in terminalEngine.test.ts, and module completeness. Auto-invoked before adding or modifying lessons or modules.
 tools: Read, Grep, Glob
-model: haiku
+model: sonnet
 ---
 
 Tu es un validateur de curriculum pédagogique pour Terminal Learning.

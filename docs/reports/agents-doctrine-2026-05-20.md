@@ -244,3 +244,67 @@ Sprint 2.B planning (prochaine session, 24-27 mai) :
 Rapport disponible : `docs/reports/agents-doctrine-2026-05-20.md` (ce fichier, committable dans la prochaine PR de session).
 
 — Fin du rapport —
+
+---
+
+## Annexe — Upgrade doctrine 27 mai 2026 (post Sprint 2.B closure)
+
+### Contexte
+
+Suite session 27 mai (5 PRs Sprint 2.B reliquats livrées #305→#309) + audit empirique @thierry sur la performance `ui-auditor` Haiku sur mission UX strategy → constat hors scope + doctrine modèles agents 20/05 a 1 agent Haiku résiduel non aligné. @thierry demande : passer Haiku → Sonnet (tous), évaluer Sonnet → Opus 4.7 individuellement (sans toucher les Opus existants).
+
+### État avant (20/05 baseline → 27/05 matin post #309)
+
+- **1 Haiku** : `curriculum-validator`
+- **14 Sonnet** : `ui-auditor` (upgraded matin 27/05 via PR #309), `linear-sync`, `test-runner`, `content-auditor`, `sustain-auditor`, `rbac-flow-tester`, `security-auditor`, `route-attack-auditor`, `user-forensics-auditor`, `vercel-firewall-auditor`, `institution-rbac-auditor`, `prompt-guardrail-auditor`, `mobile-responsive-auditor`, `classroom-workflow-auditor`
+- **4 Opus** : `lti-auditor`, `llm-security-auditor`, `session-orchestrator`, `legal-compliance-auditor`
+
+### Décision (PR de cet update)
+
+**1 Haiku → Sonnet** :
+- `curriculum-validator` : validation `curriculum.ts` mêle déterministe (regex env coverage, duplicate IDs, validator import/export sync) ET sémantique (prerequisites chain integrity, missing tests detection, module completeness). Doctrine 20/05 dit Haiku = déterministe only → Sonnet justifié pour la part chain logic.
+
+**3 Sonnet → Opus** (critères : impact incident prod $$$ + gate-zero PR critique + méthode complexe black-hat) :
+
+| Agent | Rationale upgrade Opus |
+|---|---|
+| `security-auditor` | OWASP Top 10 + RLS + supply chain + 2026 norms. **Gate-zero release**. Incident prod = $$$ + reputation. Black-hat mindset = bénéfice Opus sur edge cases multi-couches. |
+| `prompt-guardrail-auditor` | OWASP LLM Top 10 + jailbreaks + sanitizer bypass. **Gate per-PR Tuteur IA**. Incident IA en prod = brand risk B2B écoles + AI Act EU obligations. Méthode adversariale créative = Opus. |
+| `institution-rbac-auditor` | Cross-institution isolation B2B écoles. **Gate per-PR RBAC**. Multi-tenancy = catastrophe si fuite (écoles concurrentes voient données). Premier break-in 26/05 a trouvé HIGH drift 4+ semaines invisible — Opus = défense supérieure détection edge cases. |
+
+**11 Sonnet à garder** (scope déterministe ou contenu, Opus marginal) :
+- Déterministes/chiffrés : `linear-sync`, `test-runner`, `content-auditor`, `sustain-auditor`, `vercel-firewall-auditor`
+- Méthode bien définie : `route-attack-auditor`, `classroom-workflow-auditor`, `rbac-flow-tester`, `user-forensics-auditor`
+- Scope contenu : `mobile-responsive-auditor` (a11y/CSS), `ui-auditor` (shadcn lint strict)
+
+**4 Opus inchangés** :
+- `lti-auditor` (crypto chain LTI 1.3)
+- `llm-security-auditor` (méthode 7 couches OWASP LLM + vecteurs 2026)
+- `session-orchestrator` (14 phases startup+shutdown)
+- `legal-compliance-auditor` (5 couches RGPD/AI Act/DSA/CNIL/DPA-BE + WebSearch live)
+
+### Distribution post-update
+
+- **0 Haiku**
+- **11 Sonnet**
+- **7 Opus** (4 existants + 3 nouveaux)
+
+Total : 19 agents répartis 0/11/7+1 (curriculum-validator passe Haiku→Sonnet donc Sonnet count = 14 + 1 - 3 = 12 sonnet). Recount : 19 - 0 - 7 = **12 Sonnet, 7 Opus, 0 Haiku**. Bien équilibré pour la doctrine 20/05.
+
+### ROI estimé
+
+Coût marginal monthly (3 upgrades Sonnet→Opus) :
+- `security-auditor` : ~2 invocations/mois (avant releases sécurité) — coût +5× sur ces runs
+- `prompt-guardrail-auditor` : ~3-5/mois (gate per-PR AI Tutor changes) — coût +5× sur ces runs
+- `institution-rbac-auditor` : ~2-4/mois (Sprint 2.B+ B2B écoles) — coût +5× sur ces runs
+- Total : ~7-12 invocations Opus/mois additionnels = **~+$10-25/mois** vs Sonnet baseline
+
+**Bénéfice attendu** : 1 incident sécurité B2B école évité (RLS leak cross-institution OU prompt injection IA fuite) = $1000+ damage control + brand + AI Act EU compliance + audit forensique. ROI très favorable.
+
+### Critères futurs de re-évaluation
+
+- Si Opus 4.X future version optimisée → re-évaluer batch
+- Si nouveau Sprint introduit méthode complexe (ex: méthode 7 couches LLM sur un nouvel agent) → Opus
+- Trimestriel : re-tag les agents low-frequency + low-impact qui peuvent rétrograder Sonnet→Haiku si scope déterministe pur (anti-overspending)
+
+— Fin annexe 27 mai 2026 —
