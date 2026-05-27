@@ -194,12 +194,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               voient 1 lien sans friction expand). */}
           {useMesOutilsCollapsible ? (
             <div>
-              <button
+              {/* ui-auditor C1 fix : réutilise Button variant=tl-sidebar-row + size=tl-sidebar-row
+                  au lieu de raw <button> avec classes manuelles dupliquées. Cohérent avec le
+                  pattern shadcn existant + SidebarRowButton (modules). text-secondary surcharge
+                  le text-primary du variant car le toggle n'est pas "actif" par défaut. */}
+              <Button
                 type="button"
+                variant="tl-sidebar-row"
+                size="tl-sidebar-row"
                 onClick={toggleMesOutils}
                 aria-expanded={mesOutilsOpen}
                 aria-controls="sidebar-mes-outils"
-                className="w-full flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]"
+                className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)]"
               >
                 <Briefcase size={16} />
                 <span className="flex-1 text-left">Mes outils</span>
@@ -209,7 +215,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 ) : (
                   <ChevronRight size={14} className="size-[14px] text-[var(--github-text-secondary)] shrink-0" />
                 )}
-              </button>
+              </Button>
               {mesOutilsOpen && (
                 <div
                   id="sidebar-mes-outils"
