@@ -17,6 +17,9 @@
  *   5. Audit log integrity — happy path inserts a clean admin_audit_log row
  *   6. Anonymous EXECUTE blocked at GRANT layer (F-002 institution-rbac-auditor)
  *   7. Direct REST PATCH still produces audit row via trigger (F-001 audit bypass closure)
+ *   8. super_admin approves pending_teacher_b (hotfix migration 027 — cross-role)
+ *   9. super_admin approves pending_teacher_a cross-institution (hotfix 027 — supervision scope)
+ *   10. Audit log enriched with caller_role + target_institution_id (hotfix 027)
  */
 
 import { config as loadEnv } from 'dotenv';
@@ -41,7 +44,10 @@ const TEACHER_B_PASSWORD = process.env.TEST_TEACHER_B_PASSWORD ?? '';
 const TEACHER_B_UUID     = process.env.TEST_TEACHER_B_UUID     ?? '';
 
 const PENDING_B_UUID = process.env.TEST_PENDINGTEACHER_B_UUID ?? '';
-const PENDING_A_UUID = '11111111-1111-1111-1111-111111111104'; // École A pending_teacher
+// École A pending_teacher — from .env.test (fallback to migration 006 fixture UUID
+// for backward compatibility). security-auditor L2 decoupling.
+const PENDING_A_UUID =
+  process.env.TEST_PENDINGTEACHER_UUID ?? '11111111-1111-1111-1111-111111111104';
 
 const SKIP =
   !SUPABASE_URL ||
@@ -93,7 +99,6 @@ async function resetPendingB(): Promise<void> {
     .update({ role: 'pending_teacher' })
     .eq('id', PENDING_B_UUID);
   if (error) {
-    // eslint-disable-next-line no-console
     console.warn(`[approveTeacher.integration.test] resetPendingB failed: ${error.message}`);
   }
 }
@@ -354,5 +359,120 @@ describe('approve_teacher — direct PATCH audit row (F-001 closure)', () => {
 
     expect(rpcAfter ?? 0).toBe((rpcBefore ?? 0) + 1);
     expect(patchAfter ?? 0).toBe(patchBefore ?? 0);
+  });
+});
+
+// ─── Test 8 & 9 & 10: Hotfix migration 027 — super_admin cross-role + cross-institution
+// ────────────────────────────────────────────────────────────────────────────
+// Bug UX trouvé empiriquement 26/05 par @thierry : super_admin voit le panel mais
+// le RPC body check 'caller_role = institution_admin' strict rejette super_admin.
+// Migration 027 étend l'RPC : accepte institution_admin (same-institution) OR
+// super_admin (cross-institution allowed).
+
+describe('approve_teacher — hotfix 027 super_admin support', () => {
+  /**
+   * Reset pending_teacher_a (École A) to 'pending_teacher' state.
+   * Pattern identique à resetPendingB (super_admin can bypass via trigger 010 branch).
+   * Garantie d'exécution via afterAll ci-dessous (security-auditor L1 robustness).
+   */
+  const resetPendingA = async (): Promise<void> => {
+    if (!superAdminClient) return;
+    const { error } = await superAdminClient
+      .from('profiles')
+      .update({ role: 'pending_teacher' })
+      .eq('id', PENDING_A_UUID);
+    if (error) {
+      console.warn(`[approveTeacher.integration.test] resetPendingA failed: ${error.message}`);
+    }
+  };
+
+  // [security-auditor L1] try/finally robustness — si un test 9 throw avant
+  // d'atteindre son cleanup inline, ce afterAll garantit l'idempotence sur
+  // l'École A pending_teacher pour les suites suivantes.
+  afterAll(async () => {
+    if (SKIP) return;
+    try {
+      await resetPendingA();
+    } catch (err) {
+      console.warn(`[approveTeacher.integration.test] afterAll resetPendingA threw: ${err}`);
+    }
+  });
+
+  it.skipIf(SKIP)('super_admin approves pending_teacher_b (École B) — cross-role success', async () => {
+    const { error } = await superAdminClient.rpc('approve_teacher', {
+      target_user_id: PENDING_B_UUID,
+    });
+    expect(error).toBeNull();
+
+    // Verify role promoted
+    const { data } = await superAdminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', PENDING_B_UUID)
+      .single();
+    expect(data?.role).toBe('teacher');
+  });
+
+  it.skipIf(SKIP)('super_admin approves pending_teacher_a (École A) — cross-institution allowed (supervision)', async () => {
+    await resetPendingA();
+
+    const { error } = await superAdminClient.rpc('approve_teacher', {
+      target_user_id: PENDING_A_UUID,
+    });
+    expect(error).toBeNull();
+
+    const { data } = await superAdminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', PENDING_A_UUID)
+      .single();
+    expect(data?.role).toBe('teacher');
+
+    // Restore for idempotence — next test runs expect pending_teacher_a in pending state
+    await resetPendingA();
+  });
+
+  it.skipIf(SKIP)('audit log enriched with caller_role + target_institution_id (migration 027)', async () => {
+    // Snapshot count before
+    const { count: beforeCount } = await superAdminClient
+      .from('admin_audit_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('action', 'approve_teacher')
+      .eq('target_id', PENDING_B_UUID);
+
+    // super_admin approves
+    const { error: rpcErr } = await superAdminClient.rpc('approve_teacher', {
+      target_user_id: PENDING_B_UUID,
+    });
+    expect(rpcErr).toBeNull();
+
+    // Verify latest audit row has enriched metadata (caller_role + target_institution_id)
+    const { count: afterCount } = await superAdminClient
+      .from('admin_audit_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('action', 'approve_teacher')
+      .eq('target_id', PENDING_B_UUID);
+    expect(afterCount ?? 0).toBe((beforeCount ?? 0) + 1);
+
+    const { data: row } = await superAdminClient
+      .from('admin_audit_log')
+      .select('actor_id, metadata')
+      .eq('action', 'approve_teacher')
+      .eq('target_id', PENDING_B_UUID)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Hotfix 027 enriched metadata
+    expect(row?.metadata).toMatchObject({
+      caller_role: 'super_admin',
+      scope: 'global', // [security-auditor M1 fix] distingue super_admin path
+      previous_role: 'pending_teacher',
+      new_role: 'teacher',
+    });
+    // target_institution_id should be the École B UUID (super_admin has no own institution)
+    expect((row?.metadata as { target_institution_id?: string })?.target_institution_id).toBeTruthy();
+    // caller_institution_id should be null for super_admin (no institution scope)
+    expect((row?.metadata as { caller_institution_id?: string | null })?.caller_institution_id).toBeNull();
   });
 });
