@@ -121,17 +121,17 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
           </div>
           {extraActions && <div className="flex items-center gap-1 shrink-0">{extraActions}</div>}
         </div>
-        <Button
-          asChild
-          variant="emerald-soft"
-          size="link-inline"
-          className="w-full gap-2 min-h-11 py-1.5 mb-1.5 rounded-md text-xs font-mono hover:border-emerald-500/40"
+        {/* Mon profil — Link direct (pas Button asChild) pour fiabilité hover.
+            asChild + variant Button + <Link> avait un problème de propagation
+            des classes hover en cascade. Pattern cohérent NavLink sidebar :
+            classes explicites bg + border + text + transition + focus-visible. */}
+        <Link
+          to="/app/profile"
+          className="flex items-center justify-center w-full gap-2 min-h-11 py-1.5 mb-1.5 rounded-md text-xs font-mono bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 hover:border-emerald-500/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0"
         >
-          <Link to="/app/profile">
-            <CircleUser size={12} aria-hidden="true" />
-            Mon profil
-          </Link>
-        </Button>
+          <CircleUser size={12} aria-hidden="true" />
+          Mon profil
+        </Link>
         <Button
           variant="ghost"
           size="link-inline"
