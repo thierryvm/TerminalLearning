@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { clearAiSessionData } from '@/lib/ai/keyManager';
+import { clearUserRoleCache } from '@/lib/hooks/useUserRole';
 
 // Dynamic import — defers the 194 kB Supabase SDK chunk from the FCP critical
 // path. The module starts loading immediately in parallel with initial render,
@@ -72,6 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('[auth] clearAiSessionData failed (non-fatal):', err);
     }
+    // F-1 fix (rbac-flow-tester break-in 27/05/2026) : clear in-memory user role
+    // cache to prevent any cross-account leak path between successive signins
+    // on the same tab without page reload. Same defense-in-depth posture que
+    // THI-186 (progress data leak) — even si la garde UUID-mismatch dans
+    // `fetchRole` mitige le path d'exploit pratique, le contrat JSDoc de
+    // `clearUserRoleCache` exige cet appel à signOut.
+    clearUserRoleCache();
     // Clear local session immediately — the UI reacts instantly.
     // Then revoke the server-side refresh token in the background (fire-and-forget).
     // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the
