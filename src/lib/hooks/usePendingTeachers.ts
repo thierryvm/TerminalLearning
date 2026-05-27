@@ -19,15 +19,19 @@
  *   loading         : initial fetch in flight
  *   approving       : id currently being approved (single RPC at a time)
  *   error           : last failed operation (Error or null)
+ *   lastSuccess     : Sprint 2.B.2 UX feedback — derniere approbation réussie
+ *                    (displayName + scope) pour affichage "Approuvé via X".
+ *                    Auto-clear après 8s OU prochain `approve()` call.
  *   approve(id)     : calls approve_teacher RPC and refetches on success
  *   refresh()       : manual re-fetch
+ *   clearLastSuccess: dismiss manuel du message de succès
  *
  * Out of scope (v1.0 Étape 4) :
  *   - Rejection workflow (no `reject_teacher` RPC yet — backlog)
  *   - Multi-select bulk approve
  *   - Statistics (n total pending, n approved this month)
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -42,13 +46,28 @@ export interface PendingTeacher {
   created_at: string;
 }
 
+/**
+ * Sprint 2.B.2 — feedback UX post-approve.
+ * Capture le displayName de la dernière approbation réussie pour affichage
+ * inline (toast-like) dans le panel. Le composant InstitutionAdminPanel
+ * enrichit avec le scope ('global' pour super_admin / 'institution' pour
+ * institution_admin) via useUserRole — séparation concerns hook/composant.
+ */
+export interface ApprovalSuccess {
+  displayName: string;
+}
+
+const SUCCESS_AUTO_CLEAR_MS = 8000;
+
 export interface UsePendingTeachersResult {
   pendingTeachers: PendingTeacher[];
   loading: boolean;
   approving: string | null;
   error: Error | null;
+  lastSuccess: ApprovalSuccess | null;
   approve: (targetId: string) => Promise<boolean>;
   refresh: () => Promise<void>;
+  clearLastSuccess: () => void;
 }
 
 async function fetchPendingTeachers(): Promise<PendingTeacher[]> {
@@ -70,6 +89,25 @@ export function usePendingTeachers(): UsePendingTeachersResult {
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [lastSuccess, setLastSuccess] = useState<ApprovalSuccess | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLastSuccess = useCallback(() => {
+    if (successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+    setLastSuccess(null);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -105,8 +143,19 @@ export function usePendingTeachers(): UsePendingTeachersResult {
       }
       if (approving) return false;
 
+      // Snapshot du target avant approve — utilisé pour le success message
+      const targetRow = pendingTeachers.find((row) => row.id === targetId);
+      const displayName =
+        targetRow?.display_name ?? targetRow?.username ?? 'Profil sans nom';
+
       setApproving(targetId);
       setError(null);
+      // Clear precedent success message (anti-stale display)
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = null;
+      }
+      setLastSuccess(null);
 
       try {
         const { error: rpcError } = await supabase.rpc('approve_teacher', {
@@ -134,6 +183,20 @@ export function usePendingTeachers(): UsePendingTeachersResult {
         // A refresh() would also work but adds a round-trip — the RLS view
         // would exclude the now-teacher anyway.
         setPendingTeachers((prev) => prev.filter((row) => row.id !== targetId));
+
+        // Sprint 2.B.2 — feedback UX post-approve.
+        // Le hook expose uniquement `displayName` ; le composant enrichit
+        // l'affichage avec le scope (super_admin/institution_admin) via
+        // useUserRole. Séparation concerns : pas de round-trip SELECT
+        // admin_audit_log (RLS restreint super_admin only + latence inutile).
+        setLastSuccess({ displayName });
+
+        // Auto-clear timer
+        successTimerRef.current = setTimeout(() => {
+          setLastSuccess(null);
+          successTimerRef.current = null;
+        }, SUCCESS_AUTO_CLEAR_MS);
+
         return true;
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Approbation impossible'));
@@ -142,8 +205,17 @@ export function usePendingTeachers(): UsePendingTeachersResult {
         setApproving(null);
       }
     },
-    [user, approving],
+    [user, approving, pendingTeachers],
   );
 
-  return { pendingTeachers, loading, approving, error, approve, refresh };
+  return {
+    pendingTeachers,
+    loading,
+    approving,
+    error,
+    lastSuccess,
+    approve,
+    refresh,
+    clearLastSuccess,
+  };
 }

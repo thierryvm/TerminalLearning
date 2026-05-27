@@ -52,14 +52,17 @@ type MockPending = {
   loading: boolean;
   approving: string | null;
   error: Error | null;
+  lastSuccess: { displayName: string } | null;
 };
 const pendingState: MockPending = {
   pendingTeachers: [],
   loading: false,
   approving: null,
   error: null,
+  lastSuccess: null,
 };
 const approveMock = vi.fn().mockResolvedValue(true);
+const clearLastSuccessMock = vi.fn();
 
 vi.mock('@/lib/hooks/usePendingTeachers', () => ({
   usePendingTeachers: () => ({
@@ -67,8 +70,10 @@ vi.mock('@/lib/hooks/usePendingTeachers', () => ({
     loading: pendingState.loading,
     approving: pendingState.approving,
     error: pendingState.error,
+    lastSuccess: pendingState.lastSuccess,
     approve: approveMock,
     refresh: vi.fn().mockResolvedValue(undefined),
+    clearLastSuccess: clearLastSuccessMock,
   }),
 }));
 
@@ -93,8 +98,10 @@ beforeEach(() => {
   pendingState.loading = false;
   pendingState.approving = null;
   pendingState.error = null;
+  pendingState.lastSuccess = null;
   approveMock.mockClear();
   approveMock.mockResolvedValue(true);
+  clearLastSuccessMock.mockClear();
 });
 
 describe('InstitutionAdminPanel — auth & role guard', () => {
@@ -229,5 +236,59 @@ describe('InstitutionAdminPanel — institution_admin view', () => {
     const button = screen.getByRole('button', { name: /approuver alice pending/i });
     expect(button).toBeDisabled();
     expect(button).toHaveTextContent(/approbation…/i);
+  });
+});
+
+// ─── Sprint 2.B.2 — UX feedback (scope badge + success toast) ────────────────
+
+describe('InstitutionAdminPanel — Sprint 2.B.2 UX feedback', () => {
+  it('renders scope badge "institution" for institution_admin', () => {
+    authState.user = { id: 'instadmin-123' };
+    roleState.role = 'institution_admin';
+    renderPanel();
+    const badge = screen.getByLabelText(/périmètre d'action institution/i);
+    expect(badge).toHaveTextContent(/scope\s*:\s*institution/i);
+  });
+
+  it('renders scope badge "global" for super_admin', () => {
+    authState.user = { id: 'super-123' };
+    roleState.role = 'super_admin';
+    renderPanel();
+    const badge = screen.getByLabelText(/périmètre d'action global/i);
+    expect(badge).toHaveTextContent(/scope\s*:\s*global/i);
+  });
+
+  it('describes super_admin scope in header subtitle (cross-institution explicit)', () => {
+    authState.user = { id: 'super-123' };
+    roleState.role = 'super_admin';
+    renderPanel();
+    expect(
+      screen.getByText(/super_admin.*cross-institution/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders success status with displayName + scope after approve (lastSuccess set)', () => {
+    authState.user = { id: 'instadmin-123' };
+    roleState.role = 'institution_admin';
+    pendingState.lastSuccess = { displayName: 'Alice Pending' };
+    renderPanel();
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent(/Alice Pending/);
+    expect(status).toHaveTextContent(/approuvé.*scope institution/i);
+  });
+
+  it('clicking dismiss X on success card calls clearLastSuccess', async () => {
+    authState.user = { id: 'super-123' };
+    roleState.role = 'super_admin';
+    pendingState.lastSuccess = { displayName: 'Bob Pending' };
+    renderPanel();
+    const dismiss = screen.getByRole('button', {
+      name: /fermer le message de confirmation/i,
+    });
+    const user = userEvent.setup();
+    await user.click(dismiss);
+    await waitFor(() => {
+      expect(clearLastSuccessMock).toHaveBeenCalledTimes(1);
+    });
   });
 });

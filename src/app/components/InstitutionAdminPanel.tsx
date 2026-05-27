@@ -24,12 +24,13 @@
  *             regardless of path (migration 026)
  */
 import { Helmet } from 'react-helmet-async';
-import { CheckCircle2, ShieldUser, UserCheck } from 'lucide-react';
+import { CheckCircle2, Globe, ShieldUser, UserCheck, X } from 'lucide-react';
 
 import { RequireRole } from './auth/RequireRole';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { usePendingTeachers } from '@/lib/hooks/usePendingTeachers';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 export function InstitutionAdminPanel() {
   return (
@@ -40,7 +41,26 @@ export function InstitutionAdminPanel() {
 }
 
 function InstitutionAdminPanelContent() {
-  const { pendingTeachers, loading, approving, error, approve } = usePendingTeachers();
+  const {
+    pendingTeachers,
+    loading,
+    approving,
+    error,
+    lastSuccess,
+    approve,
+    clearLastSuccess,
+  } = usePendingTeachers();
+  const { role } = useUserRole();
+
+  // Sprint 2.B.2 — scope visible distingue le path forensique :
+  //   - super_admin  → 'global'      (cross-institution allowed via migration 027)
+  //   - institution_admin → 'institution' (same-institution only)
+  // Cohérent avec metadata.scope inséré par la RPC dans admin_audit_log.
+  const isSuperAdmin = role === 'super_admin';
+  const scopeLabel = isSuperAdmin ? 'global' : 'institution';
+  const scopeDescription = isSuperAdmin
+    ? "Tu agis en super_admin — visibilité et approbations cross-institution."
+    : "Les profils visibles ici appartiennent uniquement à votre institution.";
 
   return (
     <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
@@ -54,17 +74,29 @@ function InstitutionAdminPanelContent() {
       </Helmet>
 
       <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-wrap items-center gap-3 mb-2">
           <span className="text-emerald-400" aria-hidden="true">
             <ShieldUser size={24} />
           </span>
           <h1 className="text-2xl font-semibold text-[var(--github-text-primary)]">
             Mon institution
           </h1>
+          {/* Sprint 2.B.2 — badge scope visible (forensic clarity). */}
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-mono border ${
+              isSuperAdmin
+                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                : 'bg-[var(--github-bg)]/60 border-[var(--github-border-primary)] text-[var(--github-text-secondary)]'
+            }`}
+            aria-label={`Périmètre d'action ${scopeLabel}`}
+          >
+            {isSuperAdmin && <Globe size={11} aria-hidden="true" />}
+            scope : {scopeLabel}
+          </span>
         </div>
         <p className="text-sm text-[var(--github-text-secondary)]">
-          Approuvez les demandes d&apos;enseignants pour votre établissement.
-          Les profils visibles ici appartiennent uniquement à votre institution.
+          Approuvez les demandes d&apos;enseignants pour votre établissement.{' '}
+          {scopeDescription}
         </p>
       </header>
 
@@ -87,6 +119,40 @@ function InstitutionAdminPanelContent() {
             so screen readers don't re-announce the static heading on each
             refresh (ui-auditor M1). */}
         <div aria-live="polite" aria-busy={loading}>
+          {/* Sprint 2.B.2 — feedback success post-approve.
+              Affiche le displayName promu + scope utilisé (path forensique).
+              Auto-clear après 8s (timer dans le hook). Bouton X pour dismiss
+              manuel — cohérent avec le pattern toast inline non-bloquant. */}
+          {lastSuccess && !error && (
+            <Card
+              variant="tl-surface"
+              className="mb-4 px-4 py-3 border-emerald-500/40 bg-emerald-500/5"
+              role="status"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-emerald-400 shrink-0" aria-hidden="true">
+                    <CheckCircle2 size={16} />
+                  </span>
+                  <p className="text-sm text-emerald-300 font-mono truncate">
+                    <span className="font-semibold">{lastSuccess.displayName}</span>{' '}
+                    approuvé · scope {scopeLabel}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost-gh"
+                  size="icon-lg"
+                  className="shrink-0 text-emerald-300/70 hover:text-emerald-300"
+                  onClick={clearLastSuccess}
+                  aria-label="Fermer le message de confirmation"
+                >
+                  <X size={14} aria-hidden="true" />
+                </Button>
+              </div>
+            </Card>
+          )}
+
           {error && (
             <Card
               variant="tl-surface"
