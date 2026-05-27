@@ -8,6 +8,34 @@ import { clearUserRoleCache } from '@/lib/hooks/useUserRole';
 // but does not block React from painting the first frame.
 const supabaseLoader = import('../../lib/supabase');
 
+/**
+ * Client-side teardown steps run on signOut, in order. Each step must be
+ * wrapped in try/catch — failures must NOT abort the sequence (privacy mode
+ * browsers can throw SecurityError on localStorage.removeItem).
+ *
+ * Add new cleanup steps here when new client state is introduced (the array
+ * makes the teardown sequence auto-documenting and resistant to forgotten
+ * additions).
+ *
+ *  - clearAiSessionData : THI-207 — purge plain LS keys + provider pref +
+ *    consent + rate counter + tutor mode (encrypted IndexedDB preserved).
+ *  - clearUserRoleCache : F-1 rbac-flow-tester 27/05 — clear in-memory role
+ *    cache to prevent cross-account leak via stale promise (THI-186 class).
+ */
+async function teardownClientState(): Promise<void> {
+  const steps: Array<readonly [string, () => void | Promise<void>]> = [
+    ['clearAiSessionData', clearAiSessionData],
+    ['clearUserRoleCache', clearUserRoleCache],
+  ];
+  for (const [name, fn] of steps) {
+    try {
+      await fn();
+    } catch (err) {
+      console.error(`[auth] teardown step "${name}" failed (non-fatal):`, err);
+    }
+  }
+}
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -56,30 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const { supabase } = await supabaseLoader;
     if (!supabase) return;
-    // THI-207 — defense-in-depth + RGPD : purge AI session data BEFORE the UI
-    // reacts to the cleared session. The next user logging in on the same
-    // device must see the consent modal again and must not inherit any plain
-    // key, provider preference, rate counter, or tutor mode.
-    // Encrypted IndexedDB keys are preserved by design (passphrase-gated).
-    //
-    // The try/catch is non-optional : in privacy mode (Firefox ITP strict,
-    // some Android WebViews) `localStorage.removeItem` can throw a
-    // SecurityError. Letting it bubble up would abort `setSession(null)` and
-    // the Supabase token revocation below, leaving a zombie session — exactly
-    // the failure mode the prompt-guardrail + security audits flagged before
-    // merge.
-    try {
-      await clearAiSessionData();
-    } catch (err) {
-      console.error('[auth] clearAiSessionData failed (non-fatal):', err);
-    }
-    // F-1 fix (rbac-flow-tester break-in 27/05/2026) : clear in-memory user role
-    // cache to prevent any cross-account leak path between successive signins
-    // on the same tab without page reload. Same defense-in-depth posture que
-    // THI-186 (progress data leak) — even si la garde UUID-mismatch dans
-    // `fetchRole` mitige le path d'exploit pratique, le contrat JSDoc de
-    // `clearUserRoleCache` exige cet appel à signOut.
-    clearUserRoleCache();
+    // Run all client-side teardown steps before clearing the session so the
+    // next user signing in on the same device sees a clean slate (defense
+    // against THI-186-class cross-account leaks via stale in-memory or
+    // localStorage state).
+    await teardownClientState();
     // Clear local session immediately — the UI reacts instantly.
     // Then revoke the server-side refresh token in the background (fire-and-forget).
     // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the
