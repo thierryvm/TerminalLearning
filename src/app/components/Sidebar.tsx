@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser, Briefcase,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { curriculum } from '../data/curriculum';
@@ -29,6 +29,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const canSeeTeacherEntry = role === 'teacher' || role === 'super_admin';
   const canSeeInstitutionEntry = role === 'institution_admin' || role === 'super_admin';
   const canSeeAdminEntry = role === 'super_admin';
+
+  // THI-240 — "Mes outils" collapsible section.
+  // Sprint 2.B.3 (27 mai 2026) — refactor sidebar saturation pour super_admin
+  // qui voit 3 entries role-gated (Mes classes + Mon institution + Administration).
+  // Seuil empirique : ≥ 2 entries → collapsible (gain ~132px modules space).
+  // ≤ 1 entry → flat (pas de friction inutile click-to-expand pour 1 lien).
+  // Persist en localStorage pour préserver le state utilisateur (default = closed
+  // pour maximiser l'espace modules immédiat — l'utilisateur peut expand au besoin).
+  const roleGatedCount =
+    (canSeeTeacherEntry ? 1 : 0) +
+    (canSeeInstitutionEntry ? 1 : 0) +
+    (canSeeAdminEntry ? 1 : 0);
+  const useMesOutilsCollapsible = roleGatedCount >= 2;
+  const [mesOutilsOpen, setMesOutilsOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('tl-sidebar-mes-outils-open') === 'true';
+  });
+  const toggleMesOutils = () => {
+    setMesOutilsOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tl-sidebar-mes-outils-open', String(next));
+      }
+      return next;
+    });
+  };
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     curriculum.forEach((m) => { init[m.id] = true; });
@@ -161,62 +187,137 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <BookOpen size={16} />
             Référence
           </NavLink>
-          {/* THI-235 Sprint 2.A étape 2 — flat role-gated entry. Will be
-              regrouped into a "Mes outils" collapsible section per THI-240
-              if Sprint 2.B adds 2+ more role-gated entries. */}
-          {canSeeTeacherEntry && (
-            <NavLink
-              to="/app/teacher"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
-                  isActive
-                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
-                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
-                }`
-              }
-            >
-              <School size={16} />
-              Mes classes
-            </NavLink>
-          )}
-          {/* THI-280 Sprint 2.B étape 4 — Institution admin entry. Visible
-              for institution_admin (own institution scope) and super_admin
-              (any institution, via fallback in RequireRole). */}
-          {canSeeInstitutionEntry && (
-            <NavLink
-              to="/app/institution"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
-                  isActive
-                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
-                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
-                }`
-              }
-            >
-              <ShieldUser size={16} />
-              Mon institution
-            </NavLink>
-          )}
-          {/* THI-235 Sprint 2.A étape 2.bis — Administration entry for super_admin.
-              Will move into a "Mes outils" collapsible section (THI-240) once
-              Sprint 2.B adds 3+ role-gated entries (institution_admin, pending_teacher). */}
-          {canSeeAdminEntry && (
-            <NavLink
-              to="/app/admin"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
-                  isActive
-                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
-                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
-                }`
-              }
-            >
-              <ShieldCheck size={16} />
-              Administration
-            </NavLink>
+          {/* THI-240 — "Mes outils" collapsible role-gated section.
+              Sprint 2.B.3 (27 mai 2026, PR #309 — audit ui-auditor Sonnet upgrade).
+              ≥ 2 entries role-gated → collapsible (gain ~132px modules space pour
+              super_admin avec 3 entries). 1 entry → flat (teacher / institution_admin
+              voient 1 lien sans friction expand). */}
+          {useMesOutilsCollapsible ? (
+            <div>
+              <button
+                type="button"
+                onClick={toggleMesOutils}
+                aria-expanded={mesOutilsOpen}
+                aria-controls="sidebar-mes-outils"
+                className="w-full flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]"
+              >
+                <Briefcase size={16} />
+                <span className="flex-1 text-left">Mes outils</span>
+                <span className="text-xs text-[var(--github-text-secondary)] font-mono">{roleGatedCount}</span>
+                {mesOutilsOpen ? (
+                  <ChevronDown size={14} className="size-[14px] text-[var(--github-text-secondary)] shrink-0" />
+                ) : (
+                  <ChevronRight size={14} className="size-[14px] text-[var(--github-text-secondary)] shrink-0" />
+                )}
+              </button>
+              {mesOutilsOpen && (
+                <div
+                  id="sidebar-mes-outils"
+                  className="ml-3 pl-3 border-l border-[var(--github-border-secondary)] space-y-0.5 mt-0.5 mb-1"
+                >
+                  {canSeeTeacherEntry && (
+                    <NavLink
+                      to="/app/teacher"
+                      onClick={onClose}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                          isActive
+                            ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                            : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                        }`
+                      }
+                    >
+                      <School size={16} />
+                      Mes classes
+                    </NavLink>
+                  )}
+                  {canSeeInstitutionEntry && (
+                    <NavLink
+                      to="/app/institution"
+                      onClick={onClose}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                          isActive
+                            ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                            : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                        }`
+                      }
+                    >
+                      <ShieldUser size={16} />
+                      Mon institution
+                    </NavLink>
+                  )}
+                  {canSeeAdminEntry && (
+                    <NavLink
+                      to="/app/admin"
+                      onClick={onClose}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                          isActive
+                            ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                            : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                        }`
+                      }
+                    >
+                      <ShieldCheck size={16} />
+                      Administration
+                    </NavLink>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* ≤ 1 entry role-gated → flat (pas de friction expand inutile) */}
+              {canSeeTeacherEntry && (
+                <NavLink
+                  to="/app/teacher"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                      isActive
+                        ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                        : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                    }`
+                  }
+                >
+                  <School size={16} />
+                  Mes classes
+                </NavLink>
+              )}
+              {canSeeInstitutionEntry && (
+                <NavLink
+                  to="/app/institution"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                      isActive
+                        ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                        : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                    }`
+                  }
+                >
+                  <ShieldUser size={16} />
+                  Mon institution
+                </NavLink>
+              )}
+              {canSeeAdminEntry && (
+                <NavLink
+                  to="/app/admin"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                      isActive
+                        ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                        : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                    }`
+                  }
+                >
+                  <ShieldCheck size={16} />
+                  Administration
+                </NavLink>
+              )}
+            </>
           )}
           <NavLink
             to="/app/settings"
