@@ -71,7 +71,7 @@ src/
 │   │   ├── curriculum.ts         # ENVIRONMENTS, LEVELS, ROADMAP_PRIORITIES, EnvId
 │   │   └── database.ts           # Supabase DB types (Phases 3+)
 │   ├── data/
-│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons (64 lessons, 11 modules)
+│   │   ├── curriculum.ts         # ⚠️ Critical — all modules + lessons (65 lessons, 11 modules)
 │   │   ├── terminalEngine.ts     # Terminal command interpreter (60+ commands, env-aware)
 │   │   ├── commandCatalogue.ts   # Command catalogue with level + prerequisites metadata
 │   │   ├── validators.ts         # 44 exercise validation functions (extracted from curriculum)
@@ -224,7 +224,7 @@ security_reports (id, run_at, score int, findings jsonb, component text)
 | 2 | ✅ | Vercel Analytics + Sentry |
 | 3 | ✅ | Supabase Auth + progress persistence |
 | 4 | ✅ | Curriculum v2 + multi-environment + terminal profiles (192 tests) |
-| 5 | 🔄 | Curriculum expansion — 11 modules, 64 lessons, 900 unit + 176 E2E tests |
+| 5 | 🔄 | Curriculum expansion — 11 modules, 65 lessons, 900 unit + 176 E2E tests |
 | 5.5 | ✅ | Terminal Sentinel — automated security audit (THI-36, PR #90) |
 | 6 | 🔮 | Terminal multi-session (tabs) |
 | 7 | ✅ | Full RBAC — student/teacher/institution/admin + RLS (THI-37, PR #92) |
