@@ -31,7 +31,7 @@ No account required. No setup. Just open it and start learning.
 
 - 🖥️ **Interactive terminal** — type real commands, get real feedback (not just theory)
 - 🌍 **Multi-environment** — learn on Linux, macOS, or Windows — the interface adapts
-- 🔒 **Progressive curriculum** — 11 modules, 64 lessons, 1000+ unit tests
+- 🔒 **Progressive curriculum** — 11 modules, 65 lessons, 1000+ unit tests
 - 🤖 **AI as a dev tool** — dedicated module on using AI professionally (prompts, validation, limits)
 - 💾 **Progress saved automatically** — locally, or synced to the cloud with a free account
 - 📖 **Contextual help** — `help <command>` returns usage and examples for your environment
@@ -113,7 +113,7 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md). In
 | **Phase 2** | ✅ Done | Vercel Analytics + Sentry error monitoring + source maps |
 | **Phase 3** | ✅ Done | Supabase Auth + user progress sync |
 | **Phase 4** | ✅ Done | Curriculum v2 + multi-environment selection + terminal profiles |
-| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 64 lessons, 1000+ unit tests + 176 E2E |
+| **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 65 lessons, 1000+ unit tests + 176 E2E |
 | **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
 | **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
 | **THI-29** | ✅ Done | Module 11 — AI as a dev tool (12 lessons, `ai-help` command) |
