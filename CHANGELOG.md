@@ -5,6 +5,44 @@
 
 ---
 
+## 🚀 28 mai 2026 — Sprint 2.C étape 1 + vision B2B + switch Opus 4.8 + audit méta agents : 3 PRs livrées
+*PRs #314 → #316 · THI-282 umbrella Phase X B2B + THI-295 Sprint 2.C + doctrine agents 4.8 · 1 session*
+
+Session post-reset hebdo. Trois livraisons : la vision plateforme B2B formalisée, la première étape du système de support, et un audit méta de nos propres agents déclenché par le passage à Opus 4.8.
+
+### PR #314 — Vision plateforme B2B (Voie C, docs)
+
+Document stratégie `docs/strategy/2026-05-30-platform-b2b-vision.md` (549 lignes) : **Option D Hybrid** validée par @thierry — layout `/app/workspace/*` pro + curriculum `/app/learn/*` + landing segmentées `/educators` + `/b2b` + parcours métier (tracks). 3 nuances majeures verrouillées : import curriculum custom + sandbox sécurité (X3b), AI Tutor gaté sur tracks custom (X3c), test E2E rôle-down complet gate-zéro release (X6). **13 tickets Linear créés** : THI-282 umbrella Phase X + 8 sub X1→X6 + THI-291 (F-2 trigger), THI-292 (cross-tab MANUAL 4.4), THI-293 (content-auditor C1+C2 ssh/scp env coverage CRITICAL), THI-294 (Schema.org numberOfLessons drift). Décision : **silence médiatique jusqu'à la release v2 (automne)** — annoncer quand livré, pas avant. Mergée Voie C (docs-only, smoke test preview 4/4 HTTP 200).
+
+### PR #315 — Sprint 2.C étape 1 : support_tickets + RLS + hardening sécurité
+
+Table `public.support_tickets` (bug/suggestion/question, super_admin triage). Migration 028 base + **migration 029 hardening** suite audit `security-auditor` (Opus) ⚠️ SHIP WITH NOTES 8.8/10 → 6 patches in-PR → **~9.4/10** :
+- **H1** trigger audit guard `auth.uid() NULL` (sinon Sprint 2.D AI triage backend service_role aurait crashé 100% des UPDATE via NOT NULL constraint)
+- **H2** WITH CHECK INSERT durci `auth.uid() is not null`
+- **M1** CHECK `screenshot_url` Supabase Storage URLs only (defense XSS DB-level avant rendu panel admin)
+- **M2** super_admin DELETE policy (RGPD Art. 17 erasure path B2B écoles)
+- **M3** cohérence `status=resolved` ⇔ `resolved_at`/`resolved_by` (anti-état zombie)
+- **L1** `search_path = public, extensions` (cohérence migrations 025/027)
+
+**15/15 tests vitest empiriques PROD** (RLS isolation REST API + JWT per doctrine `feedback_rls_isolation_test_rest_only`). Full regression 1744/1764 PASS. Trigger audit transitions status → `admin_audit_log`. Migrations appliquées via Studio (MCP Supabase temporairement bloqué — mauvais compte, résolu en fin de session).
+
+### PR #316 — Audit méta des 20 agents + supabase-backend-auditor (post-switch Opus 4.8)
+
+@thierry passe le pilote sur **Opus 4.8** (tool-calling plus efficient, meilleur aveu d'incertitude). Audit méta des agents → 3 drifts + 1 gap corrigés :
+- **🆕 `supabase-backend-auditor` (Opus)** — gate-zero AVANT Sprint 2.C Étape 3 (Edge Function Resend) + Phase X3b (import curriculum). Comble le gap : aucun agent ne couvrait Edge Functions Deno (secret handling, BOLA, SSRF) + Storage RLS + file upload (MIME spoofing, magic bytes, zip slip, XXE, SVG-XSS). Indépendant MCP (teste en curl + JWT — leçon `linear-sync`).
+- **🔧 `linear-sync`** — réécrit pour avouer l'échec MCP au lieu de deviner (incident 28/05 : 6 incohérences "probables" devinées en sous-agent, toutes déjà Done = travail fait deux fois).
+- **📝 README sync** — fin du drift modèles README↔frontmatter. Distribution : **0 Haiku / 12 Sonnet / 8 Opus**.
+- **🔒 garde-fou pin** `claude-opus-4-7` → `claude-opus-4-8` (le pin anti-downgrade pointait sur un modèle périmé après le switch).
+
+**Règle dure @thierry** : **JAMAIS `model: haiku`** sur aucun agent, quel que soit le scope. Plancher absolu Sonnet, Opus pour le critique.
+
+### Infra session
+
+- **MCP Supabase réparé** : connexion authentifiée sur le mauvais compte (gmail/Ankora) → reconnectée au compte Terminal Learning. Near-miss SQL appliqué sur Ankora par erreur (rollback automatique, 0 dégât) → mémoire `reference_supabase_two_free_accounts.md`.
+- **Registry migrations 028/029 aligné** dans `schema_migrations` (appliquées via Studio, enregistrées post-fact).
+
+---
+
 ## 🔧 27 mai 2026 — Sprint 2.B reliquats + UX session marathon : 6 PRs livrées matin/midi
 *PRs #305 → #310 · THI-280 hotfix + THI-240 sidebar + doctrine agents · 1 session ~6h*
 
