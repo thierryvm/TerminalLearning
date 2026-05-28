@@ -47,7 +47,7 @@ Trigger : « démarrage », « début de session », « reprise », « bonjour �
 
 Process à exécuter (refondu 23 mai 2026 — codifié PR #284) :
 1. **Lire** `session_startup_process.md` dans la mémoire CC du projet courant (chemin : `~/.claude/projects/<projet>/memory/session_startup_process.md` ou équivalent localisable via `Glob`)
-2. **Phase 0 model check** : vérifier le modèle courant (Opus 4.7 attendu pour TL après l'incident Haiku 24/04/2026)
+2. **Phase 0 model check** : vérifier le modèle courant (**Opus 4.8** attendu pour TL depuis le switch 28/05/2026 ; pin `.claude/settings.local.json` doit valoir `claude-opus-4-8` — anti-downgrade post-incident Haiku 24/04/2026 ; **JAMAIS Haiku** sur aucun agent, règle dure @thierry 28/05)
 3. **Phase 1 contexte** : lire CLAUDE.md global + projet, MEMORY.md index, 3 memos critiques (`feedback_session_protocol`, `security_new_session_rules`, `user_health_signals` ou équivalent du projet), + memo session récent (event principal MEMORY.md)
 4. **Phase 1.bis sync Obsidian** : recommander au main agent d'invoquer le skill `/obsidian-session-sync` en parallèle (lit vault Athenaeum via MCP `claude-code-mcp` port 22360 : daily note + sources of truth + handoffs @cowork pending). Critique en mode trio binôme. Fallback Read direct sur `<vault path>` documenté dans CLAUDE.md global si pont MCP off.
 5. **Phase 2 état projet** : `git status`, `git log --oneline -5`, `git branch --show-current`, `gh pr list --state open --limit 20`, **recommander `linear-sync` agent** au main agent
