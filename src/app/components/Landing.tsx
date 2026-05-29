@@ -1,5 +1,6 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
+import { lazyWithRetry } from '../lib/lazyWithRetry';
 import { FadeIn } from './landing/FadeIn';
 import {
   Terminal, ChevronRight, Github, BookOpen,
@@ -16,9 +17,12 @@ import { Badge } from './ui/badge';
 // THI-118 — defer non-critical chunks to keep the landing critical path lean.
 // UserMenu only renders for logged-in users (minority of landing visitors);
 // LoginModal / PWAInstallModal only mount after user interaction.
-const UserMenu = lazy(() => import('./auth/UserMenu').then((m) => ({ default: m.UserMenu })));
-const LoginModal = lazy(() => import('./auth/LoginModal').then((m) => ({ default: m.LoginModal })));
-const PWAInstallModal = lazy(() => import('./PWAInstallModal').then((m) => ({ default: m.PWAInstallModal })));
+// lazyWithRetry (not bare lazy) so a stale chunk after a deploy auto-recovers
+// instead of surfacing React Router's default error screen — see the
+// `UserMenu-<hash>.js` "Failed to fetch dynamically imported module" report.
+const UserMenu = lazyWithRetry(() => import('./auth/UserMenu').then((m) => ({ default: m.UserMenu })));
+const LoginModal = lazyWithRetry(() => import('./auth/LoginModal').then((m) => ({ default: m.LoginModal })));
+const PWAInstallModal = lazyWithRetry(() => import('./PWAInstallModal').then((m) => ({ default: m.PWAInstallModal })));
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
 import {
   TOTAL_LESSONS, TOTAL_COMMANDS,
