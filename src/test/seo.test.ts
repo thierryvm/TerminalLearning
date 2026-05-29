@@ -8,6 +8,7 @@ import { createHash } from 'crypto';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { describe, it, expect } from 'vitest';
+import { curriculum, getTotalLessons } from '../app/data/curriculum';
 
 const ROOT = resolve(__dirname, '../../');
 const INDEX_HTML = join(ROOT, 'index.html');
@@ -126,20 +127,24 @@ describe('SEO -- JSON-LD structured data (Schema.org)', () => {
     expect(app?.['isAccessibleForFree']).toBe(true);
   });
 
-  // THI-226 enrichissement Schema.org Course — empêche le drift du nombre de leçons
-  // et garantit que chaque module est listé comme sous-cours pour Google + LLM retrievals.
-  it('Course.numberOfLessons === 65 (anti-drift)', () => {
+  // THI-226 + THI-294 — Schema.org Course DÉRIVE de la source unique getTotalLessons()
+  // (et non plus d'une constante hardcodée). Si le curriculum change de taille et que
+  // index.html n'est pas mis à jour, la CI échoue ici → le SEO ne peut plus drifter
+  // silencieusement. La vraie source = curriculum.reduce(...) (curriculum.ts:getTotalLessons),
+  // pas le littéral du JSON-LD statique. Verdict THI-294 : compte réel = 65 (faux positif
+  // du décompte manuel "63" — reseau a 6 leçons, github-collaboration en a 7).
+  it('Course.numberOfLessons === getTotalLessons() (anti-drift dérivé de la source)', () => {
     const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
     const course = g.find((n) => n['@type'] === 'Course');
-    expect(course?.['numberOfLessons']).toBe(65);
+    expect(course?.['numberOfLessons']).toBe(getTotalLessons());
   });
 
-  it('Course.hasPart contient 11 modules avec URLs valides', () => {
+  it('Course.hasPart liste tous les modules (dérivé de curriculum.length) avec URLs valides', () => {
     const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
     const course = g.find((n) => n['@type'] === 'Course');
     const parts = course?.['hasPart'] as Array<Record<string, unknown>> | undefined;
     expect(Array.isArray(parts)).toBe(true);
-    expect(parts).toHaveLength(11);
+    expect(parts).toHaveLength(curriculum.length);
     for (const part of parts!) {
       expect(part['@type']).toBe('Course');
       expect(typeof part['name']).toBe('string');
