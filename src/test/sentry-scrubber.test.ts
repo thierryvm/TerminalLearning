@@ -229,4 +229,49 @@ describe('Sentry tunnel scrubber — coverage matrix (THI-140)', () => {
       expect(stats.patterns_hit).toEqual([]);
     });
   });
+
+  // route-attack H1 (29/05) — SCRUB_PATTERNS are module-scoped /g regexes; a
+  // stateful lastIndex leaking across calls could skip a real match. These
+  // regression tests prove a secret is scrubbed on EVERY call regardless of
+  // prior-call state (the fix replaces directly instead of a stateful .test()).
+  describe('regex state isolation across calls (H1 regression)', () => {
+    it('scrubs the key on repeated calls — no lastIndex leak between invocations', () => {
+      for (let i = 0; i < 5; i++) {
+        const item = JSON.stringify({
+          type: 'event',
+          exception: { values: [{ type: 'Error', value: `Boom ${FAKE_OPENROUTER_KEY}` }] },
+        });
+        const { scrubbed, stats } = scrubEnvelopeItem(item);
+        expect(scrubbed, `call #${i} leaked the key`).not.toContain(FAKE_OPENROUTER_KEY);
+        expect(stats.patterns_hit).toContain('openrouter');
+      }
+    });
+
+    it('scrubs a key positioned earlier than a previous match (lastIndex would skip it)', () => {
+      // Call 1: key late in the value (a stateful lastIndex would advance far).
+      scrubEnvelopeItem(JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: `${'x'.repeat(200)} ${FAKE_OPENROUTER_KEY}` }] },
+      }));
+      // Call 2: key at the very start — a leaked lastIndex would make a stateful scan miss it.
+      const { scrubbed } = scrubEnvelopeItem(JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: `${FAKE_OPENROUTER_KEY} trailing` }] },
+      }));
+      const value = JSON.parse(scrubbed).exception.values[0].value;
+      expect(value).not.toContain(FAKE_OPENROUTER_KEY);
+      expect(value).toContain('[REDACTED:openrouter]');
+    });
+
+    it('scrubs multiple occurrences of the same secret in one value', () => {
+      const item = JSON.stringify({
+        type: 'event',
+        exception: { values: [{ type: 'Error', value: `${FAKE_OPENROUTER_KEY} and again ${FAKE_OPENROUTER_KEY}` }] },
+      });
+      const { scrubbed } = scrubEnvelopeItem(item);
+      const value = JSON.parse(scrubbed).exception.values[0].value;
+      expect(value).not.toContain(FAKE_OPENROUTER_KEY);
+      expect(value.match(/\[REDACTED:openrouter\]/g)?.length).toBe(2);
+    });
+  });
 });

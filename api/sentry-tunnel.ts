@@ -88,9 +88,16 @@ export function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: 
     // Non-JSON body: fall back to text-level scrub
     let scrubbed = itemBody;
     Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
-      if (pattern.test(scrubbed)) {
+      // SCRUB_PATTERNS are module-scoped /g regexes whose stateful lastIndex
+      // leaks across scrub calls — a stale lastIndex can make a later .test()
+      // skip a real match (false-negative scrub of a secret en route to Sentry,
+      // route-attack H1 29/05). Mirror the proven client scrubber (src/lib/sentry.ts):
+      // reset lastIndex, replace directly (no stateful prescan), detect hit by diff.
+      pattern.lastIndex = 0;
+      const replaced = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+      if (replaced !== scrubbed) {
         stats.patterns_hit.push(key as PatternKey);
-        scrubbed = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+        scrubbed = replaced;
       }
     });
     return { scrubbed, stats };
@@ -100,9 +107,16 @@ export function scrubEnvelopeItem(itemBody: string): { scrubbed: string; stats: 
     if (typeof val !== 'string') return val;
     let scrubbed = val;
     Object.entries(SCRUB_PATTERNS).forEach(([key, pattern]) => {
-      if (pattern.test(scrubbed)) {
+      // SCRUB_PATTERNS are module-scoped /g regexes whose stateful lastIndex
+      // leaks across scrub calls — a stale lastIndex can make a later .test()
+      // skip a real match (false-negative scrub of a secret en route to Sentry,
+      // route-attack H1 29/05). Mirror the proven client scrubber (src/lib/sentry.ts):
+      // reset lastIndex, replace directly (no stateful prescan), detect hit by diff.
+      pattern.lastIndex = 0;
+      const replaced = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+      if (replaced !== scrubbed) {
         stats.patterns_hit.push(key as PatternKey);
-        scrubbed = scrubbed.replace(pattern, `[REDACTED:${key}]`);
+        scrubbed = replaced;
       }
     });
     return scrubbed;
