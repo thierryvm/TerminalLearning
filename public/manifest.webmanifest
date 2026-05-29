@@ -1,7 +1,7 @@
 {
   "name": "Terminal Learning",
   "short_name": "Terminal",
-  "description": "Apprends les commandes du terminal gratuitement. 8 modules progressifs, émulateur interactif, Linux/macOS/Windows.",
+  "description": "Apprends les commandes du terminal gratuitement. 11 modules progressifs, 65 leçons, émulateur interactif, Linux/macOS/Windows.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d1117",
