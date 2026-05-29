@@ -1,7 +1,7 @@
 # Claude Agents — Terminal Learning
 
 > Index et guide d'usage des agents internes du projet.
-> **Dernière mise à jour** : 28 mai 2026 (audit méta post-switch Opus 4.8 : création `supabase-backend-auditor` Opus — gate-zero Edge Functions Deno + Storage RLS + file upload, avant Sprint 2.C Étape 3 Resend + Phase X3b import. Sync modèles README↔frontmatter — fin du drift Haiku stale. Règle dure @thierry : **zéro Haiku**).
+> **Dernière mise à jour** : 29 mai 2026 (doctrine anti-hallucination dénombrement — tous agents : aucun compteur descriptif de tête, source déterministe obligatoire ; suite content-auditor « 63 leçons » faux positif. + 28 mai : `supabase-backend-auditor` Opus, sync modèles, règle zéro-Haiku).
 > ⚠️ **Maintenance** : ce champ "Dernière mise à jour" doit être bumpé à chaque ajout/modification d'agent (cf. section "Convention — ajouter un nouvel agent").
 > 🧠 **Limitation technique connue** : les agents `.md` créés en cours de session ne sont disponibles qu'à la session suivante (rechargement framework). Pattern : si un agent doit gater une PR créé pendant la même session, faire l'audit empirique inline avec exactement la méthode documentée dans l'agent, l'agent prendra le relais aux PRs suivantes.
 
@@ -26,6 +26,12 @@ L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push di
 **Garde-fou utilisateur** : épingler `"model": "claude-opus-4-8"` dans `.claude/settings.local.json` du projet (cf. CLAUDE.md global) — évite que la main session bascule en Haiku/Sonnet sans notification. **Re-pin obligatoire à chaque bump de version Opus** (incident latent : pin resté sur 4.7 après switch 4.8, corrigé 28/05).
 
 **Pattern auto-apprentissage** : les leçons des bugs passés s'intègrent dans le **scope** des agents existants (ex : section "Client-state lifecycle" ajoutée à `rbac-flow-tester` après THI-186), pas dans des memos CC isolés que personne ne re-lit. Trimestriellement, re-audit des modèles agents (script `audit_agent_models.sh` à créer post-deadline).
+
+**⛔ Règle anti-hallucination — dénombrement (tous agents, effective 29/05/2026)** : aucun agent ne **dénombre du code ou de la data de tête**. Tout nombre **descriptif** (leçons, modules, tests, `describe`, commandes, % de commits, leçons complétées par un user…) doit venir d'une **source déterministe exécutée** (commande `Bash` + citation), jamais d'une estimation mentale du LLM. Distinction :
+- ✅ **Compteur prescriptif** (taille de la checklist propre à l'agent : « 16 checks », « 5 personas », « 11 sections ») = constante définie dans l'agent, pas un risque.
+- ❌ **Compteur descriptif** (mesure du code/data réel) = **commande obligatoire**. Ex : `npx tsx -e "import('./src/app/data/curriculum.ts').then(m=>console.log(m.getTotalLessons()))"`, `grep -c`, `npx vitest run` (sortie réelle), `git log --pretty` piped. Si la source n'est pas exécutable → écrire « compte non vérifié », jamais un nombre approximatif présenté comme exact.
+
+Incidents fondateurs : `content-auditor` « 356+ describes » (réel 62, 23/05) puis « 63 leçons » (réel 65, 28/05 — a failli faire corriger une comm publique correcte). La vérité des compteurs leçons est verrouillée par `src/test/landingTotals.test.ts` (total + par-module) + `src/test/seo.test.ts` (Schema.org dérivé de `getTotalLessons()`). `content-auditor.md` porte la règle détaillée ; les autres agents qui produisent des compteurs descriptifs (`test-runner` via vitest, `sustain-auditor` via git log, `user-forensics-auditor` via SQL/REST) tirent déjà de commandes — cette doctrine le codifie pour eux + tout futur agent.
 
 **Patterns récurrents** :
 - **Début de session** : invoquer `linear-sync` (status PR↔Linear) puis optionnellement `session-orchestrator` mode `startup` pour récap freshness + tickets In Progress

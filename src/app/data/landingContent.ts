@@ -240,7 +240,7 @@ export const MODULE_PREVIEWS: ModulePreview[] = [
   { id: 'variables', title: 'Variables & Scripts', description: "Maîtrisez les variables d'environnement, les fichiers de config et l'automatisation", iconName: 'Code2', color: '#f59e0b', level: 3, firstLessonId: 'env-vars', lessonCount: 6 },
   { id: 'reseau', title: 'Réseau & SSH', description: 'Testez la connectivité, effectuez des requêtes HTTP et connectez-vous à des serveurs distants', iconName: 'Globe', color: '#06b6d4', level: 3, firstLessonId: 'ping', lessonCount: 6 },
   { id: 'git', title: 'Git Fondamentaux', description: "Maîtrisez le contrôle de version avec Git — l'outil indispensable de tout développeur professionnel", iconName: 'GitBranch', color: '#f97316', level: 4, firstLessonId: 'git-init', lessonCount: 7 },
-  { id: 'github-collaboration', title: 'GitHub & Collaboration', description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise', iconName: 'GitFork', color: '#8b5cf6', level: 4, firstLessonId: 'git-remote', lessonCount: 6 },
+  { id: 'github-collaboration', title: 'GitHub & Collaboration', description: 'Synchronisez avec des dépôts distants, ouvrez des Pull Requests et collaborez comme en entreprise', iconName: 'GitFork', color: '#8b5cf6', level: 4, firstLessonId: 'git-remote', lessonCount: 7 },
   { id: 'ia-dev', title: "L'IA comme outil dev", description: "Maîtrisez l'IA comme amplificateur de vos compétences — du prompt au déploiement", iconName: 'Bot', color: '#a78bfa', level: 5, firstLessonId: 'ia-dev-intro', lessonCount: 12 },
 ];
 
