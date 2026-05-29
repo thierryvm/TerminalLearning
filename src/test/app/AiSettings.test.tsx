@@ -9,7 +9,7 @@
  */
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
@@ -108,10 +108,16 @@ describe('AiSettings — provider with a stored key', () => {
     renderSettings();
     const forget = await screen.findByRole('button', { name: /^Oublier$/ });
     await user.click(forget);
-    // Once the row refreshes, the per-provider button reverts to Configurer.
-    await screen.findAllByRole('button', { name: /Configurer/ });
-    // And there is no Forget button left for that row.
-    expect(screen.queryByRole('button', { name: /^Oublier$/ })).not.toBeInTheDocument();
+    // Wait for the SPECIFIC post-condition: the Forget button disappears once
+    // the async row refresh completes. NB: we can't wait on findAllByRole(/Configurer/)
+    // because 3 other key-less providers already show "Configurer" — that query
+    // resolves immediately, before openrouter's row has reverted, causing a race
+    // (pre-existing flaky). waitFor retries the assertion until it holds.
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /^Oublier$/ })).not.toBeInTheDocument();
+    });
+    // All 4 provider rows now show "Configurer".
+    expect(screen.getAllByRole('button', { name: /Configurer/ })).toHaveLength(4);
   });
 });
 
