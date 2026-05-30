@@ -3,6 +3,10 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type UserRole = 'super_admin' | 'institution_admin' | 'teacher' | 'pending_teacher' | 'student';
 export type EnvId = 'linux' | 'macos' | 'windows';
 
+// Sprint 2.C (THI-295) — support_tickets enums (migration 028 CHECK constraints).
+export type SupportTicketType = 'bug' | 'suggestion' | 'question';
+export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
 export interface Database {
   public: {
     Tables: {
@@ -272,6 +276,53 @@ export interface Database {
           {
             foreignKeyName: 'admin_audit_log_actor_id_fkey';
             columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      support_tickets: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: SupportTicketType;
+          description: string;
+          screenshot_url: string | null;
+          status: SupportTicketStatus;
+          ai_triage_summary: string | null;
+          created_at: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: SupportTicketType;
+          description: string;
+          screenshot_url?: string | null;
+          status?: SupportTicketStatus;
+          ai_triage_summary?: string | null;
+          created_at?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: SupportTicketType;
+          description?: string;
+          screenshot_url?: string | null;
+          status?: SupportTicketStatus;
+          ai_triage_summary?: string | null;
+          created_at?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'support_tickets_resolved_by_fkey';
+            columns: ['resolved_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
