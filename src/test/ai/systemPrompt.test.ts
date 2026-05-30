@@ -2,11 +2,11 @@
  * Tests for src/lib/ai/systemPrompt.ts — THI-111 step 2/8 + THI-148 + THI-144.
  *
  * The system prompt is the LLM's guardrail. Its content is versioned
- * (`tutor/v1.1.0`) and immutable per ship — any change implies a new
+ * (`tutor/v1.1.1`) and immutable per ship — any change implies a new
  * jailbreak retest pass (cf. security_new_session_rules Règle 10).
  *
  * Coverage:
- *  - version constant is the literal `tutor/v1.1.0`
+ *  - version constant is the literal `tutor/v1.1.1`
  *  - 4 languages × 2 modes = 8 variants resolve without throw
  *  - each variant contains the four mandatory refusal clauses (scope, prompt
  *    leak, secret request, role-play) so a guardrail audit can grep them
@@ -31,8 +31,8 @@ const LANGS: readonly TutorLang[] = ['fr', 'nl', 'en', 'de'];
 const MODES: readonly TutorMode[] = ['socratic', 'direct'];
 
 describe('TUTOR_PROMPT_VERSION', () => {
-  it('is exactly "tutor/v1.1.0"', () => {
-    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.1.0');
+  it('is exactly "tutor/v1.1.1"', () => {
+    expect(TUTOR_PROMPT_VERSION).toBe('tutor/v1.1.1');
   });
 });
 
@@ -258,15 +258,55 @@ describe('getSystemPrompt — anti-friction rules V1.1.0 (THI-144 / ADR-008)', (
   }
 });
 
+describe('getSystemPrompt — pedagogical-frontier clause V1.1.1 (F-6, chantier 30/05/2026)', () => {
+  // V1.1.1 adds an explicit pedagogical-frontier refusal: the tutor explains
+  // shell concepts but never hands a turn-key offensive payload, even when
+  // the request is reframed as a "legal CTF" / "authorized pentest" /
+  // "educational exercise". Each locale must surface the clause AND its
+  // reframing-resistance so a guardrail auditor can grep it and a future bump
+  // cannot silently drop it. Present in BOTH modes (it lives in the shared
+  // `refusals` block).
+
+  const FRONTIER_HEADER_CUE: Record<TutorLang, RegExp> = {
+    fr: /Fronti[èe]re p[ée]dagogique/i,
+    nl: /Pedagogische grens/i,
+    en: /Pedagogical frontier/i,
+    de: /P[äa]dagogische Grenze/i,
+  };
+
+  // The clause must explicitly resist the "but it's for education / legal CTF"
+  // reframing — the exact vector the F-6 chain exploited.
+  const FRONTIER_REFRAME_CUE: Record<TutorLang, RegExp> = {
+    fr: /CTF l[ée]gal|fins [ée]ducatives|exercice p[ée]dagogique/i,
+    nl: /legale CTF|educatieve doeleinden|educatieve oefening/i,
+    en: /legal CTF|educational purposes|educational exercise/i,
+    de: /legales CTF|Bildungszwecken|p[äa]dagogische [ÜU]bung/i,
+  };
+
+  for (const lang of LANGS) {
+    for (const mode of MODES) {
+      it(`${lang}/${mode} states the pedagogical frontier`, () => {
+        const prompt = getSystemPrompt({ lang, mode });
+        expect(prompt).toMatch(FRONTIER_HEADER_CUE[lang]);
+      });
+
+      it(`${lang}/${mode} resists the "educational / legal CTF" reframing`, () => {
+        const prompt = getSystemPrompt({ lang, mode });
+        expect(prompt).toMatch(FRONTIER_REFRAME_CUE[lang]);
+      });
+    }
+  }
+});
+
 describe('getSystemPrompt — immutability snapshots', () => {
   // These snapshots are the authoritative copy of the current prompt
-  // (tutor/v1.1.0). ANY edit to src/lib/ai/prompts/tutor-v1.1.0.ts will
+  // (tutor/v1.1.1). ANY edit to src/lib/ai/prompts/tutor-v1.1.1.ts will
   // break these tests. The fix is NOT to update the snapshot blindly —
   // bump TUTOR_PROMPT_VERSION first, then re-run the prompt-guardrail-auditor
   // against the new content, and only then update the snapshot.
   for (const lang of LANGS) {
     for (const mode of MODES) {
-      it(`pins ${lang}/${mode} to its frozen v1.1.0 string`, () => {
+      it(`pins ${lang}/${mode} to its frozen v1.1.1 string`, () => {
         const out = getSystemPrompt({ lang, mode });
         expect(out).toMatchSnapshot();
       });

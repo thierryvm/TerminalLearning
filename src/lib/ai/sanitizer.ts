@@ -5,7 +5,8 @@
  *
  *  - `sanitizeUserInput` runs BEFORE a question reaches the LLM. It rejects
  *    length excess, bidi/zero-width unicode tricks, prompt-injection phrases,
- *    and base64-encoded variants of the same. It HTML-escapes the structural
+ *    and base64- / ROT13- / hex-encoded variants of the same. It HTML-escapes
+ *    the structural
  *    delimiters (`<user_question>`, `<lesson_context>`, `<system>`…) so the
  *    user can never break out of their block in the system prompt.
  *
@@ -116,6 +117,57 @@ function containsBase64Injection(text: string): boolean {
   return false;
 }
 
+// ROT13 — a trivial classical cipher some jailbreak kits use to smuggle
+// "ignore previous instructions" past the literal INJECTION_PATTERNS check
+// ("vtaber cerivbhf vafgehpgvbaf" decodes back to the real phrase). We rotate
+// the WHOLE input once and re-test — no token extraction needed because ROT13
+// is a same-length, position-preserving transform. Rotating legitimate prose
+// yields gibberish that cannot match the whole-phrase injection anchors, so
+// false positives are not a concern. (F-1, llm-security-auditor 2026-05-30.)
+function rot13(text: string): string {
+  return text.replace(/[a-zA-Z]/g, (c) => {
+    const code = c.charCodeAt(0);
+    const base = code <= 90 ? 65 : 97; // 'Z' === 90
+    return String.fromCharCode(((code - base + 13) % 26) + base);
+  });
+}
+
+function containsRot13Injection(text: string): boolean {
+  return isInjection(rot13(text));
+}
+
+// Hex — "69676e6f7265..." or "\x69\x67..." / "0x69 0x67..." encodings of an
+// injection phrase. We extract candidate runs (≥10 bytes), strip the optional
+// `\x` / `0x` / separators, decode pairs to bytes, and test the UTF-8 result.
+// TextDecoder fatal mode rejects non-UTF-8 byte soup (e.g. a git SHA), so a
+// 40-char commit hash or random hex blob never produces a false positive.
+// (F-1, llm-security-auditor 2026-05-30.)
+const HEX_TOKEN_RX = /(?:(?:0x|\\x)?[0-9a-fA-F]{2}[\s,]?){10,}/g;
+
+function tryDecodeHex(token: string): string | null {
+  const hexOnly = token.replace(/0x|\\x|[\s,]/g, '');
+  if (hexOnly.length < 20 || hexOnly.length % 2 !== 0) return null;
+  try {
+    const bytes = new Uint8Array(hexOnly.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = parseInt(hexOnly.slice(i * 2, i * 2 + 2), 16);
+    }
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function containsHexInjection(text: string): boolean {
+  const matches = text.match(HEX_TOKEN_RX);
+  if (!matches) return false;
+  for (const token of matches) {
+    const decoded = tryDecodeHex(token);
+    if (decoded && isInjection(decoded)) return true;
+  }
+  return false;
+}
+
 /**
  * HTML-escape any system-prompt structural delimiter found in `text`. Exported
  * for THI-148 so non-user content (curriculum-derived module titles in
@@ -144,7 +196,8 @@ export type SanitizeUserInputResult =
  * Validates and escapes a learner's question before it reaches the LLM.
  *
  * Order of checks: type → empty → length → bidi unicode → literal prompt
- * injection → base64-decoded prompt injection → delimiter escaping.
+ * injection → base64- / ROT13- / hex-decoded prompt injection → delimiter
+ * escaping.
  *
  * Returns `{ ok: true, clean }` where `clean` may differ from the input
  * (delimiters HTML-escaped) but preserves all legitimate content.
@@ -171,6 +224,14 @@ export function sanitizeUserInput(raw: string): SanitizeUserInputResult {
   }
 
   if (containsBase64Injection(raw)) {
+    return { ok: false, reason: 'prompt_injection' };
+  }
+
+  if (containsRot13Injection(raw)) {
+    return { ok: false, reason: 'prompt_injection' };
+  }
+
+  if (containsHexInjection(raw)) {
     return { ok: false, reason: 'prompt_injection' };
   }
 
@@ -209,6 +270,17 @@ const DESTRUCTIVE_PATTERNS: readonly RegExp[] = [
   /\bdd\s+if=\/dev\/[a-z]+\s+of=\/dev\/(?:sd[a-z]\d?|hd[a-z]|nvme\d+n\d+)\b/gi,
   /:\(\)\s*\{\s*:\|:\s*&\s*\}\s*;\s*:/g,                  // fork bomb
   /\bmkfs\.\w+\s+\/dev\/(?:sd[a-z]\d?|hd[a-z]|nvme\d+n\d+p?\d*)\b/gi,
+  // Reverse-shell primitives (F-6, llm-security-auditor 2026-05-30). The tutor
+  // teaches shell *concepts* but must never emit a working reverse shell, even
+  // reframed as "legal CTF". The student prompt (tutor/v1.1.1) refuses to
+  // produce these proactively; these output-side strips are the belt-and-
+  // suspenders layer if the model emits a concrete payload anyway. Each
+  // requires the *weaponised* shape (host+port, /dev/tcp redirection, or the
+  // nc exec flag) so a high-level concept mention survives — only the turn-key
+  // command is redacted.
+  /\b(?:ba|z|k)?sh\s+-i\b[^\n]*\/dev\/(?:tcp|udp)\//gi,   // bash -i >& /dev/tcp/<h>/<p>
+  /\/dev\/(?:tcp|udp)\/[^\s/]+\/\d+/gi,                   // /dev/tcp/<host>/<port>
+  /\bnc(?:at)?\s+[^\n;|]*-e\s+\/?\w/gi,                   // nc/ncat -e <shell> backdoor
 ];
 
 const HTML_BLOCK_PATTERNS: readonly RegExp[] = [
@@ -245,7 +317,8 @@ const MARKDOWN_BOMB_PATTERNS: readonly RegExp[] = [
  *
  * Limitations:
  *  - Operates on the chunk alone. A pattern split across chunks slips through;
- *    the rehype-sanitize step in `MessageList.tsx` is the second line of
+ *    the `react-markdown` config in `MessageList.tsx` (rendered WITHOUT
+ *    `rehype-raw`, so raw HTML stays inert text) is the second line of
  *    defence on the assembled output.
  *  - Returns a placeholder (`[redacted]`, `[unsafe-command-removed]`) where it
  *    strips so the UI can style the gap.

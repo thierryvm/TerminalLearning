@@ -42,7 +42,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 import { EVAL_FIXTURES, type EvalFixture } from '../src/lib/ai/eval/fixtures';
-import { getSystemPrompt } from '../src/lib/ai/systemPrompt';
+import { getSystemPrompt, TUTOR_PROMPT_VERSION } from '../src/lib/ai/systemPrompt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -300,7 +300,7 @@ function formatSynthesisReport(
   );
   lines.push('');
   lines.push(
-    `**Stage B1 LITE** : matrice ${models.length} modèles × ${EVAL_FIXTURES.length} fixtures EVAL_FIXTURES (frictions ChatGPT cross-validation + standard pédagogique). System prompt unique = \`tutor/v1.1.0\` rôle élève (les rôles teacher/admin/superadmin sont gated Stage B2 — system prompts par rôle pas encore créés).`,
+    `**Stage B1 LITE** : matrice ${models.length} modèles × ${EVAL_FIXTURES.length} fixtures EVAL_FIXTURES (frictions ChatGPT cross-validation + standard pédagogique). System prompt unique = \`${TUTOR_PROMPT_VERSION}\` rôle élève (les rôles teacher/admin/superadmin sont gated Stage B2 — system prompts par rôle pas encore créés).`,
   );
   lines.push('');
 

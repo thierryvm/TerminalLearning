@@ -33,17 +33,24 @@
  * super_admin) with FR-only sections. NL/EN/DE fallback to FR (the LLM is
  * multilingual and answers in the user's language even when system prompt
  * is FR). NL/EN/DE translation backlogged as sub-task post-merge.
+ *
+ * PR Sécu IA (chantier 30/05/2026) bumps two prompts:
+ *  - student → tutor/v1.1.1: adds the pedagogical-frontier refusal clause
+ *    (F-6) so the tutor never emits a turn-key offensive payload.
+ *  - super_admin → superadmin/v1.0.1: drops literal secret env-var names and
+ *    the prod project_id from the prompt body (F-2) — refusal behaviour
+ *    unchanged. teacher/admin prompts untouched.
  */
 
-import { buildTutorPromptV1_1_0 } from './prompts/tutor-v1.1.0';
+import { buildTutorPromptV1_1_1 } from './prompts/tutor-v1.1.1';
 import { buildTeacherPromptV1_0_0 } from './prompts/teacher-v1.0.0';
 import { buildAdminPromptV1_0_0 } from './prompts/admin-v1.0.0';
-import { buildSuperadminPromptV1_0_0 } from './prompts/superadmin-v1.0.0';
+import { buildSuperadminPromptV1_0_1 } from './prompts/superadmin-v1.0.1';
 
-export const TUTOR_PROMPT_VERSION = 'tutor/v1.1.0';
+export const TUTOR_PROMPT_VERSION = 'tutor/v1.1.1';
 export const TEACHER_PROMPT_VERSION = 'teacher/v1.0.0';
 export const ADMIN_PROMPT_VERSION = 'admin/v1.0.0';
-export const SUPERADMIN_PROMPT_VERSION = 'superadmin/v1.0.0';
+export const SUPERADMIN_PROMPT_VERSION = 'superadmin/v1.0.1';
 
 /**
  * Literal type of the currently shipped student prompt version, derived
@@ -117,9 +124,9 @@ export function getSystemPrompt(opts: SystemPromptOpts): string {
     case 'institution_admin':
       return buildAdminPromptV1_0_0(opts.lang);
     case 'super_admin':
-      return buildSuperadminPromptV1_0_0(opts.lang);
+      return buildSuperadminPromptV1_0_1(opts.lang);
     case 'student':
     default:
-      return buildTutorPromptV1_1_0(opts.lang, opts.mode);
+      return buildTutorPromptV1_1_1(opts.lang, opts.mode);
   }
 }
