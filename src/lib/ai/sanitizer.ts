@@ -90,6 +90,12 @@ const DELIMITER_RX =
 // 20 chars ≈ 15 bytes decoded — under that, payloads are too short to matter.
 const BASE64_TOKEN_RX = /[A-Za-z0-9+/]{20,}={0,2}/g;
 
+// Single shared decoder reused by every decode pass (base64 + hex). `decode()`
+// without `{ stream: true }` is a stateless one-shot, so one instance is safe
+// across calls and avoids re-allocating a TextDecoder per token on large or
+// adversarial inputs. (Sourcery PR #330.)
+const UTF8_FATAL_DECODER = new TextDecoder('utf-8', { fatal: true });
+
 function isInjection(text: string): boolean {
   return INJECTION_PATTERNS.some((rx) => rx.test(text));
 }
@@ -101,7 +107,7 @@ function tryDecodeBase64(token: string): string | null {
     const binary = atob(token);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return UTF8_FATAL_DECODER.decode(bytes);
   } catch {
     return null;
   }
@@ -152,7 +158,7 @@ function tryDecodeHex(token: string): string | null {
     for (let i = 0; i < bytes.length; i++) {
       bytes[i] = parseInt(hexOnly.slice(i * 2, i * 2 + 2), 16);
     }
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return UTF8_FATAL_DECODER.decode(bytes);
   } catch {
     return null;
   }
@@ -278,8 +284,14 @@ const DESTRUCTIVE_PATTERNS: readonly RegExp[] = [
   // requires the *weaponised* shape (host+port, /dev/tcp redirection, or the
   // nc exec flag) so a high-level concept mention survives — only the turn-key
   // command is redacted.
-  /\b(?:ba|z|k)?sh\s+-i\b[^\n]*\/dev\/(?:tcp|udp)\//gi,   // bash -i >& /dev/tcp/<h>/<p>
-  /\/dev\/(?:tcp|udp)\/[^\s/]+\/\d+/gi,                   // /dev/tcp/<host>/<port>
+  // Pattern 1 caviarde la commande COMPLÈTE pour un rendu propre, mais le gap
+  // `bash -i … /dev/tcp/` est borné à 40 chars (Sourcery PR #330 : éviter de
+  // manger une ligne d'explication). Ce borneage est SÛR parce que la primitive
+  // réseau létale est portée par le pattern 2 ci-dessous, qui matche
+  // `/dev/(tcp|udp)/<host>/<port>` indépendamment du préfixe et de la distance —
+  // au-delà de 40 chars, la commande reste neutralisée (socket → placeholder).
+  /\b(?:ba|z|k)?sh\s+-i\b[^\n]{0,40}\/dev\/(?:tcp|udp)\//gi, // bash -i >& /dev/tcp/<h>/<p>
+  /\/dev\/(?:tcp|udp)\/[^\s/]+\/\d+/gi,                   // /dev/tcp/<host>/<port> (primitive réelle)
   /\bnc(?:at)?\s+[^\n;|]*-e\s+\/?\w/gi,                   // nc/ncat -e <shell> backdoor
 ];
 
