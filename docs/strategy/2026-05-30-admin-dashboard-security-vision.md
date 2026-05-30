@@ -129,11 +129,11 @@ V1 (PR #90, avril) = automation contenu sécurité, couplé TL. **V2 = harnais d
 
 ---
 
-## 7. Décisions à valider (@thierry)
+## 7. Décisions — VALIDÉES @thierry (30/05/2026)
 
-1. **Pivot Étape 3** : email Resend par ticket → **centre de notif dashboard Realtime + push PWA** ? (reco : oui)
-2. **Priorité** : sécurité-first (audit agents + Sentinelle V2) avant Phase 9.B, ou en parallèle ?
-3. **Budget** : tout en free tier ($0) ; Vercel Drains (analytics avancées) reste différé (Pro $20/mois) ?
+1. ✅ **Pivot Étape 3 VALIDÉ** : email Resend par ticket → **centre de notif dashboard Realtime + push PWA**. Rationale @thierry : « le natif est toujours mieux et surtout gratuit ». Resend abandonné pour v1 (au plus un digest natif plus tard).
+2. ✅ **Priorité sécurité** : timing délégué à @cc-tl (« quand tu le jugeras le plus utile »). Rappel @thierry : utiliser **dynamic cowork** (multi-agents parallèles) pour l'audit agents + Sentinelle V2.
+3. ✅ **Budget — contrainte forte, NON négociable** : **free tier + natif UNIQUEMENT, $0**. Pas de service payant (Vercel Drains Pro différé indéfiniment). Contexte : @thierry finance déjà l'IA (~108 €/mois) sur une allocation mutuelle limitée — toute proposition payante est exclue par défaut. Toujours chercher la solution native/gratuite d'abord.
 
 ---
 
