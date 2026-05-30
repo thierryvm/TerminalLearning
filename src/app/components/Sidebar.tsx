@@ -4,9 +4,11 @@ import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser, Briefcase,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser, Briefcase, LifeBuoy,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
+import { useAuth } from '../context/AuthContext';
+import { SupportTicketModal } from './support/SupportTicketModal';
 import { curriculum } from '../data/curriculum';
 import { useProgress } from '../context/ProgressContext';
 import { useEnvironment, ENV_META, type SelectedEnvironment } from '../context/EnvironmentContext';
@@ -26,6 +28,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { isLessonCompleted, getModuleProgress, overallProgress, syncStatus, unlockTree } = useProgress();
   const { selectedEnv, setEnvironment } = useEnvironment();
   const { role } = useUserRole();
+  const { user } = useAuth();
+  // Support ticket modal (Sprint 2.C Étape 2) — gated by auth : the ticket RLS
+  // requires auth.uid(), so an anonymous visitor never sees the trigger.
+  const [supportOpen, setSupportOpen] = useState(false);
   const canSeeTeacherEntry = role === 'teacher' || role === 'super_admin';
   const canSeeInstitutionEntry = role === 'institution_admin' || role === 'super_admin';
   const canSeeAdminEntry = role === 'super_admin';
@@ -339,6 +345,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Settings size={16} />
             Paramètres IA
           </NavLink>
+          {/* Sprint 2.C Étape 2 — support ticket trigger. Button (not NavLink) :
+              opens a modal, not a route. Auth-gated : the ticket RLS needs
+              auth.uid(), so anonymous visitors never see it. */}
+          {user && (
+            <Button
+              type="button"
+              variant="tl-sidebar-row"
+              size="tl-sidebar-row"
+              onClick={() => setSupportOpen(true)}
+              className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)]"
+            >
+              <LifeBuoy size={16} />
+              <span className="flex-1 text-left">Aide &amp; feedback</span>
+            </Button>
+          )}
         </nav>
 
         {/* Modules */}
@@ -479,6 +500,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           />
         </div>
       </aside>
+
+      {supportOpen && user && (
+        <SupportTicketModal userId={user.id} onClose={() => setSupportOpen(false)} />
+      )}
     </>
   );
 }
