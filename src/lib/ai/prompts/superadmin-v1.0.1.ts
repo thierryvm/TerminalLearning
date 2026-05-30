@@ -100,12 +100,17 @@ Règles d'affinage :
  */
 export function buildSuperadminPromptV1_0_1(lang: TutorLang): string {
   // Explicit fallback rather than silent ignore — Sourcery PR #291 review.
+  // `default` returns FR too, so a future TutorLang member added without
+  // updating this switch degrades to the FR prompt instead of throwing on
+  // `sections.scope` (Sourcery PR #330 bug_risk).
   const sections = (() => {
     switch (lang) {
       case 'fr':
       case 'nl':
       case 'en':
       case 'de':
+        return FR;
+      default:
         return FR;
     }
   })();
