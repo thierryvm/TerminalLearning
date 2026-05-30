@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router';
+import { NavLink, useNavigate, useLocation } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
@@ -61,14 +61,24 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       return next;
     });
   };
-  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    curriculum.forEach((m) => { init[m.id] = true; });
-    return init;
-  });
+  // Module actif déduit de la route leçon (/app/learn/:moduleId/:lessonId).
+  // null sur le dashboard ou toute page hors leçon.
+  const location = useLocation();
+  const activeModuleId = location.pathname.match(/\/app\/learn\/([^/]+)/)?.[1] ?? null;
+
+  // `expandedModules` ne stocke QUE les overrides explicites de l'utilisateur.
+  // L'état effectif est dérivé au rendu : expandedModules[id] ?? (id === activeModuleId).
+  // → par défaut seul le module actif est ouvert (les autres repliés), ce qui supprime
+  // la sidebar interminable d'avant (tous forcés ouverts = 65 leçons d'un coup, pénible
+  // sur mobile). Le module précédemment actif se replie en changeant de leçon, sauf si
+  // l'utilisateur l'a explicitement ouvert. Dérivation pure = pas de setState en effet.
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
   const toggleModule = (id: string) => {
-    setExpandedModules((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpandedModules((prev) => {
+      const effective = prev[id] ?? (id === activeModuleId);
+      return { ...prev, [id]: !effective };
+    });
   };
 
   const handleLessonClick = (moduleId: string, lessonId: string) => {
@@ -368,7 +378,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
-            const isExpanded = expandedModules[mod.id];
+            const isExpanded = expandedModules[mod.id] ?? (mod.id === activeModuleId);
             const unlockStatus = unlockTree.find((u) => u.moduleId === mod.id);
             const locked = unlockStatus ? !unlockStatus.unlocked : false;
 
