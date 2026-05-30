@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router';
+import { NavLink, useNavigate, useMatch } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
@@ -21,6 +21,17 @@ import { EnvPill } from './ui/env-pill';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+// État d'expansion effectif d'un module : un override utilisateur explicite prime,
+// sinon le module est ouvert seulement s'il est le module actif. Source unique
+// partagée par toggleModule et le rendu (évite toute divergence si la règle évolue).
+function isModuleExpanded(
+  overrides: Record<string, boolean>,
+  id: string,
+  activeModuleId: string | null,
+): boolean {
+  return overrides[id] ?? (id === activeModuleId);
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -61,10 +72,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       return next;
     });
   };
-  // Module actif déduit de la route leçon (/app/learn/:moduleId/:lessonId).
-  // null sur le dashboard ou toute page hors leçon.
-  const location = useLocation();
-  const activeModuleId = location.pathname.match(/\/app\/learn\/([^/]+)/)?.[1] ?? null;
+  // Module actif déduit de la route leçon (/app/learn/:moduleId/:lessonId) via le
+  // matching natif du routeur (useMatch) plutôt qu'une regex sur pathname : reste
+  // aligné sur la définition de route et ne casse pas silencieusement si la route
+  // évolue (base path, emboîtement). null sur le dashboard ou toute page hors leçon.
+  const learnMatch = useMatch('/app/learn/:moduleId/*');
+  const activeModuleId = learnMatch?.params.moduleId ?? null;
 
   // `expandedModules` ne stocke QUE les overrides explicites de l'utilisateur.
   // L'état effectif est dérivé au rendu : expandedModules[id] ?? (id === activeModuleId).
@@ -75,10 +88,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
   const toggleModule = (id: string) => {
-    setExpandedModules((prev) => {
-      const effective = prev[id] ?? (id === activeModuleId);
-      return { ...prev, [id]: !effective };
-    });
+    setExpandedModules((prev) => ({ ...prev, [id]: !isModuleExpanded(prev, id, activeModuleId) }));
   };
 
   const handleLessonClick = (moduleId: string, lessonId: string) => {
@@ -378,7 +388,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
-            const isExpanded = expandedModules[mod.id] ?? (mod.id === activeModuleId);
+            const isExpanded = isModuleExpanded(expandedModules, mod.id, activeModuleId);
             const unlockStatus = unlockTree.find((u) => u.moduleId === mod.id);
             const locked = unlockStatus ? !unlockStatus.unlocked : false;
 
