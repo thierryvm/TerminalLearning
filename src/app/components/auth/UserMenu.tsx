@@ -186,11 +186,15 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions }: UserMen
             </div>
           </div>
           <div className="py-1" role="none">
+            {/* Survol emerald cohérent avec la variante card (sidebar /app) :
+                l'ancien hover:bg-[var(--github-border-secondary)] était IDENTIQUE
+                au fond du popover → survol invisible. Langage couleur unifié :
+                Mon profil = emerald, Se déconnecter = rouge (cf. card ci-dessus). */}
             <Link
               to="/app/profile"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-text-primary)] font-mono hover:bg-[var(--github-border-secondary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+              className="flex items-center w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-text-primary)] font-mono hover:bg-emerald-500/10 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
             >
               <CircleUser size={14} aria-hidden="true" />
               Mon profil
