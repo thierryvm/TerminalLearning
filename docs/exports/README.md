@@ -4,7 +4,7 @@ This directory contains data exports from Terminal Learning's curriculum for ext
 
 ## curriculum.csv
 
-**Export of 65 lessons from 11 modules** — useful for pedagogical collaborators, curriculum review, or integration with external tools.
+**Export of 66 lessons from 11 modules** — useful for pedagogical collaborators, curriculum review, or integration with external tools.
 
 ### Columns
 

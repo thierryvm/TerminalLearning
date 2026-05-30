@@ -4,6 +4,7 @@ import {
   validatePwd,
   validateLs,
   validateLsLa,
+  validateCommandAnatomy,
   validateCd,
   validateMkdir,
   validateTouch,
@@ -109,6 +110,19 @@ describe('validateLsLa', () => {
   it('accepts "dir -Force" on windows', () => expect(validateLsLa('dir -Force', win)).toBe(true));
   it('rejects bare "ls"', () => expect(validateLsLa('ls', linux)).toBe(false));
   it('rejects "ls -l" (no -a)', () => expect(validateLsLa('ls -l', linux)).toBe(false));
+});
+
+describe('validateCommandAnatomy', () => {
+  it('accepts "man ls" on linux', () => expect(validateCommandAnatomy('man ls', linux)).toBe(true));
+  it('accepts "man ls" on macos', () => expect(validateCommandAnatomy('man ls', macos)).toBe(true));
+  it('accepts "man cd" (any command name)', () => expect(validateCommandAnatomy('man cd', linux)).toBe(true));
+  it('accepts "ls --help" on linux', () => expect(validateCommandAnatomy('ls --help', linux)).toBe(true));
+  it('accepts "man ls" on windows (simulator)', () => expect(validateCommandAnatomy('man ls', win)).toBe(true));
+  it('accepts "Get-Help ls" on windows (forward-compat PR #5)', () => expect(validateCommandAnatomy('Get-Help ls', win)).toBe(true));
+  it('accepts "ls -?" on windows', () => expect(validateCommandAnatomy('ls -?', win)).toBe(true));
+  it('rejects bare "man"', () => expect(validateCommandAnatomy('man', linux)).toBe(false));
+  it('rejects "ls -la" (not a help invocation)', () => expect(validateCommandAnatomy('ls -la', linux)).toBe(false));
+  it('rejects "Get-Help ls" on linux (no PowerShell there)', () => expect(validateCommandAnatomy('Get-Help ls', linux)).toBe(false));
 });
 
 describe('validateCd', () => {

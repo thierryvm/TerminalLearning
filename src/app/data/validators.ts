@@ -22,6 +22,18 @@ export const validateLsLa: ValidateFn = (cmd, env) => {
     return /^ls\s+(-la|-al|-a -l|-l -a)$/.test(c);
   };
 
+export const validateCommandAnatomy: ValidateFn = (cmd, env) => {
+    const c = cmd.trim().toLowerCase();
+    // The "Anatomie d'une commande" lesson asks the learner to open a command's
+    // manual to discover its options. Accept `man <cmd>` (engine-supported on
+    // every env today) plus forward-compatible forms for PR #5 (help/man
+    // OS-specific): `get-help <cmd>` on Windows, and `<cmd> --help` / `-?` / `/?`.
+    if (env === 'windows') {
+      return /^(get-help|man)\s+[\w.-]+$/.test(c) || /^[\w.-]+\s+(--help|-\?|\/\?)$/.test(c);
+    }
+    return /^man\s+[\w.-]+$/.test(c) || /^[\w.-]+\s+--help$/.test(c);
+  };
+
 export const validateCd: ValidateFn = (cmd, env) => {
     const c = cmd.trim().toLowerCase();
     if (env === 'windows') return ['cd documents', 'set-location documents', 'sl documents'].includes(c);

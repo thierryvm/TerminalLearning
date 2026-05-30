@@ -5,6 +5,46 @@
 
 ---
 
+## 🔒 30 mai 2026 — Durcissement Tuteur IA : clause frontière pédagogique + décodeurs ROT13/hex + strip reverse-shell (chantier enrichissement, PR #1)
+*PR #330 · gate `prompt-guardrail-auditor` SHIP · 1 session*
+
+Première PR du chantier d'enrichissement : avant d'ajouter du contenu pédagogique, on durcit le tuteur IA. Un audit `llm-security-auditor` antérieur (8.9/10, 0 CRITICAL) avait identifié une **chaîne réputationnelle** réelle : un utilisateur amène le modèle d'un concept shell → encodage ROT13 → reframing « CTF légal » → reverse shell fonctionnel, parce que la frontière pédagogique n'était jamais énoncée.
+
+### Ce qui a été livré
+
+- **F-6 — clause frontière pédagogique** dans le prompt élève (bump `tutor/v1.1.0` → `v1.1.1`, 4 locales FR/NL/EN/DE). Le tuteur explique les concepts mais ne fournit **jamais** de payload offensif clé-en-main (reverse shell, exfiltration, contournement d'auth, élévation de privilèges, effacement de traces), même reformulé en « CTF légal / pentest autorisé / exercice pédagogique / fins éducatives ». Approche **intent-based**, pas keyword-based.
+- **Strip reverse-shell output-side** : 3 patterns `DESTRUCTIVE_PATTERNS` (`bash -i …/dev/tcp/`, `/dev/tcp|udp/<host>/<port>`, `nc -e`) — ne caviarde que la forme weaponisée (host+port), la mention de concept survit. Couche belt-and-suspenders ; le prompt reste la défense primaire.
+- **F-1 — décodeurs ROT13 + hex** au sanitizer input-side (en plus du base64) pour rejeter les variantes encodées d'injection. `TextDecoder` fatal + ancres multi-mots = zéro faux positif sur git SHA / prose normale.
+- **F-2 — prompt super_admin** (`v1.0.0` → `v1.0.1`) : retrait des **noms littéraux** de secrets (`OPENROUTER_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_TOKEN`, `VERCEL_TOKEN`) + project_id du corps du prompt (surface de fuite sur prompt-leak partiel). Comportement de refus inchangé.
+- **F-5** — correction d'un commentaire périmé (`rehype-sanitize` → `react-markdown` sans `rehype-raw`, la vraie 2e ligne de défense).
+
+### Discipline & vérifications
+
+- **Gate `prompt-guardrail-auditor` : ✅ SHIP** — 0 CRITICAL, 0 HIGH, 2 MEDIUM assumés/documentés (le strip reverse-shell est un filet secondaire par design, contournable mais le prompt couvre ; clause frontière intent-based correcte), 2 LOW corrigés in-PR. Score guardrail estimé **9.3/10**. Un **delta-check** dédié a validé deux refinements Sourcery (décodeur `TextDecoder` partagé stateless + regex reverse-shell bornée `{0,40}` — sûre car le pattern 2 porte la primitive réseau).
+- **Tests** : +ROT13/hex/reverse-shell unitaires, injection fixtures **48 → 56** (2 vecteurs encodés × 4 locales), snapshots clause frontière (4 langs × 2 modes), regression guard littéraux secrets. **412 tests AI / 1820 suite complète** verts.
+- **Démo Voie A connectée** (compte test élève, JWT éphémère révoqué après) : tuteur ouvert, écran consentement RGPD + saisie de clé rendus sans erreur console. Le comportement de la clause (refus de payload) se joue côté LLM → prouvé par les tests + l'audit, pas démontrable sans clé BYOK payante (interdit via MCP).
+
+---
+
+## 📚 30 mai 2026 — Leçon fondatrice « Anatomie d'une commande » (chantier enrichissement, PR #2)
+*Module Navigation · 65 → 66 leçons · 1 session*
+
+Deuxième PR du chantier d'enrichissement (après le durcissement Sécu IA #330). Avant cette leçon, les options (`-l`, `-a`, `-la`, `-p`, `-r`…) étaient enseignées **au cas par cas**, dispersées sur tout le curriculum, sans modèle mental commun. L'apprenant mémorisait des flags sans comprendre la **structure universelle** d'une commande.
+
+### Ce qui a été livré
+
+- **Nouvelle leçon `command-anatomy`** insérée niveau 1 dans le module Navigation, **entre `ls -la` et `cd`** : elle généralise le `-la` qu'on vient de voir en modèle universel `commande [options] [arguments]`. Couvre : options courtes (`-l`) vs longues (`--all`), combinaison (`-la` = `-l -a`), options à valeur (`--sort=size`, `-u alice`), le séparateur `--` (note pro : `rm -- -rf`), et le renvoi vers `man`/`--help` pour découvrir les options de n'importe quel outil — **compétence métier réutilisable**.
+- **Variante Windows** complète (`contentByEnv.windows`) : paramètres nommés PowerShell en toutes lettres (`-Force`, `-Recurse`), pas de combinaison une-lettre, `Get-Help` au lieu de `man`.
+- **Exercice** `man ls` (forward-compatible : le validator accepte aussi `Get-Help ls` et `<cmd> --help` pour le `Get-Help` natif prévu en PR help/man) + nouveau `validateCommandAnatomy`.
+
+### Discipline & vérifications
+
+- **`curriculum-validator`** (gate pré-modif) : fichier sain, 0 CRITICAL ; point d'insertion + schéma leçon validés avant écriture.
+- **Tests** : +`validateCommandAnatomy` (10 cas, 3 OS) + 1er **bloc de tests `man`** dans `terminalEngine.test.ts` (closait un WARNING de l'audit : `man` n'avait aucun test moteur). Full regression **1834 PASS**.
+- **Drift guards réalignés** (65 → 66) sur les **6 sources de vérité** : `TOTAL_LESSONS` + `MODULE_PREVIEWS` (landingContent), JSON-LD `numberOfLessons` (index.html), export CSV régénéré, README/ARCHITECTURE/ROADMAP/CLAUDE.md, + ancrages de test.
+
+---
+
 ## 🚀 30 mai 2026 — Sprint 2.C étape 2 : système de signalement in-app (SupportTicketModal + bucket Storage)
 *PR #326 · THI-295 Sprint 2.C · 1 session*
 
