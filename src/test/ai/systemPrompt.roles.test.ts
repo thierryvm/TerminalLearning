@@ -108,7 +108,15 @@ describe('per-role refusal clauses — guarantees against scope drift', () => {
 
   it('super_admin prompt refuses environment secrets exposure', () => {
     const prompt = getSystemPrompt({ ...BASE_OPTS, role: 'super_admin' });
-    expect(prompt).toMatch(/SUPABASE_SERVICE_ROLE_KEY|VERCEL_TOKEN|GITHUB_TOKEN/);
+    // superadmin/v1.0.1 (F-2, 30/05/2026) no longer spells out the literal
+    // secret env-var NAMES (SUPABASE_SERVICE_ROLE_KEY / VERCEL_TOKEN /
+    // GITHUB_TOKEN) — naming secrets in the guardrail is itself an
+    // info-disclosure surface on partial prompt leak. The refusal BEHAVIOUR
+    // is unchanged: assert the generic "never reveal active secrets" clause.
+    expect(prompt).toMatch(/secrets actifs de l'environnement/i);
+    expect(prompt).toMatch(/Je ne révèle jamais de secrets actifs/i);
+    // Regression guard: the literal secret names must NOT reappear in the body.
+    expect(prompt).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY|VERCEL_TOKEN|GITHUB_TOKEN/);
   });
 
   it('super_admin prompt refuses destructive actions execution (advisor-only)', () => {
