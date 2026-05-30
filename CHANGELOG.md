@@ -5,6 +5,25 @@
 
 ---
 
+## 📚 30 mai 2026 — Leçon fondatrice « Anatomie d'une commande » (chantier enrichissement, PR #2)
+*Module Navigation · 65 → 66 leçons · 1 session*
+
+Deuxième PR du chantier d'enrichissement (après le durcissement Sécu IA #330). Avant cette leçon, les options (`-l`, `-a`, `-la`, `-p`, `-r`…) étaient enseignées **au cas par cas**, dispersées sur tout le curriculum, sans modèle mental commun. L'apprenant mémorisait des flags sans comprendre la **structure universelle** d'une commande.
+
+### Ce qui a été livré
+
+- **Nouvelle leçon `command-anatomy`** insérée niveau 1 dans le module Navigation, **entre `ls -la` et `cd`** : elle généralise le `-la` qu'on vient de voir en modèle universel `commande [options] [arguments]`. Couvre : options courtes (`-l`) vs longues (`--all`), combinaison (`-la` = `-l -a`), options à valeur (`--sort=size`, `-u alice`), le séparateur `--` (note pro : `rm -- -rf`), et le renvoi vers `man`/`--help` pour découvrir les options de n'importe quel outil — **compétence métier réutilisable**.
+- **Variante Windows** complète (`contentByEnv.windows`) : paramètres nommés PowerShell en toutes lettres (`-Force`, `-Recurse`), pas de combinaison une-lettre, `Get-Help` au lieu de `man`.
+- **Exercice** `man ls` (forward-compatible : le validator accepte aussi `Get-Help ls` et `<cmd> --help` pour le `Get-Help` natif prévu en PR help/man) + nouveau `validateCommandAnatomy`.
+
+### Discipline & vérifications
+
+- **`curriculum-validator`** (gate pré-modif) : fichier sain, 0 CRITICAL ; point d'insertion + schéma leçon validés avant écriture.
+- **Tests** : +`validateCommandAnatomy` (10 cas, 3 OS) + 1er **bloc de tests `man`** dans `terminalEngine.test.ts` (closait un WARNING de l'audit : `man` n'avait aucun test moteur). Full regression **1834 PASS**.
+- **Drift guards réalignés** (65 → 66) sur les **6 sources de vérité** : `TOTAL_LESSONS` + `MODULE_PREVIEWS` (landingContent), JSON-LD `numberOfLessons` (index.html), export CSV régénéré, README/ARCHITECTURE/ROADMAP/CLAUDE.md, + ancrages de test.
+
+---
+
 ## 🚀 30 mai 2026 — Sprint 2.C étape 2 : système de signalement in-app (SupportTicketModal + bucket Storage)
 *PR #326 · THI-295 Sprint 2.C · 1 session*
 

@@ -14,7 +14,7 @@ import type { SelectedEnvironment } from '../context/EnvironmentContext';
 // landing page only needs the totals, not the full data. A drift test in
 // `src/test/landingTotals.test.ts` re-imports both and fails if these
 // constants get out of sync with the actual catalogue/curriculum.
-export const TOTAL_LESSONS = 65;
+export const TOTAL_LESSONS = 66;
 export const TOTAL_COMMANDS = 27;
 /** Count of environments with `status: 'active'` in `types/curriculum.ts`. */
 export const ACTIVE_ENVIRONMENTS_COUNT = 3;
@@ -231,7 +231,7 @@ export interface ModulePreview {
 }
 
 export const MODULE_PREVIEWS: ModulePreview[] = [
-  { id: 'navigation', title: 'Navigation', description: 'Maîtrisez vos déplacements dans le système de fichiers', iconName: 'Compass', color: '#22c55e', level: 1, firstLessonId: 'orientation', lessonCount: 5 },
+  { id: 'navigation', title: 'Navigation', description: 'Maîtrisez vos déplacements dans le système de fichiers', iconName: 'Compass', color: '#22c55e', level: 1, firstLessonId: 'orientation', lessonCount: 6 },
   { id: 'fichiers', title: 'Fichiers & Dossiers', description: 'Créez, copiez, déplacez et supprimez fichiers et répertoires', iconName: 'FolderOpen', color: '#3b82f6', level: 1, firstLessonId: 'mkdir', lessonCount: 5 },
   { id: 'lecture', title: 'Lecture de fichiers', description: 'Affichez, recherchez et analysez le contenu des fichiers', iconName: 'FileText', color: '#a855f7', level: 1, firstLessonId: 'cat', lessonCount: 4 },
   { id: 'permissions', title: 'Permissions', description: "Contrôlez l'accès aux fichiers et répertoires", iconName: 'Shield', color: '#f59e0b', level: 2, firstLessonId: 'comprendre-permissions', lessonCount: 5 },

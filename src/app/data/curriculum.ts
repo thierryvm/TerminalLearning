@@ -1,5 +1,5 @@
 import {
-  validateOrientation, validatePwd, validateLs, validateLsLa, validateCd,
+  validateOrientation, validatePwd, validateLs, validateLsLa, validateCommandAnatomy, validateCd,
   validateMkdir, validateTouch, validateCp, validateMv, validateRm,
   validateCat, validateHeadTail, validateGrep, validateWc,
   validateComprendrePermissions, validateChmod, validateChown, validateSudo, validateSecurityPermissions,
@@ -265,6 +265,72 @@ export const curriculum: Module[] = [
           },
           validate: validateLsLa,
           successMessage: 'Bravo ! Vous maîtrisez maintenant les options de listage avancées.',
+        },
+      },
+      {
+        id: 'command-anatomy',
+        title: 'Anatomie d\'une commande',
+        description: 'Le modèle universel : commande, options et arguments',
+        blocks: [
+          {
+            type: 'text',
+            content:
+              'Vous venez d\'utiliser `ls -la`. Derrière, il y a un **modèle universel** que partagent presque toutes les commandes du terminal. Le comprendre une fois, c\'est savoir lire **n\'importe quelle** commande.',
+          },
+          {
+            type: 'code',
+            content: 'ls        -la           Documents\n│          │                │\ncommande   options       argument (sur quoi agir)',
+            label: 'commande [options] [arguments]',
+            contentByEnv: {
+              windows: 'Get-ChildItem   -Force        Documents\n│                 │              │\ncommande          paramètre     argument (sur quoi agir)',
+            },
+          },
+          {
+            type: 'text',
+            content:
+              '**Les options** modifient le comportement de la commande. Il en existe deux écritures :\n- **courte** : un tiret + une lettre — `-l`, `-a`\n- **longue** : deux tirets + un mot — `--all`, `--format=long`\n\nBeaucoup d\'outils acceptent les deux : `-a` et `--all` font la même chose. La forme longue est plus lisible (utile dans les scripts), la courte plus rapide à taper.',
+            contentByEnv: {
+              windows: 'En PowerShell, les options s\'appellent des **paramètres** et s\'écrivent en toutes lettres avec un seul tiret : `-Force`, `-Recurse`, `-Name`. Il n\'y a pas de forme courte d\'une seule lettre comme `-l` sous Linux/macOS.',
+            },
+          },
+          {
+            type: 'text',
+            content:
+              '**Combiner les options courtes** : `-la` est un raccourci pour `-l -a`. L\'ordre n\'a pas d\'importance — `-la` et `-al` sont identiques.',
+            contentByEnv: {
+              windows: 'En PowerShell, on ne combine pas les paramètres en une seule lettre : on les liste séparément, par ex. `Get-ChildItem -Force -Recurse`.',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              '**Une option peut attendre une valeur.** Exemples : `--sort=size` (trier par taille) ou `-u alice` (préciser un utilisateur). Ce n\'est plus un simple oui/non : la valeur fait partie de l\'option.',
+          },
+          {
+            type: 'tip',
+            content:
+              'Pour découvrir les options d\'un outil, deux réflexes : `man <commande>` (le manuel complet) ou `<commande> --help` (l\'aide rapide) — comme vu dans la leçon « Comment demander de l\'aide ».',
+            contentByEnv: {
+              windows: 'En PowerShell, le réflexe est `Get-Help <commande>` (ex. `Get-Help Get-ChildItem`). L\'équivalent rapide est `<commande> -?`.',
+            },
+          },
+          {
+            type: 'info',
+            content:
+              '**Note de pro — le séparateur `--`.** Tout ce qui suit `--` est traité comme un argument, et non plus comme une option. Pratique pour agir sur un fichier dont le nom commence par un tiret : `rm -- -rf` supprime le fichier nommé `-rf` au lieu d\'interpréter `-rf` comme des options.',
+          },
+        ],
+        exercise: {
+          instruction: 'Affichez le manuel de `ls` pour explorer toutes ses options : tapez `man ls`.',
+          instructionByEnv: {
+            windows: 'En PowerShell, l\'équivalent du manuel est `Get-Help`. Dans ce simulateur, tapez `man ls` pour voir le principe (le `Get-Help` natif arrive bientôt).',
+          },
+          hint: 'Tapez "man ls" — `man` (manual) suivi du nom de la commande.',
+          hintByEnv: {
+            windows: 'Tapez "man ls" ici ; en PowerShell réel ce serait "Get-Help ls".',
+          },
+          validate: validateCommandAnatomy,
+          successMessage: 'Parfait ! Vous savez maintenant lire et explorer n\'importe quelle commande : nom, options (courtes ou longues), arguments.',
         },
       },
       {

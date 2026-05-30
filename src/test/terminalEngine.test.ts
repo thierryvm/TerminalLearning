@@ -117,6 +117,35 @@ describe('help', () => {
   });
 });
 
+// ─── man ────────────────────────────────────────────────────────────────────
+// Backs the "Anatomie d'une commande" lesson exercise (man <cmd>) and closes
+// the curriculum-validator WARNING that `man` had no engine test.
+
+describe('man', () => {
+  it('returns the ls manual page (linux)', () => {
+    const result = processCommand(makeState(), 'man ls');
+    const text = result.lines.map((l) => l.text).join('\n');
+    expect(result.lines[0].type).not.toBe('error');
+    expect(text).toContain('Liste le contenu');
+  });
+
+  it('returns the ls manual page on windows env too (simulator)', () => {
+    const result = processCommand(makeState(), 'man ls', 'windows');
+    expect(result.lines[0].type).not.toBe('error');
+  });
+
+  it('errors when no command name is given', () => {
+    const result = processCommand(makeState(), 'man');
+    expect(result.lines[0].type).toBe('error');
+  });
+
+  it('errors for a command with no manual page', () => {
+    const result = processCommand(makeState(), 'man zzzznope');
+    expect(result.lines[0].type).toBe('error');
+    expect(result.lines[0].text).toContain('zzzznope');
+  });
+});
+
 // ─── unknown command ──────────────────────────────────────────────────────────
 
 describe('unknown command', () => {

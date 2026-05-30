@@ -3,6 +3,7 @@ navigation,Navigation,orientation,Comment demander de l'aide,Apprenez à vous re
 navigation,Navigation,pwd,pwd — Où suis-je ?,Affichez votre position exacte dans le système de fichiers,yes,custom
 navigation,Navigation,ls,ls — Lister les fichiers,Affichez le contenu d'un répertoire,yes,custom
 navigation,Navigation,ls-la,ls -la — Détails et fichiers cachés,"Affichez tous les détails d'un répertoire, y compris les fichiers cachés",yes,custom
+navigation,Navigation,command-anatomy,Anatomie d'une commande,"Le modèle universel : commande, options et arguments",yes,custom
 navigation,Navigation,cd,cd — Se déplacer,Naviguez entre les répertoires du système de fichiers,yes,custom
 fichiers,Fichiers & Dossiers,mkdir,mkdir — Créer des répertoires,Créez de nouveaux dossiers dans le système de fichiers,yes,custom
 fichiers,Fichiers & Dossiers,touch,touch — Créer des fichiers,Créez de nouveaux fichiers vides,yes,custom
@@ -49,6 +50,7 @@ github-collaboration,GitHub & Collaboration,git-remote,git remote — Connecter 
 github-collaboration,GitHub & Collaboration,git-push-pull,git push & pull — Synchroniser avec GitHub,Envoyez vos commits vers GitHub et récupérez les modifications de votre équipe,yes,custom
 github-collaboration,GitHub & Collaboration,git-fetch-clone,git fetch & clone — Récupérer et cloner,Clonez un dépôt existant et récupérez les mises à jour sans intégration automatique,yes,custom
 github-collaboration,GitHub & Collaboration,pull-requests,Pull Requests — Code Review & Collaboration,"Maîtrisez le workflow Pull Request, pilier de la collaboration professionnelle",yes,custom
+github-collaboration,GitHub & Collaboration,merge-strategies,"Stratégies de merge — Merge commit, Squash, Rebase","Choisissez la bonne stratégie de merge selon le contexte (feature, hotfix, historique propre)",yes,custom
 github-collaboration,GitHub & Collaboration,conflicts,Conflits de merge — Les résoudre comme un pro,Comprenez pourquoi les conflits apparaissent et apprenez à les résoudre avec méthode,yes,custom
 github-collaboration,GitHub & Collaboration,github-actions,GitHub Actions — CI/CD automatisé,"Automatisez vos tests, builds et déploiements avec GitHub Actions",yes,custom
 ia-dev,L'IA comme outil dev,ia-dev-intro,"L'IA en 2026 : un outil, pas un oracle",Comprendre ce que l'IA change réellement pour un développeur,yes,custom

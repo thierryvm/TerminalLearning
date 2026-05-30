@@ -2,9 +2,10 @@
 /**
  * Guard: anti-drift du compteur de leçons dans la doc markdown d'ÉTAT PRÉSENT.
  *
- * Contexte : le curriculum est passé à 65 leçons (Module 11 "IA", avril 2026),
- * mais le "64" a persisté dans plusieurs docs. Le garde-fou `seo.test.ts` ne
- * couvrait que le HTML/SEO public (numberOfLessons === 65), pas la doc markdown.
+ * Contexte : le curriculum est passé à 66 leçons (ajout « Anatomie d'une
+ * commande » au Module 1, mai 2026), mais un compteur obsolète peut persister
+ * dans plusieurs docs. Le garde-fou `seo.test.ts` ne couvre que le HTML/SEO
+ * public (numberOfLessons dérivé), pas la doc markdown.
  * Ce test étend la couverture aux fichiers de doc qui affirment un état présent.
  *
  * Exclus volontairement (traces historiques datées — les "corriger" = falsifier
@@ -30,14 +31,14 @@ const PRESENT_STATE_DOCS = [
   'docs/exports/README.md',
 ];
 
-// Détecte un compteur de leçons obsolète "64 lessons" / "64 leçon(s)".
-const STALE_LESSON_COUNT = /64[\s-]*(le[çc]on|lesson)/i;
+// Détecte un compteur de leçons obsolète "65 lessons" / "65 leçon(s)".
+const STALE_LESSON_COUNT = /65[\s-]*(le[çc]on|lesson)/i;
 
 describe('doc lesson count — anti-drift guard', () => {
-  it('le curriculum compte bien 65 leçons (ancrage source de vérité)', () => {
+  it('le curriculum compte bien 66 leçons (ancrage source de vérité)', () => {
     // Si cette assertion casse, le curriculum a changé de taille : mettre à
     // jour la doc d'état présent ET le pattern de ce test ensemble.
-    expect(getTotalLessons()).toBe(65);
+    expect(getTotalLessons()).toBe(66);
   });
 
   it.each(PRESENT_STATE_DOCS)(
@@ -48,7 +49,7 @@ describe('doc lesson count — anti-drift guard', () => {
       expect(
         match,
         match
-          ? `"${match[0]}" trouvé dans ${relPath} — le curriculum compte 65 leçons, pas 64. Corriger l'assertion d'état présent (l'historique CHANGELOG/STORY/audits/reports reste inchangé).`
+          ? `"${match[0]}" trouvé dans ${relPath} — le curriculum compte 66 leçons, pas 65. Corriger l'assertion d'état présent (l'historique CHANGELOG/STORY/audits/reports reste inchangé).`
           : undefined,
       ).toBeNull();
     },

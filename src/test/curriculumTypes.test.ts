@@ -96,10 +96,10 @@ describe('curriculum types', () => {
       }
     });
 
-    it('total lessons should be 65', () => {
-      // 39 (Modules 1–8) + 7 (Module 9 Git) + 7 (Module 10 GitHub, +merge-strategies) + 12 (Module 11 IA) = 65
+    it('total lessons should be 66', () => {
+      // 40 (Modules 1–8, +command-anatomy in Navigation) + 7 (Module 9 Git) + 7 (Module 10 GitHub, +merge-strategies) + 12 (Module 11 IA) = 66
       const total = curriculum.reduce((acc, mod) => acc + mod.lessons.length, 0);
-      expect(total).toBe(65);
+      expect(total).toBe(66);
     });
 
     it('module ids are unique (no duplicate modules)', () => {
