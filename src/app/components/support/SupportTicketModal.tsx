@@ -12,13 +12,12 @@
  * in) because the underlying RLS requires auth.uid(); `userId` is passed in.
  */
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { X, LifeBuoy, CheckCircle2, AlertCircle, ImageUp } from 'lucide-react';
+import { X, LifeBuoy, CheckCircle2, AlertCircle, AlertTriangle, ImageUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import {
   submitTicket,
   isAllowedMime,
-  ALLOWED_SCREENSHOT_MIME,
   MAX_SCREENSHOT_BYTES,
   DESCRIPTION_MIN,
   DESCRIPTION_MAX,
@@ -36,7 +35,12 @@ const TYPE_OPTIONS: { value: SupportTicketType; label: string }[] = [
   { value: 'question', label: 'Question' },
 ];
 
-const ACCEPT_ATTR = ALLOWED_SCREENSHOT_MIME.join(',');
+// Broad picker on purpose : on iOS/Android `accept="image/*"` opens the full
+// photo library + camera in one tap (a screenshot is a PNG, instantly pickable;
+// iOS even transcodes HEIC → JPEG on upload). The strict allow-list is still
+// enforced by `handleFileChange` (client) + the bucket `allowed_mime_types`
+// (server) — so a non png/jpg/webp pick is rejected with a clear message.
+const ACCEPT_ATTR = 'image/*';
 const SCREENSHOT_LABEL = 'Capture d’écran (optionnel)';
 
 export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps) {
@@ -214,7 +218,7 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
                 maxLength={DESCRIPTION_MAX}
                 required
                 aria-describedby={descHintId}
-                placeholder="Décris ce qui ne va pas, ou ton idée…"
+                placeholder="Que s'est-il passé ? Ce que tu faisais, ce qui n'a pas marché, et ce que tu attendais. Plus c'est précis, plus on peut aider vite."
                 className="w-full rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] px-3 py-2 text-sm text-[var(--github-text-primary)] placeholder:text-[var(--github-text-secondary)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
               />
               <p id={descHintId} className="mt-1 text-xs text-[var(--github-text-secondary)]">
@@ -251,10 +255,16 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
               )}
             </div>
 
-            {/* PII disclaimer (micro-décision verrouillée 28/05 — pas de scrubber auto v1) */}
-            <p className="text-xs text-[var(--github-text-secondary)] bg-[var(--github-bg-secondary)] border border-[var(--github-border-primary)] rounded-lg px-3 py-2">
-              Ne partage pas d’email perso, mot de passe ou donnée sensible dans ce
-              formulaire.
+            {/* PII disclaimer — mis en évidence (micro-décision 28/05 : pas de scrubber auto v1). */}
+            <p
+              role="note"
+              className="flex items-start gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2"
+            >
+              <AlertTriangle size={15} className="mt-px shrink-0 text-amber-400" aria-hidden="true" />
+              <span>
+                Ne partage pas d’email perso, mot de passe ou <strong>donnée sensible</strong> dans
+                ce formulaire.
+              </span>
             </p>
 
             {error && (

@@ -29,7 +29,12 @@ export const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024; // 5 MB — mirror migratio
 export const ALLOWED_SCREENSHOT_MIME = ['image/png', 'image/jpeg', 'image/webp'] as const;
 export const DESCRIPTION_MIN = 10;
 export const DESCRIPTION_MAX = 5000;
-const SIGNED_URL_TTL_SECONDS = 604800; // 7 days — matches column comment (migration 028)
+// 1h TTL (was 7d) — security-auditor 2nd pass (30/05) Chain C: a stored signed
+// URL is an anonymous bearer (fetch with no auth → 200), so a leak (logs, Sentry,
+// shared link) granted days of access to a personal screenshot. 1h bounds that
+// window; the super_admin panel re-mints a fresh URL at read time (it has the
+// storage select-all policy), so the stored value expiring is harmless.
+const SIGNED_URL_TTL_SECONDS = 3600;
 
 type AllowedMime = (typeof ALLOWED_SCREENSHOT_MIME)[number];
 

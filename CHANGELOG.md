@@ -13,7 +13,8 @@ Deuxième étape du système de support : les utilisateurs connectés peuvent d�
 ### Ce qui a été livré
 
 - **Migration 030** — bucket Storage privé `support_screenshots` (5 Mo max, MIME png/jpg/webp en allow-list serveur) + **5 policies RLS** sur `storage.objects` : user upload/lit/supprime uniquement son dossier `{uid}/…` (`(storage.foldername(name))[1] = auth.uid()::text`), super_admin lit + supprime tout (triage + RGPD Art. 17). Appliquée sur prod.
-- **`submitTicket.ts`** — flux upload → URL signée 7j (format conforme à la contrainte DB 029 M1 `…/object/sign/support_screenshots/…`) → insert ticket, avec **cleanup best-effort** de l'objet orphelin si l'insert échoue. Mapping d'erreurs FR (codes RLS → Sentry, jamais à l'user).
+- **`submitTicket.ts`** — flux upload → URL signée **1h** (durcie depuis 7j, cf. audit 2e passe) → insert ticket, avec **cleanup best-effort** de l'objet orphelin si l'insert échoue. Mapping d'erreurs FR (codes RLS → Sentry, jamais à l'user).
+- **Migration 031** — durcissement de la contrainte `screenshot_url` (regex ancrée fin + caractères restreints) suite au **2e passage `security-auditor`** : la contrainte M1 (029) n'était ancrée qu'au début → un payload attribut-breakout (`…/x.png"><img onerror=…>`) était accepté (prouvé). Désormais rejeté (23514).
 - **`SupportTicketModal.tsx`** — modal popup (pattern `PWAInstallModal` + **focus-trap + Escape** pour l'a11y, que le modal de référence n'avait pas) : form 3 champs (type / description 10-5000 chars / capture), disclaimer PII (pas de scrubber auto v1), états succès/erreur + auto-close. Trigger « Aide & feedback » dans la Sidebar, **gated par `user`** (anonyme ne le voit pas — la RLS exige `auth.uid()`).
 - **Types** — `support_tickets` ajouté à `database.ts` (enums `SupportTicketType`/`SupportTicketStatus`).
 
@@ -22,8 +23,11 @@ Deuxième étape du système de support : les utilisateurs connectés peuvent d�
 - **Context7** consulté avant d'écrire : API Supabase Storage (`upload`/`createSignedUrl`/`remove` + RLS `storage.foldername`) confirmée à jour.
 - **3 audits gate-zero ALL GREEN** : `supabase-backend-auditor` SHIP (**11 tests adversariaux live prod** — path traversal, MIME spoof, oversize, cross-user signed URL : tous bloqués, 0 CRITICAL/0 HIGH) · `ui-auditor` clean (0 hex introduit) · `security-auditor` **9.3/10** (0 CRITICAL/0 HIGH).
 - **code-review** : 0 critical, 2 améliorations appliquées (double-`<label>` file input → un seul label + `aria-label` ; `isAllowedMime` dédupliqué).
-- **Tests** : 8 composant (jsdom) + **7 RLS bucket empiriques PROD** (REST+JWT, doctrine `feedback_rls_isolation_test_rest_only`, incl. T7 non-régression cross-user signed URL). Full regression **1765 → 1780 PASS**.
-- **Suivis tracés Étape 3/4** (non bloquants) : validation magic-bytes serveur (Edge Function, le MIME déclaré reste falsifiable), rate limiting upload/insert (API4, backlog Sprint 2.D), CSP `img-src` supabase.co à ajouter à l'Étape 4 (rendu screenshot dashboard).
+- **2e passage `security-auditor` (challenge chaînes d'attaque 2026)** : mandat explicite de **combiner les micro-failles** plutôt que les lister. A trouvé que le 1er audit avait **sous-classé M1** → reclassé **H1** (regex préfixe ≠ défense XSS, **corrigé in-PR migration 031**) + **Chain C** (signed URL 7j = bearer anonyme, **corrigé TTL→1h in-PR**). Restent **latents Étape 4** (gatés, non exploitables maintenant) : H1-render (rendu admin en JSX `<img>` only), H2 (magic-bytes serveur), CSP `img-src`. Chain D (forge cross-user) **réfutée** (RLS tient). Score 9.3 → 8.7/10 (révision honnête à la baisse + 2 fixes).
+- **E2E vraies données PROD** : student soumet ticket + screenshot → **super_admin récupère tout** (ticket + image HTTP 200 + UPDATE status triage) ✅, **teacher/rôles inférieurs = 0 ligne** (isolé) ✅, cleanup propre.
+- **Raffinements UX** (retours @thierry) : disclaimer PII **mis en évidence** (encadré ambre + ⚠️), placeholder description plus explicatif, `accept="image/*"` (picker mobile iOS/Android complet en 1 tap, validation stricte conservée côté garde + bucket).
+- **Tests** : 8 composant (jsdom) + **12 empiriques PROD** (7 RLS bucket + 5 contrainte `screenshot_url` H1, REST+JWT). Full regression **1765 → 1785 PASS**.
+- **Suivis tracés** (non bloquants, backlog) : magic-bytes serveur (Edge Function Étape 3) + rate limiting upload/insert + GC orphelins (Chain B, exploitable via upload direct → Sprint 2.D) + CSP `img-src` + rendu admin JSX-only (gates Étape 4).
 
 **Sprint 2.C reste 2 étapes** : Edge Function Resend (notification email super_admin) → AdminPanel section Tickets (triage).
 
