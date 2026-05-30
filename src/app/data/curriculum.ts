@@ -275,7 +275,7 @@ export const curriculum: Module[] = [
           {
             type: 'text',
             content:
-              'Vous venez d\'utiliser `ls -la`. Derrière, il y a un **modèle universel** que partagent presque toutes les commandes du terminal. Le comprendre une fois, c\'est savoir lire **n\'importe quelle** commande.',
+              'Vous venez d\'utiliser `ls -la`. Derrière, il y a un modèle universel que partagent presque toutes les commandes du terminal. Le comprendre une fois, c\'est savoir lire n\'importe quelle commande.',
           },
           {
             type: 'code',
@@ -288,15 +288,15 @@ export const curriculum: Module[] = [
           {
             type: 'text',
             content:
-              '**Les options** modifient le comportement de la commande. Il en existe deux écritures :\n- **courte** : un tiret + une lettre — `-l`, `-a`\n- **longue** : deux tirets + un mot — `--all`, `--format=long`\n\nBeaucoup d\'outils acceptent les deux : `-a` et `--all` font la même chose. La forme longue est plus lisible (utile dans les scripts), la courte plus rapide à taper.',
+              'Les options modifient le comportement de la commande. Il en existe deux écritures : la forme courte — un tiret + une lettre, comme `-l` ou `-a` — et la forme longue — deux tirets + un mot, comme `--all` ou `--format=long`. Beaucoup d\'outils acceptent les deux : `-a` et `--all` font la même chose. La forme longue est plus lisible (utile dans les scripts), la courte plus rapide à taper.',
             contentByEnv: {
-              windows: 'En PowerShell, les options s\'appellent des **paramètres** et s\'écrivent en toutes lettres avec un seul tiret : `-Force`, `-Recurse`, `-Name`. Il n\'y a pas de forme courte d\'une seule lettre comme `-l` sous Linux/macOS.',
+              windows: 'En PowerShell, les options s\'appellent des paramètres et s\'écrivent en toutes lettres avec un seul tiret : `-Force`, `-Recurse`, `-Name`. Il n\'y a pas de forme courte d\'une seule lettre comme `-l` sous Linux/macOS.',
             },
           },
           {
             type: 'text',
             content:
-              '**Combiner les options courtes** : `-la` est un raccourci pour `-l -a`. L\'ordre n\'a pas d\'importance — `-la` et `-al` sont identiques.',
+              'Combiner les options courtes : `-la` est un raccourci pour `-l -a`. L\'ordre n\'a pas d\'importance — `-la` et `-al` sont identiques.',
             contentByEnv: {
               windows: 'En PowerShell, on ne combine pas les paramètres en une seule lettre : on les liste séparément, par ex. `Get-ChildItem -Force -Recurse`.',
             },
@@ -304,7 +304,7 @@ export const curriculum: Module[] = [
           {
             type: 'info',
             content:
-              '**Une option peut attendre une valeur.** Exemples : `--sort=size` (trier par taille) ou `-u alice` (préciser un utilisateur). Ce n\'est plus un simple oui/non : la valeur fait partie de l\'option.',
+              'Une option peut attendre une valeur. Exemples : `--sort=size` (trier par taille) ou `-u alice` (préciser un utilisateur). Ce n\'est plus un simple oui/non : la valeur fait partie de l\'option.',
           },
           {
             type: 'tip',
@@ -317,7 +317,7 @@ export const curriculum: Module[] = [
           {
             type: 'info',
             content:
-              '**Note de pro — le séparateur `--`.** Tout ce qui suit `--` est traité comme un argument, et non plus comme une option. Pratique pour agir sur un fichier dont le nom commence par un tiret : `rm -- -rf` supprime le fichier nommé `-rf` au lieu d\'interpréter `-rf` comme des options.',
+              'Note de pro — le séparateur `--`. Tout ce qui suit `--` est traité comme un argument, et non plus comme une option. Pratique pour agir sur un fichier dont le nom commence par un tiret : `rm -- -rf` supprime le fichier nommé `-rf` au lieu d\'interpréter `-rf` comme des options.',
           },
         ],
         exercise: {
