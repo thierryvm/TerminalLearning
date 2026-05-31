@@ -150,6 +150,16 @@ describe('unlocking logic', () => {
       // A module the learner never entered and whose prereqs are incomplete stays locked.
       expect(tree.find((m) => m.moduleId === 'variables')?.unlocked).toBe(false);
     });
+
+    it('a sticky-unlocked module exposes no missing prerequisites (invariant)', () => {
+      // fichiers started but its prereq (navigation) is incomplete → unlocked,
+      // and missingPrerequisites must be normalised to [] (unlocked ⟹ none missing).
+      const tree = getModuleUnlockTree(new Set(), new Set(['fichiers']));
+      const fichiers = tree.find((m) => m.moduleId === 'fichiers');
+      expect(fichiers?.unlocked).toBe(true);
+      expect(fichiers?.missingPrerequisites).toEqual([]);
+      expect(fichiers?.missingPrerequisiteLabels).toEqual([]);
+    });
   });
 
   describe('getModuleUnlockTree', () => {

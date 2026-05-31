@@ -114,13 +114,18 @@ export function getModuleUnlockTree(
   startedModuleIds: Set<string> = new Set(),
 ): ModuleUnlockStatus[] {
   return curriculum.map((mod) => {
-    const missing = getMissingPrerequisites(mod.id, completedModuleIds);
+    const unlocked = isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds);
+    // Invariant: an unlocked module exposes no missing prerequisites. With sticky
+    // access a started module can be unlocked while its prerequisites are still
+    // < 100% — surfacing those as "missing" would be misleading to consumers, so
+    // normalise to empty once the module is reachable.
+    const missing = unlocked ? [] : getMissingPrerequisites(mod.id, completedModuleIds);
     return {
       moduleId: mod.id,
       title: mod.title,
       color: mod.color,
       iconName: mod.iconName,
-      unlocked: isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds),
+      unlocked,
       completed: completedModuleIds.has(mod.id),
       missingPrerequisites: missing,
       missingPrerequisiteLabels: missing.map(
