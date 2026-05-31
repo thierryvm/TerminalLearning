@@ -11,14 +11,15 @@ Terminal Learning is a beginner-friendly educational web app built with React an
 - **License**: Open source (MIT)
 - **Stack**: Vite 6, React 18, TypeScript strict, Tailwind CSS v4, Supabase, Vercel
 
-## Curriculum (11 modules, 65 lessons)
+## Curriculum (11 modules, 66 lessons)
 
 ### Module 1 — Navigation
-`pwd`, `ls`, `ls -la`, `cd` — moving through the file system
+`pwd`, `ls`, `ls -la`, `cd`, command anatomy (`-l`/`--long`, `--`, `man ls`) — moving through the file system and reading any command
 - https://terminallearning.dev/app/learn/navigation/orientation
 - https://terminallearning.dev/app/learn/navigation/pwd
 - https://terminallearning.dev/app/learn/navigation/ls
 - https://terminallearning.dev/app/learn/navigation/ls-la
+- https://terminallearning.dev/app/learn/navigation/command-anatomy
 - https://terminallearning.dev/app/learn/navigation/cd
 
 ### Module 2 — Fichiers & Dossiers

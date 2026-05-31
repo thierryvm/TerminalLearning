@@ -657,7 +657,7 @@ export function CommandReference() {
 
   usePageSEO({
     title: 'Référence des commandes — Terminal Learning',
-    description: 'Référence complète de 27+ commandes terminal : syntaxe, exemples, variantes Linux / macOS / Windows. Navigation, fichiers, permissions, réseau, Git.',
+    description: 'Référence complète de 38+ commandes terminal : syntaxe, exemples, variantes Linux / macOS / Windows. Navigation, fichiers, permissions, réseau, Git.',
     path: '/app/reference',
   });
 

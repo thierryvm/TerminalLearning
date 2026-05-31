@@ -37,6 +37,7 @@ const SITEMAP_URLS = [
   { path: '/app/learn/navigation/pwd',         changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/navigation/ls',          changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/navigation/ls-la',       changefreq: 'monthly', priority: '0.8' },
+  { path: '/app/learn/navigation/command-anatomy', changefreq: 'monthly', priority: '0.8' },
   { path: '/app/learn/navigation/cd',          changefreq: 'monthly', priority: '0.8' },
 
   // Module: Fichiers & Dossiers

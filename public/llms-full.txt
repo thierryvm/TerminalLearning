@@ -19,11 +19,11 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 
 ## Curriculum Structure
 
-11 modules, 65 lessons total. Modules unlock progressively as the learner completes prerequisites.
+11 modules, 66 lessons total. Modules unlock progressively as the learner completes prerequisites.
 
 ---
 
-### Module 1 — Navigation (5 lessons)
+### Module 1 — Navigation (6 lessons)
 
 **Goal**: Understand where you are in the filesystem and how to move around.
 
@@ -33,6 +33,7 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 | pwd — Où suis-je ? | `pwd` | /app/learn/navigation/pwd |
 | ls — Lister les fichiers | `ls` | /app/learn/navigation/ls |
 | ls -la — Détails et fichiers cachés | `ls -la`, `ls -lh` | /app/learn/navigation/ls-la |
+| Anatomie d'une commande | `commande [options] [arguments]`, `-l`/`--long`, `--`, `man ls` | /app/learn/navigation/command-anatomy |
 | cd — Se déplacer | `cd`, `cd ..`, `cd ~`, `cd -` | /app/learn/navigation/cd |
 
 ---
