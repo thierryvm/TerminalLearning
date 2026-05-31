@@ -145,6 +145,12 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Issue In Progress + PR ouverte → **In Review**
 - Issue In Review + PR mergée → **Done**
 
+### Avant toute PR de code (`src/`, `api/`, `supabase/`) — gate code-review (codifié 31/05/2026)
+- Invoquer l'agent **`feature-dev:code-reviewer`** sur le diff → corriger les findings CRITICAL/IMPORTANT avant merge.
+- **En plus** de Sourcery (review automatique CI), pas à la place : ils sont complémentaires. *Incident #340 (31/05)* : Sourcery + mes vérifs manuelles ont laissé passer un drift SEO (compteur `/app/reference` figé 59→75) que `feature-dev:code-reviewer` a attrapé en post-merge (fix #342). Le code-review confidence-based attrape la correctness/maintainability que Sourcery ne flague pas toujours.
+- Ne remplace PAS les gates spécialisés ci-dessous (ui-auditor / prompt-guardrail / security-auditor / route-attack) — c'est une passe correctness générale qui s'ajoute.
+- Sweep full-codebase périodique des zones jamais couvertes par un review-agent : tracké **THI-306**.
+
 ### Avant toute PR touchant des composants UI
 - Invoquer l'agent **`ui-auditor`** → analyser le rapport, corriger les CRITICAL avant de proposer la PR
 - Tout CRITICAL dans le rapport bloque le merge — pas d'exception
