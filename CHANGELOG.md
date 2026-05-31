@@ -5,6 +5,27 @@
 
 ---
 
+## 🌿 31 mai 2026 — Git & GitHub dans la Référence : 59 → 75 commandes (chantier enrichissement, PR #5)
+*PR #340 · +16 commandes (10 git + 6 github) · sources git-scm.com vérifiées HTTP 200 · Voie A desktop+mobile*
+
+La page `/app/reference` couvrait les 8 catégories shell mais **pas les deux modules Git** du curriculum. PR-2 du chantier les ajoute au catalogue (source unique) — ils apparaissent donc automatiquement sur la page.
+
+### Ce qui a été livré
+
+- **Catégorie `git`** (niveau 4) : `git init`, `config`, `add`, `commit`, `status`, `log`, `diff`, `.gitignore`, `branch`, `merge`.
+- **Catégorie `github-collaboration`** (niveau 4) : `git remote`, `push`, `pull`, `fetch`, `clone`, `rebase`.
+- **Sources officielles git-scm.com** (chaque URL vérifiée HTTP 200). Git étant identique sur les 3 OS → un lien canonique par commande, pas de variante par environnement.
+- Les catégories **mirrorent** le `level` + `prerequisites` des modules curriculum (garde-fou de cohérence `curriculumTypes.test`).
+- **`ia-dev` volontairement exclu** de la Référence : ses « commandes » sont des pseudo-commandes `ai-help` spécifiques à l'app, sans doc CLI officielle — l'ajouter violerait le principe « sources officielles uniquement ». Reste du contenu curriculum.
+
+### Discipline & vérifications
+
+- Compteurs synchronisés : `TOTAL_COMMANDS` 59→75, FAQ JSON-LD `index.html`, allow-list test (host `git-scm.com`), garde-fou superset ≥75. **Nouveau garde-fou anti-drift** : un test asserte que les compteurs FAQ de `index.html` == `TOTAL_COMMANDS`/`TOTAL_LESSONS` (suite review Sourcery — fini le drift silencieux du HTML).
+- **Voie A desktop + mobile** : 2 catégories rendues (Niv. 4), lien `git init` → git-scm correct + aria-label, **0px overflow à 390px**. CI + 104 tests verts.
+- **Suivi sandbox THI-305 (High)** : le terminal simule déjà ~21 sous-commandes git, mais `git rebase` manque et la profondeur (merge commits, conflits réels) est à auditer pour que **chaque leçon git ait un exercice exécutable**.
+
+---
+
 ## 📚 31 mai 2026 — Sources officielles par commande sur `/app/reference` (chantier enrichissement, PR #4)
 *PR #337 (sources) + PR #335 (invariants tests) · 57/59 commandes sourcées · URLs vérifiées HTTP 200 · gates ui-auditor + Voie A desktop+mobile*
 
