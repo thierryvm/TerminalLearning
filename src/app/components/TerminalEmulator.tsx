@@ -122,8 +122,17 @@ function useCoarsePointer(): boolean {
     const mq = window.matchMedia('(pointer: coarse)');
     const update = () => setCoarse(mq.matches);
     update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+    // Older iOS Safari / WebKit only expose the deprecated addListener — calling
+    // the missing addEventListener would throw, so feature-detect first.
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+    if (typeof mq.addListener === 'function') {
+      mq.addListener(update);
+      return () => mq.removeListener(update);
+    }
+    return;
   }, []);
   return coarse;
 }
@@ -261,8 +270,8 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
     const el = inputRef.current;
     const start = el?.selectionStart ?? input.length;
     const end = el?.selectionEnd ?? input.length;
-    const { value } = spliceAtSelection(input, start, end, text);
-    const sanitized = sanitiseInput(value);
+    const spliced = spliceAtSelection(input, start, end, text);
+    const sanitized = sanitiseInput(spliced);
     setInput(sanitized);
     // Place the caret after the *sanitised* inserted token. The chars before
     // the insertion point are already clean (input is always sanitised), so the

@@ -4,15 +4,10 @@
  * Extracted from the component so the splice logic is unit-testable without a
  * DOM. The mobile key bar inserts shell characters (`|`, `>`, `~`, …) at the
  * caret rather than always appending — a learner editing the middle of a
- * command must keep typing where they were.
+ * command must keep typing where they were. Caret restoration is the caller's
+ * concern (it owns the sanitiser + the input ref), so this stays a focused
+ * "safe string splice".
  */
-
-export interface SpliceResult {
-  /** The new input value after the insertion. */
-  value: string;
-  /** Where to place the caret — immediately after the inserted text. */
-  cursor: number;
-}
 
 /**
  * Insert `insert` into `value`, replacing the `[start, end)` selection.
@@ -27,12 +22,9 @@ export function spliceAtSelection(
   start: number,
   end: number,
   insert: string,
-): SpliceResult {
+): string {
   const len = value.length;
   const s = Math.max(0, Math.min(start, len));
   const e = Math.max(s, Math.min(end, len));
-  return {
-    value: value.slice(0, s) + insert + value.slice(e),
-    cursor: s + insert.length,
-  };
+  return value.slice(0, s) + insert + value.slice(e);
 }
