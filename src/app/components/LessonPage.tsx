@@ -423,6 +423,8 @@ export function LessonPage() {
       <AiTutorPanel
         lang="fr"
         role={role}
+        // Raise the FAB above the terminal mobile key bar on touch (THI-307).
+        liftAboveMobileBar
         lessonContext={{
           moduleSlug: moduleId,
           lessonSlug: lessonId,

@@ -58,6 +58,13 @@ interface Props {
    * dispatcher (defense-in-depth: pending teachers are not yet approved).
    */
   role?: UserRole | null;
+  /**
+   * When true, the floating trigger (FAB) is raised on coarse-pointer (touch)
+   * viewports so it clears the terminal mobile key bar (THI-307) — that bar is
+   * only rendered inside the lesson terminal, so pages without it omit this and
+   * keep the FAB in the bottom-right corner.
+   */
+  liftAboveMobileBar?: boolean;
 }
 
 function readEnabled(): boolean {
@@ -74,7 +81,7 @@ function readStoredProvider(): Provider {
   return 'openrouter';
 }
 
-export function AiTutorPanel({ lang = 'fr', lessonContext, role }: Props) {
+export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobileBar = false }: Props) {
   const [enabled] = useState<boolean>(() => readEnabled());
   const [open, setOpen] = useState(false);
   const [provider, setProviderState] = useState<Provider>(() => readStoredProvider());
@@ -200,6 +207,13 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role }: Props) {
 
   if (!enabled) return null;
 
+  // On touch viewports inside a lesson, raise the FAB above the terminal mobile
+  // key bar (~57px) so it never overlaps it. Desktop / non-lesson pages keep the
+  // standard bottom-right corner anchor.
+  const fabBottomClass = liftAboveMobileBar
+    ? 'bottom-[max(1rem,env(safe-area-inset-bottom))] [@media(pointer:coarse)]:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4rem)]'
+    : 'bottom-[max(1rem,env(safe-area-inset-bottom))]';
+
   return (
     <>
       <button
@@ -238,7 +252,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role }: Props) {
         // every background; active:scale-95 gives a tactile press feedback
         // on touch devices that the previous hover-only affordance could
         // not deliver on Safari iOS (no hover state).
-        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 md:h-14 md:w-14"
+        className={`fixed ${fabBottomClass} right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 md:h-14 md:w-14`}
       >
         <Sparkles size={20} strokeWidth={2} aria-hidden="true" />
       </button>

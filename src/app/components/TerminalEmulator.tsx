@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo, startTransition } from 'react';
 import { TerminalState, OutputLine, processCommand, displayPathForEnv, getTabCompletions, createInitialState } from '../data/terminalEngine';
 import type { SelectedEnvironment } from '../context/EnvironmentContext';
+import { spliceAtSelection } from './terminalKeyInsert';
+import { TerminalKeyBar } from './TerminalKeyBar';
 
 // ─── Security helpers ─────────────────────────────────────────────────────────
 
@@ -107,6 +109,34 @@ interface TerminalEmulatorProps {
 let lineCounter = 0;
 const nextId = () => ++lineCounter;
 
+/**
+ * Reactive coarse-pointer detection (THI-307). True on touch devices (phones,
+ * tablets) where the mobile key bar is useful; false on desktop so it never
+ * pollutes the pointer/keyboard experience. Starts `false` and flips after
+ * mount — the SPA has no SSR so there is no hydration mismatch to worry about.
+ */
+function useCoarsePointer(): boolean {
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(pointer: coarse)');
+    const update = () => setCoarse(mq.matches);
+    update();
+    // Older iOS Safari / WebKit only expose the deprecated addListener — calling
+    // the missing addEventListener would throw, so feature-detect first.
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+    if (typeof mq.addListener === 'function') {
+      mq.addListener(update);
+      return () => mq.removeListener(update);
+    }
+    return;
+  }, []);
+  return coarse;
+}
+
 export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux' }: TerminalEmulatorProps) {
   const [termState, setTermState] = useState<TerminalState>(createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
@@ -117,6 +147,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
+  const isCoarse = useCoarsePointer();
 
   // Instant scroll — smooth triggers a separate animation that delays the next
   // paint and inflates INP on mid-range mobile devices (measured: +200–400 ms).
@@ -199,31 +230,74 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
     [input, activeState, onCommand, environment]
   );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Recall the previous command (history ↑). Shared by the keyboard handler
+  // and the mobile key bar.
+  const historyPrev = useCallback(() => {
     const history = activeState.commandHistory;
+    if (history.length === 0) return;
+    const newIndex = Math.min(historyIndex + 1, history.length - 1);
+    setHistoryIndex(newIndex);
+    setInput(history[history.length - 1 - newIndex] ?? '');
+  }, [activeState, historyIndex]);
+
+  // Recall the next command (history ↓), back to an empty line at the bottom.
+  const historyNext = useCallback(() => {
+    const history = activeState.commandHistory;
+    const newIndex = Math.max(historyIndex - 1, -1);
+    setHistoryIndex(newIndex);
+    setInput(newIndex === -1 ? '' : history[history.length - 1 - newIndex] ?? '');
+  }, [activeState, historyIndex]);
+
+  // Tab autocompletion. Shared by the keyboard handler and the mobile key bar.
+  const triggerTabCompletion = useCallback(() => {
+    const completions = getTabCompletions(input, activeState);
+    if (completions.length === 1) {
+      setInput(completions[0]);
+    } else if (completions.length > 1) {
+      const prompt = getEnvPrompt(activeState, environment);
+      setLines((prev) => appendLines(
+        prev,
+        { id: nextId(), type: 'prompt', text: input, prompt },
+        { id: nextId(), type: 'output', text: completions.join('  ') },
+      ));
+    }
+  }, [input, activeState, environment]);
+
+  // Insert text at the caret (mobile key bar). Replaces any selection, then
+  // restores focus + caret after React commits the controlled value so the
+  // native keyboard stays open and the learner keeps typing in place.
+  const insertAtCursor = useCallback((text: string) => {
+    const el = inputRef.current;
+    const start = el?.selectionStart ?? input.length;
+    const end = el?.selectionEnd ?? input.length;
+    const spliced = spliceAtSelection(input, start, end, text);
+    const sanitized = sanitiseInput(spliced);
+    setInput(sanitized);
+    // Place the caret after the *sanitised* inserted token. The chars before
+    // the insertion point are already clean (input is always sanitised), so the
+    // caret = clamped start + sanitised-token length, clamped to the final
+    // length (covers the 500-char truncation). Deriving from sanitiseInput(text)
+    // keeps the caret correct even if a control char were ever inserted.
+    const safeStart = Math.max(0, Math.min(start, input.length));
+    const pos = Math.min(safeStart + sanitiseInput(text).length, sanitized.length);
+    requestAnimationFrame(() => {
+      const node = inputRef.current;
+      if (!node) return;
+      node.focus();
+      node.setSelectionRange(pos, pos);
+    });
+  }, [input]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const newIndex = Math.min(historyIndex + 1, history.length - 1);
-      setHistoryIndex(newIndex);
-      setInput(history[history.length - 1 - newIndex] ?? '');
+      historyPrev();
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      const newIndex = Math.max(historyIndex - 1, -1);
-      setHistoryIndex(newIndex);
-      setInput(newIndex === -1 ? '' : history[history.length - 1 - newIndex] ?? '');
+      historyNext();
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      const completions = getTabCompletions(input, activeState);
-      if (completions.length === 1) {
-        setInput(completions[0]);
-      } else if (completions.length > 1) {
-        const prompt = getEnvPrompt(activeState, environment);
-        setLines((prev) => appendLines(
-          prev,
-          { id: nextId(), type: 'prompt', text: input, prompt },
-          { id: nextId(), type: 'output', text: completions.join('  ') },
-        ));
-      }
+      triggerTabCompletion();
     } else if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
       setLines((prev) => appendLines(
@@ -237,7 +311,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       setLines([]);
       setHistoryIndex(-1);
     }
-  }, [activeState, historyIndex, input, environment]);
+  }, [historyPrev, historyNext, triggerTabCompletion, input, activeState, environment]);
 
   const prompt = getEnvPrompt(activeState, environment);
   const promptColor = ENV_PROMPT_COLOR[environment];
@@ -301,6 +375,17 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           />
         </form>
       </div>
+
+      {/* Mobile special-character bar — touch viewports only (THI-307).
+          Sits outside the scroll area so it stays pinned above the keyboard. */}
+      {isCoarse && (
+        <TerminalKeyBar
+          onInsert={insertAtCursor}
+          onTab={triggerTabCompletion}
+          onHistoryPrev={historyPrev}
+          onHistoryNext={historyNext}
+        />
+      )}
     </div>
   );
 }
