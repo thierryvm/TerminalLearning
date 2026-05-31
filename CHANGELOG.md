@@ -23,7 +23,7 @@ La page `/app/reference` couvrait les 8 catégories shell mais **pas les deux mo
 - Compteurs synchronisés : `TOTAL_COMMANDS` 59→75, FAQ JSON-LD `index.html`, allow-list test (host `git-scm.com`), garde-fou superset ≥75. **Nouveau garde-fou anti-drift** : un test asserte que les compteurs FAQ de `index.html` == `TOTAL_COMMANDS`/`TOTAL_LESSONS` (suite review Sourcery — fini le drift silencieux du HTML).
 - **Voie A desktop + mobile** : 2 catégories rendues (Niv. 4), lien `git init` → git-scm correct + aria-label, **0px overflow à 390px**. CI + 104 tests verts.
 - **Suivi sandbox THI-305 (High)** : le terminal simule déjà ~21 sous-commandes git, mais `git rebase` manque et la profondeur (merge commits, conflits réels) est à auditer pour que **chaque leçon git ait un exercice exécutable**.
-- **Gates de rattrapage post-merge (PR #342)** : passes `content-auditor` (0 CRITICAL) + `feature-dev:code-reviewer` lancées à la demande — le code-review a attrapé un **drift SEO** (meta description `/app/reference` figée à 59) corrigé en `${TOTAL_COMMANDS}` + garde-fou test, plus couleurs de pills git/github (rose/violet). Leçon codifiée : `feature-dev:code-reviewer` devient un gate pré-merge pour les PRs de code (THI-306 pour le sweep full-codebase).
+- **Gates de rattrapage post-merge (PR #342)** : passes `content-auditor` (0 CRITICAL) + `feature-dev:code-reviewer` lancées à la demande — la review de code a attrapé un **drift SEO** (meta description `/app/reference` figée à 59) corrigé en `${TOTAL_COMMANDS}` + garde-fou test, plus couleurs de pills git/github (rose/violet). Leçon codifiée : `feature-dev:code-reviewer` devient un gate pré-merge pour les PRs de code (THI-306 pour le sweep full-codebase).
 
 ---
 
