@@ -37,7 +37,7 @@ describe('CommandReference — single source of truth (catalogue)', () => {
     // (caught by code-review). The description must be templated from the constant.
     expect(componentSource).toMatch(/\$\{TOTAL_COMMANDS\}\s*commandes/);
     expect(componentSource, 'SEO description must not hardcode a command count').not.toMatch(
-      /de \d+ commandes terminal/,
+      /\b\d+\s+commandes\b/,
     );
   });
 });
