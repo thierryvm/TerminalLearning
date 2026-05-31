@@ -90,10 +90,12 @@ export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }
       role="toolbar"
       aria-label="Touches spéciales du terminal"
       aria-orientation="horizontal"
-      // pr-16: trailing scroll clearance so the last keys can scroll clear of
-      // the lesson AI-tutor FAB (fixed bottom-right, ~56px) — otherwise the
-      // rightmost keys sit under it and can't be tapped.
-      className="flex shrink-0 items-stretch gap-1 overflow-x-auto pl-2 pr-16 py-1.5 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] [scrollbar-width:none]"
+      // mr-16: shrink the bar's footprint so its right edge never reaches under
+      // the lesson AI-tutor FAB (fixed bottom-right, ~56px). A scrollable bar
+      // overflows under the FAB at most scroll offsets, so trailing *padding*
+      // is not enough — only a *margin* keeps every key tappable at any scroll
+      // position. The FAB floats in the cleared gap.
+      className="flex shrink-0 items-stretch gap-1 overflow-x-auto px-2 mr-16 py-1.5 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] [scrollbar-width:none]"
     >
       <KeyButton onPress={onHistoryPrev} label="commande précédente">↑</KeyButton>
       <KeyButton onPress={onHistoryNext} label="commande suivante">↓</KeyButton>
