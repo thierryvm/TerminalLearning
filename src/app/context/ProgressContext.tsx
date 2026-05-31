@@ -177,8 +177,8 @@ const ProgressContext = createContext<ProgressContextValue | null>(null);
 type CurriculumBundle = {
   curriculum: Module[];
   getTotalLessons: () => number;
-  isModuleUnlocked: (id: string, completed: Set<string>) => boolean;
-  getModuleUnlockTree: (completed: Set<string>) => ModuleUnlockStatus[];
+  isModuleUnlocked: (id: string, completed: Set<string>, started: Set<string>) => boolean;
+  getModuleUnlockTree: (completed: Set<string>, started: Set<string>) => ModuleUnlockStatus[];
 };
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
@@ -467,15 +467,30 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return ids;
   }, [progress, currBundle]);
 
+  // Derive *started* module IDs (≥1 lesson completed). A started module stays
+  // unlocked even if a prerequisite later drops below 100% — prevents the
+  // retroactive re-lock when a new lesson is inserted into an early module
+  // (THI-309). Distinct from completedModuleIds (ALL lessons), which still
+  // gates fresh unlocking of never-touched modules.
+  const startedModuleIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const mod of currBundle?.curriculum ?? []) {
+      if (mod.lessons.some((l) => progress.completedLessons[`${mod.id}/${l.id}`])) {
+        ids.add(mod.id);
+      }
+    }
+    return ids;
+  }, [progress, currBundle]);
+
   const isModUnlocked = useCallback(
     (moduleId: string) =>
-      currBundle?.isModuleUnlocked(moduleId, completedModuleIds) ?? true,
-    [completedModuleIds, currBundle],
+      currBundle?.isModuleUnlocked(moduleId, completedModuleIds, startedModuleIds) ?? true,
+    [completedModuleIds, startedModuleIds, currBundle],
   );
 
   const unlockTree = useMemo(
-    () => currBundle?.getModuleUnlockTree(completedModuleIds) ?? [],
-    [completedModuleIds, currBundle],
+    () => currBundle?.getModuleUnlockTree(completedModuleIds, startedModuleIds) ?? [],
+    [completedModuleIds, startedModuleIds, currBundle],
   );
 
   return (
