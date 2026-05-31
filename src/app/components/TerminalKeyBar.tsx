@@ -67,10 +67,14 @@ function KeyButton({
   return (
     <button
       type="button"
+      // Touch-only bar — keep it out of the physical-keyboard Tab order (the
+      // input already exposes ↑/↓/Tab). VoiceOver can still reach it by swipe.
+      tabIndex={-1}
       // Keep the input focused so the native mobile keyboard stays open while
-      // tapping keys. preventDefault on mousedown blocks the focus shift; the
-      // subsequent click still fires the action.
-      onMouseDown={(e) => e.preventDefault()}
+      // tapping keys. preventDefault on pointerdown blocks the focus shift on
+      // both touch (iOS Safari fires pointerdown, not mousedown, on buttons)
+      // and mouse; the subsequent click still fires the action.
+      onPointerDown={(e) => e.preventDefault()}
       onClick={onPress}
       aria-label={label}
       className="flex shrink-0 items-center justify-center min-w-[2.75rem] h-11 px-2 rounded-md font-mono text-sm text-[var(--github-text-primary)] bg-[var(--github-bg)] border border-[var(--github-border-primary)] active:bg-[var(--github-border-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0"

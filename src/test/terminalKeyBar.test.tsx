@@ -59,10 +59,12 @@ describe('TerminalKeyBar (THI-307)', () => {
     expect(onHistoryNext).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the input focused (prevents default mousedown so the keyboard stays open)', () => {
+  it('keeps the input focused (prevents default pointerdown so the keyboard stays open)', () => {
     setup();
     const pipe = screen.getByRole('button', { name: /insérer pipe/i });
-    const ev = fireEvent.mouseDown(pipe);
+    // iOS Safari fires pointerdown (not mousedown) on buttons; preventing its
+    // default is what keeps the input focused so the keyboard stays open.
+    const ev = fireEvent.pointerDown(pipe);
     // fireEvent returns false when a handler called preventDefault().
     expect(ev).toBe(false);
   });
@@ -71,6 +73,13 @@ describe('TerminalKeyBar (THI-307)', () => {
     setup();
     for (const btn of screen.getAllByRole('button')) {
       expect(btn).toHaveAttribute('type', 'button');
+    }
+  });
+
+  it('keeps touch keys out of the physical-keyboard Tab order (tabIndex=-1)', () => {
+    setup();
+    for (const btn of screen.getAllByRole('button')) {
+      expect(btn).toHaveAttribute('tabindex', '-1');
     }
   });
 

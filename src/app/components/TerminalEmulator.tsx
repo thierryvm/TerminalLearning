@@ -261,10 +261,16 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
     const el = inputRef.current;
     const start = el?.selectionStart ?? input.length;
     const end = el?.selectionEnd ?? input.length;
-    const { value, cursor } = spliceAtSelection(input, start, end, text);
+    const { value } = spliceAtSelection(input, start, end, text);
     const sanitized = sanitiseInput(value);
     setInput(sanitized);
-    const pos = Math.min(cursor, sanitized.length);
+    // Place the caret after the *sanitised* inserted token. The chars before
+    // the insertion point are already clean (input is always sanitised), so the
+    // caret = clamped start + sanitised-token length, clamped to the final
+    // length (covers the 500-char truncation). Deriving from sanitiseInput(text)
+    // keeps the caret correct even if a control char were ever inserted.
+    const safeStart = Math.max(0, Math.min(start, input.length));
+    const pos = Math.min(safeStart + sanitiseInput(text).length, sanitized.length);
     requestAnimationFrame(() => {
       const node = inputRef.current;
       if (!node) return;
