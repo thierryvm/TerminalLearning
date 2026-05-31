@@ -6,6 +6,7 @@ import { mergeProgress, getDelta } from '../lib/progressSync';
 // loads in parallel with initial render, never blocking FCP.
 const supabaseLoader = import('../../lib/supabase');
 import type { ModuleUnlockStatus } from '../lib/unlocking';
+import { isStaleChunkError, reloadOnceForStaleChunk } from '../lib/lazyWithRetry';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -202,19 +203,53 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   // ── Lazy-load curriculum + unlocking (excluded from main bundle) ──────────
   useEffect(() => {
     let cancelled = false;
+
+    // Recover from a failed/partial curriculum bundle load WITHOUT crashing.
+    // Both a rejected import (stale chunk after a deploy → SPA-rewrite serves
+    // index.html on ANY browser) and a resolved-but-incomplete module namespace
+    // (observed cross-platform: Sentry c666a960 iOS 18.7, a3bf3322 desktop
+    // Chrome) used to surface `…undefined (curriculum)` via onunhandledrejection.
+    // Strategy: one guarded reload (once/session) self-heals the common stale
+    // chunk; if that's already been spent, degrade to local-only mode and
+    // report genuinely unexpected (non-stale) failures so they stay observable.
+    const recover = (reason: unknown, stale: boolean) => {
+      if (cancelled) return;
+      if (reloadOnceForStaleChunk()) return;
+      setSyncStatus('local');
+      if (!stale) {
+        // Dynamic import so Sentry stays in its own chunk (no FCP bundle cost).
+        void import('@/lib/sentry')
+          .then(({ Sentry }) => Sentry.captureException(reason))
+          .catch(() => {});
+      }
+    };
+
     Promise.all([
       import('../data/curriculum'),
       import('../lib/unlocking'),
     ]).then(([currMod, unlockMod]) => {
-      if (!cancelled) {
-        setCurrBundle({
-          curriculum: currMod.curriculum,
-          getTotalLessons: currMod.getTotalLessons,
-          isModuleUnlocked: unlockMod.isModuleUnlocked,
-          getModuleUnlockTree: unlockMod.getModuleUnlockTree,
-        });
+      if (cancelled) return;
+      // Validate the FULL bundle shape before reading any field — a partial
+      // namespace (stale/aborted chunk) is treated like a stale chunk.
+      if (
+        !currMod?.curriculum ||
+        typeof currMod.getTotalLessons !== 'function' ||
+        typeof unlockMod?.isModuleUnlocked !== 'function' ||
+        typeof unlockMod.getModuleUnlockTree !== 'function'
+      ) {
+        recover(new Error('curriculum bundle resolved with an incomplete module namespace'), false);
+        return;
       }
+      setCurrBundle({
+        curriculum: currMod.curriculum,
+        getTotalLessons: currMod.getTotalLessons,
+        isModuleUnlocked: unlockMod.isModuleUnlocked,
+        getModuleUnlockTree: unlockMod.getModuleUnlockTree,
+      });
+    }).catch((err) => {
+      recover(err, isStaleChunkError(err));
     });
+
     return () => { cancelled = true; };
   }, []);
 
