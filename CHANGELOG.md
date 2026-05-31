@@ -5,6 +5,24 @@
 
 ---
 
+## 🔓 31 mai 2026 — Fiabilité de la progression : déverrouillage persistant + crash de chargement corrigé (THI-309 · #349)
+*PRs #348 + #349 · ProgressContext · code-review + Sourcery + vérification Sentry empirique*
+
+Parti d'un signalement « ma progression est à 0% sur iPhone » — qui a révélé **deux bugs distincts**, tous deux corrigés et vérifiés. Aucune donnée n'a jamais été perdue (24 leçons toujours intactes en base, confirmé en lecture seule).
+
+### 1. Re-verrouillage rétroactif des modules (THI-309, PR #348)
+Ajouter une leçon (`command-anatomy`) au module Navigation l'a fait passer de 5 à 6 leçons → les utilisateurs ayant fini les 5 anciennes étaient à **5/6** → Navigation « incomplet » → **tout l'aval se re-verrouillait** (Fichiers, Lecture, Permissions…), même les modules déjà entamés. Défaut de conception : chaque enrichissement du curriculum punissait les utilisateurs existants.
+- **Fix — déverrouillage persistant** : un module **déjà entamé (≥1 leçon)** reste accessible à vie, même si un prérequis repasse sous 100%. Le gate strict 100% reste pour les modules **jamais touchés** (séquence pédagogique intacte pour les nouveaux). Dérivé des données existantes, zéro nouveau stockage. Invariant `unlocked ⟹ 0 prérequis manquant` normalisé (review Sourcery). +5 tests dont la reproduction exacte de la régression.
+
+### 2. Crash de chargement du curriculum sur chunk périmé (PR #349, hotfix)
+`ProgressContext` chargeait le curriculum via `Promise.all([import(...)])` **sans `.catch` ni garde**. Après un déploiement, un onglet resté sur l'ancien build demande un chunk au hash périmé → l'import échoue/résout `undefined` → `TypeError … curriculum` (rejet non géré) → `currBundle` jamais chargé → écran vide / 0%. **Cross-plateforme** (capté sur iOS Safari *et* desktop Chrome), pas spécifique iOS.
+- **Fix** : garde des 4 propriétés du bundle avant lecture + `.catch` + self-heal `reloadOnceForStaleChunk` (1 reload/session), avec report Sentry des échecs non-stale (review Sourcery). Complète les 3 couches anti-stale-chunk déjà en place dans `main.tsx` (`vite:preloadError` officiel + `unhandledrejection`), qui ne couvraient pas le cas « résout undefined ».
+
+### Vérification
+Suite complète verte (1931 tests). **Vérification empirique Sentry** : les 4 events `.curriculum` étaient tous sur des releases **pré-fix** (#341/#346/#348), **zéro sur le build corrigé** ; 3 issues résolues. Bug confirmé résolu desktop + mobile par @thierry. Reliquat de durcissement (autres imports async catch-less, faible probabilité) tracké THI-310.
+
+---
+
 ## ⌨️ 31 mai 2026 — Barre de touches spéciales mobile dans le terminal (THI-307)
 *PR #346 · terminal sandbox · tactile-only · ui-auditor + code-review (4 findings) + Voie A mobile*
 
