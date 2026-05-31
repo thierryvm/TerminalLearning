@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Terminal, ChevronDown, ChevronRight, ExternalLink, BookOpen } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import { commandCatalogue } from '../data/commandCatalogue';
 import type { EnrichedCommand, EnvironmentId } from '../types/curriculum';
@@ -358,6 +358,30 @@ export function CommandReference() {
                             {cmd.commonErrors.map((err, i) => (
                               <li key={i} className="text-[var(--github-text-secondary)] text-sm">
                                 {err}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {cmd.officialDocs && cmd.officialDocs.length > 0 && (
+                        <div>
+                          <p className="text-xs text-[var(--github-text-secondary)] mb-1 flex items-center gap-1">
+                            <BookOpen size={12} aria-hidden="true" />
+                            Sources officielles
+                          </p>
+                          <ul className="space-y-0.5">
+                            {cmd.officialDocs.map((doc, i) => (
+                              <li key={i}>
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded"
+                                >
+                                  {doc.label}
+                                  <ExternalLink size={12} aria-hidden="true" />
+                                </a>
                               </li>
                             ))}
                           </ul>
