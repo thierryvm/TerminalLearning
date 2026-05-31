@@ -197,7 +197,7 @@ describe('commandCatalogue', () => {
     it('every command should have a non-empty syntax and at least one example', () => {
       for (const cat of commandCatalogue) {
         for (const cmd of cat.commands) {
-          expect(cmd.syntax.length, `"${cmd.id}" has empty syntax`).toBeGreaterThan(0);
+          expect(cmd.syntax.trim().length, `"${cmd.id}" has empty/whitespace-only syntax`).toBeGreaterThan(0);
           expect(cmd.examples.length, `"${cmd.id}" has no example`).toBeGreaterThanOrEqual(1);
         }
       }
