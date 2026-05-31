@@ -35,6 +35,8 @@ No account required. No setup. Just open it and start learning.
 - 🤖 **AI as a dev tool** — dedicated module on using AI professionally (prompts, validation, limits)
 - 💾 **Progress saved automatically** — locally, or synced to the cloud with a free account
 - 📖 **Contextual help** — `help <command>` returns usage and examples for your environment
+- 🧑‍🏫 **Optional AI tutor (BYOK)** — contextual help on the current lesson via your own key (OpenRouter / Anthropic / OpenAI / Gemini); keys stored client-side only, never relayed through our servers
+- 🏫 **Multi-role classroom** — teachers create classes & share invitation codes, students enroll, institution admins approve teachers — Row Level Security enforced at the database
 - 🎓 **Designed for everyone** — schools, universities, self-taught developers
 - 💸 **100% free, forever** — no paywall, no ads, no catch
 
@@ -116,6 +118,10 @@ Full security policy and vulnerability reporting: [SECURITY.md](SECURITY.md). In
 | **Phase 5** | 🔄 In progress | Curriculum expansion: 11 modules, 66 lessons, 1000+ unit tests + 176 E2E |
 | **Phase 5.5** | ✅ Done | Terminal Sentinel — automated security & content audit agents |
 | **Phase 7** | ✅ Done | RBAC — student / teacher / institution_admin / super_admin roles |
+| **Phase 7b** | ✅ Done | AI Tutor V1 — optional BYOK contextual tutor (OpenRouter / Anthropic / OpenAI / Gemini), client-side keys, live in production |
+| **Phase 7c** | ✅ Done | LTI 1.3 launch authentication (JWKS verify, replay protection) — Auth MVP, gated behind a feature flag |
+| **B2B classroom** | ✅ Done | Teacher class management + invitation codes, student enrollment, institution-admin teacher approval, in-app support tickets |
+| **Reference** | ✅ Done | Unified command reference (`/app/reference`) — single source of truth, per-OS variants + official documentation links |
 | **THI-29** | ✅ Done | Module 11 — AI as a dev tool (12 lessons, `ai-help` command) |
 | **THI-84** | ✅ Done | Public changelog ([terminallearning.dev/changelog](https://terminallearning.dev/changelog)) + project story ([terminallearning.dev/story](https://terminallearning.dev/story)) |
 | **Security** | ✅ Done | Post-Phase 7 hardening — CSP, SHA-pinned CI, credential rotation, audit agents |
