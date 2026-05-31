@@ -6,6 +6,7 @@ import { mergeProgress, getDelta } from '../lib/progressSync';
 // loads in parallel with initial render, never blocking FCP.
 const supabaseLoader = import('../../lib/supabase');
 import type { ModuleUnlockStatus } from '../lib/unlocking';
+import { isStaleChunkError, reloadOnceForStaleChunk } from '../lib/lazyWithRetry';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -206,14 +207,25 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       import('../data/curriculum'),
       import('../lib/unlocking'),
     ]).then(([currMod, unlockMod]) => {
-      if (!cancelled) {
-        setCurrBundle({
-          curriculum: currMod.curriculum,
-          getTotalLessons: currMod.getTotalLessons,
-          isModuleUnlocked: unlockMod.isModuleUnlocked,
-          getModuleUnlockTree: unlockMod.getModuleUnlockTree,
-        });
-      }
+      if (cancelled) return;
+      // Defensive: on iOS Safari a flaky/aborted chunk can resolve to an
+      // incomplete module namespace — guard before reading so we never throw
+      // `undefined is not an object (curriculum)` (Sentry c666a960, iOS 18.7).
+      if (!currMod?.curriculum || !unlockMod?.isModuleUnlocked) return;
+      setCurrBundle({
+        curriculum: currMod.curriculum,
+        getTotalLessons: currMod.getTotalLessons,
+        isModuleUnlocked: unlockMod.isModuleUnlocked,
+        getModuleUnlockTree: unlockMod.getModuleUnlockTree,
+      });
+    }).catch((err) => {
+      // No .catch previously → a failed dynamic import (stale chunk after a
+      // deploy, flaky iOS network) surfaced as an UNHANDLED rejection / crash.
+      // Stale chunk → self-heal with one guarded reload; otherwise stay usable
+      // in local-only mode rather than crashing.
+      if (cancelled) return;
+      if (isStaleChunkError(err)) reloadOnceForStaleChunk();
+      else setSyncStatus('local');
     });
     return () => { cancelled = true; };
   }, []);
