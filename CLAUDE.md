@@ -192,6 +192,7 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
 - Une seule navigation avec query param par hostname (le cookie persiste) — règle anti-leak `reference_vercel_bypass.md`
 - Vérifs obligatoires : `take_snapshot` + `take_screenshot` + `list_console_messages` (zéro erreur rouge) + `list_network_requests` (zéro 4xx/5xx)
 - Pages à tester : selon scope PR (au minimum la page modifiée, idéalement `/` + page modifiée)
+- **Mobile obligatoire (codifié 31/05/2026)** : toute PR touchant du rendu DOIT être validée aussi en **viewport mobile 390px** (`resize` 390×844), pas seulement desktop. Check empirique décisif : `document.documentElement.scrollWidth - clientWidth === 0` (zéro overflow horizontal) via `evaluate`, + screenshot de l'élément modifié. Red flags qui rendent ce check non-optionnel : labels/textes longs, `inline-flex`/`whitespace-nowrap`, largeurs fixes px, tableaux, code spans longs. Changement de layout sensible (nav, drawer, grille, cards, formulaires) → invoquer en plus `mobile-responsive-auditor`. *Incident #337 (31/05) : Voie A desktop-seul, overflow mobile possible non testé sur labels longs `inline-flex` — sans conséquence (le texte wrappait) mais par chance, pas par rigueur.*
 
 **Voie B — Browser utilisateur direct (fallback)**
 - Quand : Chrome MCP coince sur l'injection bypass, ou si validation rapide suffit

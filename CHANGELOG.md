@@ -5,6 +5,26 @@
 
 ---
 
+## 📚 31 mai 2026 — Sources officielles par commande sur `/app/reference` (chantier enrichissement, PR #4)
+*PR #337 (sources) + PR #335 (invariants tests) · 57/59 commandes sourcées · URLs vérifiées HTTP 200 · gates ui-auditor + Voie A desktop+mobile*
+
+Dans la foulée de l'unification, chaque commande de la page Référence porte désormais ses **sources officielles** (section « 📚 Sources officielles » dans la carte dépliée). Idée de @thierry : adosser le contenu de référence à des sources faisant autorité — « uniquement officielle ».
+
+### Ce qui a été livré
+
+- **Champ `officialDocs[]`** optionnel sur `EnrichedCommand`, peuplé pour **57/59 commandes** (le catalogue reste la source unique, fusion à l'export).
+- **Modèle par-OS canonique** : Linux → man7.org · Windows → Microsoft Learn (PowerShell / winget) · macOS → Homebrew + upstream partagé (OpenSSH / GNU / curl) · `tree`/`dig`/`zip`/`unzip` → manpages.debian.org (absents de man7). `open`/`pbcopy` **volontairement sans lien** — pas d'hôte Apple officiel propre, aucun fallback tiers.
+- **Discipline anti-hallucination** : **chaque URL vérifiée en live (HTTP 200) le 31/05** via batch `curl` HEAD, pas construite à l'aveugle — zéro lien inventé, zéro 404.
+- **Garde-fou test** : allow-list de domaines officiels + https + labels non-vides + couverture niv.1/2 (`commandCatalogue.test.ts`). Plus les invariants **PR #335** (variant⊆compatibility + syntax/examples non-vides).
+
+### Discipline & vérifications
+
+- **`ui-auditor` SHIP** : H1 a11y (annonce « ouvre dans un nouvel onglet » via `aria-label`, WCAG 3.2.2) + M2 (focus ring-offset) corrigés in-PR. 0 hex en dur introduit.
+- **Voie A Playwright desktop + mobile** : liens rendus + URLs correctes (`ls` → man7/Get-ChildItem), **0px overflow horizontal à 390px** (labels longs wrappent proprement), 0 erreur applicative. Validation visuelle @thierry.
+- **Process codifié** : Voie A inclut désormais le viewport mobile 390px (check `scrollWidth-clientWidth==0`) pour toute PR de rendu — leçon de cette PR.
+
+---
+
 ## 🗂️ 31 mai 2026 — Page Références unifiée : `commandCatalogue` source canonique unique + UX multi-OS (chantier enrichissement, PR #3)
 *PR #333 · 38 → 59 commandes · gates `ui-auditor` + `content-auditor` · 1 session (+ session parallèle)*
 
