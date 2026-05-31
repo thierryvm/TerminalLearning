@@ -149,6 +149,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Invoquer l'agent **`feature-dev:code-reviewer`** sur le diff → corriger les findings CRITICAL/IMPORTANT avant merge.
 - **En plus** de Sourcery (review automatique CI), pas à la place : ils sont complémentaires. *Incident #340 (31/05)* : Sourcery + mes vérifs manuelles ont laissé passer un drift SEO (compteur `/app/reference` figé 59→75) que `feature-dev:code-reviewer` a attrapé en post-merge (fix #342). Le code-review confidence-based attrape la correctness/maintainability que Sourcery ne flague pas toujours.
 - Ne remplace PAS les gates spécialisés ci-dessous (ui-auditor / prompt-guardrail / security-auditor / route-attack) — c'est une passe correctness générale qui s'ajoute.
+- **Exemptions** : PR **docs-only** (`*.md`, `docs/`) ou **config-only** triviale (ex. `.gitignore`) → pas de `feature-dev:code-reviewer` (ce sont des Voie C, smoke test suffit). Le gate vise le code exécutable (`src/`, `api/`, `supabase/`).
+- **Ordre pour PR à périmètre mixte** : lancer d'abord les gates **spécialisés** pertinents (ui-auditor / prompt-guardrail / security-auditor / route-attack selon le scope), corriger leurs CRITICAL, **puis** `feature-dev:code-reviewer` en dernier sur le diff stabilisé (évite de reviewer du code qui va changer). Les findings des deux se cumulent avant merge.
 - Sweep full-codebase périodique des zones jamais couvertes par un review-agent : tracké **THI-306**.
 
 ### Avant toute PR touchant des composants UI
