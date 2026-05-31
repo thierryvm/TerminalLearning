@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useNavigate, useMatch } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
@@ -32,6 +32,30 @@ function isModuleExpanded(
   activeModuleId: string | null,
 ): boolean {
   return overrides[id] ?? (id === activeModuleId);
+}
+
+/**
+ * Visual section micro-label for the sidebar nav (THI-308, NN/g grouped-sections).
+ *
+ * `aria-hidden` is intentional (Sourcery review PR #351): the nav links below
+ * are individually self-describing ("Tableau de bord", "Paramètres IA"…), so
+ * the label is a purely visual scannability aid. Exposing it to assistive tech
+ * would add a redundant pre-link announcement with no navigational value, and
+ * promoting it to a heading would risk heading-order audit failures since the
+ * sidebar <aside> is a landmark separate from the main-content heading tree.
+ *
+ * `className` carries only the top-padding variant so the shared typography
+ * (size, tracking, mono, color) stays defined in one place.
+ */
+function SidebarSectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <p
+      aria-hidden="true"
+      className={`text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pb-0.5 ${className}`}
+    >
+      {children}
+    </p>
+  );
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -188,9 +212,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               rhythm (NN/g grouped-sections) without the navigation cost of a
               second menu. Matches the existing "Modules"/"Environnement"
               uppercase micro-label idiom. Non-destructive: no route changes. */}
-          <p className="text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pt-1 pb-0.5">
-            Navigation
-          </p>
+          <SidebarSectionLabel className="pt-1">Navigation</SidebarSectionLabel>
           <NavLink
             to="/app"
             end
@@ -358,9 +380,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </>
           )}
-          <p className="text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pt-2 pb-0.5">
-            Compte &amp; aide
-          </p>
+          <SidebarSectionLabel className="pt-2">Compte &amp; aide</SidebarSectionLabel>
           <NavLink
             to="/app/settings"
             onClick={onClose}
