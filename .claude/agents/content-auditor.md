@@ -24,7 +24,8 @@ Si tu ne peux pas exécuter la source déterministe, écris **« compte non vér
 
 - `src/app/data/curriculum.ts` — modules et leçons
 - `src/app/data/terminalEngine.ts` — commandes simulées
-- `src/app/data/commandCatalogue.ts` — catalogue de référence
+- `src/app/data/commandCatalogue.ts` — **SOURCE CANONIQUE UNIQUE** des commandes affichées sur `/app/reference` (depuis l'unification Option A, 31/05/2026). La page `src/app/components/CommandReference.tsx` dérive sa liste de ce catalogue (`flatMap` des categories) — elle n'a **plus** de liste interne en dur. Toute réintroduction d'un array local de commandes dans CommandReference = régression (deux sources qui re-divergent). Verrouillé par `src/test/commandReferenceSource.test.ts`.
+- `src/app/components/CommandReference.tsx` — page `/app/reference`, doit consommer le catalogue (pas de `const commands` local)
 - `src/test/terminalEngine.test.ts` — tests unitaires
 - `CHANGELOG.md`, `STORY.md` — docs narratifs rendus sur `/changelog` et `/story`
 - `src/app/routes.ts` — table de routes source de vérité
@@ -52,6 +53,16 @@ Pour chaque `case` dans le switch de `terminalEngine.ts`, vérifier qu'au moins 
 ### 4. Cohérence curriculum ↔ commandCatalogue
 Pour chaque module présent dans les deux fichiers, vérifier que `level` et `prerequisites` sont identiques.
 - WARNING si incohérence détectée
+- Note : le catalogue peut contenir des catégories **absentes** de `curriculum.ts` (ex: `search`, `archives`, `reseau`, `systeme`) — c'est légitime (catégories catalogue-only). Ne pas signaler comme CRITICAL.
+
+### 4bis. Source canonique unique de la référence (anti-régression deux-sources)
+Depuis l'unification Option A (31/05/2026), `commandCatalogue.ts` est la **seule** source des commandes de `/app/reference`.
+- CRITICAL si `CommandReference.tsx` réintroduit une liste de commandes en dur (`const commands` / `interface CommandEntry`) au lieu de dériver du catalogue → c'est le bug deux-sources que `commandReferenceSource.test.ts` est censé empêcher.
+- Vérifier la cohérence des **compteurs** entre le catalogue et les fichiers d'affichage :
+  - `TOTAL_COMMANDS` (`src/app/data/landingContent.ts`) == somme déterministe des `commands` du catalogue (verrouillé par `landingTotals.test.ts` — lancer ce test plutôt que d'estimer).
+  - `index.html` FAQ JSON-LD ("Plus de N commandes") cohérent avec `TOTAL_COMMANDS` (le préfixe "Plus de" tolère un décalage vers le haut, pas vers le bas).
+  - `public/llms.txt` / `public/llms-full.txt` : ne contiennent **pas** de compteur numérique de commandes (référence générique "all commands") — confirmer que c'est toujours le cas (sinon ils dérivent silencieusement). Voir checklist `maintenance_docs_checklist` section public/.
+- WARNING si un compteur d'affichage diverge du catalogue.
 
 ### 5. Chaîne pédagogique
 - Les prérequis forment-ils un graphe acyclique ? (pas de dépendance circulaire)
