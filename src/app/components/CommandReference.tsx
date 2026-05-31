@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Search, Terminal, ChevronDown, ChevronRight, ExternalLink, BookOpen } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import { commandCatalogue } from '../data/commandCatalogue';
+import { TOTAL_COMMANDS } from '../data/landingContent';
 import type { EnrichedCommand, EnvironmentId } from '../types/curriculum';
 import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
@@ -46,6 +47,8 @@ const categoryColors: Record<string, string> = {
   'Archives & Compression': 'text-orange-400 bg-orange-500/10 border-orange-500/20',
   'Variables & Scripts': 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
   'Réseau & SSH': 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+  'Git Fondamentaux': 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+  'GitHub & Collaboration': 'text-violet-400 bg-violet-500/10 border-violet-500/20',
 };
 
 // Per-OS metadata. `lit` is used when the command supports the OS, `dim` when not.
@@ -107,7 +110,7 @@ export function CommandReference() {
   usePageSEO({
     title: 'Référence des commandes — Terminal Learning',
     description:
-      'Référence complète de 59 commandes terminal : compatibilité et variantes par OS (Linux / macOS / Windows PowerShell), syntaxe, exemples et erreurs courantes. Navigation, fichiers, permissions, réseau, Git.',
+      `Référence complète de ${TOTAL_COMMANDS} commandes terminal : compatibilité et variantes par OS (Linux / macOS / Windows PowerShell), syntaxe, exemples, erreurs courantes et sources officielles. Navigation, fichiers, permissions, réseau, Git/GitHub.`,
     path: '/app/reference',
   });
 
