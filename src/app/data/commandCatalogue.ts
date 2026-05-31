@@ -1245,7 +1245,7 @@ const baseCatalogue: CategoryMeta[] = [
       {
         id: 'gitignore', name: '.gitignore', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
-        syntax: '.gitignore (fichier de motifs)', summary: 'Exclure des fichiers du suivi Git',
+        syntax: '# un motif par ligne dans le fichier .gitignore', summary: 'Exclure des fichiers du suivi Git',
         examples: ['node_modules/', '*.log', '.env'],
         commonErrors: ['.gitignore n\'affecte PAS les fichiers déjà suivis (git rm --cached d\'abord)'],
       },

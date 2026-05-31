@@ -31,6 +31,15 @@ describe('CommandReference — single source of truth (catalogue)', () => {
     expect(componentSource).not.toMatch(/const\s+commands\s*:/);
     expect(componentSource).not.toMatch(/interface\s+CommandEntry/);
   });
+
+  it('SEO meta description uses TOTAL_COMMANDS, not a hardcoded count (no drift)', () => {
+    // PR #340 bumped 59→75 but the SEO description string lagged at "59 commandes"
+    // (caught by code-review). The description must be templated from the constant.
+    expect(componentSource).toMatch(/\$\{TOTAL_COMMANDS\}\s*commandes/);
+    expect(componentSource, 'SEO description must not hardcode a command count').not.toMatch(
+      /de \d+ commandes terminal/,
+    );
+  });
 });
 
 describe('catalogue retains every historically-visible command (no regression)', () => {
