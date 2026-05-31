@@ -2099,10 +2099,18 @@ describe('git', () => {
   });
 
   // ── git cherry-pick (THI-305) ─────────────────────────────────────────────────
-  it('git cherry-pick without a ref returns usage', () => {
-    const s = processCommand(makeState(), 'git init').newState;
+  it('git cherry-pick without a ref returns usage (repo has commits)', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add mon-fichier.txt').newState;
+    s = processCommand(s, 'git commit -m "base"').newState;
     const r = processCommand(s, 'git cherry-pick');
     expect(r.lines[0].text).toContain('Usage: git cherry-pick');
+  });
+
+  it('git cherry-pick on a repo with no commits returns "no commits yet"', () => {
+    const s = processCommand(makeState(), 'git init').newState;
+    const r = processCommand(s, 'git cherry-pick');
+    expect(r.lines[0].text).toContain('does not have any commits yet');
   });
 
   it('git cherry-pick a bad revision returns fatal', () => {

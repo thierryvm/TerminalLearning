@@ -534,12 +534,13 @@ export function handleGit(newState: TerminalState, args: string[], _env: Termina
       const repoErr = requireRepo();
       if (repoErr) return { lines: [repoErr], newState };
       const g = newState.git!;
+      // No commits → no ref can ever be valid; give the contextual error first (like git log/tag).
+      if (g.commits.length === 0) {
+        return { lines: [{ text: 'fatal: your current branch does not have any commits yet.', type: 'error' }], newState };
+      }
       const ref = args.find((a) => !a.startsWith('-') && a !== sub) ?? '';
       if (!ref) {
         return { lines: [{ text: "Usage: git cherry-pick <commit>\nHint: récupère le hash via 'git log --oneline'.", type: 'error' }], newState };
-      }
-      if (g.commits.length === 0) {
-        return { lines: [{ text: 'fatal: your current branch does not have any commits yet.', type: 'error' }], newState };
       }
       const picked = g.commits.find((c) => c.hash.startsWith(ref));
       if (!picked) {
