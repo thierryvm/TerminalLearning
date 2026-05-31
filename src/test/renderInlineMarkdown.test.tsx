@@ -44,6 +44,25 @@ describe('renderInlineMarkdown', () => {
     expect(container.textContent).toBe('2 * 3 = 6');
   });
 
+  it('renders bold that itself contains a single asterisk (Sourcery PR #332)', () => {
+    const { container } = renderInline('glob **a * b** pattern');
+    const strong = container.querySelector('strong');
+    expect(strong?.textContent).toBe('a * b');
+    expect(container.textContent).toBe('glob a * b pattern');
+  });
+
+  it('leaves an unclosed ** marker verbatim (no swallowing)', () => {
+    const { container } = renderInline('un **gras pas fermé ici');
+    expect(container.querySelector('strong')).toBeNull();
+    expect(container.textContent).toBe('un **gras pas fermé ici');
+  });
+
+  it('leaves an unclosed backtick verbatim', () => {
+    const { container } = renderInline('un `code pas fermé');
+    expect(container.querySelector('code')).toBeNull();
+    expect(container.textContent).toBe('un `code pas fermé');
+  });
+
   it('leaves plain text without markup', () => {
     const { container } = renderInline('juste du texte normal');
     expect(container.querySelector('strong')).toBeNull();

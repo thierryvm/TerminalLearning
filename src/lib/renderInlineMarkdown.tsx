@@ -16,9 +16,14 @@ import type { ReactNode } from 'react';
  * literal text inside the <strong> rather than nesting, which is acceptable.
  *
  * Tokens that do not match either pattern render as plain <span> text, so a
- * stray single `*` or backtick is shown verbatim (never swallowed).
+ * stray single `*`, an unclosed `**`, or a lone backtick is shown verbatim
+ * (never swallowed).
+ *
+ * The bold sub-pattern allows a single `*` inside the span (e.g. `**a * b**`)
+ * via `\*(?!\*)` — it only stops at the closing `**` — so legitimate bold
+ * containing an asterisk is not missed (Sourcery PR #332).
  */
-const INLINE_TOKEN_RX = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+const INLINE_TOKEN_RX = /(`[^`]+`|\*\*(?:[^*]|\*(?!\*))+\*\*)/g;
 
 export function renderInlineMarkdown(text: string): ReactNode[] {
   return text.split(INLINE_TOKEN_RX).map((part, i) => {
