@@ -51,7 +51,7 @@ function SidebarSectionLabel({ children, className = '' }: { children: ReactNode
   return (
     <p
       aria-hidden="true"
-      className={`text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pb-0.5 ${className}`}
+      className={`text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pb-0.5 ${className}`}
     >
       {children}
     </p>
@@ -414,7 +414,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Modules */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest px-3 py-2">Modules</p>
+          <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 py-2">Modules</p>
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
