@@ -44,14 +44,18 @@ function isModuleExpanded(
  * promoting it to a heading would risk heading-order audit failures since the
  * sidebar <aside> is a landmark separate from the main-content heading tree.
  *
- * `className` carries only the top-padding variant so the shared typography
- * (size, tracking, mono, color) stays defined in one place.
+ * The base class holds the shared typography (size, tracking, mono, color,
+ * horizontal padding) so it stays defined in one place; `className` carries
+ * the per-usage vertical spacing (each nav cluster has its own top/bottom
+ * rhythm). This keeps the abstraction complete: every nav-zone label —
+ * Navigation, Compte & aide, Modules — routes through this component, so a
+ * future typography tweak applies to all of them at once.
  */
 function SidebarSectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <p
       aria-hidden="true"
-      className={`text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pb-0.5 ${className}`}
+      className={`text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 ${className}`}
     >
       {children}
     </p>
@@ -212,7 +216,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               rhythm (NN/g grouped-sections) without the navigation cost of a
               second menu. Matches the existing "Modules"/"Environnement"
               uppercase micro-label idiom. Non-destructive: no route changes. */}
-          <SidebarSectionLabel className="pt-1">Navigation</SidebarSectionLabel>
+          <SidebarSectionLabel className="pt-1 pb-0.5">Navigation</SidebarSectionLabel>
           <NavLink
             to="/app"
             end
@@ -380,7 +384,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </>
           )}
-          <SidebarSectionLabel className="pt-2">Compte &amp; aide</SidebarSectionLabel>
+          <SidebarSectionLabel className="pt-2 pb-0.5">Compte & aide</SidebarSectionLabel>
           <NavLink
             to="/app/settings"
             onClick={onClose}
@@ -407,14 +411,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)]"
             >
               <LifeBuoy size={16} />
-              <span className="flex-1 text-left">Aide &amp; feedback</span>
+              <span className="flex-1 text-left">Aide & feedback</span>
             </Button>
           )}
         </nav>
 
         {/* Modules */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 py-2">Modules</p>
+          <SidebarSectionLabel className="py-2">Modules</SidebarSectionLabel>
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);
