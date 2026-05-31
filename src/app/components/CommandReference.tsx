@@ -377,7 +377,8 @@ export function CommandReference() {
                                   href={doc.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded"
+                                  aria-label={`${doc.label} (ouvre dans un nouvel onglet)`}
+                                  className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--github-bg)] focus-visible:ring-emerald-500/50 rounded"
                                 >
                                   {doc.label}
                                   <ExternalLink size={12} aria-hidden="true" />
