@@ -184,6 +184,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Nav */}
         <nav className="shrink-0 p-2 border-b border-[var(--github-border-primary)] space-y-0.5">
+          {/* THI-308 UX 2026 — light section labels give the nav a scannable
+              rhythm (NN/g grouped-sections) without the navigation cost of a
+              second menu. Matches the existing "Modules"/"Environnement"
+              uppercase micro-label idiom. Non-destructive: no route changes. */}
+          <p className="text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pt-1 pb-0.5">
+            Navigation
+          </p>
           <NavLink
             to="/app"
             end
@@ -351,6 +358,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </>
           )}
+          <p className="text-[11px] text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 pt-2 pb-0.5">
+            Compte &amp; aide
+          </p>
           <NavLink
             to="/app/settings"
             onClick={onClose}
