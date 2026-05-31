@@ -216,6 +216,7 @@ describe('commandCatalogue', () => {
       'manpages.debian.org',
       'learn.microsoft.com',
       'docs.brew.sh',
+      'git-scm.com',
     ]);
 
     it('every official doc URL is https and points to an allow-listed official host', () => {

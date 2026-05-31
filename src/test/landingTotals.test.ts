@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   TOTAL_LESSONS,
   TOTAL_COMMANDS,
@@ -59,5 +61,26 @@ describe('landingContent — totals drift guard (THI-118)', () => {
   it('sum of MODULE_PREVIEWS.lessonCount equals TOTAL_LESSONS (hero = cards)', () => {
     const cardsSum = MODULE_PREVIEWS.reduce((sum, p) => sum + p.lessonCount, 0);
     expect(cardsSum).toBe(TOTAL_LESSONS);
+  });
+
+  // index.html carries hardcoded counts in the FAQ JSON-LD ("66 leçons",
+  // "Plus de 75 commandes") that are NOT generated from TOTAL_LESSONS /
+  // TOTAL_COMMANDS — they would drift silently (Sourcery PR #340). Rather than
+  // wire HTML templating into the build, this guard ties the static FAQ numbers
+  // to the canonical constants so CI fails loudly if they diverge.
+  describe('index.html FAQ counts stay in sync with constants', () => {
+    const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf-8');
+
+    it('FAQ "Plus de N commandes" matches TOTAL_COMMANDS', () => {
+      const m = html.match(/Plus de (\d+) commandes/);
+      expect(m, 'FAQ command-count sentence not found in index.html').not.toBeNull();
+      expect(Number(m![1])).toBe(TOTAL_COMMANDS);
+    });
+
+    it('FAQ "N leçons" matches TOTAL_LESSONS', () => {
+      const m = html.match(/propose (\d+) leçons/);
+      expect(m, 'FAQ lesson-count sentence not found in index.html').not.toBeNull();
+      expect(Number(m![1])).toBe(TOTAL_LESSONS);
+    });
   });
 });
