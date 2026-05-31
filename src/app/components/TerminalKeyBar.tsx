@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
  * Mobile special-character toolbar for the terminal sandbox (THI-307).
@@ -9,9 +9,14 @@ import type { ReactNode } from 'react';
  * 44px tap targets right above the input. It is rendered only on coarse-pointer
  * (touch) viewports by the parent — never on desktop.
  *
- * Keyboard-persistence: every button prevents the default `mousedown` action so
- * the input never loses focus (the battle-tested editor-toolbar pattern). The
- * native keyboard stays open while keys are tapped; the `click` still fires.
+ * The full set never fits a phone width, so the row scrolls horizontally and
+ * shows edge fades (right while more keys remain, left once scrolled) to make
+ * the scrollability obvious — otherwise a clipped key reads as a bug.
+ *
+ * Keyboard-persistence: every button prevents the default `pointerdown` action
+ * so the input never loses focus (iOS Safari fires pointerdown, not mousedown,
+ * on buttons). The native keyboard stays open while keys are tapped; the
+ * `click` still fires.
  */
 
 interface TerminalKeyBarProps {
@@ -85,28 +90,66 @@ function KeyButton({
 }
 
 export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }: TerminalKeyBarProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(true);
+
+  const updateEdges = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setAtStart(el.scrollLeft <= 1);
+    setAtEnd(el.scrollLeft >= max - 1);
+  }, []);
+
+  useEffect(() => {
+    updateEdges();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateEdges, { passive: true });
+    window.addEventListener('resize', updateEdges);
+    return () => {
+      el.removeEventListener('scroll', updateEdges);
+      window.removeEventListener('resize', updateEdges);
+    };
+  }, [updateEdges]);
+
   return (
-    <div
-      role="toolbar"
-      aria-label="Touches spéciales du terminal"
-      aria-orientation="horizontal"
-      // Full-width strip. The lesson AI-tutor FAB is raised above this bar on
-      // touch (AiTutorPanel `liftAboveMobileBar`), so no horizontal clearance is
-      // needed here — every key spans the full width and stays tappable.
-      className="flex shrink-0 items-stretch gap-1 overflow-x-auto px-2 py-1.5 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] [scrollbar-width:none]"
-    >
-      <KeyButton onPress={onHistoryPrev} label="commande précédente">↑</KeyButton>
-      <KeyButton onPress={onHistoryNext} label="commande suivante">↓</KeyButton>
-      <KeyButton onPress={onTab} label="autocomplétion (Tab)">⇥</KeyButton>
-      <span
-        className="w-px self-center h-6 mx-0.5 shrink-0 bg-[var(--github-border-primary)]"
-        aria-hidden="true"
-      />
-      {INSERT_KEYS.map((k) => (
-        <KeyButton key={k.value} onPress={() => onInsert(k.value)} label={`insérer ${k.label}`}>
-          {k.display}
-        </KeyButton>
-      ))}
+    <div className="relative shrink-0 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+      <div
+        ref={scrollRef}
+        role="toolbar"
+        aria-label="Touches spéciales du terminal"
+        aria-orientation="horizontal"
+        className="flex items-stretch gap-1 overflow-x-auto px-2 py-1.5 [scrollbar-width:none]"
+      >
+        <KeyButton onPress={onHistoryPrev} label="commande précédente">↑</KeyButton>
+        <KeyButton onPress={onHistoryNext} label="commande suivante">↓</KeyButton>
+        <KeyButton onPress={onTab} label="autocomplétion (Tab)">⇥</KeyButton>
+        <span
+          className="w-px self-center h-6 mx-0.5 shrink-0 bg-[var(--github-border-primary)]"
+          aria-hidden="true"
+        />
+        {INSERT_KEYS.map((k) => (
+          <KeyButton key={k.value} onPress={() => onInsert(k.value)} label={`insérer ${k.label}`}>
+            {k.display}
+          </KeyButton>
+        ))}
+      </div>
+
+      {/* Scroll affordances — fade the edge that still hides keys. */}
+      {!atStart && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[var(--github-border-secondary)] to-transparent"
+        />
+      )}
+      {!atEnd && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[var(--github-border-secondary)] to-transparent"
+        />
+      )}
     </div>
   );
 }
