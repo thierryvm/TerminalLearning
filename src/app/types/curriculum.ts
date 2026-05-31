@@ -41,6 +41,19 @@ export interface CommandVariant {
   shell?: string; // e.g. 'PowerShell', 'CMD'
 }
 
+// --- Official documentation source (reference page) ---
+
+/**
+ * An authoritative documentation link for a command.
+ * `label` carries the OS/source scope (e.g. "Linux — man7.org",
+ * "Windows — Microsoft Learn"). Only OFFICIAL/canonical sources are allowed
+ * (enforced by an allow-list test): no third-party or community mirrors.
+ */
+export interface OfficialDoc {
+  label: string;
+  url: string;
+}
+
 // --- Enriched command (for reference + lessons) ---
 
 export interface EnrichedCommand {
@@ -55,6 +68,8 @@ export interface EnrichedCommand {
   summary: string;
   examples: string[];
   commonErrors: string[];
+  /** Authoritative documentation links shown on /app/reference. Optional. */
+  officialDocs?: OfficialDoc[];
 }
 
 // --- Category metadata (prerequisites & unlocking) ---

@@ -1,4 +1,4 @@
-import type { CategoryMeta, EnrichedCommand, EnvironmentId } from '../types/curriculum';
+import type { CategoryMeta, EnrichedCommand, EnvironmentId, OfficialDoc } from '../types/curriculum';
 
 /**
  * Structured command catalogue for Terminal Learning.
@@ -9,7 +9,7 @@ import type { CategoryMeta, EnrichedCommand, EnvironmentId } from '../types/curr
  *
  * Categories map 1:1 to curriculum modules via their `id`.
  */
-export const commandCatalogue: CategoryMeta[] = [
+const baseCatalogue: CategoryMeta[] = [
   // ─── LEVEL 1 — FUNDAMENTALS ───────────────────────────────
 
   {
@@ -1177,6 +1177,207 @@ export const commandCatalogue: CategoryMeta[] = [
     ],
   },
 ];
+
+/**
+ * Official documentation links per command id.
+ *
+ * ⚠️ OFFICIAL / canonical sources ONLY (no third-party, no community mirrors).
+ * Every URL below was verified live (HTTP 200) on 2026-05-31. The allowed
+ * domains are enforced by `src/test/commandReferenceSource.test.ts`.
+ *
+ * Hosts used:
+ *  - man7.org              → Linux man-pages (coreutils, util-linux, procps…)
+ *  - manpages.debian.org   → Debian official man-pages (tree, dig, zip…)
+ *  - www.gnu.org           → GNU manuals (Bash builtins/redirections, Wget, Tar)
+ *  - man.openbsd.org       → OpenSSH official man-pages
+ *  - curl.se               → curl official man-page
+ *  - docs.brew.sh          → Homebrew official docs (macOS)
+ *  - learn.microsoft.com   → Microsoft Learn (PowerShell / winget — Windows)
+ *
+ * macOS note: Apple does not host its CLI man-pages online cleanly, so macOS
+ * relies on the shared upstream reference (man7 / OpenSSH / GNU) for POSIX
+ * tools, plus Homebrew for mac-specific tooling. `open` / `pbcopy` have no
+ * clean official online doc → intentionally left without a link rather than
+ * pointing to a third-party mirror.
+ */
+const M1 = 'https://man7.org/linux/man-pages/man1/';
+const M8 = 'https://man7.org/linux/man-pages/man8/';
+const PS = 'https://learn.microsoft.com/en-us/powershell/module/';
+const BASH = 'https://www.gnu.org/software/bash/manual/bash.html';
+const DEB = 'https://manpages.debian.org/';
+const OBSD = 'https://man.openbsd.org/';
+
+const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
+  // navigation
+  pwd: [
+    { label: 'man7.org (Linux)', url: `${M1}pwd.1.html` },
+    { label: 'Microsoft Learn — Get-Location (Windows)', url: `${PS}microsoft.powershell.management/get-location` },
+  ],
+  ls: [
+    { label: 'man7.org (Linux)', url: `${M1}ls.1.html` },
+    { label: 'Microsoft Learn — Get-ChildItem (Windows)', url: `${PS}microsoft.powershell.management/get-childitem` },
+  ],
+  cd: [
+    { label: 'GNU Bash — builtin cd', url: BASH },
+    { label: 'Microsoft Learn — Set-Location (Windows)', url: `${PS}microsoft.powershell.management/set-location` },
+  ],
+  clear_cls: [
+    { label: 'man7.org — clear (Linux)', url: `${M1}clear.1.html` },
+    { label: 'Microsoft Learn — Clear-Host (Windows)', url: `${PS}microsoft.powershell.core/clear-host` },
+  ],
+  tree: [{ label: 'manpages.debian.org — tree (Linux)', url: `${DEB}tree` }],
+  // fichiers
+  mkdir: [{ label: 'man7.org (Linux)', url: `${M1}mkdir.1.html` }],
+  touch: [{ label: 'man7.org (Linux)', url: `${M1}touch.1.html` }],
+  cp: [
+    { label: 'man7.org (Linux)', url: `${M1}cp.1.html` },
+    { label: 'Microsoft Learn — Copy-Item (Windows)', url: `${PS}microsoft.powershell.management/copy-item` },
+  ],
+  mv: [
+    { label: 'man7.org (Linux)', url: `${M1}mv.1.html` },
+    { label: 'Microsoft Learn — Move-Item (Windows)', url: `${PS}microsoft.powershell.management/move-item` },
+  ],
+  rm: [
+    { label: 'man7.org (Linux)', url: `${M1}rm.1.html` },
+    { label: 'Microsoft Learn — Remove-Item (Windows)', url: `${PS}microsoft.powershell.management/remove-item` },
+  ],
+  // lecture
+  cat: [
+    { label: 'man7.org (Linux)', url: `${M1}cat.1.html` },
+    { label: 'Microsoft Learn — Get-Content (Windows)', url: `${PS}microsoft.powershell.management/get-content` },
+  ],
+  less_more: [{ label: 'man7.org — less (Linux)', url: `${M1}less.1.html` }],
+  head_tail: [
+    { label: 'man7.org — head (Linux)', url: `${M1}head.1.html` },
+    { label: 'man7.org — tail (Linux)', url: `${M1}tail.1.html` },
+  ],
+  // search
+  grep: [
+    { label: 'man7.org (Linux)', url: `${M1}grep.1.html` },
+    { label: 'Microsoft Learn — Select-String (Windows)', url: `${PS}microsoft.powershell.utility/select-string` },
+  ],
+  find: [{ label: 'man7.org (Linux)', url: `${M1}find.1.html` }],
+  wc: [{ label: 'man7.org (Linux)', url: `${M1}wc.1.html` }],
+  // systeme
+  echo: [
+    { label: 'man7.org (Linux)', url: `${M1}echo.1.html` },
+    { label: 'Microsoft Learn — Write-Output (Windows)', url: `${PS}microsoft.powershell.utility/write-output` },
+  ],
+  date: [
+    { label: 'man7.org (Linux)', url: `${M1}date.1.html` },
+    { label: 'Microsoft Learn — Get-Date (Windows)', url: `${PS}microsoft.powershell.utility/get-date` },
+  ],
+  uname: [{ label: 'man7.org (Linux)', url: `${M1}uname.1.html` }],
+  getcomputerinfo: [{ label: 'Microsoft Learn — Get-ComputerInfo (Windows)', url: `${PS}microsoft.powershell.management/get-computerinfo` }],
+  history: [
+    { label: 'GNU Bash — builtin history', url: BASH },
+    { label: 'Microsoft Learn — Get-History (Windows)', url: `${PS}microsoft.powershell.core/get-history` },
+  ],
+  man: [
+    { label: 'man7.org — man (Linux)', url: `${M1}man.1.html` },
+    { label: 'Microsoft Learn — Get-Help (Windows)', url: `${PS}microsoft.powershell.core/get-help` },
+  ],
+  alias: [
+    { label: 'GNU Bash — builtin alias', url: BASH },
+    { label: 'Microsoft Learn — Set-Alias (Windows)', url: `${PS}microsoft.powershell.utility/set-alias` },
+  ],
+  brew: [{ label: 'Homebrew — manpage (macOS)', url: 'https://docs.brew.sh/Manpage' }],
+  winget: [{ label: 'Microsoft Learn — winget (Windows)', url: 'https://learn.microsoft.com/en-us/windows/package-manager/winget/' }],
+  // permissions
+  chmod: [{ label: 'man7.org (Linux)', url: `${M1}chmod.1.html` }],
+  chown: [{ label: 'man7.org (Linux)', url: `${M1}chown.1.html` }],
+  whoami: [{ label: 'man7.org (Linux)', url: `${M1}whoami.1.html` }],
+  id: [{ label: 'man7.org (Linux)', url: `${M1}id.1.html` }],
+  sudo: [
+    { label: 'man7.org — sudo (Linux)', url: `${M8}sudo.8.html` },
+    { label: 'Microsoft Learn — Start-Process -Verb RunAs (Windows)', url: `${PS}microsoft.powershell.management/start-process` },
+  ],
+  umask: [{ label: 'GNU Bash — builtin umask', url: BASH }],
+  getacl: [{ label: 'Microsoft Learn — Get-Acl (Windows)', url: `${PS}microsoft.powershell.security/get-acl` }],
+  // processus
+  ps: [
+    { label: 'man7.org (Linux)', url: `${M1}ps.1.html` },
+    { label: 'Microsoft Learn — Get-Process (Windows)', url: `${PS}microsoft.powershell.management/get-process` },
+  ],
+  kill: [
+    { label: 'man7.org (Linux)', url: `${M1}kill.1.html` },
+    { label: 'Microsoft Learn — Stop-Process (Windows)', url: `${PS}microsoft.powershell.management/stop-process` },
+  ],
+  top_htop: [{ label: 'man7.org — top (Linux)', url: `${M1}top.1.html` }],
+  jobs: [
+    { label: 'GNU Bash — builtin jobs', url: BASH },
+    { label: 'Microsoft Learn — Get-Job (Windows)', url: `${PS}microsoft.powershell.core/get-job` },
+  ],
+  bg: [
+    { label: 'GNU Bash — builtin bg', url: BASH },
+    { label: 'Microsoft Learn — Start-Job (Windows)', url: `${PS}microsoft.powershell.core/start-job` },
+  ],
+  fg: [
+    { label: 'GNU Bash — builtin fg', url: BASH },
+    { label: 'Microsoft Learn — Receive-Job (Windows)', url: `${PS}microsoft.powershell.core/receive-job` },
+  ],
+  // redirection
+  redirect_output: [{ label: 'GNU Bash — Redirections', url: BASH }],
+  pipes: [{ label: 'GNU Bash — Pipelines', url: BASH }],
+  tee: [{ label: 'man7.org (Linux)', url: `${M1}tee.1.html` }],
+  redirect_stderr: [{ label: 'GNU Bash — Redirections', url: BASH }],
+  redirect_stderr_stdout: [{ label: 'GNU Bash — Redirections', url: BASH }],
+  // archives
+  tar: [
+    { label: 'GNU Tar — manuel', url: 'https://www.gnu.org/software/tar/manual/tar.html' },
+    { label: 'man7.org — tar (Linux)', url: `${M1}tar.1.html` },
+  ],
+  zip_unzip: [
+    { label: 'manpages.debian.org — zip (Linux)', url: `${DEB}zip` },
+    { label: 'manpages.debian.org — unzip (Linux)', url: `${DEB}unzip` },
+  ],
+  // variables
+  export: [
+    { label: 'GNU Bash — builtin export', url: BASH },
+    { label: 'Microsoft Learn — about_Environment_Variables (Windows)', url: `${PS}microsoft.powershell.core/about/about_environment_variables` },
+  ],
+  env: [
+    { label: 'man7.org — env (Linux)', url: `${M1}env.1.html` },
+    { label: 'Microsoft Learn — about_Environment_Variables (Windows)', url: `${PS}microsoft.powershell.core/about/about_environment_variables` },
+  ],
+  source: [{ label: 'GNU Bash — builtin source (.)', url: BASH }],
+  run_script: [{ label: 'GNU Bash — Shell Scripts', url: BASH }],
+  crontab: [{ label: 'man7.org — crontab (Linux)', url: `${M1}crontab.1.html` }],
+  printenv: [{ label: 'man7.org (Linux)', url: `${M1}printenv.1.html` }],
+  // reseau
+  ping: [{ label: 'man7.org — ping (Linux)', url: `${M8}ping.8.html` }],
+  curl: [
+    { label: 'curl.se — manpage officielle', url: 'https://curl.se/docs/manpage.html' },
+    { label: 'Microsoft Learn — Invoke-WebRequest (Windows)', url: `${PS}microsoft.powershell.utility/invoke-webrequest` },
+  ],
+  wget: [
+    { label: 'GNU Wget — manuel', url: 'https://www.gnu.org/software/wget/manual/wget.html' },
+    { label: 'Microsoft Learn — Invoke-WebRequest (Windows)', url: `${PS}microsoft.powershell.utility/invoke-webrequest` },
+  ],
+  dns: [
+    { label: 'manpages.debian.org — dig (Linux)', url: `${DEB}dig` },
+    { label: 'manpages.debian.org — nslookup (Linux)', url: `${DEB}nslookup` },
+    { label: 'Microsoft Learn — Resolve-DnsName (Windows)', url: `${PS}dnsclient/resolve-dnsname` },
+  ],
+  ssh: [
+    { label: 'OpenSSH — ssh', url: `${OBSD}ssh` },
+    { label: 'OpenSSH — ssh-keygen', url: `${OBSD}ssh-keygen` },
+  ],
+  scp: [{ label: 'OpenSSH — scp', url: `${OBSD}scp` }],
+};
+
+/**
+ * Canonical catalogue: base data merged with verified official docs.
+ * Single source of truth consumed by /app/reference, the landing counter,
+ * and the curriculum consistency tests.
+ */
+export const commandCatalogue: CategoryMeta[] = baseCatalogue.map((category) => ({
+  ...category,
+  commands: category.commands.map((cmd) => ({
+    ...cmd,
+    officialDocs: OFFICIAL_DOCS[cmd.id] ?? [],
+  })),
+}));
 
 // --- Helpers ---
 

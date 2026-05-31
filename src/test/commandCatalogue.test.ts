@@ -203,4 +203,61 @@ describe('commandCatalogue', () => {
       }
     });
   });
+
+  describe('official documentation sources', () => {
+    // ONLY official / canonical hosts are allowed — no third-party or community
+    // mirrors. URLs verified live (HTTP 200) on 2026-05-31. If a new source is
+    // needed, verify it then add its host here deliberately.
+    const ALLOWED_DOC_HOSTS = new Set([
+      'man7.org',
+      'man.openbsd.org',
+      'curl.se',
+      'www.gnu.org',
+      'manpages.debian.org',
+      'learn.microsoft.com',
+      'docs.brew.sh',
+    ]);
+
+    it('every official doc URL is https and points to an allow-listed official host', () => {
+      for (const cat of commandCatalogue) {
+        for (const cmd of cat.commands) {
+          for (const doc of cmd.officialDocs ?? []) {
+            const url = new URL(doc.url);
+            expect(url.protocol, `"${cmd.id}" doc is not https: ${doc.url}`).toBe('https:');
+            expect(
+              ALLOWED_DOC_HOSTS.has(url.host),
+              `"${cmd.id}" doc points to a non-official host "${url.host}" — only official sources allowed`,
+            ).toBe(true);
+          }
+        }
+      }
+    });
+
+    it('every official doc has a non-empty label', () => {
+      for (const cat of commandCatalogue) {
+        for (const cmd of cat.commands) {
+          for (const doc of cmd.officialDocs ?? []) {
+            expect(doc.label.trim().length, `"${cmd.id}" has a doc with empty label`).toBeGreaterThan(0);
+          }
+        }
+      }
+    });
+
+    it('core level-1/2 commands expose at least one official source', () => {
+      // Guard against silently shipping the feature half-populated for the
+      // most-used commands. `open`/`pbcopy` are intentionally exempt (no clean
+      // official online man-page host).
+      const EXEMPT = new Set(['open', 'pbcopy_pbpaste']);
+      for (const cat of commandCatalogue) {
+        for (const cmd of cat.commands) {
+          if (cmd.level <= 2 && !EXEMPT.has(cmd.id)) {
+            expect(
+              (cmd.officialDocs ?? []).length,
+              `level-${cmd.level} command "${cmd.id}" has no official doc`,
+            ).toBeGreaterThanOrEqual(1);
+          }
+        }
+      }
+    });
+  });
 });
