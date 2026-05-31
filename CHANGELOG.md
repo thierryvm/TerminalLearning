@@ -5,6 +5,26 @@
 
 ---
 
+## 🔁 31 mai 2026 — `git rebase` + `git cherry-pick` exécutables dans le sandbox (THI-305 PR-3a)
+*PR #344 · sandbox engine · 76e commande · gate code-review appliqué (1 fix) · Voie A desktop+mobile*
+
+La page Référence listait `git rebase`/`cherry-pick` mais le **terminal sandbox ne les simulait pas** → un apprenant lisait la commande sans pouvoir la pratiquer. Comblé : les leçons git ont désormais des exercices exécutables.
+
+### Ce qui a été livré
+
+- **`git rebase`** : `<branche>` (message historique linéaire + avertissement « ne jamais rebaser du partagé »), `-i` (guidance rebase interactif), chemins invalid-upstream + up-to-date.
+- **`git cherry-pick <commit>`** : ré-applique un commit trouvé par préfixe de hash → nouveau commit ; chemins no-commits / bad-revision / usage. *(Commande signalée par @thierry.)*
+- `git cherry-pick` ajouté au catalogue (github-collaboration) + source **git-scm.com** (HTTP 200). 75 → **76 commandes**, drift sync (TOTAL_COMMANDS, FAQ index.html, garde-fou ≥76).
+- **+9 tests** `terminalEngine` (rebase ×5, cherry-pick ×4).
+
+### Discipline & vérifications
+
+- **Gate `feature-dev:code-reviewer` (codifié ce jour, appliqué à la PR)** : a trouvé un ordre de gardes inversé sur cherry-pick (« Usage » avant « no commits yet », contraire à git réel) → corrigé + test splitté. 0 critique sinon.
+- **Voie A desktop + mobile** : `git cherry-pick` rendu sur `/app/reference`, **0px overflow 390px**, lien git-scm correct.
+- **Audit sandbox git** (THI-305 livrable 1) : ~21 sous-commandes à état réel, mais `diff` canned, `merge` sans conflits, `commits[]` global non-per-branche → **phase 2** (modèle per-branche + vrais conflits + vrai diff) backlogée. Input mobile (`|` `>` au doigt) tracké THI-307.
+
+---
+
 ## 🌿 31 mai 2026 — Git & GitHub dans la Référence : 59 → 75 commandes (chantier enrichissement, PR #5)
 *PR #340 · +16 commandes (10 git + 6 github) · sources git-scm.com vérifiées HTTP 200 · Voie A desktop+mobile*
 
