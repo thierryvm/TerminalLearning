@@ -2065,6 +2065,73 @@ describe('git', () => {
     expect(r.lines.some((l) => l.text.includes('commit'))).toBe(true);
   });
 
+  // ── git rebase (THI-305) ──────────────────────────────────────────────────────
+  it('git rebase without init returns fatal error', () => {
+    const r = processCommand(makeState(), 'git rebase main');
+    expect(r.lines[0].text).toContain('not a git repository');
+  });
+
+  it('git rebase <branch> rejoue les commits (historique linéaire)', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git branch feature').newState;
+    s = processCommand(s, 'git checkout feature').newState;
+    const r = processCommand(s, 'git rebase main');
+    expect(r.lines.some((l) => l.text.includes('Successfully rebased'))).toBe(true);
+  });
+
+  it('git rebase on the same branch is up to date', () => {
+    const s = processCommand(makeState(), 'git init').newState;
+    const r = processCommand(s, 'git rebase main');
+    expect(r.lines[0].text).toContain('up to date');
+  });
+
+  it('git rebase -i shows interactive rebase guidance + shared-branch warning', () => {
+    const s = processCommand(makeState(), 'git init').newState;
+    const r = processCommand(s, 'git rebase -i HEAD~3');
+    expect(r.lines.some((l) => l.text.toLowerCase().includes('interactif'))).toBe(true);
+    expect(r.lines.some((l) => l.text.includes('partagée'))).toBe(true);
+  });
+
+  it('git rebase invalid upstream returns error', () => {
+    const s = processCommand(makeState(), 'git init').newState;
+    const r = processCommand(s, 'git rebase nope');
+    expect(r.lines[0].text).toContain('invalid upstream');
+  });
+
+  // ── git cherry-pick (THI-305) ─────────────────────────────────────────────────
+  it('git cherry-pick without a ref returns usage (repo has commits)', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add mon-fichier.txt').newState;
+    s = processCommand(s, 'git commit -m "base"').newState;
+    const r = processCommand(s, 'git cherry-pick');
+    expect(r.lines[0].text).toContain('Usage: git cherry-pick');
+  });
+
+  it('git cherry-pick on a repo with no commits returns "no commits yet"', () => {
+    const s = processCommand(makeState(), 'git init').newState;
+    const r = processCommand(s, 'git cherry-pick');
+    expect(r.lines[0].text).toContain('does not have any commits yet');
+  });
+
+  it('git cherry-pick a bad revision returns fatal', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add mon-fichier.txt').newState;
+    s = processCommand(s, 'git commit -m "first"').newState;
+    const r = processCommand(s, 'git cherry-pick deadbee');
+    expect(r.lines[0].text).toContain("bad revision");
+  });
+
+  it('git cherry-pick <hash> re-applies the commit on the current branch', () => {
+    let s = processCommand(makeState(), 'git init').newState;
+    s = processCommand(s, 'git add mon-fichier.txt').newState;
+    s = processCommand(s, 'git commit -m "feat: base"').newState;
+    const { hash } = s.git!.commits[0];
+    const before = s.git!.commits.length;
+    const r = processCommand(s, `git cherry-pick ${hash}`);
+    expect(r.newState.git!.commits.length).toBe(before + 1);
+    expect(r.lines.some((l) => l.text.includes('cherry-pické'))).toBe(true);
+  });
+
   // ── unknown git subcommand ────────────────────────────────────────────────────
   it('unknown git subcommand returns error', () => {
     const r = processCommand(makeState(), 'git foobar');

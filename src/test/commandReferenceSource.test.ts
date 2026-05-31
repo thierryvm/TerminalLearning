@@ -72,8 +72,8 @@ describe('catalogue retains every historically-visible command (no regression)',
     expect(getCommandById(id), `command "${id}" disappeared from commandCatalogue`).toBeDefined();
   });
 
-  it('catalogue is a superset (>= the 75 unified commands)', () => {
+  it('catalogue is a superset (>= the 76 unified commands)', () => {
     const total = commandCatalogue.reduce((sum, cat) => sum + cat.commands.length, 0);
-    expect(total).toBeGreaterThanOrEqual(75);
+    expect(total).toBeGreaterThanOrEqual(76);
   });
 });

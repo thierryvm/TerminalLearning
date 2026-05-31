@@ -529,6 +529,71 @@ export function handleGit(newState: TerminalState, args: string[], _env: Termina
       return { lines: [{ text: `git config ${key || '--list'}`, type: 'info' }], newState };
     }
 
+    // ── git cherry-pick ─────────────────────────────────────────────────────────
+    case 'cherry-pick': {
+      const repoErr = requireRepo();
+      if (repoErr) return { lines: [repoErr], newState };
+      const g = newState.git!;
+      // No commits → no ref can ever be valid; give the contextual error first (like git log/tag).
+      if (g.commits.length === 0) {
+        return { lines: [{ text: 'fatal: your current branch does not have any commits yet.', type: 'error' }], newState };
+      }
+      const ref = args.find((a) => !a.startsWith('-') && a !== sub) ?? '';
+      if (!ref) {
+        return { lines: [{ text: "Usage: git cherry-pick <commit>\nHint: récupère le hash via 'git log --oneline'.", type: 'error' }], newState };
+      }
+      const picked = g.commits.find((c) => c.hash.startsWith(ref));
+      if (!picked) {
+        return { lines: [{ text: `fatal: bad revision '${ref}'`, type: 'error' }], newState };
+      }
+      const hash = makeHash();
+      const commit: GitCommit = { hash, message: picked.message, author: newState.user, date: new Date().toISOString().slice(0, 10) };
+      newState = { ...newState, git: { ...g, commits: [commit, ...g.commits] } };
+      return {
+        lines: [
+          { text: `[${g.branch} ${hash}] ${picked.message}`, type: 'success' },
+          { text: ` (cherry-pické depuis ${picked.hash} — le commit est ré-appliqué sur ${g.branch})`, type: 'info' },
+        ],
+        newState,
+      };
+    }
+
+    // ── git rebase ────────────────────────────────────────────────────────────
+    case 'rebase': {
+      const repoErr = requireRepo();
+      if (repoErr) return { lines: [repoErr], newState };
+      const g = newState.git!;
+      const interactive = args.includes('-i') || args.includes('--interactive');
+      if (interactive) {
+        return {
+          lines: [
+            { text: 'Rebase interactif (simulé) — réécriture de l\'historique.', type: 'info' },
+            { text: 'En réel : un éditeur s\'ouvre avec pick/reword/squash/drop pour chaque commit.', type: 'output' },
+            { text: '⚠️  Ne JAMAIS réécrire un historique déjà poussé sur une branche partagée.', type: 'error' },
+          ],
+          newState,
+        };
+      }
+      const target = args.find((a) => !a.startsWith('-') && a !== sub) ?? '';
+      if (!target) {
+        return { lines: [{ text: 'Usage: git rebase <branche-de-base> | git rebase -i HEAD~N', type: 'error' }], newState };
+      }
+      if (!g.branches.includes(target)) {
+        return { lines: [{ text: `fatal: invalid upstream '${target}'`, type: 'error' }], newState };
+      }
+      if (target === g.branch) {
+        return { lines: [{ text: `Current branch ${g.branch} is up to date.`, type: 'info' }], newState };
+      }
+      return {
+        lines: [
+          { text: `Successfully rebased and updated refs/heads/${g.branch}.`, type: 'success' },
+          { text: `Les commits de ${g.branch} sont rejoués au-dessus de ${target} (historique linéaire, pas de merge commit).`, type: 'info' },
+          { text: '⚠️  Rebaser réécrit les hashes — à éviter sur une branche déjà partagée.', type: 'output' },
+        ],
+        newState,
+      };
+    }
+
     // ── git --version / --help ────────────────────────────────────────────────
     case '--version':
       return { lines: [{ text: 'git version 2.45.0 (simulated)', type: 'output' }], newState };
@@ -551,6 +616,8 @@ export function handleGit(newState: TerminalState, args: string[], _env: Termina
           { text: '  checkout  Changer de branche ou restaurer des fichiers', type: 'output' },
           { text: '  switch    Changer de branche (commande moderne)', type: 'output' },
           { text: '  merge     Fusionner une branche dans la branche active', type: 'output' },
+          { text: '  rebase    Rejouer des commits sur une autre base (historique linéaire)', type: 'output' },
+          { text: '  cherry-pick  Ré-appliquer un commit précis sur la branche courante', type: 'output' },
           { text: '  remote    Gérer les dépôts distants', type: 'output' },
           { text: '  push      Envoyer les commits vers le dépôt distant', type: 'output' },
           { text: '  pull      Récupérer et intégrer les commits distants', type: 'output' },
