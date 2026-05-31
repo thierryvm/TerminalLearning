@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { useEnvironment } from '../context/EnvironmentContext';
 import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
+import { renderInlineMarkdown } from '../../lib/renderInlineMarkdown';
 import { TerminalState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
@@ -24,18 +25,8 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
   const content = block.contentByEnv?.[env] ?? block.content;
   const label = block.labelByEnv?.[env] ?? block.label;
 
-  const renderText = (text: string) => {
-    const parts = text.split(/(`[^`]+`)/g);
-    return parts.map((part, i) =>
-      part.startsWith('`') && part.endsWith('`') ? (
-        <code key={i} className="px-1.5 py-0.5 bg-[#21262d] text-emerald-400 rounded text-sm font-mono border border-[var(--github-border-primary)]">
-          {part.slice(1, -1)}
-        </code>
-      ) : (
-        <span key={i}>{part}</span>
-      )
-    );
-  };
+  // Inline markdown (code + bold) shared with tests — see renderInlineMarkdown.
+  const renderText = (text: string) => renderInlineMarkdown(text);
 
   switch (block.type) {
     case 'text':
