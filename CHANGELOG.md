@@ -5,6 +5,29 @@
 
 ---
 
+## ⌨️ 31 mai 2026 — Barre de touches spéciales mobile dans le terminal (THI-307)
+*PR #346 · terminal sandbox · tactile-only · ui-auditor + code-review (4 findings) + Voie A mobile*
+
+Sur clavier mobile (iOS/Android), les caractères shell essentiels — `|` `>` `~` `-` `/` `*` `$` … — sont enfouis 2-4 taps profond ou absents. Les leçons **redirection / pipes / options** étaient quasi **impraticables au doigt** sur ~la moitié du trafic. Une barre de touches dédiée comble ça.
+
+### Ce qui a été livré
+
+- **Barre scrollable** au-dessus de l'input terminal, **uniquement sur viewport tactile** (desktop souris ne la voit jamais) : 15 caractères shell + `⇥` Tab + `↑`/`↓` historique, insertion **au curseur** (pas seulement en fin).
+- **Clavier natif maintenu ouvert** : `onPointerDown` + `preventDefault` garde le focus de l'input (iOS Safari émet `pointerdown`, pas `mousedown`, sur les boutons) — le tap insère sans fermer le clavier.
+- **FAB tuteur IA remonté** au-dessus de la barre sur les pages leçon tactiles (plus de chevauchement).
+- **Affordance de scroll** : dégradés de bord dynamiques (droite tant qu'il reste des touches, gauche une fois scrollé) — la touche coupée ne ressemble plus à un bug.
+- A11y : tap targets **44×44px**, `tabIndex=-1` (hors ordre Tab clavier physique, VoiceOver garde l'accès), `role="toolbar"`. **0 débordement horizontal** à 390px.
+
+### Discipline & vérifications
+
+- **ui-auditor** : 0 CRITICAL (ring-token canonique + propriété webkit dépréciée corrigés).
+- **feature-dev:code-reviewer** (2 passes) : 4 findings IMPORTANT corrigés — `pointerdown` vs `mousedown` no-op iOS (cassait la feature sur la cible !), `tabIndex=-1`, caret robuste si char de contrôle, flash de fade au montage.
+- **Sourcery** : fallback `addListener` (vieux Safari) + simplification du helper d'insertion.
+- **Voie A émulation iPhone** : insertion `|>` OK, focus conservé au tap, FAB remonté (gap 6px), fades dynamiques validés (début/milieu/fin), **41 tests**.
+- ⚠️ Comportement *natif* du clavier iOS Safari à confirmer sur appareil réel (émulation ≠ clavier natif) ; follow-up barre-accessoire `visualViewport` si besoin.
+
+---
+
 ## 🔁 31 mai 2026 — `git rebase` + `git cherry-pick` exécutables dans le sandbox (THI-305 PR-3a)
 *PR #344 · sandbox engine · 76e commande · gate code-review appliqué (1 fix) · Voie A desktop+mobile*
 
