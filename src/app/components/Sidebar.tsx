@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useNavigate, useMatch } from 'react-router';
 import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
@@ -32,6 +32,34 @@ function isModuleExpanded(
   activeModuleId: string | null,
 ): boolean {
   return overrides[id] ?? (id === activeModuleId);
+}
+
+/**
+ * Visual section micro-label for the sidebar nav (THI-308, NN/g grouped-sections).
+ *
+ * `aria-hidden` is intentional (Sourcery review PR #351): the nav links below
+ * are individually self-describing ("Tableau de bord", "Paramètres IA"…), so
+ * the label is a purely visual scannability aid. Exposing it to assistive tech
+ * would add a redundant pre-link announcement with no navigational value, and
+ * promoting it to a heading would risk heading-order audit failures since the
+ * sidebar <aside> is a landmark separate from the main-content heading tree.
+ *
+ * The base class holds the shared typography (size, tracking, mono, color,
+ * horizontal padding) so it stays defined in one place; `className` carries
+ * the per-usage vertical spacing (each nav cluster has its own top/bottom
+ * rhythm). This keeps the abstraction complete: every nav-zone label —
+ * Navigation, Compte & aide, Modules — routes through this component, so a
+ * future typography tweak applies to all of them at once.
+ */
+function SidebarSectionLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <p
+      aria-hidden="true"
+      className={`text-xs text-[var(--github-text-secondary)] uppercase tracking-widest font-mono px-3 ${className}`}
+    >
+      {children}
+    </p>
+  );
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -184,6 +212,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Nav */}
         <nav className="shrink-0 p-2 border-b border-[var(--github-border-primary)] space-y-0.5">
+          {/* THI-308 UX 2026 — light section labels give the nav a scannable
+              rhythm (NN/g grouped-sections) without the navigation cost of a
+              second menu. Matches the existing "Modules"/"Environnement"
+              uppercase micro-label idiom. Non-destructive: no route changes. */}
+          <SidebarSectionLabel className="pt-1 pb-0.5">Navigation</SidebarSectionLabel>
           <NavLink
             to="/app"
             end
@@ -351,6 +384,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </>
           )}
+          <SidebarSectionLabel className="pt-2 pb-0.5">Compte & aide</SidebarSectionLabel>
           <NavLink
             to="/app/settings"
             onClick={onClose}
@@ -377,14 +411,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="text-[var(--github-text-secondary)] hover:text-[var(--github-text-primary)]"
             >
               <LifeBuoy size={16} />
-              <span className="flex-1 text-left">Aide &amp; feedback</span>
+              <span className="flex-1 text-left">Aide & feedback</span>
             </Button>
           )}
         </nav>
 
         {/* Modules */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-widest px-3 py-2">Modules</p>
+          <SidebarSectionLabel className="py-2">Modules</SidebarSectionLabel>
           {curriculum.map((mod) => {
             const Icon = iconMap[mod.iconName] ?? BookOpen;
             const { completed, total } = getModuleProgress(mod.id);

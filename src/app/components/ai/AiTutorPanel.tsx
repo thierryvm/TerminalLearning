@@ -221,6 +221,10 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Ouvrir le tuteur IA (Ctrl+I)"
+        // Hover tooltip (desktop) / long-press (touch) — keeps the icon-only FAB
+        // discoverable without adding a text pill that would defeat the size
+        // reduction. The aria-label remains the screen-reader source of truth.
+        title="Tuteur IA — Ctrl+I"
         aria-expanded={open}
         aria-controls="ai-tutor-panel"
         // bottom uses max(1rem, env(safe-area-inset-bottom)) so the FAB sits
@@ -235,24 +239,23 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
         // a scroll-to-top FAB. So the precaution was dead weight that
         // pushed the icon awkwardly off the corner.
         //
-        // Sizing (THI-152 brick 5/9 Option D — empirical recalibration):
+        // Sizing (THI-308 UX 2026 recalibration — supersedes THI-152 brick 5/9):
         // mobile 44 px (h-11, exact Apple HIG floor — comfort kept via the
         // 100% opacity + ring + shadow rather than extra surface area),
-        // desktop 56 px (md:h-14, Material/Apple FAB primary standard
-        // empirically validated by @thierry on preview as well-proportioned
-        // for desktop density).
+        // desktop 48 px (md:h-12, Material 3 "default" FAB). The previous
+        // 56 px (md:h-14) read as visually heavy on desktop density per
+        // @thierry empirical feedback (2026-05-31) — 48 px keeps the FAB a
+        // clear primary anchor without dominating the corner.
         //
         // The asymmetry is intentional: a FAB is the only desktop button
         // exempt from the "≤40 px compact density" rule because it is the
-        // primary visual anchor of the surface. The mobile 48 → 44 revert
-        // came from @thierry empirical feedback that 12% of a 393 px
-        // viewport felt visually heavy.
+        // primary visual anchor of the surface.
         //
         // Always-100% opacity so the Sparkles is unambiguously visible on
         // every background; active:scale-95 gives a tactile press feedback
         // on touch devices that the previous hover-only affordance could
         // not deliver on Safari iOS (no hover state).
-        className={`fixed ${fabBottomClass} right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 md:h-14 md:w-14`}
+        className={`fixed ${fabBottomClass} right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--github-accent)] text-white shadow-lg ring-1 ring-black/30 transition active:scale-95 hover:bg-[var(--github-accent-hover)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-0 md:h-12 md:w-12`}
       >
         <Sparkles size={20} strokeWidth={2} aria-hidden="true" />
       </button>

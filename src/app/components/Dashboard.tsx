@@ -150,11 +150,15 @@ export function Dashboard() {
       </div>
 
       {/* CTA */}
+      {/* THI-308 UX 2026 — full-width is a mobile pattern; on desktop a primary
+          pill should hug its content (sm:w-auto) so it reads as a deliberate
+          CTA rather than a stretched bar. Stays full-width at the thumb on
+          mobile. */}
       <Button
         variant="emerald"
         size="cta-pill"
         onClick={handleContinue}
-        className="w-full mb-8 min-h-11"
+        className="w-full sm:w-auto mb-8 min-h-11"
       >
         <Terminal size={18} aria-hidden="true" />
         <span>{totalCompleted === 0 ? 'Commencer l\'apprentissage' : totalCompleted === totalLessons ? 'Revoir depuis le début' : 'Continuer'}</span>
