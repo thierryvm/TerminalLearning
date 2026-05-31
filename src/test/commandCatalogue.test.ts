@@ -174,5 +174,33 @@ describe('commandCatalogue', () => {
         }
       }
     });
+
+    it('every variant environment must be within the command compatibility (no orphan variant)', () => {
+      // A variant for an environment the command is not compatible with would
+      // render a command line for an OS where the command is flagged unavailable.
+      for (const cat of commandCatalogue) {
+        for (const cmd of cat.commands) {
+          for (const variant of cmd.variants) {
+            // `wsl` variants are an allowed refinement of `linux` compatibility.
+            const covered =
+              cmd.compatibility.includes(variant.environment) ||
+              (variant.environment === 'wsl' && cmd.compatibility.includes('linux'));
+            expect(
+              covered,
+              `"${cmd.id}" has a "${variant.environment}" variant but compatibility is [${cmd.compatibility.join(', ')}]`,
+            ).toBe(true);
+          }
+        }
+      }
+    });
+
+    it('every command should have a non-empty syntax and at least one example', () => {
+      for (const cat of commandCatalogue) {
+        for (const cmd of cat.commands) {
+          expect(cmd.syntax.length, `"${cmd.id}" has empty syntax`).toBeGreaterThan(0);
+          expect(cmd.examples.length, `"${cmd.id}" has no example`).toBeGreaterThanOrEqual(1);
+        }
+      }
+    });
   });
 });
