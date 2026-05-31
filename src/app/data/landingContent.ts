@@ -15,7 +15,7 @@ import type { SelectedEnvironment } from '../context/EnvironmentContext';
 // `src/test/landingTotals.test.ts` re-imports both and fails if these
 // constants get out of sync with the actual catalogue/curriculum.
 export const TOTAL_LESSONS = 66;
-export const TOTAL_COMMANDS = 75;
+export const TOTAL_COMMANDS = 76;
 /** Count of environments with `status: 'active'` in `types/curriculum.ts`. */
 export const ACTIVE_ENVIRONMENTS_COUNT = 3;
 

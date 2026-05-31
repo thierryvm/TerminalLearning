@@ -1321,6 +1321,13 @@ const baseCatalogue: CategoryMeta[] = [
         examples: ['git rebase main', 'git rebase -i HEAD~3'],
         commonErrors: ['Ne jamais rebaser une branche déjà partagée/poussée publiquement'],
       },
+      {
+        id: 'git_cherry_pick', name: 'git cherry-pick', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git cherry-pick <commit>', summary: 'Ré-appliquer un commit précis sur la branche courante',
+        examples: ['git cherry-pick a1b2c3d', 'git cherry-pick a1b2c3d..e4f5g6h'],
+        commonErrors: ['Récupérer le hash via git log --oneline', 'Peut créer un conflit si le commit touche des lignes déjà modifiées'],
+      },
     ],
   },
 ];
@@ -1529,6 +1536,7 @@ const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
   git_fetch: [{ label: 'git-scm.com — git fetch (officiel)', url: `${GIT}git-fetch` }],
   git_clone: [{ label: 'git-scm.com — git clone (officiel)', url: `${GIT}git-clone` }],
   git_rebase: [{ label: 'git-scm.com — git rebase (officiel)', url: `${GIT}git-rebase` }],
+  git_cherry_pick: [{ label: 'git-scm.com — git cherry-pick (officiel)', url: `${GIT}git-cherry-pick` }],
 };
 
 /**
