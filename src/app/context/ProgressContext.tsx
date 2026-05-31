@@ -177,8 +177,8 @@ const ProgressContext = createContext<ProgressContextValue | null>(null);
 type CurriculumBundle = {
   curriculum: Module[];
   getTotalLessons: () => number;
-  isModuleUnlocked: (id: string, completed: Set<string>) => boolean;
-  getModuleUnlockTree: (completed: Set<string>) => ModuleUnlockStatus[];
+  isModuleUnlocked: (id: string, completed: Set<string>, started?: Set<string>) => boolean;
+  getModuleUnlockTree: (completed: Set<string>, started?: Set<string>) => ModuleUnlockStatus[];
 };
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
@@ -456,26 +456,37 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const totalLessons = currBundle?.getTotalLessons() ?? 0;
   const overallProgress = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
 
-  // Derive completed module IDs from lesson-level progress
-  const completedModuleIds = useMemo(() => {
-    const ids = new Set<string>();
+  // Derive both module ID sets from lesson-level progress in a single pass:
+  //  • completedModuleIds — ALL lessons done; satisfies downstream prerequisites.
+  //  • startedModuleIds    — ≥1 lesson done; stays unlocked even if a prerequisite
+  //    later drops below 100% (sticky access, THI-309) — prevents the retroactive
+  //    re-lock when a new lesson is inserted into an early module. The strict gate
+  //    (completedModuleIds) still controls fresh unlocking of never-touched modules.
+  const { completedModuleIds, startedModuleIds } = useMemo(() => {
+    const completed = new Set<string>();
+    const started = new Set<string>();
     for (const mod of currBundle?.curriculum ?? []) {
-      if (mod.lessons.every((l) => progress.completedLessons[`${mod.id}/${l.id}`])) {
-        ids.add(mod.id);
+      let all = true;
+      let any = false;
+      for (const l of mod.lessons) {
+        if (progress.completedLessons[`${mod.id}/${l.id}`]) any = true;
+        else all = false;
       }
+      if (all) completed.add(mod.id);
+      if (any) started.add(mod.id);
     }
-    return ids;
+    return { completedModuleIds: completed, startedModuleIds: started };
   }, [progress, currBundle]);
 
   const isModUnlocked = useCallback(
     (moduleId: string) =>
-      currBundle?.isModuleUnlocked(moduleId, completedModuleIds) ?? true,
-    [completedModuleIds, currBundle],
+      currBundle?.isModuleUnlocked(moduleId, completedModuleIds, startedModuleIds) ?? true,
+    [completedModuleIds, startedModuleIds, currBundle],
   );
 
   const unlockTree = useMemo(
-    () => currBundle?.getModuleUnlockTree(completedModuleIds) ?? [],
-    [completedModuleIds, currBundle],
+    () => currBundle?.getModuleUnlockTree(completedModuleIds, startedModuleIds) ?? [],
+    [completedModuleIds, startedModuleIds, currBundle],
   );
 
   return (

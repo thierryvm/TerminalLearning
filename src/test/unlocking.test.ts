@@ -115,6 +115,53 @@ describe('unlocking logic', () => {
     });
   });
 
+  // THI-309 — sticky access: a module already entered (≥1 lesson done) stays
+  // unlocked even if a prerequisite later drops below 100% (e.g. a new lesson
+  // is inserted into Navigation). Prevents retroactive re-locking of modules
+  // existing users had already progressed in.
+  describe('sticky unlock (THI-309)', () => {
+    it('keeps a started module unlocked even when its prerequisite is no longer complete', () => {
+      // navigation NOT in completed (e.g. command-anatomy added → 5/6), but the
+      // learner already did lessons in fichiers → fichiers must stay accessible.
+      const completed = new Set<string>(); // navigation incomplete
+      const started = new Set(['fichiers']);
+      expect(isModuleUnlocked('fichiers', completed, started)).toBe(true);
+    });
+
+    it('still locks a never-started module when its prerequisite is incomplete', () => {
+      // permissions never touched + prereqs incomplete → stays locked (gate intact).
+      expect(isModuleUnlocked('permissions', new Set(), new Set(['fichiers']))).toBe(false);
+    });
+
+    it('getUnlockedModules includes every started module regardless of prereqs', () => {
+      const started = new Set(['fichiers', 'lecture', 'permissions', 'processus', 'redirection']);
+      const unlocked = getUnlockedModules(new Set(), started);
+      for (const id of started) expect(unlocked).toContain(id);
+    });
+
+    it('reproduces the regression scenario: Navigation 5/6 must not re-lock entered modules', () => {
+      // Navigation incomplete (not in completed), learner started 5 downstream modules.
+      const completed = new Set<string>();
+      const started = new Set(['fichiers', 'lecture', 'permissions', 'processus', 'redirection']);
+      const tree = getModuleUnlockTree(completed, started);
+      for (const id of started) {
+        expect(tree.find((m) => m.moduleId === id)?.unlocked, `${id} should stay unlocked`).toBe(true);
+      }
+      // A module the learner never entered and whose prereqs are incomplete stays locked.
+      expect(tree.find((m) => m.moduleId === 'variables')?.unlocked).toBe(false);
+    });
+
+    it('a sticky-unlocked module exposes no missing prerequisites (invariant)', () => {
+      // fichiers started but its prereq (navigation) is incomplete → unlocked,
+      // and missingPrerequisites must be normalised to [] (unlocked ⟹ none missing).
+      const tree = getModuleUnlockTree(new Set(), new Set(['fichiers']));
+      const fichiers = tree.find((m) => m.moduleId === 'fichiers');
+      expect(fichiers?.unlocked).toBe(true);
+      expect(fichiers?.missingPrerequisites).toEqual([]);
+      expect(fichiers?.missingPrerequisiteLabels).toEqual([]);
+    });
+  });
+
   describe('getModuleUnlockTree', () => {
     it('should return status for every module in curriculum', () => {
       const tree = getModuleUnlockTree(new Set());

@@ -7,18 +7,36 @@ import type { Module } from '../data/curriculum';
  * A module is unlocked when ALL of its prerequisites are completed.
  * Modules with no prerequisites (e.g. "navigation") are always unlocked.
  *
- * This module is stateless — it takes completed module IDs as input
+ * **Sticky access (THI-309)**: a module the learner has already entered — i.e.
+ * completed at least one of its lessons — stays unlocked forever, even if a
+ * prerequisite module later gains a new lesson and drops below 100%. Without
+ * this, inserting a lesson into an early module (e.g. `command-anatomy` added
+ * to Navigation) retroactively re-locks every downstream module for existing
+ * users who had already progressed — a trust-breaking regression. The strict
+ * 100%-of-prerequisites gate is preserved for modules the learner has NOT yet
+ * touched, so the pedagogical sequence still holds for newcomers.
+ *
+ * This module is stateless — it takes completed/started module IDs as input
  * and returns unlock status. The actual progress state lives in
  * ProgressContext.
  */
 
-/** Check if a single module is unlocked given a set of completed module IDs. */
+/**
+ * Check if a single module is unlocked.
+ *
+ * @param completedModuleIds Modules with ALL lessons completed (satisfy prereqs).
+ * @param startedModuleIds   Modules with ≥1 lesson completed (sticky-unlocked).
+ */
 export function isModuleUnlocked(
   moduleId: string,
   completedModuleIds: Set<string>,
+  startedModuleIds: Set<string> = new Set(),
 ): boolean {
   const mod = curriculum.find((m) => m.id === moduleId);
   if (!mod) return false;
+
+  // Sticky: already entered → stays accessible regardless of prerequisite drift.
+  if (startedModuleIds.has(moduleId)) return true;
 
   const prerequisites = mod.prerequisites ?? [];
 
@@ -29,31 +47,34 @@ export function isModuleUnlocked(
   return prerequisites.every((prereqId) => completedModuleIds.has(prereqId));
 }
 
-/** Get all unlocked module IDs given a set of completed module IDs. */
+/** Get all unlocked module IDs given completed + started module IDs. */
 export function getUnlockedModules(
   completedModuleIds: Set<string>,
+  startedModuleIds: Set<string> = new Set(),
 ): string[] {
   return curriculum
-    .filter((mod) => isModuleUnlocked(mod.id, completedModuleIds))
+    .filter((mod) => isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds))
     .map((mod) => mod.id);
 }
 
-/** Get all locked module IDs given a set of completed module IDs. */
+/** Get all locked module IDs given completed + started module IDs. */
 export function getLockedModules(
   completedModuleIds: Set<string>,
+  startedModuleIds: Set<string> = new Set(),
 ): string[] {
   return curriculum
-    .filter((mod) => !isModuleUnlocked(mod.id, completedModuleIds))
+    .filter((mod) => !isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds))
     .map((mod) => mod.id);
 }
 
 /** Get the next recommended module (first unlocked but not yet completed). */
 export function getNextRecommendedModule(
   completedModuleIds: Set<string>,
+  startedModuleIds: Set<string> = new Set(),
 ): Module | null {
   const unlocked = curriculum.filter(
     (mod) =>
-      isModuleUnlocked(mod.id, completedModuleIds) &&
+      isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds) &&
       !completedModuleIds.has(mod.id),
   );
   return unlocked[0] ?? null;
@@ -90,15 +111,21 @@ export interface ModuleUnlockStatus {
 
 export function getModuleUnlockTree(
   completedModuleIds: Set<string>,
+  startedModuleIds: Set<string> = new Set(),
 ): ModuleUnlockStatus[] {
   return curriculum.map((mod) => {
-    const missing = getMissingPrerequisites(mod.id, completedModuleIds);
+    const unlocked = isModuleUnlocked(mod.id, completedModuleIds, startedModuleIds);
+    // Invariant: an unlocked module exposes no missing prerequisites. With sticky
+    // access a started module can be unlocked while its prerequisites are still
+    // < 100% — surfacing those as "missing" would be misleading to consumers, so
+    // normalise to empty once the module is reachable.
+    const missing = unlocked ? [] : getMissingPrerequisites(mod.id, completedModuleIds);
     return {
       moduleId: mod.id,
       title: mod.title,
       color: mod.color,
       iconName: mod.iconName,
-      unlocked: isModuleUnlocked(mod.id, completedModuleIds),
+      unlocked,
       completed: completedModuleIds.has(mod.id),
       missingPrerequisites: missing,
       missingPrerequisiteLabels: missing.map(
