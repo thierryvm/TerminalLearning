@@ -5,6 +5,27 @@
 
 ---
 
+## 🗂️ 31 mai 2026 — Page Références unifiée : `commandCatalogue` source canonique unique + UX multi-OS (chantier enrichissement, PR #3)
+*PR #333 · 38 → 59 commandes · gates `ui-auditor` + `content-auditor` · 1 session (+ session parallèle)*
+
+La page `/app/reference` rendait depuis une **liste interne** à `CommandReference.tsx`, totalement déconnectée de `commandCatalogue.ts` (qui n'alimentait que le compteur landing + un test de cohérence curriculum). **Deux sources de vérité** = le compteur landing pouvait diverger de ce que voyait l'utilisateur, et toute commande ajoutée d'un côté n'apparaissait pas de l'autre. Découvert visuellement (Voie A) pendant le chantier, pas par un test.
+
+### Ce qui a été livré
+
+- **Source unique** : `commandCatalogue.ts` devient la source canonique (meilleure structure — `variants[]` par environnement + `compatibility[]` + `recommendedFor[]` + `commonErrors[]`, taillée pour l'UX OS-targeting). `CommandReference.tsx` **dérive** désormais du catalogue (`flatMap`) — array local supprimé (~600 lignes en moins).
+- **Réconciliation en superset** : 38 → **59 commandes**, **0 des 44 commandes historiques perdue**, data migrée depuis l'ancienne liste (groundée, pas inventée). Nouvelle catégorie `systeme` (+11) ; ajouts `tree`, `sudo`/`umask`/`getacl`, `jobs`/`bg`/`fg`, `printenv`, redirections `2>`/`2>&1` ; spécifiques-OS préservées (`Get-Acl`, `Get-ComputerInfo`, `open`, `pbcopy`, `brew`, `winget`).
+- **UX multi-OS** : badges de compatibilité par OS, commande par-environnement (variantes), `recommendedFor` et `commonErrors` affichés dans le panneau déplié. Le switch d'environnement bascule bien les variantes (`ls`→`Get-ChildItem`, `tree`→`tree /F`, `clear`→`cls`) et masque les incompatibles.
+- **Garde-fou anti-régression** : `src/test/commandReferenceSource.test.ts` — assert structurel (la page importe le catalogue, pas de réintroduction d'array local) + data (les ids historiques restent présents, catalogue ≥ 59). La divergence deux-sources ne peut plus revenir silencieusement.
+
+### Discipline & vérifications
+
+- **Gate `ui-auditor` : ✅ MERGE** (0 CRITICAL) — 1 HIGH a11y clavier pré-existant corrigé in-PR (`role=button`, `tabIndex`, `aria-expanded`, Enter/Espace, focus-visible).
+- **Gate `content-auditor` : ✅** (0 CRITICAL) — 3 warnings corrigés in-PR (cohérence `echo`→`Write-Output`, `winget` shell CMD, note `brew` Linux). Le prompt de l'agent a été mis à jour : il sait désormais que `commandCatalogue` est la source unique + vérifie la cohérence des compteurs `public/`.
+- **Voie A (Playwright)** : ✅ Linux = 53 cmds, Windows = 54 cmds, switch d'env et badges OS corrects, panneau déplié complet, 0 erreur applicative. Validation visuelle @thierry : « très propre et adapté aux multi-OS ».
+- **Compteurs synchronisés** (1 source) : `TOTAL_COMMANDS` 38→59, FAQ JSON-LD, meta description. CI verte, Sourcery rate-limit (acceptable).
+
+---
+
 ## 🔒 30 mai 2026 — Durcissement Tuteur IA : clause frontière pédagogique + décodeurs ROT13/hex + strip reverse-shell (chantier enrichissement, PR #1)
 *PR #330 · gate `prompt-guardrail-auditor` SHIP · 1 session*
 
