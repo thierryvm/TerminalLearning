@@ -366,7 +366,7 @@ export const commandCatalogue: CategoryMeta[] = [
         variants: [
           { environment: 'linux', command: 'echo "texte"' },
           { environment: 'macos', command: 'echo "texte"' },
-          { environment: 'windows', command: 'Write-Host "texte"', shell: 'PowerShell' },
+          { environment: 'windows', command: 'Write-Output "texte"', shell: 'PowerShell' },
         ],
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'echo [texte]',
@@ -374,6 +374,7 @@ export const commandCatalogue: CategoryMeta[] = [
         examples: ['echo "Bonjour"', 'echo $HOME', 'echo "User: $USER"'],
         commonErrors: [
           'Windows : echo fonctionne aussi, mais $HOME devient $env:USERPROFILE',
+          'Write-Output écrit dans le pipeline ; Write-Host écrit directement à la console (sans pipeline)',
         ],
       },
       {
@@ -518,7 +519,9 @@ export const commandCatalogue: CategoryMeta[] = [
         syntax: 'brew install|update|list [paquet]',
         summary: 'Homebrew — gestionnaire de paquets macOS',
         examples: ['brew install htop', 'brew update', 'brew list'],
-        commonErrors: [],
+        commonErrors: [
+          'Linux : brew fonctionne aussi (brew.sh), mais apt / dnf / pacman sont les gestionnaires natifs',
+        ],
       },
       {
         id: 'winget',
@@ -527,7 +530,7 @@ export const commandCatalogue: CategoryMeta[] = [
         level: 1,
         recommendedFor: ['windows'],
         variants: [
-          { environment: 'windows', command: 'winget install paquet', shell: 'PowerShell' },
+          { environment: 'windows', command: 'winget install paquet', shell: 'CMD' },
         ],
         compatibility: ['windows'],
         syntax: 'winget install|list [paquet]',

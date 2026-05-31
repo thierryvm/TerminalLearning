@@ -213,8 +213,17 @@ export function CommandReference() {
               return (
                 <div
                   key={key}
-                  className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 transition-colors cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 focus-visible:border-[#58a6ff] focus-visible:outline-none transition-colors cursor-pointer"
                   onClick={() => setExpanded(isOpen ? null : key)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setExpanded(isOpen ? null : key);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
                     <code className="text-emerald-400 font-mono text-sm shrink-0 w-28 truncate">{envCmd.command}</code>
