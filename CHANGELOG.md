@@ -5,6 +5,19 @@
 
 ---
 
+## 🎨 31 mai 2026 — Affinages UX : FAB plus discret, CTA pro, sidebar lisible (THI-311)
+*PR #351 · AiTutorPanel · Dashboard · Sidebar · ui-auditor + code-review + Sourcery + Voie A (desktop + mobile + super_admin)*
+
+Trois retouches visuelles issues d'un coup d'œil critique de @thierry, traitées en branche dédiée sans rien casser (0 route, 0 logique modifiée).
+
+- **Bouton tuteur IA (FAB)** — trop imposant sur desktop : ramené de 56 à **48px** (standard Material 3), avec une infobulle au survol pour rester découvrable. Mobile inchangé (44px, plancher Apple HIG).
+- **Bouton « Continuer »** — il s'étirait sur toute la largeur (un réflexe mobile qui fait « pas pro » sur grand écran) : désormais **taille-contenu sur desktop**, pleine largeur au doigt sur mobile.
+- **Sidebar** — ajout de **labels de section** (« Navigation », « Compte & aide ») pour structurer le menu, surtout pour les comptes admin/super-admin. Le split en deux menus a été **écarté** après vérification : le regroupement repliable « Mes outils » (THI-240) suffisait déjà. Typographie des quatre labels unifiée.
+
+Arbitrage délégué à l'agent (« tu challenges et tu décides »), puis validé visuellement par @thierry (desktop, mobile, vue super_admin). Tous les gates qualité passés (ui-auditor 0 critique, code-review 0 critique, Sourcery traité). L'i18n des libellés est repoussée au futur chantier multilingue — aucune couche i18n n'existe encore.
+
+---
+
 ## 🔓 31 mai 2026 — Fiabilité de la progression : déverrouillage persistant + crash de chargement corrigé (THI-309 · #349)
 *PRs #348 + #349 · ProgressContext · code-review + Sourcery + vérification Sentry empirique*
 
