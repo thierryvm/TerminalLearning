@@ -92,7 +92,10 @@ function KeyButton({
 export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }: TerminalKeyBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(true);
+  // Starts false: on a phone the key set always overflows, so the right fade
+  // must be present from the first paint (updateEdges corrects it after mount
+  // for the rare non-overflowing case). Avoids a one-frame missing-fade flash.
+  const [atEnd, setAtEnd] = useState(false);
 
   const updateEdges = useCallback(() => {
     const el = scrollRef.current;
