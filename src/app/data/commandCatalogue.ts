@@ -1176,6 +1176,153 @@ const baseCatalogue: CategoryMeta[] = [
       },
     ],
   },
+
+  // ─── LEVEL 4 — GIT & COLLABORATION ────────────────────────
+  // Git is identical across Linux/macOS/Windows → no per-OS variants.
+
+  {
+    id: 'git',
+    label: 'Git Fondamentaux',
+    level: 4,
+    prerequisites: ['variables'],
+    unlocks: ['github-collaboration'],
+    exerciseIdeas: [
+      'Initialiser un dépôt et faire un premier commit',
+      'Configurer son identité Git',
+      'Consulter le statut et l\'historique',
+      'Créer une branche et la fusionner',
+    ],
+    commands: [
+      {
+        id: 'git_init', name: 'git init', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git init [chemin]', summary: 'Initialiser un nouveau dépôt Git',
+        examples: ['git init', 'git init mon-projet'],
+        commonErrors: ['Lancer git init dans le mauvais dossier (vérifier avec pwd)'],
+      },
+      {
+        id: 'git_config', name: 'git config', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git config [--global] clé valeur', summary: 'Configurer Git (identité, préférences)',
+        examples: ['git config --global user.name "Alice"', 'git config --global user.email "alice@example.com"'],
+        commonErrors: ['Oublier --global → config limitée au dépôt courant'],
+      },
+      {
+        id: 'git_add', name: 'git add', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git add <fichiers>', summary: 'Indexer des modifications pour le prochain commit',
+        examples: ['git add fichier.txt', 'git add .'],
+        commonErrors: ['git add . indexe TOUT — vérifier git status avant'],
+      },
+      {
+        id: 'git_commit', name: 'git commit', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git commit -m "message"', summary: 'Enregistrer un instantané des fichiers indexés',
+        examples: ['git commit -m "feat: ajoute la page contact"', 'git commit -am "fix: corrige le bug"'],
+        commonErrors: ['Commit sans git add préalable → rien n\'est enregistré', 'Message vide ou non descriptif'],
+      },
+      {
+        id: 'git_status', name: 'git status', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git status', summary: 'Afficher l\'état du dépôt (fichiers modifiés, indexés)',
+        examples: ['git status', 'git status -s'],
+        commonErrors: [],
+      },
+      {
+        id: 'git_log', name: 'git log', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git log [options]', summary: 'Afficher l\'historique des commits',
+        examples: ['git log', 'git log --oneline', 'git log --graph --oneline --all'],
+        commonErrors: ['Sortie longue : taper q pour quitter le pager'],
+      },
+      {
+        id: 'git_diff', name: 'git diff', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git diff [options]', summary: 'Comparer les modifications (working dir, index, commits)',
+        examples: ['git diff', 'git diff --staged', 'git diff main feature'],
+        commonErrors: ['git diff seul ne montre PAS les fichiers déjà indexés (utiliser --staged)'],
+      },
+      {
+        id: 'gitignore', name: '.gitignore', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: '.gitignore (fichier de motifs)', summary: 'Exclure des fichiers du suivi Git',
+        examples: ['node_modules/', '*.log', '.env'],
+        commonErrors: ['.gitignore n\'affecte PAS les fichiers déjà suivis (git rm --cached d\'abord)'],
+      },
+      {
+        id: 'git_branch', name: 'git branch', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git branch [nom]', summary: 'Lister, créer ou supprimer des branches',
+        examples: ['git branch', 'git branch feature/login', 'git switch -c feature/login'],
+        commonErrors: ['git branch crée la branche mais ne bascule pas dessus (git switch / checkout)'],
+      },
+      {
+        id: 'git_merge', name: 'git merge', category: 'git', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git merge <branche>', summary: 'Fusionner une branche dans la branche courante',
+        examples: ['git merge feature/login', 'git merge --no-ff feature/login'],
+        commonErrors: ['Conflits de merge : résoudre, git add, puis git commit'],
+      },
+    ],
+  },
+
+  {
+    id: 'github-collaboration',
+    label: 'GitHub & Collaboration',
+    level: 4,
+    prerequisites: ['git', 'reseau'],
+    unlocks: [],
+    exerciseIdeas: [
+      'Lier un dépôt local à GitHub',
+      'Pousser et récupérer des modifications',
+      'Cloner un dépôt existant',
+      'Rebaser une branche sur main',
+    ],
+    commands: [
+      {
+        id: 'git_remote', name: 'git remote', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git remote [add <nom> <url>]', summary: 'Gérer les dépôts distants (remotes)',
+        examples: ['git remote -v', 'git remote add origin https://github.com/user/repo.git'],
+        commonErrors: ['Confondre le nom du remote (origin) et le nom de la branche (main)'],
+      },
+      {
+        id: 'git_push', name: 'git push', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git push [remote] [branche]', summary: 'Envoyer les commits locaux vers le dépôt distant',
+        examples: ['git push', 'git push -u origin main'],
+        commonErrors: ['Premier push : utiliser -u pour lier la branche locale au remote'],
+      },
+      {
+        id: 'git_pull', name: 'git pull', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git pull [remote] [branche]', summary: 'Récupérer ET fusionner les modifications distantes',
+        examples: ['git pull', 'git pull origin main'],
+        commonErrors: ['git pull = git fetch + git merge — peut créer des conflits'],
+      },
+      {
+        id: 'git_fetch', name: 'git fetch', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git fetch [remote]', summary: 'Récupérer les modifications distantes SANS les fusionner',
+        examples: ['git fetch', 'git fetch origin'],
+        commonErrors: ['Contrairement à pull, fetch ne modifie pas votre branche de travail'],
+      },
+      {
+        id: 'git_clone', name: 'git clone', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git clone <url> [dossier]', summary: 'Cloner un dépôt distant en local',
+        examples: ['git clone https://github.com/user/repo.git', 'git clone git@github.com:user/repo.git'],
+        commonErrors: ['HTTPS vs SSH : le clone SSH nécessite une clé configurée'],
+      },
+      {
+        id: 'git_rebase', name: 'git rebase', category: 'github-collaboration', level: 4,
+        recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'git rebase <branche>', summary: 'Réappliquer des commits sur une autre base (historique linéaire)',
+        examples: ['git rebase main', 'git rebase -i HEAD~3'],
+        commonErrors: ['Ne jamais rebaser une branche déjà partagée/poussée publiquement'],
+      },
+    ],
+  },
 ];
 
 /**
@@ -1206,6 +1353,7 @@ const PS = 'https://learn.microsoft.com/en-us/powershell/module/';
 const BASH = 'https://www.gnu.org/software/bash/manual/bash.html';
 const DEB = 'https://manpages.debian.org/';
 const OBSD = 'https://man.openbsd.org/';
+const GIT = 'https://git-scm.com/docs/';
 
 const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
   // navigation
@@ -1364,6 +1512,23 @@ const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
     { label: 'OpenSSH — ssh-keygen', url: `${OBSD}ssh-keygen` },
   ],
   scp: [{ label: 'OpenSSH — scp', url: `${OBSD}scp` }],
+  // git (identique cross-OS — doc officielle unique git-scm.com)
+  git_init: [{ label: 'git-scm.com — git init (officiel)', url: `${GIT}git-init` }],
+  git_config: [{ label: 'git-scm.com — git config (officiel)', url: `${GIT}git-config` }],
+  git_add: [{ label: 'git-scm.com — git add (officiel)', url: `${GIT}git-add` }],
+  git_commit: [{ label: 'git-scm.com — git commit (officiel)', url: `${GIT}git-commit` }],
+  git_status: [{ label: 'git-scm.com — git status (officiel)', url: `${GIT}git-status` }],
+  git_log: [{ label: 'git-scm.com — git log (officiel)', url: `${GIT}git-log` }],
+  git_diff: [{ label: 'git-scm.com — git diff (officiel)', url: `${GIT}git-diff` }],
+  gitignore: [{ label: 'git-scm.com — gitignore (officiel)', url: `${GIT}gitignore` }],
+  git_branch: [{ label: 'git-scm.com — git branch (officiel)', url: `${GIT}git-branch` }],
+  git_merge: [{ label: 'git-scm.com — git merge (officiel)', url: `${GIT}git-merge` }],
+  git_remote: [{ label: 'git-scm.com — git remote (officiel)', url: `${GIT}git-remote` }],
+  git_push: [{ label: 'git-scm.com — git push (officiel)', url: `${GIT}git-push` }],
+  git_pull: [{ label: 'git-scm.com — git pull (officiel)', url: `${GIT}git-pull` }],
+  git_fetch: [{ label: 'git-scm.com — git fetch (officiel)', url: `${GIT}git-fetch` }],
+  git_clone: [{ label: 'git-scm.com — git clone (officiel)', url: `${GIT}git-clone` }],
+  git_rebase: [{ label: 'git-scm.com — git rebase (officiel)', url: `${GIT}git-rebase` }],
 };
 
 /**
