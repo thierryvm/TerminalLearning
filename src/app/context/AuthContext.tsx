@@ -65,6 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setSession(data.session);
         setLoading(false);
+      }).catch(() => {
+        // getSession() can reject on a transient SDK/network error. This
+        // promise is not chained to the outer .catch below (it's fired, not
+        // returned), so without its own handler a rejection would surface as
+        // an unhandled rejection AND leave the app stuck in `loading`. Degrade
+        // to "no session" so the UI renders (THI-310).
+        if (!cancelled) setLoading(false);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
@@ -82,29 +89,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    const { supabase } = await supabaseLoader;
-    if (!supabase) return;
-    // Run all client-side teardown steps before clearing the session so the
-    // next user signing in on the same device sees a clean slate (defense
-    // against THI-186-class cross-account leaks via stale in-memory or
-    // localStorage state).
-    await teardownClientState();
-    // Clear local session immediately — the UI reacts instantly.
-    // Then revoke the server-side refresh token in the background (fire-and-forget).
-    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the
-    // server-side session active, causing Supabase to re-sign the user immediately
-    // via onAuthStateChange — making sign-out appear broken.
-    // We don't await the API call: the local session is already gone, and token
-    // revocation completing a few seconds later is an acceptable trade-off.
-    // See: https://supabase.com/docs/reference/javascript/auth-signout
+    // Local logout FIRST so it ALWAYS completes and the UI reacts instantly,
+    // independent of the SDK chunk or teardown internals. The previous order
+    // awaited `supabaseLoader` before `setSession(null)`, so a rejected loader
+    // threw before the local logout ran (THI-310 latent bug). `setSession(null)`
+    // is ordered before teardown so the guarantee holds even if a future
+    // teardown step were to throw (Sourcery bug_risk) — `teardownClientState`
+    // is itself per-step try/caught today and clears THI-186-class cross-account
+    // vectors (AI session data + in-memory role cache) before the next user.
     setSession(null);
-    supabase.auth.signOut({ scope: 'global' }).then(({ error }) => {
-      if (error) {
-        // Log revocation failures — token may still be valid server-side until expiry.
-        // Not fatal: local session is already cleared and the user is logged out in the UI.
-        console.error('[auth] signOut revocation failed:', error.message);
+    await teardownClientState();
+
+    // Server-side token revocation is fire-and-forget (deliberately NOT awaited)
+    // so logout navigation stays snappy — the local session is already gone.
+    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' leaves
+    // the server session active, re-signing the user via onAuthStateChange.
+    // A failed chunk load or a rejected/errored revocation must not surface as an
+    // unhandled rejection. https://supabase.com/docs/reference/javascript/auth-signout
+    void (async () => {
+      try {
+        const { supabase } = await supabaseLoader;
+        if (!supabase) return;
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
+        if (error) {
+          // Token may still be valid server-side until expiry. Not fatal:
+          // local session is already cleared and the user is logged out.
+          console.error('[auth] signOut revocation failed:', error.message);
+        }
+      } catch (err) {
+        console.error('[auth] signOut revocation threw (non-fatal):', err);
       }
-    });
+    })();
   }, []);
 
   return (

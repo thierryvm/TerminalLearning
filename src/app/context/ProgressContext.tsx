@@ -423,26 +423,35 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
       // Fire-and-forget upsert — supabaseLoader is already resolved by the time
       // a user completes a lesson (loads within ~200 ms of app mount).
-      supabaseLoader.then(({ supabase }) => {
-        if (!supabase) return;
-        supabase.auth.getSession().then(({ data }) => {
-          if (!data.session?.user) return;
-          const userId = data.session.user.id;
-          // Promote the owner marker now that we know who is authenticated —
-          // any future sign-out / account switch will correctly clear.
-          setStoredOwner(userId);
-          supabase
-            .from('progress')
-            .upsert(
-              { user_id: userId, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
-              { onConflict: 'user_id,lesson_id' }
-            )
-            .then(({ error }) => {
-              if (!error) setSyncStatus('synced');
-              else setSyncStatus('error');
-            });
+      // The inner promises are RETURNED so the whole chain funnels into the
+      // single `.catch` below: a rejected SDK chunk load, getSession, or upsert
+      // must not surface as an unhandled rejection (THI-310). The lesson is
+      // already persisted to localStorage above (saveProgress), so a remote
+      // failure only downgrades the sync indicator — no data is lost, and the
+      // next sync on auth change / reload reconciles.
+      supabaseLoader
+        .then(({ supabase }) => {
+          if (!supabase) return;
+          return supabase.auth.getSession().then(({ data }) => {
+            if (!data.session?.user) return;
+            const userId = data.session.user.id;
+            // Promote the owner marker now that we know who is authenticated —
+            // any future sign-out / account switch will correctly clear.
+            setStoredOwner(userId);
+            return supabase
+              .from('progress')
+              .upsert(
+                { user_id: userId, lesson_id: key, completed: true as const, completed_at: new Date().toISOString() },
+                { onConflict: 'user_id,lesson_id' }
+              )
+              .then(({ error }) => {
+                setSyncStatus(error ? 'error' : 'synced');
+              });
+          });
+        })
+        .catch(() => {
+          setSyncStatus('error');
         });
-      });
 
       return next;
     });
