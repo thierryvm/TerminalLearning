@@ -207,11 +207,14 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
 
   if (!enabled) return null;
 
-  // On touch viewports inside a lesson, raise the FAB above the terminal mobile
-  // key bar (~57px) so it never overlaps it. Desktop / non-lesson pages keep the
-  // standard bottom-right corner anchor.
+  // On touch viewports inside a lesson, raise the FAB above the bottom chrome:
+  // the terminal mobile key bar (~57px) AND the persistent lesson nav footer
+  // (THI-313, ~68px non-notch / ~90px notch PWA). +5rem (80px) keeps a clear
+  // gap above the footer nav on notched iPhones in standalone mode (≈24px),
+  // not just the ≈8px that +4rem left. Desktop / non-lesson pages keep the
+  // standard bottom-right corner anchor. (Real-iPhone validation pending.)
   const fabBottomClass = liftAboveMobileBar
-    ? 'bottom-[max(1rem,env(safe-area-inset-bottom))] [@media(pointer:coarse)]:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4rem)]'
+    ? 'bottom-[max(1rem,env(safe-area-inset-bottom))] [@media(pointer:coarse)]:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5rem)]'
     : 'bottom-[max(1rem,env(safe-area-inset-bottom))]';
 
   return (

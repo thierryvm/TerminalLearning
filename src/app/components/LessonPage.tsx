@@ -390,7 +390,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           inside the content pane, which is hidden when the terminal pane is
           active on mobile — without this footer, Précédent/Suivant would be
           unreachable from the terminal view. shrink-0 so it never scrolls away. */}
-      <div className="lg:hidden shrink-0 border-t border-[var(--github-border-primary)] px-4 py-3 flex items-center justify-between bg-[var(--github-bg)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="lg:hidden shrink-0 border-t border-[var(--github-border-primary)] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between bg-[var(--github-bg)]">
         <LessonNav
           prevLesson={prevLesson}
           nextLesson={nextLesson}
