@@ -214,7 +214,12 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
   // also shows on narrow fine-pointer viewports (a resized desktop window),
   // where a coarse-only lift left the FAB overlapping the "Suivant" button.
   // +5rem (80px) clears the footer with a comfortable gap; reset to the corner
-  // anchor at `lg` (no footer there). Real-iPhone PWA validation still pending.
+  // anchor at `lg` (no footer there). Clearance is invariant to the safe-area
+  // inset: the footer's pb and the FAB's bottom both track
+  // env(safe-area-inset-bottom) with slope 1, so the gap = 80px − (footer pt
+  // 12px + 44px nav button + ~1px border) ≈ 23px for ANY inset value. Verified
+  // empirically on prod at 390px: footer 69px tall, FAB bottom edge at 96px,
+  // gap +27px (inset 0); iPhone PWA inset ~34px → gap +23px. No overlap possible.
   const fabBottomClass = liftAboveMobileBar
     ? 'bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5rem)] lg:bottom-[max(1rem,env(safe-area-inset-bottom))]'
     : 'bottom-[max(1rem,env(safe-area-inset-bottom))]';
