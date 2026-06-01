@@ -43,16 +43,27 @@ async function fetchRole(userId: string): Promise<UserRole | null> {
   }
   cachedRoleUserId = userId;
   cachedRolePromise = (async () => {
-    const { supabase } = await import('@/lib/supabase');
-    if (!supabase) return null;
-    const { data, error } = await supabase.rpc('get_my_role');
-    if (error) {
-      // Don't expose the user-facing error here — the calling component
-      // will render a fallback. Logging the technical error is enough.
-      console.error('[useUserRole] get_my_role RPC failed:', error.message);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) return null;
+      const { data, error } = await supabase.rpc('get_my_role');
+      if (error) {
+        // Don't expose the user-facing error here — the calling component
+        // will render a fallback. Logging the technical error is enough.
+        console.error('[useUserRole] get_my_role RPC failed:', error.message);
+        return null;
+      }
+      return data as UserRole | null;
+    } catch (err) {
+      // A rejected SDK chunk load (stale chunk / network) or a thrown RPC must
+      // NOT reject the cached promise: the caller's `.then` (in the effect
+      // below) has no `.catch`, so a rejection would surface as an unhandled
+      // rejection. Degrade to `null` — the most restrictive default (no
+      // elevated role); a genuine stale chunk self-heals on the next reload
+      // via main.tsx. THI-310.
+      console.error('[useUserRole] role resolution failed (non-fatal):', err);
       return null;
     }
-    return data as UserRole | null;
   })();
   return cachedRolePromise;
 }
