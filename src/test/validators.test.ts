@@ -77,6 +77,13 @@ const win   = 'windows' as const;
 describe('validateOrientation', () => {
   it('accepts "help"', () => expect(validateOrientation('help')).toBe(true));
   it('accepts "HELP" (case insensitive)', () => expect(validateOrientation('HELP')).toBe(true));
+  // THI-316 — the lesson tip teaches `help <cmd>`; the engine simulates `man`.
+  it('accepts "help ls" (lesson teaches it)', () => expect(validateOrientation('help ls')).toBe(true));
+  it('accepts "man"', () => expect(validateOrientation('man')).toBe(true));
+  it('accepts "man ls"', () => expect(validateOrientation('man ls')).toBe(true));
+  // Engine does NOT execute these — must NOT validate on an error output.
+  it('rejects "whatis ls" (engine has no whatis)', () => expect(validateOrientation('whatis ls')).toBe(false));
+  it('rejects "apropos copy" (engine has no apropos)', () => expect(validateOrientation('apropos copy')).toBe(false));
   it('rejects empty string', () => expect(validateOrientation('')).toBe(false));
   it('rejects "ls"', () => expect(validateOrientation('ls')).toBe(false));
 });
@@ -130,6 +137,9 @@ describe('validateCd', () => {
   it('accepts "Set-Location documents" on windows', () => expect(validateCd('Set-Location documents', win)).toBe(true));
   it('accepts "sl documents" on windows', () => expect(validateCd('sl documents', win)).toBe(true));
   it('accepts "cd documents" on windows', () => expect(validateCd('cd documents', win)).toBe(true));
+  // THI-316 — Tab-completion appends a trailing slash to a directory.
+  it('accepts "cd documents/" (tab-completion slash)', () => expect(validateCd('cd documents/', linux)).toBe(true));
+  it('accepts "cd documents/" on windows', () => expect(validateCd('cd documents/', win)).toBe(true));
   it('rejects "cd downloads"', () => expect(validateCd('cd downloads', linux)).toBe(false));
   it('rejects bare "cd"', () => expect(validateCd('cd', linux)).toBe(false));
 });
@@ -340,13 +350,22 @@ describe('validateCron', () => {
 describe('validatePing', () => {
   it('accepts "ping google.com"', () => expect(validatePing('ping google.com')).toBe(true));
   it('accepts "ping 8.8.8.8"', () => expect(validatePing('ping 8.8.8.8')).toBe(true));
+  // THI-316 — options the lesson teaches must not be rejected.
+  it('accepts "ping -c 4 google.com" (Linux/macOS)', () => expect(validatePing('ping -c 4 google.com')).toBe(true));
+  it('accepts "ping -n 4 google.com" (Windows)', () => expect(validatePing('ping -n 4 google.com')).toBe(true));
+  it('accepts "ping -t google.com" (Windows continuous)', () => expect(validatePing('ping -t google.com')).toBe(true));
   it('rejects bare "ping"', () => expect(validatePing('ping')).toBe(false));
+  it('rejects "ping -c 4" (no host)', () => expect(validatePing('ping -c 4')).toBe(false));
 });
 
 describe('validateCurl', () => {
   it('accepts "curl https://example.com"', () => expect(validateCurl('curl https://example.com', linux)).toBe(true));
   it('accepts "Invoke-WebRequest -Uri https://example.com" on windows', () => expect(validateCurl('Invoke-WebRequest -Uri https://example.com', win)).toBe(true));
+  // THI-316 — flags may precede the URL; a URL is now required (W1 fix).
+  it('accepts "curl -I https://example.com"', () => expect(validateCurl('curl -I https://example.com', linux)).toBe(true));
+  it('accepts "curl -s https://api.github.com | jq ."', () => expect(validateCurl('curl -s https://api.github.com | jq .', linux)).toBe(true));
   it('rejects bare "curl"', () => expect(validateCurl('curl', linux)).toBe(false));
+  it('rejects "curl foo" (no URL — was accepted before)', () => expect(validateCurl('curl foo', linux)).toBe(false));
 });
 
 describe('validateWget', () => {

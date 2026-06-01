@@ -1884,7 +1884,13 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Testez la connectivité vers `google.com` avec la commande `ping google.com`.',
+          instructionByEnv: {
+            windows: 'Testez la connectivité vers `google.com` avec `ping google.com` — commande identique sur Windows (où `ping` envoie 4 paquets puis s\'arrête automatiquement).',
+          },
           hint: 'Tapez: ping google.com',
+          hintByEnv: {
+            windows: 'Tapez: ping google.com (sur Windows : `-n 4` limite le nombre de paquets, là où Linux/macOS utilisent `-c 4`)',
+          },
           validate: validatePing,
           successMessage: 'Excellent ! Vous savez maintenant tester la connectivité réseau.',
         },
@@ -2080,7 +2086,13 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Générez une paire de clés SSH ED25519 avec `ssh-keygen -t ed25519`.',
+          instructionByEnv: {
+            windows: 'Générez une paire de clés SSH ED25519 avec `ssh-keygen -t ed25519` — OpenSSH est natif sur Windows 10+, la commande est identique (PowerShell ou CMD).',
+          },
           hint: 'Tapez: ssh-keygen -t ed25519',
+          hintByEnv: {
+            windows: 'Tapez: ssh-keygen -t ed25519 (fonctionne nativement via OpenSSH sur Windows 10+)',
+          },
           validate: validateSsh,
           successMessage: 'Bravo ! Vous venez de générer votre première paire de clés SSH.',
         },
@@ -2120,7 +2132,13 @@ export const curriculum: Module[] = [
         ],
         exercise: {
           instruction: 'Copiez un fichier vers un serveur distant avec `scp fichier.txt user@serveur.example.com:/home/user/`.',
+          instructionByEnv: {
+            windows: 'Copiez un fichier vers un serveur distant avec `scp fichier.txt user@serveur.example.com:/home/user/` — `scp` est natif sur Windows 10+, la commande est identique.',
+          },
           hint: 'Tapez: scp fichier.txt user@serveur.example.com:/home/user/',
+          hintByEnv: {
+            windows: 'Tapez: scp fichier.txt user@serveur.example.com:/home/user/ (identique sur Windows 10+ via OpenSSH natif)',
+          },
           validate: validateScp,
           successMessage: 'Excellent ! Vous savez maintenant transférer des fichiers de manière sécurisée.',
         },
