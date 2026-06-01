@@ -354,6 +354,7 @@ describe('validatePing', () => {
   it('accepts "ping -c 4 google.com" (Linux/macOS)', () => expect(validatePing('ping -c 4 google.com')).toBe(true));
   it('accepts "ping -n 4 google.com" (Windows)', () => expect(validatePing('ping -n 4 google.com')).toBe(true));
   it('accepts "ping -t google.com" (Windows continuous)', () => expect(validatePing('ping -t google.com')).toBe(true));
+  it('accepts "ping -i 0.2 google.com" (fast ping, taught in lesson)', () => expect(validatePing('ping -i 0.2 google.com')).toBe(true));
   it('rejects bare "ping"', () => expect(validatePing('ping')).toBe(false));
   it('rejects "ping -c 4" (no host)', () => expect(validatePing('ping -c 4')).toBe(false));
 });
