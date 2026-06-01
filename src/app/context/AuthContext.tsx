@@ -89,42 +89,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // Local logout must ALWAYS complete, even if the Supabase SDK chunk failed
-    // to load (network / stale chunk). The previous order awaited `supabaseLoader`
-    // FIRST — so a rejected loader threw before `setSession(null)` ever ran, and
-    // clicking "sign out" did nothing visible (THI-310 latent bug). We now run
-    // the client-side teardown + clear the local session UNCONDITIONALLY first.
-    //
-    // Teardown clears THI-186-class cross-account leak vectors (AI session data +
-    // in-memory role cache) so the next user on the same device sees a clean slate.
-    await teardownClientState();
+    // Local logout FIRST so it ALWAYS completes and the UI reacts instantly,
+    // independent of the SDK chunk or teardown internals. The previous order
+    // awaited `supabaseLoader` before `setSession(null)`, so a rejected loader
+    // threw before the local logout ran (THI-310 latent bug). `setSession(null)`
+    // is ordered before teardown so the guarantee holds even if a future
+    // teardown step were to throw (Sourcery bug_risk) — `teardownClientState`
+    // is itself per-step try/caught today and clears THI-186-class cross-account
+    // vectors (AI session data + in-memory role cache) before the next user.
     setSession(null);
+    await teardownClientState();
 
-    // Then revoke the server-side refresh token, best-effort. A failed chunk
-    // load or a rejected revocation call must NOT resurface as an unhandled
-    // rejection — the user is already logged out locally.
-    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' left the
-    // server-side session active, causing Supabase to re-sign the user immediately
-    // via onAuthStateChange — making sign-out appear broken.
-    // See: https://supabase.com/docs/reference/javascript/auth-signout
-    try {
-      const { supabase } = await supabaseLoader;
-      if (!supabase) return;
-      supabase.auth
-        .signOut({ scope: 'global' })
-        .then(({ error }) => {
-          if (error) {
-            // Token may still be valid server-side until expiry. Not fatal:
-            // local session is already cleared and the user is logged out in the UI.
-            console.error('[auth] signOut revocation failed:', error.message);
-          }
-        })
-        .catch((err) => {
-          console.error('[auth] signOut revocation threw (non-fatal):', err);
-        });
-    } catch {
-      // Supabase SDK chunk unavailable — local logout above already succeeded.
-    }
+    // Server-side token revocation is fire-and-forget (deliberately NOT awaited)
+    // so logout navigation stays snappy — the local session is already gone.
+    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' leaves
+    // the server session active, re-signing the user via onAuthStateChange.
+    // A failed chunk load or a rejected/errored revocation must not surface as an
+    // unhandled rejection. https://supabase.com/docs/reference/javascript/auth-signout
+    void (async () => {
+      try {
+        const { supabase } = await supabaseLoader;
+        if (!supabase) return;
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
+        if (error) {
+          // Token may still be valid server-side until expiry. Not fatal:
+          // local session is already cleared and the user is logged out.
+          console.error('[auth] signOut revocation failed:', error.message);
+        }
+      } catch (err) {
+        console.error('[auth] signOut revocation threw (non-fatal):', err);
+      }
+    })();
   }, []);
 
   return (
