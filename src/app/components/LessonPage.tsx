@@ -92,6 +92,63 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
   }
 }
 
+// Shared Précédent / Suivant (or Dashboard) navigation. Rendered in two places
+// (THI-313): the desktop in-content footer AND a mobile-only persistent footer,
+// so navigation is reachable from BOTH mobile panes (Contenu + Terminal). One
+// definition keeps the two in sync.
+type LessonTarget = { moduleId: string; lessonId: string } | null;
+function LessonNav({
+  prevLesson,
+  nextLesson,
+  onNavigate,
+  onDashboard,
+}: {
+  prevLesson: LessonTarget;
+  nextLesson: LessonTarget;
+  onNavigate: (target: LessonTarget) => void;
+  onDashboard: () => void;
+}) {
+  return (
+    <>
+      <Button
+        type="button"
+        variant="nav-link"
+        size="tl-nav-inline"
+        onClick={() => onNavigate(prevLesson)}
+        disabled={!prevLesson}
+        className="gap-2 -ml-2 disabled:opacity-30"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        <span>Précédent</span>
+      </Button>
+
+      {nextLesson ? (
+        <Button
+          type="button"
+          variant="emerald-soft"
+          size="tl-nav-cta"
+          onClick={() => onNavigate(nextLesson)}
+          aria-label="Passer à la leçon suivante"
+        >
+          <span>Suivant</span>
+          <ChevronRight className="size-4" aria-hidden="true" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="emerald-soft"
+          size="tl-nav-cta"
+          onClick={onDashboard}
+          aria-label="Retour au tableau de bord"
+        >
+          <span>Tableau de bord</span>
+          <ChevronRight className="size-4" aria-hidden="true" />
+        </Button>
+      )}
+    </>
+  );
+}
+
 // Separated so the parent can remount it with a key when the lesson changes,
 // resetting all local state without needing useEffect + setState.
 function LessonContent({ mod, lesson, moduleId, lessonId }: {
@@ -156,7 +213,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const effectiveInstruction =
     lesson.exercise?.instructionByEnv?.[selectedEnv] ?? lesson.exercise?.instruction ?? '';
   const welcomeMessage = lesson.exercise
-    ? [`📚 ${lesson.title}`, ``, `Exercice : ${effectiveInstruction}`, ``]
+    ? exerciseCompleted
+      ? [`📚 ${lesson.title}`, ``, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
+      : [`📚 ${lesson.title}`, ``, `Exercice : ${effectiveInstruction}`, ``]
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
 
   return (
@@ -281,43 +340,16 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             )}
           </div>
 
-          {/* Navigation */}
-          <div className="shrink-0 border-t border-[var(--github-border-primary)] px-5 py-4 flex items-center justify-between">
-            <Button
-              type="button"
-              variant="nav-link"
-              size="tl-nav-inline"
-              onClick={() => handleNavigate(prevLesson)}
-              disabled={!prevLesson}
-              className="gap-2 -ml-2 disabled:opacity-30"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-              <span>Précédent</span>
-            </Button>
-
-            {nextLesson ? (
-              <Button
-                type="button"
-                variant="emerald-soft"
-                size="tl-nav-cta"
-                onClick={() => handleNavigate(nextLesson)}
-                aria-label="Passer à la leçon suivante"
-              >
-                <span>Suivant</span>
-                <ChevronRight className="size-4" aria-hidden="true" />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="emerald-soft"
-                size="tl-nav-cta"
-                onClick={() => navigate('/app')}
-                aria-label="Retour au tableau de bord"
-              >
-                <span>Tableau de bord</span>
-                <ChevronRight className="size-4" aria-hidden="true" />
-              </Button>
-            )}
+          {/* Navigation — desktop only. On mobile the content pane is hidden
+              when the terminal pane is active, so navigation lives in the
+              persistent mobile footer below (THI-313). */}
+          <div className="hidden lg:flex shrink-0 border-t border-[var(--github-border-primary)] px-5 py-4 items-center justify-between">
+            <LessonNav
+              prevLesson={prevLesson}
+              nextLesson={nextLesson}
+              onNavigate={handleNavigate}
+              onDashboard={() => navigate('/app')}
+            />
           </div>
         </div>
 
@@ -352,6 +384,19 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             environment={selectedEnv}
           />
         </div>
+      </div>
+
+      {/* Mobile-only persistent navigation (THI-313). The desktop nav lives
+          inside the content pane, which is hidden when the terminal pane is
+          active on mobile — without this footer, Précédent/Suivant would be
+          unreachable from the terminal view. shrink-0 so it never scrolls away. */}
+      <div className="lg:hidden shrink-0 border-t border-[var(--github-border-primary)] px-4 py-3 flex items-center justify-between bg-[var(--github-bg)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <LessonNav
+          prevLesson={prevLesson}
+          nextLesson={nextLesson}
+          onNavigate={handleNavigate}
+          onDashboard={() => navigate('/app')}
+        />
       </div>
     </div>
   );
