@@ -5,6 +5,22 @@
 
 ---
 
+## 🔐 1er juin 2026 — Déconnexion fiable + fiabilité chargement + nav leçon mobile (THI-310 · THI-315 · THI-313)
+*PRs #353 + #355 + #354 · AuthContext · ProgressContext · useUserRole · LessonPage · security-auditor + code-review + Voie A*
+
+Session de fiabilité partie d'un signalement utilisateur, qui a déterré trois problèmes distincts — tous corrigés et validés.
+
+### 1. Déconnexion incomplète (THI-315, hotfix #355)
+Cliquer « Se déconnecter » dans l'app laissait parfois l'utilisateur **toujours connecté** sur la page d'accueil. Cause : la révocation de session côté serveur était lancée en « fire-and-forget » — la fonction de déconnexion rendait la main **avant** que le jeton de session persisté soit effacé, et le rafraîchissement automatique du jeton restaurait alors la session. Race intermittente (donc parfois invisible). **Fix** : on attend désormais la révocation (jeton effacé avant toute navigation), borné par un timeout pour ne jamais bloquer. Le retour visuel reste instantané. Renforce la protection anti-fuite entre comptes sur appareil partagé (THI-186).
+
+### 2. Durcissement des imports asynchrones (THI-310, #353)
+Reliquat du correctif de fiabilité du chargement (#349) : trois chaînes asynchrones critiques (complétion de leçon, résolution de rôle, déconnexion) pouvaient produire des rejets non gérés sur erreur réseau/chunk périmé. **Fix** : chaque chaîne dégrade proprement (statut d'erreur, rôle restrictif par défaut, cache de rôle **auto-réparant** au prochain montage). +3 tests. security-auditor 9.5/10.
+
+### 3. Navigation de leçon inaccessible sur mobile (THI-313, #354)
+Sur mobile, l'apprenant atterrit sur le **panneau Terminal**, mais les boutons **Précédent/Suivant** ne vivaient que dans le panneau Contenu → impossible d'avancer depuis le terminal sans rebasculer. **Fix** : une barre de navigation persistante en bas, visible depuis les deux panneaux mobiles (composant partagé, desktop strictement inchangé) + un repère « ✓ leçon déjà complétée » dans le terminal. La validation visuelle a attrapé au passage un chevauchement du bouton tuteur IA avec « Suivant » (corrigé — le bouton se relève désormais sur le bon point de rupture).
+
+---
+
 ## 🎨 31 mai 2026 — Affinages UX : FAB plus discret, CTA pro, sidebar lisible (THI-311)
 *PR #351 · AiTutorPanel · Dashboard · Sidebar · ui-auditor + code-review + Sourcery + Voie A (desktop + mobile + super_admin)*
 
