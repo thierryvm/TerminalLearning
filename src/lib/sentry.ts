@@ -37,6 +37,17 @@ export function createScrubString(patterns: typeof SCRUB_PATTERNS) {
   };
 }
 
+// Crawler / bot detection for Sentry noise filtering. Bots execute the SPA's JS
+// only partially and trip guards that never fire for real users (e.g. Applebot
+// resolving the curriculum dynamic import with an incomplete module namespace —
+// THI-316 guard). Exported so the pattern is unit-tested. The `bot` token covers
+// Googlebot / bingbot / Applebot / etc.; the rest catch crawlers that don't use
+// it (Yahoo Slurp, Google Mediapartners, facebookexternalhit).
+const CRAWLER_UA_RX = /bot|crawl|spider|slurp|mediapartners|facebookexternalhit/i;
+export function isCrawlerUserAgent(ua: string | undefined | null): boolean {
+  return !!ua && CRAWLER_UA_RX.test(ua);
+}
+
 export function initSentry() {
   if (!dsn) return;
 
@@ -50,6 +61,13 @@ export function initSentry() {
     // Don't send events in development unless DSN is explicitly set
     enabled: import.meta.env.PROD,
     beforeSend(event: Sentry.ErrorEvent) {
+      // Drop events from crawlers / bots (see isCrawlerUserAgent). Verified
+      // Applebot-only via Sentry (2 events / 7d, 0 real users) before adding
+      // this filter; no real-user telemetry is lost.
+      if (typeof navigator !== 'undefined' && isCrawlerUserAgent(navigator.userAgent)) {
+        return null;
+      }
+
       // Drop EvalError: CSP correctly blocking eval() calls — not app bugs
       const evalErr = 'Eval' + 'Error';
       if (event.exception?.values?.some((e) => e.type === evalErr)) return null;
