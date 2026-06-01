@@ -40,10 +40,15 @@ export function createScrubString(patterns: typeof SCRUB_PATTERNS) {
 // Crawler / bot detection for Sentry noise filtering. Bots execute the SPA's JS
 // only partially and trip guards that never fire for real users (e.g. Applebot
 // resolving the curriculum dynamic import with an incomplete module namespace —
-// THI-316 guard). Exported so the pattern is unit-tested. The `bot` token covers
-// Googlebot / bingbot / Applebot / etc.; the rest catch crawlers that don't use
-// it (Yahoo Slurp, Google Mediapartners, facebookexternalhit).
-const CRAWLER_UA_RX = /bot|crawl|spider|slurp|mediapartners|facebookexternalhit/i;
+// THI-316 guard). Exported so the pattern is unit-tested.
+//
+// NB: we match an explicit list of crawler NAMES rather than a bare `bot`
+// substring — `bot` would false-positive on real devices like "Cubot" (an
+// Android brand). A `\bbot\b` word boundary doesn't work either: in "Googlebot"
+// the "bot" suffix has no boundary before it, so it would MISS the real bots.
+// Hence the curated name list + generic crawler keywords. (code-reviewer THI-317)
+const CRAWLER_UA_RX =
+  /applebot|googlebot|bingbot|yandex(?:bot)?|duckduckbot|baiduspider|ahrefsbot|semrushbot|petalbot|bytespider|gptbot|claudebot|ccbot|crawler|crawl|spider|slurp|mediapartners|facebookexternalhit|telegrambot|discordbot|whatsapp/i;
 export function isCrawlerUserAgent(ua: string | undefined | null): boolean {
   return !!ua && CRAWLER_UA_RX.test(ua);
 }
