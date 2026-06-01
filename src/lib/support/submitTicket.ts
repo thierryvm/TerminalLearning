@@ -22,6 +22,7 @@
  * THI-241 doctrine). Returns `{ error: null }` on success.
  */
 import { supabase } from '@/lib/supabase';
+import { notifyTicketCreated } from '@/lib/support/notifyTicket';
 import type { SupportTicketType } from '@/app/types/database';
 
 export const SUPPORT_BUCKET = 'support_screenshots';
@@ -109,9 +110,11 @@ export async function submitTicket(params: SubmitTicketParams): Promise<SubmitTi
     screenshotUrl = signed.signedUrl;
   }
 
-  const { error: insertError } = await supabase
+  const { data: inserted, error: insertError } = await supabase
     .from('support_tickets')
-    .insert({ user_id: userId, type, description, screenshot_url: screenshotUrl });
+    .insert({ user_id: userId, type, description, screenshot_url: screenshotUrl })
+    .select('id')
+    .single();
 
   if (insertError) {
     // Best-effort cleanup so a rejected ticket leaves no dangling screenshot.
@@ -122,6 +125,17 @@ export async function submitTicket(params: SubmitTicketParams): Promise<SubmitTi
       return { error: 'Connectez-vous pour envoyer un signalement.' };
     }
     return { error: 'Impossible d’envoyer le signalement pour le moment. Réessayez dans un instant.' };
+  }
+
+  // Best-effort super_admin email nudge (fire-and-forget — never blocks nor
+  // fails the user flow; the ticket is already persisted).
+  if (inserted?.id) {
+    void notifyTicketCreated(inserted.id);
+  } else {
+    // Incoherent state: insert reported success but the row id was not
+    // returned (e.g. a future SELECT policy stricter than INSERT hid it). The
+    // ticket is persisted, so don't fail the user — just surface it for triage.
+    console.warn('[submitTicket] insert succeeded but no id returned — email notification skipped');
   }
 
   return { error: null };
