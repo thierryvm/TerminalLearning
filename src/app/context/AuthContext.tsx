@@ -100,26 +100,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     await teardownClientState();
 
-    // Server-side token revocation is fire-and-forget (deliberately NOT awaited)
-    // so logout navigation stays snappy — the local session is already gone.
-    // scope:'global' is required for OAuth (GitHub, Google): scope:'local' leaves
-    // the server session active, re-signing the user via onAuthStateChange.
-    // A failed chunk load or a rejected/errored revocation must not surface as an
-    // unhandled rejection. https://supabase.com/docs/reference/javascript/auth-signout
-    void (async () => {
-      try {
-        const { supabase } = await supabaseLoader;
-        if (!supabase) return;
-        const { error } = await supabase.auth.signOut({ scope: 'global' });
-        if (error) {
-          // Token may still be valid server-side until expiry. Not fatal:
-          // local session is already cleared and the user is logged out.
-          console.error('[auth] signOut revocation failed:', error.message);
-        }
-      } catch (err) {
-        console.error('[auth] signOut revocation threw (non-fatal):', err);
-      }
-    })();
+    // Await the revocation so the persisted session token is cleared BEFORE the
+    // caller navigates — a fire-and-forget revoke let autoRefreshToken restore
+    // the session on the next page (incident detail in the commit message +
+    // ticket). Bounded by a timeout so a hung network never leaves signOut
+    // pending: gotrue-js removes the local token before its network call, so
+    // proceeding on timeout is safe. scope:'global' is required for OAuth.
+    try {
+      const { supabase } = await supabaseLoader;
+      if (!supabase) return;
+      await Promise.race([
+        supabase.auth.signOut({ scope: 'global' }).then(({ error }) => {
+          if (error) console.error('[auth] signOut revocation failed:', error.message);
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, 4000)),
+      ]);
+    } catch (err) {
+      console.error('[auth] signOut revocation threw (non-fatal):', err);
+    }
   }, []);
 
   return (
