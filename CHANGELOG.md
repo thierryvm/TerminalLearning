@@ -5,6 +5,21 @@
 
 ---
 
+## 🎯 1er juin 2026 — Cohérence des exercices : les validateurs acceptent ce que la leçon enseigne (THI-316 · THI-293)
+*PR #357 · validators.ts · curriculum.ts · curriculum-validator + test-runner + content-auditor + code-review + Voie A 3 OS*
+
+Parti du blocage concret de @thierry — taper `help ls` (montré dans la leçon) ne validait pas l'exercice « Comment demander de l'aide » — un **audit complet du catalogue** (66 validateurs relus, instructions et support du moteur vérifiés) a corrigé toute une classe de validateurs trop stricts ou trop laxistes.
+
+- **« Comment demander de l'aide »** acceptait UNIQUEMENT `help` à la lettre. Désormais elle reconnaît aussi `help <commande>`, `man`, `man <commande>` — exactement ce que la leçon montre et ce que le terminal simule (les outils non simulés comme `whatis` restent refusés pour ne pas valider sur une erreur).
+- **`cd`** accepte le slash que la **tab-complétion** ajoute (`cd documents/`).
+- **`ping`** accepte les options enseignées (`-c 4`, `-n 4`, `-t`, `-i 0.2`) au lieu du seul `ping google.com`.
+- **`curl`** exige maintenant une vraie URL (avant, `curl n'importe quoi` validait).
+- **Réseau (ping / SSH / scp)** : guidage Windows explicite ajouté (commandes identiques nativement sur Windows 10+) — ferme les 3 points bloquants de l'audit pédagogique (THI-293).
+
+Vérifié sur les **3 OS** (Linux, macOS, Windows) par des tests par-environnement déterministes (~50 assertions ajoutées) + confirmation en preview : `help ls` valide et fait avancer la leçon. Les exercices « tape exactement cette commande » (cp/mv/rm/cat) et ceux alignés sur leur instruction (kill→`ps aux`, chown→`ls -la`) ont été revus et laissés tels quels — documenté.
+
+---
+
 ## 🔐 1er juin 2026 — Déconnexion fiable + fiabilité chargement + nav leçon mobile (THI-310 · THI-315 · THI-313)
 *PRs #353 + #355 + #354 · AuthContext · ProgressContext · useUserRole · LessonPage · security-auditor + code-review + Voie A*
 

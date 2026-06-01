@@ -2,7 +2,20 @@ import type { EnvId } from './curriculum';
 
 export type ValidateFn = (command: string, env?: EnvId) => boolean;
 
-export const validateOrientation: ValidateFn = (cmd) => cmd.trim().toLowerCase() === 'help';
+export const validateOrientation: ValidateFn = (cmd) => {
+  const c = cmd.trim().toLowerCase();
+  // The lesson teaches "how to find help", not one exact command. Accept the
+  // help-seeking commands the SIMULATOR actually runs: `help` / `help <cmd>`
+  // (in-sim command list) and `man` / `man <cmd>` (simulated manual). A learner
+  // typing `help ls` (shown in the lesson tip) or `man ls` is doing exactly what
+  // the lesson asks — the previous `=== 'help'` rejected them.
+  // `whatis` / `apropos` / `<cmd> --help` are described as real-terminal tools
+  // but terminalEngine does NOT execute them (they hit "commande introuvable"),
+  // so they are intentionally NOT accepted — validating on an error output would
+  // be incoherent. Engine support verified: terminalEngine.ts `case 'help'` +
+  // `case 'man'` (env-agnostic in the sim).
+  return c === 'help' || /^help\s+\S/.test(c) || c === 'man' || /^man\s+\S/.test(c);
+};
 
 export const validatePwd: ValidateFn = (cmd, env) => {
     const c = cmd.trim().toLowerCase();
@@ -35,7 +48,9 @@ export const validateCommandAnatomy: ValidateFn = (cmd, env) => {
   };
 
 export const validateCd: ValidateFn = (cmd, env) => {
-    const c = cmd.trim().toLowerCase();
+    // Tolerate a trailing slash — the terminal's Tab-completion appends `/` to a
+    // directory, so a learner who tab-completes types `cd documents/` (3 OS).
+    const c = cmd.trim().toLowerCase().replace(/\/+$/, '');
     if (env === 'windows') return ['cd documents', 'set-location documents', 'sl documents'].includes(c);
     return c === 'cd documents';
   };
@@ -205,14 +220,26 @@ export const validateScripts: ValidateFn = (cmd, env) => {
 
 export const validateCron: ValidateFn = (cmd) => cmd.trim().toLowerCase() === 'crontab -l';
 
-export const validatePing: ValidateFn = (cmd) => /^ping\s+[a-zA-Z0-9._-]+$/.test(cmd.trim().toLowerCase());
+export const validatePing: ValidateFn = (cmd) => {
+    // Accept `ping <host>` plus the options the lesson teaches across OSes:
+    // `-c N` (Linux/macOS), `-n N` / `-t` (Windows), `-i 0.2`, … The host is the
+    // last token. The previous single-token regex rejected `ping -c 4 google.com`.
+    const c = cmd.trim().toLowerCase();
+    // Host must contain a letter or a dot (lookahead) so a bare count like the
+    // `4` in `ping -c 4` is not mistaken for the host — `google.com`, `8.8.8.8`,
+    // `localhost` all qualify; `4` alone does not.
+    return /^ping(\s+-\S+(\s+\d+(\.\d+)?)?)*\s+(?=[a-z0-9._-]*[a-z.])[a-z0-9._-]+$/.test(c);
+  };
 
 export const validateCurl: ValidateFn = (cmd, env) => {
     const c = cmd.trim().toLowerCase();
     if (env === 'windows') {
       return /^curl(\.exe)?\s+https?:\/\/.+/.test(c) || /^invoke-webrequest\s+-uri\s+https?:\/\/.+/.test(c);
     }
-    return /^curl\s+.+/.test(c);
+    // Require an http(s) URL (flags may precede it) — the instruction asks for
+    // `curl https://api.github.com`. The previous `/^curl\s+.+/` accepted any
+    // garbage like `curl foo` (content-auditor W1); now aligned with Windows.
+    return /^curl\s+.*https?:\/\/\S+/.test(c);
   };
 
 export const validateWget: ValidateFn = (cmd, env) => {

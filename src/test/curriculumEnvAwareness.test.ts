@@ -414,9 +414,30 @@ describe('curriculum — spot-checks per lesson × env', () => {
       expect(ex('navigation', 'cd').validate('set-location documents', 'windows')).toBe(true);
       expect(ex('navigation', 'cd').validate('sl documents', 'windows')).toBe(true);
     });
+    it('THI-316: trailing slash from tab-completion passes on all 3 envs', () => {
+      expect(ex('navigation', 'cd').validate('cd documents/', 'linux')).toBe(true);
+      expect(ex('navigation', 'cd').validate('cd documents/', 'macos')).toBe(true);
+      expect(ex('navigation', 'cd').validate('cd documents/', 'windows')).toBe(true);
+    });
     it('bare cd without target does not pass on any env', () => {
       expect(ex('navigation', 'cd').validate('cd', 'linux')).toBe(false);
       expect(ex('navigation', 'cd').validate('cd', 'windows')).toBe(false);
+    });
+  });
+
+  describe('navigation/orientation', () => {
+    it('all 3 envs: help passes', () => {
+      expect(ex('navigation', 'orientation').validate('help', 'linux')).toBe(true);
+      expect(ex('navigation', 'orientation').validate('help', 'macos')).toBe(true);
+      expect(ex('navigation', 'orientation').validate('help', 'windows')).toBe(true);
+    });
+    it('THI-316: help <cmd> and man <cmd> pass (engine-supported help tools)', () => {
+      expect(ex('navigation', 'orientation').validate('help ls', 'linux')).toBe(true);
+      expect(ex('navigation', 'orientation').validate('man ls', 'windows')).toBe(true);
+    });
+    it('whatis / apropos do not pass (engine has no such command)', () => {
+      expect(ex('navigation', 'orientation').validate('whatis ls', 'linux')).toBe(false);
+      expect(ex('navigation', 'orientation').validate('apropos copy', 'macos')).toBe(false);
     });
   });
 
@@ -865,6 +886,79 @@ describe('curriculum — spot-checks per lesson × env', () => {
     it('crontab -e and other variants do not pass (exercise is specific)', () => {
       expect(ex('variables', 'cron').validate('crontab -e', 'linux')).toBe(false);
       expect(ex('variables', 'cron').validate('crontab', 'linux')).toBe(false);
+    });
+  });
+
+  // ── MODULE: reseau (THI-316 — was missing from section 4) ─────────────────
+
+  describe('reseau/ping', () => {
+    it('all 3 envs: ping google.com passes', () => {
+      expect(ex('reseau', 'ping').validate('ping google.com', 'linux')).toBe(true);
+      expect(ex('reseau', 'ping').validate('ping google.com', 'macos')).toBe(true);
+      expect(ex('reseau', 'ping').validate('ping google.com', 'windows')).toBe(true);
+    });
+    it('THI-316: taught options pass (-c Linux/macOS, -n / -t Windows)', () => {
+      expect(ex('reseau', 'ping').validate('ping -c 4 google.com', 'linux')).toBe(true);
+      expect(ex('reseau', 'ping').validate('ping -n 4 google.com', 'windows')).toBe(true);
+      expect(ex('reseau', 'ping').validate('ping -t google.com', 'windows')).toBe(true);
+    });
+    it('bare ping (no host) does not pass', () => {
+      expect(ex('reseau', 'ping').validate('ping', 'linux')).toBe(false);
+    });
+  });
+
+  describe('reseau/curl', () => {
+    it('all 3 envs: curl https://api.github.com passes', () => {
+      expect(ex('reseau', 'curl').validate('curl https://api.github.com', 'linux')).toBe(true);
+      expect(ex('reseau', 'curl').validate('curl https://api.github.com', 'macos')).toBe(true);
+      expect(ex('reseau', 'curl').validate('curl https://api.github.com', 'windows')).toBe(true);
+    });
+    it('windows: Invoke-WebRequest -Uri <url> also passes', () => {
+      expect(ex('reseau', 'curl').validate('invoke-webrequest -uri https://api.github.com', 'windows')).toBe(true);
+    });
+    it('THI-316: curl without a URL does not pass on any env', () => {
+      expect(ex('reseau', 'curl').validate('curl foo', 'linux')).toBe(false);
+      expect(ex('reseau', 'curl').validate('curl foo', 'windows')).toBe(false);
+    });
+  });
+
+  describe('reseau/wget', () => {
+    it('all 3 envs: wget <url> passes', () => {
+      expect(ex('reseau', 'wget').validate('wget https://example.com/f.zip', 'linux')).toBe(true);
+      expect(ex('reseau', 'wget').validate('wget https://example.com/f.zip', 'macos')).toBe(true);
+      expect(ex('reseau', 'wget').validate('wget https://example.com/f.zip', 'windows')).toBe(true);
+    });
+    it('windows: iwr / Invoke-WebRequest also pass', () => {
+      expect(ex('reseau', 'wget').validate('iwr https://example.com/f.zip', 'windows')).toBe(true);
+    });
+  });
+
+  describe('reseau/dns', () => {
+    it('all 3 envs: nslookup google.com passes', () => {
+      expect(ex('reseau', 'dns').validate('nslookup google.com', 'linux')).toBe(true);
+      expect(ex('reseau', 'dns').validate('nslookup google.com', 'macos')).toBe(true);
+      expect(ex('reseau', 'dns').validate('nslookup google.com', 'windows')).toBe(true);
+    });
+    it('dig passes (native Linux/macOS, also accepted on Windows branch)', () => {
+      expect(ex('reseau', 'dns').validate('dig google.com', 'linux')).toBe(true);
+      expect(ex('reseau', 'dns').validate('dig google.com', 'windows')).toBe(true);
+    });
+  });
+
+  describe('reseau/ssh', () => {
+    it('all 3 envs: ssh-keygen -t ed25519 passes (OpenSSH native cross-OS)', () => {
+      expect(ex('reseau', 'ssh').validate('ssh-keygen -t ed25519', 'linux')).toBe(true);
+      expect(ex('reseau', 'ssh').validate('ssh-keygen -t ed25519', 'macos')).toBe(true);
+      expect(ex('reseau', 'ssh').validate('ssh-keygen -t ed25519', 'windows')).toBe(true);
+    });
+  });
+
+  describe('reseau/scp', () => {
+    it('all 3 envs: scp file to remote passes (scp native cross-OS)', () => {
+      const cmd = 'scp fichier.txt user@serveur.example.com:/home/user/';
+      expect(ex('reseau', 'scp').validate(cmd, 'linux')).toBe(true);
+      expect(ex('reseau', 'scp').validate(cmd, 'macos')).toBe(true);
+      expect(ex('reseau', 'scp').validate(cmd, 'windows')).toBe(true);
     });
   });
 });
