@@ -207,11 +207,16 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
 
   if (!enabled) return null;
 
-  // On touch viewports inside a lesson, raise the FAB above the terminal mobile
-  // key bar (~57px) so it never overlaps it. Desktop / non-lesson pages keep the
-  // standard bottom-right corner anchor.
+  // Inside a lesson, raise the FAB above the bottom chrome: the terminal mobile
+  // key bar (~57px, touch only) AND the persistent lesson nav footer (THI-313,
+  // shown on every `<lg` viewport). The lift is keyed on the SAME breakpoint as
+  // that footer (`lg:hidden`) — NOT on `pointer:coarse` — because the footer
+  // also shows on narrow fine-pointer viewports (a resized desktop window),
+  // where a coarse-only lift left the FAB overlapping the "Suivant" button.
+  // +5rem (80px) clears the footer with a comfortable gap; reset to the corner
+  // anchor at `lg` (no footer there). Real-iPhone PWA validation still pending.
   const fabBottomClass = liftAboveMobileBar
-    ? 'bottom-[max(1rem,env(safe-area-inset-bottom))] [@media(pointer:coarse)]:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4rem)]'
+    ? 'bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5rem)] lg:bottom-[max(1rem,env(safe-area-inset-bottom))]'
     : 'bottom-[max(1rem,env(safe-area-inset-bottom))]';
 
   return (
