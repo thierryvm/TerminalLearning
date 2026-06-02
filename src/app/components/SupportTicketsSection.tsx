@@ -20,7 +20,6 @@ import { CheckCircle2, ImageIcon, Inbox, Loader2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import {
   getFreshScreenshotUrl,
   useSupportTickets,
@@ -218,22 +217,22 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
         >
           Statut
         </label>
-        <Select
+        {/* Native <select>: keeps style-src CSP strict (Radix popovers inject
+            inline styles, blocked by our CSP). [color-scheme:dark] themes the
+            native option popup dark across Chrome/Firefox/Safari. */}
+        <select
+          id={selectId}
           value={ticket.status}
-          onValueChange={(v) => onStatusChange(v as SupportTicketStatus)}
           disabled={updating}
+          onChange={(e) => onStatusChange(e.target.value as SupportTicketStatus)}
+          className="min-h-11 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-sm text-[var(--github-text-primary)] font-mono [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
         >
-          <SelectTrigger id={selectId} className="w-[9.5rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_ORDER.map((s) => (
-              <SelectItem key={s} value={s}>
-                {STATUS_LABELS[s]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {STATUS_ORDER.map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
         {updating && (
           <span className="text-emerald-400" aria-hidden="true">
             <Loader2 size={14} className="animate-spin" />

@@ -32,27 +32,6 @@ if (typeof window !== 'undefined' && !('IntersectionObserver' in globalThis)) {
   Object.defineProperty(globalThis, 'IntersectionObserver', { value: MockIntersectionObserver });
 }
 
-// Radix UI primitives (e.g. Select) rely on these DOM APIs that jsdom lacks.
-if (typeof window !== 'undefined') {
-  if (!Element.prototype.hasPointerCapture) {
-    Element.prototype.hasPointerCapture = () => false;
-  }
-  if (!Element.prototype.releasePointerCapture) {
-    Element.prototype.releasePointerCapture = () => {};
-  }
-  if (!Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = () => {};
-  }
-  if (!('ResizeObserver' in globalThis)) {
-    class MockResizeObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    }
-    Object.defineProperty(globalThis, 'ResizeObserver', { value: MockResizeObserver });
-  }
-}
-
 // window.matchMedia polyfill — jsdom does not implement it.
 // Guard required: node-environment tests (e.g. rbac.integration.test.ts) share this setupFile.
 if (typeof window !== 'undefined') {

@@ -6,7 +6,6 @@
  * description rendered as escaped text (never parsed as HTML), empty + error states.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
@@ -70,8 +69,8 @@ describe('SupportTicketsSection', () => {
     render(<SupportTicketsSection />);
     expect(screen.getByText('Suggestion')).toBeInTheDocument();
     expect(screen.getByText('Le bouton ne marche pas')).toBeInTheDocument();
-    // the Select trigger (role=combobox) reflects the current status label
-    expect(screen.getByRole('combobox', { name: 'Statut' })).toHaveTextContent('En cours');
+    // the native status select reflects the current value
+    expect(screen.getByLabelText('Statut')).toHaveValue('in_progress');
   });
 
   it('renders the description as escaped text, never as parsed HTML (XSS defense)', () => {
@@ -99,13 +98,10 @@ describe('SupportTicketsSection', () => {
     expect(screen.getByText('RESOLVED ONE')).toBeInTheDocument();
   });
 
-  it('calls updateStatus when a new status is chosen in the Select', async () => {
-    const user = userEvent.setup();
+  it('calls updateStatus when the status select changes', () => {
     h.state.tickets = [ticket({ id: 't9', status: 'open' })];
     render(<SupportTicketsSection />);
-    await user.click(screen.getByRole('combobox', { name: 'Statut' }));
-    await screen.findByRole('listbox'); // ensure the Radix portal mounted before querying options
-    await user.click(await screen.findByRole('option', { name: 'Résolu' }));
+    fireEvent.change(screen.getByLabelText('Statut'), { target: { value: 'resolved' } });
     expect(h.state.updateStatus).toHaveBeenCalledWith('t9', 'resolved');
   });
 
