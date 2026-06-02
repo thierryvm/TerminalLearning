@@ -5,6 +5,26 @@
 
 ---
 
+## 📧 1er juin 2026 — Le support qui prévient : email automatique au mainteneur à chaque signalement (THI-319)
+*PR #360 · api/support/notify.ts · notifyTicket.ts · submitTicket.ts · security-auditor + route-attack-auditor + code-review + email réel vérifié*
+
+Troisième étape du système de support (après le formulaire et le stockage des captures) : quand un utilisateur envoie un signalement (bug, suggestion ou question), le mainteneur (super_admin) reçoit désormais **un email de notification** — plus besoin de surveiller la base à la main.
+
+- **Où tourne le code** : une **route serverless Vercel** (`api/support/notify.ts`), pas une fonction Supabase. Le brief prévoyait une Edge Function Supabase ; vérifier le code existant a montré que la clé d'envoi (Resend) vivait déjà côté Vercel et que le projet sert déjà ses routes dans `api/*` → le choix Vercel évite une nouvelle plateforme, une dépendance et un second secret. **Zéro coût, zéro dépendance ajoutée.**
+- **Sécurité** : l'autorisation est **déléguée à la base** — le jeton de l'utilisateur est transmis à PostgREST, et la ligne du ticket n'est renvoyée que si l'appelant en est propriétaire ou super_admin (aucune clé d'administration n'est stockée). Anti-rejeu (un ticket de plus de 60 s n'envoie pas d'email), limite de débit (10/min/IP), description échappée (anti-injection HTML dans l'email), réponses `no-store`, et fonctionnement **best-effort** : si l'email échoue, le ticket reste enregistré (jamais perdu).
+- **Vérifié pour de vrai** : 3 audits sans faille critique (sécurité 9.2/10, attaque de route « ship », revue de code propre) **et un email réellement reçu** de bout en bout — pas seulement des tests verts.
+
+Resend reste sur le palier gratuit (3000 emails/mois). **THI-319 terminé — il reste l'étape 4 du support** : une section « Tickets » dans le tableau de bord du mainteneur (THI-320).
+
+---
+
+## 🔇 1er juin 2026 — Monitoring d'erreurs : le bruit des robots ne masque plus les vrais bugs (THI-317)
+*PR #358 · src/lib/sentry.ts · sentryBotFilter.test.ts · code-review*
+
+Les robots d'indexation (Googlebot, Applebot, Bingbot…) déclenchaient des erreurs remontées dans le monitoring, noyant les vrais problèmes rencontrés par les utilisateurs. Un filtre écarte désormais les événements provenant d'agents identifiés comme crawlers, à partir d'une **liste de noms curée** — et non d'un motif « bot » trop large qui aurait raté « Googlebot » faute de frontière de mot, vérifié par un test négatif (« Cubot » n'est pas un bot). Les alertes reflètent à nouveau les vrais incidents.
+
+---
+
 ## 🎯 1er juin 2026 — Cohérence des exercices : les validateurs acceptent ce que la leçon enseigne (THI-316 · THI-293)
 *PR #357 · validators.ts · curriculum.ts · curriculum-validator + test-runner + content-auditor + code-review + Voie A 3 OS*
 
