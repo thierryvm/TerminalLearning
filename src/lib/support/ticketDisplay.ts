@@ -37,12 +37,14 @@ export const TICKET_TYPE_LABELS: Record<SupportTicketType, string> = {
   question: 'Question',
 };
 
+// Intl.DateTimeFormat (not Date.toLocaleDateString with time options, which is
+// semantically date-only) — explicit + unambiguous output across environments.
 export function formatTicketDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', {
+  return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).format(new Date(iso));
 }
