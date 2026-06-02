@@ -25,43 +25,16 @@ import {
   useSupportTickets,
   type SupportTicket,
 } from '@/lib/hooks/useSupportTickets';
-import type { SupportTicketStatus, SupportTicketType } from '@/app/types/database';
-
-const STATUS_ORDER: SupportTicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
-
-const STATUS_LABELS: Record<SupportTicketStatus, string> = {
-  open: 'En attente',
-  in_progress: 'En cours',
-  resolved: 'Résolu',
-  closed: 'Fermé',
-};
-
-type BadgeVariant = 'pill-amber' | 'pill-blue' | 'pill-emerald' | 'pill-muted';
-
-const STATUS_BADGE: Record<SupportTicketStatus, BadgeVariant> = {
-  open: 'pill-amber',
-  in_progress: 'pill-blue',
-  resolved: 'pill-emerald',
-  closed: 'pill-muted',
-};
-
-const TYPE_LABELS: Record<SupportTicketType, string> = {
-  bug: 'Bug',
-  suggestion: 'Suggestion',
-  question: 'Question',
-};
+import type { SupportTicketStatus } from '@/app/types/database';
+import {
+  TICKET_STATUS_ORDER as STATUS_ORDER,
+  TICKET_STATUS_LABELS as STATUS_LABELS,
+  TICKET_STATUS_BADGE as STATUS_BADGE,
+  TICKET_TYPE_LABELS as TYPE_LABELS,
+  formatTicketDate as formatDate,
+} from '@/lib/support/ticketDisplay';
 
 type StatusFilter = 'all' | SupportTicketStatus;
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 export function SupportTicketsSection() {
   const { tickets, loading, error, updatingId, updateStatus } = useSupportTickets();

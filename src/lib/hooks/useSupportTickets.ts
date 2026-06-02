@@ -35,7 +35,7 @@ export interface SupportTicket {
   resolved_by: string | null;
 }
 
-const TICKET_COLUMNS =
+export const TICKET_COLUMNS =
   'id, user_id, type, description, screenshot_url, status, created_at, resolved_at, resolved_by';
 
 // Fresh signed URL TTL when the super_admin opens a screenshot. Short by design:
