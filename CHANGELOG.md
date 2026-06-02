@@ -5,6 +5,18 @@
 
 ---
 
+## 🗂️ 2 juin 2026 — Triage des signalements : le mainteneur traite tout depuis le tableau de bord (THI-320)
+*PR #364 · AdminPanel · useSupportTickets · security-auditor 9.5/10 + supabase-backend (inline) + ui-auditor + mobile-responsive + code-review + Voie A e2e super_admin*
+
+Quatrième et dernière brique du système de support : une section « Signalements » dans le panneau d'administration (`/app/admin`, réservé au mainteneur) qui liste tous les tickets, les filtre par statut, affiche la description et la capture, et permet de faire évoluer le statut (En attente → En cours → Résolu → Fermé). **Chaque changement de statut est journalisé automatiquement** (piste d'audit `admin_audit_log`).
+
+- **Sécurité** : la capture est affichée en `<img>` uniquement (un fichier mal étiqueté ne peut pas s'exécuter), via une **URL signée re-générée à la lecture** (jamais la valeur stockée, expirée). Description échappée (rendu texte). La **CSP reste stricte** : le sélecteur de statut est un `<select>` natif thémé sombre — on a écarté un composant qui aurait injecté du style inline et imposé d'affaiblir la CSP.
+- **Validé pour de vrai** : parcours complet testé de bout en bout en conditions réelles (soumission d'un ticket avec capture → apparition en triage → changement de statut aller-retour → journalisation confirmée en base → image chargée sans violation CSP), sur desktop **et** mobile.
+
+Le système de support est désormais complet : formulaire → stockage chiffré → email au mainteneur → triage. Prochaine étape : donner à l'utilisateur la visibilité sur l'état de ses propres signalements (THI-325).
+
+---
+
 ## 📧 1er juin 2026 — Le support qui prévient : email automatique au mainteneur à chaque signalement (THI-319)
 *PR #360 · api/support/notify.ts · notifyTicket.ts · submitTicket.ts · security-auditor + route-attack-auditor + code-review + email réel vérifié*
 

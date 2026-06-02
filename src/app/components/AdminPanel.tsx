@@ -13,7 +13,8 @@
  * Hors scope v1 (différé v2 post-deadline) :
  *   - `institution_admin` role (RLS scope creep P=70% identifié agent challenge)
  *   - Drains Vercel Analytics (Pro plan blocker confirmé spike 18/05)
- *   - Maintenance mode, in-app tickets, screenshots upload
+ *   - Maintenance mode, screenshots upload moderation
+ *   (in-app support tickets triage shipped Étape 4 — THI-320, see SupportTicketsSection)
  *   - Teacher adoption heatmap (THI-78)
  *
  * Le lien vers le dashboard Vercel externe est placé en footer pour les
@@ -23,6 +24,7 @@ import { Helmet } from 'react-helmet-async';
 import { Activity, AlertCircle, BarChart3, ExternalLink, ShieldCheck, Users } from 'lucide-react';
 
 import { RequireRole } from './auth/RequireRole';
+import { SupportTicketsSection } from './SupportTicketsSection';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -65,7 +67,9 @@ function AdminPanelContent() {
         <WidgetStudentHeatmap />
       </div>
 
-      <footer className="pt-6 border-t border-[var(--github-border-primary)]">
+      <SupportTicketsSection />
+
+      <footer className="mt-10 pt-6 border-t border-[var(--github-border-primary)]">
         <Button asChild variant="ghost-gh" className="min-h-11 gap-2 font-mono text-sm">
           <a
             href="https://vercel.com/thierry-vanmeeterens-projects/terminal-learning/analytics"
