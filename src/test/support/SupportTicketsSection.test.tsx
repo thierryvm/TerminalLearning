@@ -70,8 +70,8 @@ describe('SupportTicketsSection', () => {
     render(<SupportTicketsSection />);
     expect(screen.getByText('Suggestion')).toBeInTheDocument();
     expect(screen.getByText('Le bouton ne marche pas')).toBeInTheDocument();
-    // the Select trigger reflects the current status label
-    expect(screen.getByLabelText('Statut')).toHaveTextContent('En cours');
+    // the Select trigger (role=combobox) reflects the current status label
+    expect(screen.getByRole('combobox', { name: 'Statut' })).toHaveTextContent('En cours');
   });
 
   it('renders the description as escaped text, never as parsed HTML (XSS defense)', () => {
@@ -103,7 +103,8 @@ describe('SupportTicketsSection', () => {
     const user = userEvent.setup();
     h.state.tickets = [ticket({ id: 't9', status: 'open' })];
     render(<SupportTicketsSection />);
-    await user.click(screen.getByLabelText('Statut'));
+    await user.click(screen.getByRole('combobox', { name: 'Statut' }));
+    await screen.findByRole('listbox'); // ensure the Radix portal mounted before querying options
     await user.click(await screen.findByRole('option', { name: 'Résolu' }));
     expect(h.state.updateStatus).toHaveBeenCalledWith('t9', 'resolved');
   });
@@ -158,5 +159,11 @@ describe('SupportTicketsSection', () => {
     h.state.tickets = [ticket({ status: 'resolved', resolved_at: '2026-06-01T11:00:00Z' })];
     render(<SupportTicketsSection />);
     expect(screen.getByText(/Résolu le/)).toBeInTheDocument();
+  });
+
+  it('omits the resolved date marker when resolved_at is unknown (no badge duplicate)', () => {
+    h.state.tickets = [ticket({ status: 'resolved', resolved_at: null })];
+    render(<SupportTicketsSection />);
+    expect(screen.queryByText(/Résolu le/)).not.toBeInTheDocument();
   });
 });

@@ -239,10 +239,12 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
             <Loader2 size={14} className="animate-spin" />
           </span>
         )}
-        {ticket.status === 'resolved' && !updating && (
+        {/* Date marker only when resolved_at is known — the status badge already
+            says "Résolu", so a bare duplicate would look like a bug. */}
+        {ticket.status === 'resolved' && !updating && ticket.resolved_at && (
           <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-mono">
             <CheckCircle2 size={12} aria-hidden="true" />
-            {ticket.resolved_at ? `Résolu le ${formatDate(ticket.resolved_at)}` : 'Résolu'}
+            {`Résolu le ${formatDate(ticket.resolved_at)}`}
           </span>
         )}
       </div>
