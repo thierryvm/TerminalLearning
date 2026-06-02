@@ -170,7 +170,7 @@ function FilterChip({ active, onClick, children }: FilterChipProps) {
       type="button"
       variant={active ? 'emerald-soft' : 'ghost-gh'}
       size="sm"
-      className="min-h-9 font-mono text-xs"
+      className="min-h-11 font-mono text-xs"
       aria-pressed={active}
       onClick={onClick}
     >
@@ -201,7 +201,7 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
 
       {/* Description — JSX text node (React-escaped). break-words prevents a long
           unbroken string from overflowing on narrow viewports. */}
-      <p className="text-sm text-[var(--github-text-primary)] whitespace-pre-wrap break-words">
+      <p className="text-sm text-[var(--github-text-primary)] whitespace-pre-wrap break-words [word-break:break-word]">
         {ticket.description}
       </p>
 
@@ -219,7 +219,7 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
           value={ticket.status}
           disabled={updating}
           onChange={(e) => onStatusChange(e.target.value as SupportTicketStatus)}
-          className="min-h-9 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-sm text-[var(--github-text-primary)] font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:opacity-50"
+          className="min-h-11 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-sm text-[var(--github-text-primary)] font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s}>
@@ -264,14 +264,18 @@ function ScreenshotViewer({ storedUrl }: ScreenshotViewerProps) {
   }
 
   if (state === 'ready' && freshUrl) {
+    // Wrapper owns the width constraint + border so the <img> can't flash at its
+    // intrinsic width on first paint (WebKit w-auto-in-flex quirk).
     return (
-      <img
-        src={freshUrl}
-        alt="Capture d'écran jointe au signalement"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        className="max-h-80 w-auto max-w-full rounded-md border border-[var(--github-border-primary)]"
-      />
+      <div className="w-full overflow-hidden rounded-md border border-[var(--github-border-primary)]">
+        <img
+          src={freshUrl}
+          alt="Capture d'écran jointe au signalement"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="max-h-80 w-full object-contain"
+        />
+      </div>
     );
   }
 
@@ -281,7 +285,7 @@ function ScreenshotViewer({ storedUrl }: ScreenshotViewerProps) {
         type="button"
         variant="ghost-gh"
         size="sm"
-        className="min-h-9 gap-2 font-mono text-xs"
+        className="min-h-11 gap-2 font-mono text-xs"
         onClick={reveal}
         disabled={state === 'loading'}
       >
