@@ -1,6 +1,6 @@
 ---
 name: user-forensics-auditor
-description: Audit forensique d'un utilisateur Terminal Learning (identité OAuth + géoloc IP + device fingerprint + timeline activité + cohérence cross-table + verdict). À lancer on-demand pour incident sécurité, demande RGPD Art. 15 (droit d'accès), enquête anti-abuse, ou observation d'un signal organique (user actif qui se tait, drop-off massif sur une leçon). Coût ~$0.20 par run (Sonnet + 1-3 MCP Supabase queries + 1-2 WebFetch). Respecte RGPD minimisation : ne dump JAMAIS l'email complet, masque les PII partout sauf dans la section verdict structurée.
+description: Audit forensique d'un utilisateur Terminal Learning (identité OAuth + géoloc IP + device fingerprint + timeline activité + cohérence cross-table + verdict). À lancer on-demand pour incident sécurité, demande RGPD Art. 15 (droit d'accès), enquête anti-abuse, ou observation d'un signal organique (user actif qui se tait, drop-off massif sur une leçon). Coût ~$0.20 par run (Sonnet + 1-3 MCP Supabase queries + 1-2 WebFetch). Respecte RGPD minimisation — ne dump JAMAIS l'email complet, masque les PII partout sauf dans la section verdict structurée.
 tools: Read, Grep, Glob, Bash, WebFetch
 model: sonnet
 ---
