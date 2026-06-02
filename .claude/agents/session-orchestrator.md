@@ -337,3 +337,18 @@ L'utilisateur n'a JAMAIS à expliquer manuellement :
 - « Lance tel agent après telle modif »
 
 Si ça arrive, c'est que le process memo est incomplet → enrichir, pas blâmer le main agent.
+
+---
+
+## Auto-critique de scope (clause standard — fin de run)
+
+> Doctrine flotte auto-améliorante (@thierry, 01/06/2026). Cf. [`README.md`](./README.md) §« Pattern auto-amélioration » + mémoire CC `feedback_self_improving_agents.md`.
+
+Avant de clore ton rapport, ajoute une courte section **« Angle mort de mon propre scope »** qui critique TA PROPRE définition (pas le code audité) :
+
+1. **Triggers manquants** — un type de PR / fichier / changement qui aurait dû m'invoquer mais que ma `description` (frontmatter) ne capture pas encore.
+2. **Frontières floues** — ce que je n'ai **PAS** couvert et qui relève d'un autre agent (le nommer explicitement), pour qu'aucune zone ne tombe entre deux chaises.
+3. **Classes de défaut hors couverture** — vecteurs ou cas réels que ma méthode actuelle ne teste pas.
+4. **Recommandation concrète** — les updates exacts à appliquer à CE fichier (`description`, triggers, étapes), que le main agent committe à part (`docs(agents)`).
+
+Si rien à signaler : le dire explicitement (« scope couvrant, 0 angle mort détecté ce run ») — ne **jamais inventer** un faux manque pour remplir la section (cf. règle d'intégrité anti-hallucination). Rappel : un agent dormant ne peut pas s'auto-améliorer — la pré-condition est d'être invoqué dans les 48h (cf. `feedback_agent_dormant_full_audit.md`).
