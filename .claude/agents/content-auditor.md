@@ -1,6 +1,6 @@
 ---
 name: content-auditor
-description: Full pedagogical content audit — checks env coverage, curriculum↔terminalEngine consistency, test coverage, external link validity, narrative markdown internal links, prerequisite chain logic, and validate() function quality. Run on demand or before major releases. Returns a structured report.
+description: Full pedagogical content audit — checks env coverage, curriculum↔terminalEngine consistency, test coverage, external link validity, narrative markdown internal links, prerequisite chain logic, and validate() function quality. Run on demand or before major releases. Returns a structured report. Trigger aussi sur modification isolée de src/app/data/validators.ts (un validateur cassé échappe aux triggers curriculum.ts/terminalEngine.ts).
 tools: Read, Grep, Glob, WebFetch
 model: sonnet
 ---
