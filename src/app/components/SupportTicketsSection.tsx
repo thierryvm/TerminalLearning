@@ -20,6 +20,7 @@ import { CheckCircle2, ImageIcon, Inbox, Loader2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import {
   getFreshScreenshotUrl,
   useSupportTickets,
@@ -190,9 +191,12 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
   return (
     <Card variant="tl-surface" className="px-5 py-4 gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <Badge variant="pill-muted">{TYPE_LABELS[ticket.type]}</Badge>
           <Badge variant={STATUS_BADGE[ticket.status]}>{STATUS_LABELS[ticket.status]}</Badge>
+          <span className="text-xs text-[var(--github-text-secondary)]/50 font-mono" title={ticket.id}>
+            #{ticket.id.slice(0, 8)}
+          </span>
         </div>
         <p className="text-xs text-[var(--github-text-secondary)] font-mono shrink-0">
           {formatDate(ticket.created_at)}
@@ -214,19 +218,22 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
         >
           Statut
         </label>
-        <select
-          id={selectId}
+        <Select
           value={ticket.status}
+          onValueChange={(v) => onStatusChange(v as SupportTicketStatus)}
           disabled={updating}
-          onChange={(e) => onStatusChange(e.target.value as SupportTicketStatus)}
-          className="min-h-11 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-sm text-[var(--github-text-primary)] font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
         >
-          {STATUS_ORDER.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id={selectId} className="w-[9.5rem]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {updating && (
           <span className="text-emerald-400" aria-hidden="true">
             <Loader2 size={14} className="animate-spin" />
@@ -235,7 +242,7 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
         {ticket.status === 'resolved' && !updating && (
           <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-mono">
             <CheckCircle2 size={12} aria-hidden="true" />
-            résolu
+            {ticket.resolved_at ? `Résolu le ${formatDate(ticket.resolved_at)}` : 'Résolu'}
           </span>
         )}
       </div>

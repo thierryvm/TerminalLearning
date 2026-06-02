@@ -5,7 +5,8 @@
  * status filter, status <select> wiring, lazy screenshot reveal via re-minted URL,
  * description rendered as escaped text (never parsed as HTML), empty + error states.
  */
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
@@ -69,8 +70,8 @@ describe('SupportTicketsSection', () => {
     render(<SupportTicketsSection />);
     expect(screen.getByText('Suggestion')).toBeInTheDocument();
     expect(screen.getByText('Le bouton ne marche pas')).toBeInTheDocument();
-    // status select reflects current value
-    expect(screen.getByLabelText('Statut')).toHaveValue('in_progress');
+    // the Select trigger reflects the current status label
+    expect(screen.getByLabelText('Statut')).toHaveTextContent('En cours');
   });
 
   it('renders the description as escaped text, never as parsed HTML (XSS defense)', () => {
@@ -98,10 +99,12 @@ describe('SupportTicketsSection', () => {
     expect(screen.getByText('RESOLVED ONE')).toBeInTheDocument();
   });
 
-  it('calls updateStatus when the status select changes', () => {
+  it('calls updateStatus when a new status is chosen in the Select', async () => {
+    const user = userEvent.setup();
     h.state.tickets = [ticket({ id: 't9', status: 'open' })];
     render(<SupportTicketsSection />);
-    fireEvent.change(screen.getByLabelText('Statut'), { target: { value: 'resolved' } });
+    await user.click(screen.getByLabelText('Statut'));
+    await user.click(await screen.findByRole('option', { name: 'Résolu' }));
     expect(h.state.updateStatus).toHaveBeenCalledWith('t9', 'resolved');
   });
 
@@ -151,10 +154,9 @@ describe('SupportTicketsSection', () => {
     expect(h.getFresh).toHaveBeenCalledTimes(1);
   });
 
-  it('shows resolved confirmation marker for resolved tickets', () => {
-    h.state.tickets = [ticket({ status: 'resolved' })];
+  it('shows the resolved date marker for resolved tickets', () => {
+    h.state.tickets = [ticket({ status: 'resolved', resolved_at: '2026-06-01T11:00:00Z' })];
     render(<SupportTicketsSection />);
-    const list = screen.getByRole('list');
-    expect(within(list).getByText('résolu')).toBeInTheDocument();
+    expect(screen.getByText(/Résolu le/)).toBeInTheDocument();
   });
 });
