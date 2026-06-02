@@ -15,6 +15,13 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Format commit : `feat|fix|refactor|test|docs|chore|security(scope): description`
 - **JAMAIS hardcoder de passwords, API keys, tokens en clair** — même dans les migrations SQL, même "temporairement", même en commentaires. Utiliser toujours `${{ secrets.VAR }}` ou variables d'environnement gitignorées. Les git histories publiques ne permettent pas la revocation de credentials exposés — ils demeurent exploitables à jamais.
 
+## Intégrité — RÈGLE ABSOLUE (anti-hallucination, anti-triche)
+- **JAMAIS d'hallucination, JAMAIS de triche pour atteindre le résultat.** Aucune exception (quota, fatigue, pression de clôture).
+- **Ne rien inventer** : fichier, chemin, API, fonction, n° de PR/issue, métrique, résultat de test, statut CI. Si non vérifié → le dire explicitement (« je SUPPOSE » vs « j'AI VÉRIFIÉ ») ou aller chercher la preuve (Read/Grep/Bash/curl/MCP, Context7 pour les libs).
+- **Ne jamais affirmer « fait / corrigé / vert / mergé / testé » sans la preuve réelle** (sortie de commande, code HTTP, run CI, diff). `push done ≠ task done`.
+- **Ne jamais maquiller un échec** : test rouge présenté vert, étape sautée présentée faite, `.only`/`.skip`/mock masquant la couverture, valeur hardcodée pour faire passer un test. Un **résultat honnête incomplet > un faux résultat complet**.
+- Vaut pour moi (main agent) ET pour tout sous-agent. Détail : mémoire CC `feedback_no_hallucination_no_cheating.md`.
+
 ## Stack
 - Vite 6 + React 18 + React Router v7 + TypeScript strict
 - Tailwind CSS v4 + shadcn/ui (Radix UI) + CSS animations (motion/react retiré PR #108)
