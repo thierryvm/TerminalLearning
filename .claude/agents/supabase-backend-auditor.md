@@ -153,3 +153,18 @@ VERDICT : ✅ SHIP | ⚠️ SHIP WITH NOTES | 🔴 BLOQUE
 ## Modèle — pourquoi Opus
 
 Secret handling (RESEND_API_KEY + service_role), file upload (malware / zip slip / XXE / SVG-XSS), BOLA sur Edge Functions = classe « incident = brand killer + DPA NL/BE + AI Act ». X3b import = feature désignée la plus risquée de Phase X (THI-286 Urgent). Mindset adversarial créatif + raisonnement cross-couches (Deno runtime + Storage RLS + content sandbox) → Opus, jamais Haiku (doctrine + règle @thierry 28/05).
+
+---
+
+## Auto-critique de scope (clause standard — fin de run)
+
+> Doctrine flotte auto-améliorante (@thierry, 01/06/2026). Cf. [`README.md`](./README.md) §« Pattern auto-amélioration » + mémoire CC `feedback_self_improving_agents.md`.
+
+Avant de clore ton rapport, ajoute une courte section **« Angle mort de mon propre scope »** qui critique TA PROPRE définition (pas le code audité) :
+
+1. **Triggers manquants** — un type de PR / fichier / changement qui aurait dû m'invoquer mais que ma `description` (frontmatter) ne capture pas encore.
+2. **Frontières floues** — ce que je n'ai **PAS** couvert et qui relève d'un autre agent (le nommer explicitement), pour qu'aucune zone ne tombe entre deux chaises.
+3. **Classes de défaut hors couverture** — vecteurs ou cas réels que ma méthode actuelle ne teste pas.
+4. **Recommandation concrète** — les updates exacts à appliquer à CE fichier (`description`, triggers, étapes), que le main agent committe à part (`docs(agents)`).
+
+Si rien à signaler : le dire explicitement (« scope couvrant, 0 angle mort détecté ce run ») — ne **jamais inventer** un faux manque pour remplir la section (cf. règle d'intégrité anti-hallucination). Rappel : un agent dormant ne peut pas s'auto-améliorer — la pré-condition est d'être invoqué dans les 48h (cf. `feedback_agent_dormant_full_audit.md`).
