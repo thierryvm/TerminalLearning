@@ -44,6 +44,9 @@ const TeacherDashboard = lazyWithRetry(() =>
 const JoinClass = lazyWithRetry(() =>
   import('./components/JoinClass').then(({ JoinClass }) => ({ default: JoinClass }))
 );
+const MySupportTickets = lazyWithRetry(() =>
+  import('./components/support/MySupportTickets').then(({ MySupportTickets }) => ({ default: MySupportTickets }))
+);
 const Changelog = lazyWithRetry(() =>
   import('./components/Changelog').then(({ Changelog }) => ({ default: Changelog }))
 );
@@ -76,6 +79,7 @@ export const router = createBrowserRouter([
       { path: 'institution', Component: InstitutionAdminPanel },
       { path: 'teacher', Component: TeacherDashboard },
       { path: 'join', Component: JoinClass },
+      { path: 'support', Component: MySupportTickets },
     ],
   },
 

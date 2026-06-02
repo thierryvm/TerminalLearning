@@ -4,7 +4,7 @@ import { useFocusTrap } from '../../lib/hooks/useFocusTrap';
 import { useUserRole } from '../../lib/hooks/useUserRole';
 import {
   Terminal, LayoutDashboard, BookOpen, Settings,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser, Briefcase, LifeBuoy,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, X, Menu, Home, Lock, School, ShieldCheck, ShieldUser, Briefcase, LifeBuoy, Inbox,
 } from 'lucide-react';
 import { UserMenu } from './auth/UserMenu';
 import { useAuth } from '../context/AuthContext';
@@ -413,6 +413,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <LifeBuoy size={16} />
               <span className="flex-1 text-left">Aide & feedback</span>
             </Button>
+          )}
+          {user && (
+            <NavLink
+              to="/app/support"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 min-h-11 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+                  isActive
+                    ? 'bg-[#21262d] text-[var(--github-text-primary)]'
+                    : 'text-[var(--github-text-secondary)] hover:bg-[var(--github-border-secondary)] hover:text-[var(--github-text-primary)]'
+                }`
+              }
+            >
+              <Inbox size={16} />
+              Mes signalements
+            </NavLink>
           )}
         </nav>
 
