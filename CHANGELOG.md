@@ -5,6 +5,17 @@
 
 ---
 
+## 📋 2 juin 2026 — Tes signalements suivis : l'utilisateur voit où en sont ses retours (THI-325)
+*PR #366 · /app/support · useMySupportTickets · ticketDisplay (source unique badges/libellés) · security-auditor 9.6/10 (isolation RLS prouvée REST+JWT) + ui-auditor + code-review + Voie A desktop/tablette/mobile 390px*
+
+Cinquième et dernière brique « utilisateur » du système de support : une page **« Mes signalements »** (`/app/support`, accessible via la Sidebar quand on est connecté) où chacun voit **ses propres** signalements et leur statut (En attente / En cours / Résolu / Fermé). C'est le pendant du triage mainteneur (THI-320), côté utilisateur.
+
+- **Zéro backend** : la règle de sécurité base (RLS « user select own ») autorisait déjà chacun à lire ses propres tickets — aucune migration. Vue **lecture seule** (l'utilisateur ne modifie pas le statut).
+- **Isolation prouvée** : un audit empirique (2 comptes, API + jeton) confirme qu'un utilisateur ne voit **que** ses tickets, jamais ceux d'un autre ; un visiteur anonyme ne voit rien et est invité à se connecter.
+- **Responsive vérifié pour de vrai** : rendu validé en mobile (390 px), tablette (768 px) et desktop, sans débordement horizontal. La capture n'est **pas encore affichée** (marqueur « Capture jointe ») — décision de sécurité, suite dans une sous-tâche dédiée (THI-336).
+
+---
+
 ## 🗂️ 2 juin 2026 — Triage des signalements : le mainteneur traite tout depuis le tableau de bord (THI-320)
 *PR #364 · AdminPanel · useSupportTickets · security-auditor 9.5/10 + supabase-backend (inline) + ui-auditor + mobile-responsive + code-review + Voie A e2e super_admin*
 
