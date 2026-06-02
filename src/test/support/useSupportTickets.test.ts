@@ -80,6 +80,11 @@ describe('parseScreenshotPath', () => {
     expect(parseScreenshotPath('https://evil.example.com/u1/abc.png')).toBeNull();
     expect(parseScreenshotPath('not a url')).toBeNull();
   });
+
+  it('rejects path traversal even with the marker present (raw and encoded ..)', () => {
+    expect(parseScreenshotPath(`${SIGN_BASE}/../private/secret.png?token=x`)).toBeNull();
+    expect(parseScreenshotPath(`${SIGN_BASE}/u1/%2e%2e/secret.png?token=x`)).toBeNull();
+  });
 });
 
 describe('getFreshScreenshotUrl', () => {

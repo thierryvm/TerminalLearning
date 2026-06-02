@@ -16,7 +16,7 @@
  * re-mints a short-lived URL at read time using the super_admin storage select-all
  * policy (migration 030) — the stored value is only used to recover the object path.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -63,11 +63,17 @@ export function parseScreenshotPath(storedUrl: string): string | null {
   const after = storedUrl.slice(idx + SIGN_PATH_MARKER.length);
   const [rawPath] = after.split('?');
   if (!rawPath) return null;
+  let decoded: string;
   try {
-    return decodeURIComponent(rawPath);
+    decoded = decodeURIComponent(rawPath);
   } catch {
     return null;
   }
+  // Defense in depth: reject path traversal even though the DB CHECK (migration
+  // 031, end-anchored) already constrains the stored URL. The check runs after
+  // decode so an encoded `%2e%2e` can't slip through.
+  if (decoded.includes('..')) return null;
+  return decoded;
 }
 
 /**
@@ -102,6 +108,9 @@ export function useSupportTickets(): UseSupportTicketsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // Live guard against re-entrant updates: a ref reads the current value even
+  // before a pending setUpdatingId has flushed, unlike a closure-captured state.
+  const updatingIdRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -134,8 +143,9 @@ export function useSupportTickets(): UseSupportTicketsResult {
         setError(new Error('Authentification requise'));
         return false;
       }
-      if (updatingId) return false;
+      if (updatingIdRef.current) return false;
 
+      updatingIdRef.current = id;
       setUpdatingId(id);
       setError(null);
 
@@ -166,10 +176,11 @@ export function useSupportTickets(): UseSupportTicketsResult {
         setError(err instanceof Error ? err : new Error('Mise à jour impossible'));
         return false;
       } finally {
+        updatingIdRef.current = null;
         setUpdatingId(null);
       }
     },
-    [user, updatingId],
+    [user],
   );
 
   return { tickets, loading, error, updatingId, updateStatus, refresh };

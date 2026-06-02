@@ -129,6 +129,28 @@ describe('SupportTicketsSection', () => {
     );
   });
 
+  it('does not re-mint twice when "Voir la capture" is clicked while already loading', async () => {
+    let resolve!: (v: string | null) => void;
+    h.getFresh.mockReturnValue(
+      new Promise<string | null>((r) => {
+        resolve = r;
+      }),
+    );
+    h.state.tickets = [
+      ticket({ screenshot_url: 'https://stored/object/sign/support_screenshots/u1/x.png?token=old' }),
+    ];
+    render(<SupportTicketsSection />);
+
+    const btn = screen.getByRole('button', { name: /Voir la capture/ });
+    fireEvent.click(btn);
+    expect(btn).toBeDisabled();
+    fireEvent.click(btn); // ignored while loading
+
+    resolve('https://jdnukbpkjyyyjpuwgxhv.supabase.co/storage/v1/object/sign/support_screenshots/u1/x.png?token=fresh');
+    await screen.findByRole('img', { name: /Capture/ });
+    expect(h.getFresh).toHaveBeenCalledTimes(1);
+  });
+
   it('shows resolved confirmation marker for resolved tickets', () => {
     h.state.tickets = [ticket({ status: 'resolved' })];
     render(<SupportTicketsSection />);

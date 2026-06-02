@@ -14,7 +14,7 @@
  *   - Display size is capped (max-h-80) pending server-side dimension limits (M2,
  *     THI-297) so a huge image can't blow up the layout.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, ImageIcon, Inbox, Loader2 } from 'lucide-react';
 
 import { Badge } from './ui/badge';
@@ -251,10 +251,15 @@ interface ScreenshotViewerProps {
 function ScreenshotViewer({ storedUrl }: ScreenshotViewerProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
+  // Guard against setState after unmount (e.g. the filter changes and unmounts
+  // this card) while the re-mint request is still in flight.
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   async function reveal() {
     setState('loading');
     const url = await getFreshScreenshotUrl(storedUrl);
+    if (!mountedRef.current) return;
     if (url) {
       setFreshUrl(url);
       setState('ready');
