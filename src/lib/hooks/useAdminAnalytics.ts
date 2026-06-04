@@ -50,8 +50,11 @@ export function useAdminAnalytics(): UseAdminAnalyticsResult {
         supabase.rpc('admin_platform_stats'),
         supabase.rpc('admin_activity_heatmap'),
       ]);
-      if (statsRes.error) throw new Error(statsRes.error.message);
-      if (heatmapRes.error) throw new Error(heatmapRes.error.message);
+      // Both RPCs run in parallel — surface BOTH errors if they fail together
+      // (likely the same root cause, e.g. a role edge case) for easier debugging
+      // instead of masking the second one (code-reviewer THI-234).
+      const messages = [statsRes.error?.message, heatmapRes.error?.message].filter(Boolean);
+      if (messages.length > 0) throw new Error(messages.join(' | '));
       setStats(statsRes.data ?? null);
       setHeatmap(heatmapRes.data ?? []);
     } catch (err) {

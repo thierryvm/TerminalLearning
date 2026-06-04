@@ -43,9 +43,12 @@ begin
   select json_build_object(
     'total_users', (select count(*) from public.profiles),
     'active_users_7d', (
+      -- completed = true is redundant today (ProgressContext only upserts completed
+      -- rows) but kept explicit for consistency with the other metrics + robustness
+      -- if the upsert ever stamps completed_at on lesson-start (code-reviewer THI-234).
       select count(distinct user_id)
       from public.progress
-      where completed_at >= now() - interval '7 days'
+      where completed = true and completed_at >= now() - interval '7 days'
     ),
     'lessons_completed_30d', (
       select count(*)
