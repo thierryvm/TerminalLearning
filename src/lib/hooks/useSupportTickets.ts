@@ -48,7 +48,9 @@ export interface UseSupportTicketsResult {
   loading: boolean;
   error: Error | null;
   updatingId: string | null;
+  deletingId: string | null;
   updateStatus: (id: string, next: SupportTicketStatus) => Promise<boolean>;
+  deleteTicket: (id: string) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -108,9 +110,15 @@ export function useSupportTickets(): UseSupportTicketsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   // Live guard against re-entrant updates: a ref reads the current value even
   // before a pending setUpdatingId has flushed, unlike a closure-captured state.
   const updatingIdRef = useRef<string | null>(null);
+  const deletingIdRef = useRef<string | null>(null);
+  // Guard setState against an update/delete resolving after unmount (navigation
+  // away mid-flight) — same pattern as ScreenshotViewer below (code-reviewer).
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -143,7 +151,9 @@ export function useSupportTickets(): UseSupportTicketsResult {
         setError(new Error('Authentification requise'));
         return false;
       }
-      if (updatingIdRef.current) return false;
+      // Cross-guard: never run an update while a delete on any row is in flight
+      // (and vice versa) — avoids an UPDATE committing on a row a DELETE removed.
+      if (updatingIdRef.current || deletingIdRef.current) return false;
 
       updatingIdRef.current = id;
       setUpdatingId(id);
@@ -170,18 +180,63 @@ export function useSupportTickets(): UseSupportTicketsResult {
           throw new Error('Mise à jour du statut impossible. Réessaye dans un instant.');
         }
         // Optimistic local patch — the status-change audit trigger fires server-side.
-        setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+        if (isMountedRef.current) {
+          setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+        }
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Mise à jour impossible'));
+        if (isMountedRef.current) {
+          setError(err instanceof Error ? err : new Error('Mise à jour impossible'));
+        }
         return false;
       } finally {
         updatingIdRef.current = null;
-        setUpdatingId(null);
+        if (isMountedRef.current) setUpdatingId(null);
       }
     },
     [user],
   );
 
-  return { tickets, loading, error, updatingId, updateStatus, refresh };
+  const deleteTicket = useCallback(
+    async (id: string): Promise<boolean> => {
+      if (!user || !supabase) {
+        setError(new Error('Authentification requise'));
+        return false;
+      }
+      if (deletingIdRef.current || updatingIdRef.current) return false;
+
+      deletingIdRef.current = id;
+      setDeletingId(id);
+      setError(null);
+
+      try {
+        // RLS allows DELETE when the row is own OR the caller is super_admin
+        // (migration 033). The hook is used by the super_admin triage UI, so a
+        // 42501/PGRST301 here means an unexpected role drift, not a normal path.
+        const { error: deleteError } = await supabase
+          .from('support_tickets')
+          .delete()
+          .eq('id', id);
+        if (deleteError) {
+          if (deleteError.code === '42501' || deleteError.code === 'PGRST301') {
+            throw new Error('Action non autorisée pour ce compte.');
+          }
+          throw new Error('Suppression impossible. Réessaye dans un instant.');
+        }
+        if (isMountedRef.current) setTickets((prev) => prev.filter((t) => t.id !== id));
+        return true;
+      } catch (err) {
+        if (isMountedRef.current) {
+          setError(err instanceof Error ? err : new Error('Suppression impossible'));
+        }
+        return false;
+      } finally {
+        deletingIdRef.current = null;
+        if (isMountedRef.current) setDeletingId(null);
+      }
+    },
+    [user],
+  );
+
+  return { tickets, loading, error, updatingId, deletingId, updateStatus, deleteTicket, refresh };
 }
