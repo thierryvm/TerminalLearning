@@ -192,7 +192,10 @@ function ProfilePageContent() {
                   maxLength={50}
                   autoFocus
                   disabled={saving}
+                  autoComplete="name"
+                  spellCheck={false}
                   aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? 'profile-display-name-error' : undefined}
                   className="text-base"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSave();
@@ -200,7 +203,7 @@ function ProfilePageContent() {
                   }}
                 />
                 {error && (
-                  <p role="alert" className="mt-1 text-xs text-[var(--github-red)] font-mono">
+                  <p id="profile-display-name-error" role="alert" className="mt-1 text-xs text-[var(--github-red)] font-mono">
                     {error}
                   </p>
                 )}
@@ -210,7 +213,7 @@ function ProfilePageContent() {
                     size="link-inline"
                     onClick={handleSave}
                     disabled={saving}
-                    className="gap-1.5 px-3 min-h-9 rounded-md text-xs"
+                    className="gap-1.5 px-3 min-h-11 rounded-md text-xs"
                   >
                     <Check size={13} aria-hidden="true" />
                     {saving ? 'Enregistrement…' : 'Enregistrer'}
@@ -220,7 +223,7 @@ function ProfilePageContent() {
                     size="link-inline"
                     onClick={() => setIsEditing(false)}
                     disabled={saving}
-                    className="gap-1.5 px-3 min-h-9 rounded-md text-xs"
+                    className="gap-1.5 px-3 min-h-11 rounded-md text-xs"
                   >
                     <X size={13} aria-hidden="true" />
                     Annuler
@@ -235,7 +238,7 @@ function ProfilePageContent() {
                   size="link-inline"
                   onClick={startEdit}
                   aria-label="Modifier le nom affiché"
-                  className="shrink-0 gap-1 px-2 min-h-9 rounded-md text-xs text-[var(--github-text-secondary)] hover:text-emerald-300"
+                  className="shrink-0 gap-1 px-2 min-h-11 rounded-md text-xs text-[var(--github-text-secondary)] hover:text-emerald-300"
                 >
                   <Pencil size={12} aria-hidden="true" />
                   Modifier
