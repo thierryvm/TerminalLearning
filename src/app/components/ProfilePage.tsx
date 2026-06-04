@@ -126,14 +126,17 @@ function ProfilePageContent() {
       setError(parsed.error.issues[0]?.message ?? 'Nom invalide');
       return;
     }
+    // Resolve the client + guard BEFORE setSaving(true) so the spinner only
+    // starts when the network call will actually happen (code-reviewer: a guard
+    // inside the try after setSaving is correct today but fragile to refactor).
+    const { supabase } = await import('../../lib/supabase');
+    if (!supabase) {
+      setError('Service indisponible.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const { supabase } = await import('../../lib/supabase');
-      if (!supabase) {
-        setError('Service indisponible.');
-        return;
-      }
       // updateUser acts on the caller's own JWT — no cross-user surface. The
       // emitted USER_UPDATED event refreshes `user` via AuthContext, so the
       // displayed name re-renders without a manual refetch.
@@ -182,6 +185,10 @@ function ProfilePageContent() {
           <div className="min-w-0 flex-1">
             {isEditing ? (
               <div>
+                {/* shadcn Input ships light-mode tokens (bg-input-background / border-input)
+                    but the app theme is GitHub-dark via CSS vars (no `dark` class), so we
+                    override the colors to match the other fields (cf. SupportTicketModal).
+                    twMerge keeps these over the defaults. Contrast fix — @thierry review. */}
                 <label htmlFor="profile-display-name" className="sr-only">
                   Nom affiché
                 </label>
@@ -196,7 +203,7 @@ function ProfilePageContent() {
                   spellCheck={false}
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? 'profile-display-name-error' : undefined}
-                  className="text-base"
+                  className="text-base bg-[var(--github-bg-secondary)] text-[var(--github-text-primary)] border-[var(--github-border-primary)] placeholder:text-[var(--github-text-secondary)] focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:border-emerald-500/40"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSave();
                     if (e.key === 'Escape') setIsEditing(false);
@@ -258,15 +265,20 @@ function ProfilePageContent() {
         <h2 id="profile-env-heading" className="text-sm font-medium text-[var(--github-text-secondary)] font-mono uppercase tracking-wider mb-3">
           Environnement actif
         </h2>
-        <div className="px-5 py-4 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] flex items-center gap-4">
-          <Monitor size={20} className={envMeta.color} aria-hidden="true" />
+        <div className="px-5 py-4 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] flex items-start gap-4">
+          <Monitor size={20} className={`${envMeta.color} shrink-0 mt-0.5`} aria-hidden="true" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-[var(--github-text-primary)] font-medium">{envMeta.label}</p>
-            <p className="text-xs text-[var(--github-text-secondary)] font-mono">{envMeta.shell} · {envMeta.promptPreview}</p>
+            {/* break-words so the shell + prompt preview wrap cleanly on mobile
+                instead of overflowing / colliding with the hint (was a right-aligned
+                shrink-0 <p> that overlapped the wrapped text at 390px). */}
+            <p className="text-xs text-[var(--github-text-secondary)] font-mono break-words">
+              {envMeta.shell} · {envMeta.promptPreview}
+            </p>
+            <p className="text-xs text-[var(--github-text-secondary)]/70 font-mono mt-1">
+              Modifier dans la barre latérale
+            </p>
           </div>
-          <p className="text-xs text-[var(--github-text-secondary)]/70 font-mono shrink-0">
-            Modifier dans la sidebar
-          </p>
         </div>
       </section>
 
