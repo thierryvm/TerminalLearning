@@ -18,14 +18,27 @@
  * PR #3 ajoutera les sections role-aware (Mes classes pour teacher, Admin
  * Panel pour admin) dans le UserMenu dropdown ET ici via tabs.
  */
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Github, KeyRound, Mail, Monitor, Sliders } from 'lucide-react';
+import { z } from 'zod';
+import { ArrowLeft, Check, Github, KeyRound, Mail, Monitor, Pencil, Sliders, X } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { useEnvironment, ENV_META } from '../context/EnvironmentContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { UserAvatar } from './auth/UserAvatar';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+
+// THI-344 — display_name edit. user_metadata is free-form JSON (Supabase does
+// not validate it), so we constrain it client-side. Rendering is React-escaped
+// (no XSS), but we still trim + cap length to keep the UI sane.
+const NAME_SCHEMA = z
+  .string()
+  .trim()
+  .min(1, 'Le nom ne peut pas être vide')
+  .max(50, 'Maximum 50 caractères');
 
 // OAuth provider label + icon — mirrors the subset of providers we currently
 // support in LoginModal (GitHub + Google email/password). Anything else
@@ -79,6 +92,12 @@ function ProfilePageContent() {
   // RequireAuth above guarantees user is non-null and session is initialized.
   const { user } = useAuth();
   const { selectedEnv } = useEnvironment();
+  // Hooks must run before any early return (rules-of-hooks). nameValue is seeded
+  // from displayName in startEdit() (displayName is derived after the guard).
+  const [isEditing, setIsEditing] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!user) return null; // type-narrowing for TS — never reached at runtime
 
@@ -94,6 +113,44 @@ function ProfilePageContent() {
   const provider = user.app_metadata?.provider;
 
   const envMeta = ENV_META[selectedEnv];
+
+  const startEdit = () => {
+    setNameValue(displayName);
+    setError(null);
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    const parsed = NAME_SCHEMA.safeParse(nameValue);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Nom invalide');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      if (!supabase) {
+        setError('Service indisponible.');
+        return;
+      }
+      // updateUser acts on the caller's own JWT — no cross-user surface. The
+      // emitted USER_UPDATED event refreshes `user` via AuthContext, so the
+      // displayed name re-renders without a manual refetch.
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { full_name: parsed.data },
+      });
+      if (updateError) {
+        setError(updateError.message);
+        return;
+      }
+      setIsEditing(false);
+    } catch {
+      setError('Erreur réseau, réessayez.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
@@ -112,7 +169,7 @@ function ProfilePageContent() {
 
       <h1 className="text-2xl font-semibold text-[var(--github-text-primary)] mb-2">Mon profil</h1>
       <p className="text-sm text-[var(--github-text-secondary)] mb-8">
-        Informations de compte, environnement actif et paramètres. <span className="text-[var(--github-text-secondary)]/70">Édition de profil et danger zone disponibles bientôt.</span>
+        Informations de compte, environnement actif et paramètres. <span className="text-[var(--github-text-secondary)]/70">Export de données et suppression de compte bientôt disponibles.</span>
       </p>
 
       {/* ── Identité ──────────────────────────────────────────────────── */}
@@ -123,8 +180,69 @@ function ProfilePageContent() {
         <div className="px-5 py-5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] flex items-center gap-5">
           <UserAvatar avatarUrl={avatarUrl} initials={initials} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="text-lg text-[var(--github-text-primary)] font-medium truncate">{displayName}</p>
-            <p className="text-sm text-[var(--github-text-secondary)] truncate font-mono">{user.email}</p>
+            {isEditing ? (
+              <div>
+                <label htmlFor="profile-display-name" className="sr-only">
+                  Nom affiché
+                </label>
+                <Input
+                  id="profile-display-name"
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  maxLength={50}
+                  autoFocus
+                  disabled={saving}
+                  aria-invalid={error ? true : undefined}
+                  className="text-base"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') setIsEditing(false);
+                  }}
+                />
+                {error && (
+                  <p role="alert" className="mt-1 text-xs text-[var(--github-red)] font-mono">
+                    {error}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center gap-2">
+                  <Button
+                    variant="emerald-soft"
+                    size="link-inline"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="gap-1.5 px-3 min-h-9 rounded-md text-xs"
+                  >
+                    <Check size={13} aria-hidden="true" />
+                    {saving ? 'Enregistrement…' : 'Enregistrer'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="link-inline"
+                    onClick={() => setIsEditing(false)}
+                    disabled={saving}
+                    className="gap-1.5 px-3 min-h-9 rounded-md text-xs"
+                  >
+                    <X size={13} aria-hidden="true" />
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="text-lg text-[var(--github-text-primary)] font-medium truncate">{displayName}</p>
+                <Button
+                  variant="ghost"
+                  size="link-inline"
+                  onClick={startEdit}
+                  aria-label="Modifier le nom affiché"
+                  className="shrink-0 gap-1 px-2 min-h-9 rounded-md text-xs text-[var(--github-text-secondary)] hover:text-emerald-300"
+                >
+                  <Pencil size={12} aria-hidden="true" />
+                  Modifier
+                </Button>
+              </div>
+            )}
+            <p className="text-sm text-[var(--github-text-secondary)] truncate font-mono mt-0.5">{user.email}</p>
             <div className="mt-2">
               <ProviderBadge provider={typeof provider === 'string' ? provider : undefined} />
             </div>
