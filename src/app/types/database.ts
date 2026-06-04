@@ -373,6 +373,31 @@ export interface Database {
         Args: { target_user_id: string };
         Returns: void;
       };
+      /**
+       * THI-234 Phase 9 — cross-user platform aggregates for the Admin Panel
+       * (total users, active 7d, lessons completed 30d/total, top 5 lessons).
+       * SECURITY DEFINER + internal super_admin gate (raises PERMISSION_DENIED
+       * otherwise) + REVOKE public/anon (migration 032). Counts only, no PII.
+       */
+      admin_platform_stats: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_users: number;
+          active_users_7d: number;
+          lessons_completed_30d: number;
+          lessons_completed_total: number;
+          top_lessons: { lesson_id: string; completions: number }[];
+        };
+      };
+      /**
+       * THI-234 Phase 9 (THI-77) — daily completed-lesson counts over the last
+       * 365 days for the student activity heatmap. SECURITY DEFINER + super_admin
+       * gate + REVOKE public/anon (migration 032). Daily counts only, no PII.
+       */
+      admin_activity_heatmap: {
+        Args: Record<PropertyKey, never>;
+        Returns: { day: string; completions: number }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

@@ -1,24 +1,19 @@
 /**
- * AdminPanel — THI-225 Phase 9 Admin Panel v1 (skeleton).
+ * AdminPanel — THI-225 Phase 9 Admin Panel + THI-234 widgets data-driven.
  *
  * Route `/app/admin` gated par `<RequireRole allowed={['super_admin']}>`.
  *
- * Scope v1 (deadline 10 juin 2026) — read-only super_admin only :
- *   - 4 widgets placeholder skeleton (data réelle en S3 Sprint 2.5)
- *   - Supabase health (users actifs, lessons completed, agrégats progress)
- *   - Sentry events (last 24h errors/warnings)
- *   - Application health (RLS policies status, RPC calls)
- *   - Student activity heatmap (THI-77, GitHub-style)
+ * Widgets LIVE (THI-234, migration 032 RPC SECURITY DEFINER + gate super_admin) :
+ *   - Santé Supabase    → `admin_platform_stats()` (users, actifs 7j, leçons 30j/total, top 5)
+ *   - Activité élèves   → `admin_activity_heatmap()` (progress/jour sur 52 semaines, THI-77)
  *
- * Hors scope v1 (différé v2 post-deadline) :
- *   - `institution_admin` role (RLS scope creep P=70% identifié agent challenge)
- *   - Drains Vercel Analytics (Pro plan blocker confirmé spike 18/05)
- *   - Maintenance mode, screenshots upload moderation
- *   (in-app support tickets triage shipped Étape 4 — THI-320, see SupportTicketsSection)
- *   - Teacher adoption heatmap (THI-78)
+ * Widgets placeholder (différés v2 post-démo) :
+ *   - Sentry events     → nécessite route API + secret Sentry (plus lourd/risqué)
+ *   - Application health → agrégats techniques (peu parlants pour la cible écoles)
  *
- * Le lien vers le dashboard Vercel externe est placé en footer pour les
- * admins TL eux-mêmes (les autres rôles n'arrivent jamais ici).
+ * Les agrégats sont cross-user mais gated `super_admin` côté RPC (raise
+ * PERMISSION_DENIED sinon) + REVOKE public/anon — defense in depth avec le
+ * RequireRole UI. Voir migration 032 + `useAdminAnalytics`.
  */
 import { Helmet } from 'react-helmet-async';
 import { Activity, AlertCircle, BarChart3, ExternalLink, ShieldCheck, Users } from 'lucide-react';
@@ -27,6 +22,8 @@ import { RequireRole } from './auth/RequireRole';
 import { SupportTicketsSection } from './SupportTicketsSection';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { useAdminAnalytics, type PlatformStats, type HeatmapDay } from '@/lib/hooks/useAdminAnalytics';
+import { buildHeatmapGrid, heatmapLevel, heatmapMax, HEATMAP_WEEKS } from '@/lib/admin/heatmap';
 
 export function AdminPanel() {
   return (
@@ -37,6 +34,8 @@ export function AdminPanel() {
 }
 
 function AdminPanelContent() {
+  const { stats, heatmap, loading, error } = useAdminAnalytics();
+
   return (
     <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
       <Helmet>
@@ -53,18 +52,15 @@ function AdminPanelContent() {
           Panneau administrateur
         </h1>
         <p className="text-sm text-[var(--github-text-secondary)]">
-          Supervision et monitoring de la plateforme.{' '}
-          <span className="text-[var(--github-text-secondary)]/70">
-            Édition v1 — données live disponibles bientôt.
-          </span>
+          Supervision et monitoring de la plateforme.
         </p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <WidgetSupabaseHealth />
+        <WidgetSupabaseHealth stats={stats} loading={loading} error={error} />
         <WidgetSentryEvents />
         <WidgetApplicationHealth />
-        <WidgetStudentHeatmap />
+        <WidgetStudentHeatmap heatmap={heatmap} loading={loading} error={error} />
       </div>
 
       <SupportTicketsSection />
@@ -92,7 +88,7 @@ interface WidgetCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  comingIn: string;
+  comingIn?: string;
   children?: React.ReactNode;
 }
 
@@ -125,14 +121,96 @@ function WidgetCard({ icon, title, description, comingIn, children }: WidgetCard
   );
 }
 
-function WidgetSupabaseHealth() {
+/**
+ * Shared body wrapper for the data-driven widgets — renders loading / error /
+ * empty states consistently, otherwise the children (the actual data view).
+ */
+function WidgetBody({
+  loading,
+  error,
+  empty,
+  emptyLabel = 'Aucune donnée pour le moment.',
+  children,
+}: {
+  loading: boolean;
+  error: Error | null;
+  empty: boolean;
+  emptyLabel?: string;
+  children: React.ReactNode;
+}) {
+  if (loading) {
+    return <p className="text-sm text-[var(--github-text-secondary)] font-mono">Chargement…</p>;
+  }
+  if (error) {
+    return (
+      <p className="text-sm text-red-400" role="alert">
+        Chargement impossible. Réessaie dans un instant.
+      </p>
+    );
+  }
+  if (empty) {
+    return <p className="text-sm text-[var(--github-text-secondary)]">{emptyLabel}</p>;
+  }
+  return <>{children}</>;
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="px-3 py-2 rounded-md bg-[var(--github-bg)]/40 border border-[var(--github-border-primary)]">
+      <div className="text-xl font-semibold text-[var(--github-text-primary)] font-mono">
+        {value.toLocaleString('fr-FR')}
+      </div>
+      <div className="text-xs text-[var(--github-text-secondary)] leading-tight">{label}</div>
+    </div>
+  );
+}
+
+function WidgetSupabaseHealth({
+  stats,
+  loading,
+  error,
+}: {
+  stats: PlatformStats | null;
+  loading: boolean;
+  error: Error | null;
+}) {
   return (
     <WidgetCard
       icon={<Users size={20} />}
       title="Santé Supabase"
-      description="Utilisateurs actifs (7j), leçons complétées (30j), modules populaires, sessions auth."
-      comingIn="Sprint S3 — requêtes Supabase REST sur progress + auth.users"
-    />
+      description="Utilisateurs, activité récente et leçons complétées."
+    >
+      <WidgetBody loading={loading} error={error} empty={!stats}>
+        {stats && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <Stat label="Utilisateurs" value={stats.total_users} />
+              <Stat label="Actifs (7 j)" value={stats.active_users_7d} />
+              <Stat label="Leçons complétées (30 j)" value={stats.lessons_completed_30d} />
+              <Stat label="Total complétées" value={stats.lessons_completed_total} />
+            </div>
+            {stats.top_lessons.length > 0 && (
+              <div>
+                <p className="text-xs text-[var(--github-text-secondary)] uppercase tracking-wide font-mono mb-1.5">
+                  Top leçons
+                </p>
+                <ul className="space-y-1">
+                  {stats.top_lessons.map((l) => (
+                    <li
+                      key={l.lesson_id}
+                      className="flex items-center justify-between text-sm text-[var(--github-text-secondary)]"
+                    >
+                      <span className="font-mono truncate">{l.lesson_id}</span>
+                      <span className="text-emerald-400 font-mono shrink-0 ml-2">{l.completions}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </WidgetBody>
+    </WidgetCard>
   );
 }
 
@@ -142,7 +220,7 @@ function WidgetSentryEvents() {
       icon={<AlertCircle size={20} />}
       title="Événements Sentry"
       description="Erreurs et warnings des 24 dernières heures (free tier 5K events/mois)."
-      comingIn="Sprint S3 — Sentry REST API integration"
+      comingIn="Phase 9 v2 — Sentry REST API (route serveur + secret)"
     />
   );
 }
@@ -153,37 +231,66 @@ function WidgetApplicationHealth() {
       icon={<ShieldCheck size={20} />}
       title="Santé application"
       description="Status RLS policies, RPC calls réussis vs erreur, événements auth Supabase."
-      comingIn="Sprint S3 — Supabase Admin queries via supabase-js"
+      comingIn="Phase 9 v2 — Supabase Admin queries"
     />
   );
 }
 
-function WidgetStudentHeatmap() {
+// GitHub-style intensity palette (0 = aucune activité → 4 = jour le plus actif).
+// emerald = couleur accent du projet (cohérent Sidebar / progress bar).
+const HEATMAP_LEVEL_CLASS = [
+  'bg-[var(--github-bg)] border border-[var(--github-border-primary)]/40',
+  'bg-emerald-900/70',
+  'bg-emerald-700',
+  'bg-emerald-500',
+  'bg-emerald-400',
+] as const;
+
+function WidgetStudentHeatmap({
+  heatmap,
+  loading,
+  error,
+}: {
+  heatmap: HeatmapDay[];
+  loading: boolean;
+  error: Error | null;
+}) {
+  const cells = buildHeatmapGrid(heatmap);
+  const max = heatmapMax(cells);
+  const totalCompletions = cells.reduce((sum, c) => sum + c.completions, 0);
+
   return (
     <WidgetCard
       icon={<BarChart3 size={20} />}
       title="Activité élèves"
-      description="Heatmap GitHub-style des leçons complétées par jour sur 52 semaines (THI-77)."
-      comingIn="Sprint S3 — agrégat progress par date_trunc('day', completed_at)"
+      description={`Leçons complétées par jour sur ${HEATMAP_WEEKS} semaines (THI-77).`}
     >
-      {/* Skeleton heatmap placeholder — emerald grid pattern */}
-      <div
-        className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 mt-2"
-        role="img"
-        aria-label="Heatmap placeholder — données live disponibles Sprint S3"
-      >
-        {Array.from({ length: 91 }, (_, i) => (
-          <span
-            key={i}
-            className="aspect-square rounded-sm bg-[var(--github-bg)]/40 border border-[var(--github-border-primary)]/40"
-            aria-hidden="true"
-          />
-        ))}
-      </div>
-      <p className="mt-2 text-xs text-[var(--github-text-secondary)]/70 font-mono inline-flex items-center gap-2">
-        <Activity size={12} aria-hidden="true" />
-        Skeleton — 91 jours × 1 cellule
-      </p>
+      <WidgetBody loading={loading} error={error} empty={false}>
+        <div className="overflow-x-auto">
+          <div
+            className="grid grid-rows-[repeat(7,10px)] grid-flow-col gap-[2px] w-max"
+            role="img"
+            aria-label={
+              totalCompletions === 0
+                ? `Aucune activité sur les ${HEATMAP_WEEKS} dernières semaines.`
+                : `Heatmap d'activité : ${totalCompletions} leçons complétées sur les ${HEATMAP_WEEKS} dernières semaines, jour le plus actif ${max}.`
+            }
+          >
+            {cells.map((c) => (
+              <span
+                key={c.date}
+                className={`size-2.5 rounded-[2px] ${HEATMAP_LEVEL_CLASS[heatmapLevel(c.completions, max)]}`}
+                title={`${c.date} : ${c.completions} leçon(s)`}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-[var(--github-text-secondary)]/70 font-mono inline-flex items-center gap-2">
+          <Activity size={12} aria-hidden="true" />
+          {totalCompletions} complétions · pic {max}/jour
+        </p>
+      </WidgetBody>
     </WidgetCard>
   );
 }

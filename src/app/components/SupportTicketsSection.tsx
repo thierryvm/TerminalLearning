@@ -192,13 +192,14 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
         </label>
         {/* Native <select>: keeps style-src CSP strict (Radix popovers inject
             inline styles, blocked by our CSP). [color-scheme:dark] themes the
-            native option popup dark across Chrome/Firefox/Safari. */}
+            native option popup dark across Chrome/Firefox/Safari. text-base (16px)
+            prevents Safari iOS auto-zoom on focus (mobile-auditor THI-234). */}
         <select
           id={selectId}
           value={ticket.status}
           disabled={updating}
           onChange={(e) => onStatusChange(e.target.value as SupportTicketStatus)}
-          className="min-h-11 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-sm text-[var(--github-text-primary)] font-mono [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
+          className="min-h-11 rounded-md border border-[var(--github-border-primary)] bg-[var(--github-bg)] px-2 py-1 text-base text-[var(--github-text-primary)] font-mono [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-50"
         >
           {STATUS_ORDER.map((s) => (
             <option key={s} value={s}>
