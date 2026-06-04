@@ -48,7 +48,9 @@ export interface UseSupportTicketsResult {
   loading: boolean;
   error: Error | null;
   updatingId: string | null;
+  deletingId: string | null;
   updateStatus: (id: string, next: SupportTicketStatus) => Promise<boolean>;
+  deleteTicket: (id: string) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -108,9 +110,11 @@ export function useSupportTickets(): UseSupportTicketsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   // Live guard against re-entrant updates: a ref reads the current value even
   // before a pending setUpdatingId has flushed, unlike a closure-captured state.
   const updatingIdRef = useRef<string | null>(null);
+  const deletingIdRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -183,5 +187,44 @@ export function useSupportTickets(): UseSupportTicketsResult {
     [user],
   );
 
-  return { tickets, loading, error, updatingId, updateStatus, refresh };
+  const deleteTicket = useCallback(
+    async (id: string): Promise<boolean> => {
+      if (!user || !supabase) {
+        setError(new Error('Authentification requise'));
+        return false;
+      }
+      if (deletingIdRef.current) return false;
+
+      deletingIdRef.current = id;
+      setDeletingId(id);
+      setError(null);
+
+      try {
+        // RLS allows DELETE when the row is own OR the caller is super_admin
+        // (migration 033). The hook is used by the super_admin triage UI, so a
+        // 42501/PGRST301 here means an unexpected role drift, not a normal path.
+        const { error: deleteError } = await supabase
+          .from('support_tickets')
+          .delete()
+          .eq('id', id);
+        if (deleteError) {
+          if (deleteError.code === '42501' || deleteError.code === 'PGRST301') {
+            throw new Error('Action non autorisée pour ce compte.');
+          }
+          throw new Error('Suppression impossible. Réessaye dans un instant.');
+        }
+        setTickets((prev) => prev.filter((t) => t.id !== id));
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Suppression impossible'));
+        return false;
+      } finally {
+        deletingIdRef.current = null;
+        setDeletingId(null);
+      }
+    },
+    [user],
+  );
+
+  return { tickets, loading, error, updatingId, deletingId, updateStatus, deleteTicket, refresh };
 }

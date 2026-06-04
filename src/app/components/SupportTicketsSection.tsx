@@ -15,7 +15,7 @@
  *     THI-297) so a huge image can't blow up the layout.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, ImageIcon, Inbox, Loader2 } from 'lucide-react';
+import { CheckCircle2, ImageIcon, Inbox, Loader2, Trash2 } from 'lucide-react';
 
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -37,7 +37,8 @@ import {
 type StatusFilter = 'all' | SupportTicketStatus;
 
 export function SupportTicketsSection() {
-  const { tickets, loading, error, updatingId, updateStatus } = useSupportTickets();
+  const { tickets, loading, error, updatingId, deletingId, updateStatus, deleteTicket } =
+    useSupportTickets();
   const [filter, setFilter] = useState<StatusFilter>('all');
 
   const counts = useMemo(() => {
@@ -120,7 +121,9 @@ export function SupportTicketsSection() {
                 <TicketCard
                   ticket={ticket}
                   updating={updatingId === ticket.id}
+                  deleting={deletingId === ticket.id}
                   onStatusChange={(next) => updateStatus(ticket.id, next)}
+                  onDelete={() => deleteTicket(ticket.id)}
                 />
               </li>
             ))}
@@ -155,11 +158,14 @@ function FilterChip({ active, onClick, children }: FilterChipProps) {
 interface TicketCardProps {
   ticket: SupportTicket;
   updating: boolean;
+  deleting: boolean;
   onStatusChange: (next: SupportTicketStatus) => void;
+  onDelete: () => void;
 }
 
-function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
+function TicketCard({ ticket, updating, deleting, onStatusChange, onDelete }: TicketCardProps) {
   const selectId = `ticket-status-${ticket.id}`;
+  const [confirming, setConfirming] = useState(false);
   return (
     <Card variant="tl-surface" className="px-5 py-4 gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -220,6 +226,49 @@ function TicketCard({ ticket, updating, onStatusChange }: TicketCardProps) {
             {`Résolu le ${formatDate(ticket.resolved_at)}`}
           </span>
         )}
+
+        {/* Delete — two-step inline confirm (no native confirm dialog). super_admin
+            purge: spam / obsolete / leftover test rows (THI-347 volet 3, THI-334). */}
+        <div className="ml-auto flex items-center gap-2">
+          {confirming ? (
+            <>
+              <span className="text-xs text-[var(--github-text-secondary)] font-mono">Supprimer ?</span>
+              <Button
+                type="button"
+                variant="ghost-gh"
+                size="sm"
+                className="min-h-11 font-mono text-xs text-[var(--github-red)] hover:text-[var(--github-red)] hover:bg-[var(--github-red)]/10"
+                onClick={onDelete}
+                disabled={deleting}
+                aria-label={`Confirmer la suppression du signalement #${ticket.id.slice(0, 8)}`}
+              >
+                {deleting ? 'Suppression…' : 'Confirmer'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost-gh"
+                size="sm"
+                className="min-h-11 font-mono text-xs"
+                onClick={() => setConfirming(false)}
+                disabled={deleting}
+              >
+                Annuler
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost-gh"
+              size="sm"
+              className="min-h-11 gap-1.5 font-mono text-xs text-[var(--github-text-secondary)] hover:text-[var(--github-red)]"
+              onClick={() => setConfirming(true)}
+              aria-label={`Supprimer le signalement #${ticket.id.slice(0, 8)}`}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+              Supprimer
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );

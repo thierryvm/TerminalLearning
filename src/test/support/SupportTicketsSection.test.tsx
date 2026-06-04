@@ -14,7 +14,9 @@ const h = vi.hoisted(() => ({
     loading: false,
     error: null as Error | null,
     updatingId: null as string | null,
+    deletingId: null as string | null,
     updateStatus: vi.fn(),
+    deleteTicket: vi.fn(),
     refresh: vi.fn(),
   },
   getFresh: vi.fn(),
@@ -48,7 +50,9 @@ beforeEach(() => {
   h.state.loading = false;
   h.state.error = null;
   h.state.updatingId = null;
+  h.state.deletingId = null;
   h.state.updateStatus = vi.fn().mockResolvedValue(true);
+  h.state.deleteTicket = vi.fn().mockResolvedValue(true);
   h.getFresh = vi.fn();
 });
 
@@ -161,5 +165,25 @@ describe('SupportTicketsSection', () => {
     h.state.tickets = [ticket({ status: 'resolved', resolved_at: null })];
     render(<SupportTicketsSection />);
     expect(screen.queryByText(/Résolu le/)).not.toBeInTheDocument();
+  });
+
+  it('deletes a ticket only after the inline two-step confirm', () => {
+    h.state.tickets = [ticket({ id: 'tdel' })];
+    render(<SupportTicketsSection />);
+    // Step 1 — "Supprimer" reveals the confirm but does NOT delete yet.
+    fireEvent.click(screen.getByRole('button', { name: /Supprimer le signalement/ }));
+    expect(h.state.deleteTicket).not.toHaveBeenCalled();
+    // Step 2 — "Confirmer" triggers the delete.
+    fireEvent.click(screen.getByRole('button', { name: /Confirmer la suppression/ }));
+    expect(h.state.deleteTicket).toHaveBeenCalledWith('tdel');
+  });
+
+  it('cancels the delete confirm without deleting', () => {
+    h.state.tickets = [ticket({ id: 'tdel' })];
+    render(<SupportTicketsSection />);
+    fireEvent.click(screen.getByRole('button', { name: /Supprimer le signalement/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Annuler$/ }));
+    expect(h.state.deleteTicket).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Supprimer le signalement/ })).toBeInTheDocument();
   });
 });

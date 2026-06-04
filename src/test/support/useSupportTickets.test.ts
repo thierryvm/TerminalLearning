@@ -16,6 +16,8 @@ const h = vi.hoisted(() => ({
   orderMock: vi.fn(),
   updateMock: vi.fn(),
   eqMock: vi.fn(),
+  deleteMock: vi.fn(),
+  deleteEqMock: vi.fn(),
   createSignedUrlMock: vi.fn(),
   auth: { user: { id: 'admin-1' } as { id: string } | null, initialized: true },
 }));
@@ -59,11 +61,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.auth.user = { id: 'admin-1' };
   h.auth.initialized = true;
-  h.fromMock.mockReturnValue({ select: h.selectMock, update: h.updateMock });
+  h.fromMock.mockReturnValue({ select: h.selectMock, update: h.updateMock, delete: h.deleteMock });
   h.selectMock.mockReturnValue({ order: h.orderMock });
   h.updateMock.mockReturnValue({ eq: h.eqMock });
+  h.deleteMock.mockReturnValue({ eq: h.deleteEqMock });
   h.orderMock.mockResolvedValue({ data: [], error: null });
   h.eqMock.mockResolvedValue({ error: null });
+  h.deleteEqMock.mockResolvedValue({ error: null });
   h.createSignedUrlMock.mockResolvedValue({ data: { signedUrl: `${SIGN_BASE}/u1/new.png?token=fresh` }, error: null });
 });
 
@@ -188,5 +192,39 @@ describe('useSupportTickets — updateStatus', () => {
     expect(result.current.error?.message).toContain('autorisée');
     // Optimistic patch must NOT have applied on failure.
     expect(result.current.tickets[0].status).toBe('open');
+  });
+});
+
+describe('useSupportTickets — deleteTicket', () => {
+  it('removes the ticket from the list optimistically on success', async () => {
+    h.orderMock.mockResolvedValue({ data: [ticket({ id: 't1' }), ticket({ id: 't2' })], error: null });
+    const { result } = renderHook(() => useSupportTickets());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.deleteTicket('t1');
+    });
+
+    expect(ok).toBe(true);
+    expect(h.deleteMock).toHaveBeenCalled();
+    expect(h.deleteEqMock).toHaveBeenCalledWith('id', 't1');
+    expect(result.current.tickets.map((t) => t.id)).toEqual(['t2']);
+  });
+
+  it('maps an RLS denial (42501) to a friendly error and keeps the ticket', async () => {
+    h.orderMock.mockResolvedValue({ data: [ticket({ id: 't1' })], error: null });
+    h.deleteEqMock.mockResolvedValue({ error: { code: '42501', message: 'denied' } });
+    const { result } = renderHook(() => useSupportTickets());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.deleteTicket('t1');
+    });
+
+    expect(ok).toBe(false);
+    expect(result.current.error?.message).toContain('autorisée');
+    expect(result.current.tickets).toHaveLength(1);
   });
 });

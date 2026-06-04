@@ -437,14 +437,46 @@ describe('support_tickets — status/resolved coherence (migration 029)', () => 
 
 // ─── Test 12: super_admin DELETE policy (M2 RGPD Art. 17) ────────────────────
 
-describe('support_tickets — super_admin DELETE policy (migration 029)', () => {
-  it.skipIf(SKIP)('student cannot DELETE own ticket (no user delete policy)', async () => {
+describe('support_tickets — DELETE policies (029 super_admin + 033 user-own)', () => {
+  it.skipIf(SKIP)('student CAN delete own ticket (migration 033 — THI-334 teardown + RGPD Art. 17)', async () => {
     const { data: ticket } = await studentClient
       .from('support_tickets')
       .insert({
         user_id: studentUserId,
         type: 'bug',
-        description: 'Ticket for student DELETE denial test.',
+        description: 'Ticket for student self-DELETE test.',
+      })
+      .select('id')
+      .single();
+    expect(ticket?.id).toBeTruthy();
+    const ticketId = ticket!.id;
+    // Not pushed to createdTicketIds — this test deletes it itself.
+
+    // migration 033 added a "user delete own" policy → the owner can now erase.
+    const { data, error } = await studentClient
+      .from('support_tickets')
+      .delete()
+      .eq('id', ticketId)
+      .select('id');
+
+    expect(error).toBeNull();
+    expect(data?.length ?? 0).toBe(1); // own row actually deleted
+
+    const { data: verify } = await superAdminClient
+      .from('support_tickets')
+      .select('id')
+      .eq('id', ticketId)
+      .maybeSingle();
+    expect(verify).toBeNull();
+  });
+
+  it.skipIf(SKIP)("a non-owner non-admin user CANNOT delete another user's ticket (isolation)", async () => {
+    const { data: ticket } = await studentClient
+      .from('support_tickets')
+      .insert({
+        user_id: studentUserId,
+        type: 'bug',
+        description: 'Ticket for cross-user DELETE isolation test.',
       })
       .select('id')
       .single();
@@ -452,17 +484,17 @@ describe('support_tickets — super_admin DELETE policy (migration 029)', () => 
     const ticketId = ticket!.id;
     createdTicketIds.push(ticketId);
 
-    // Student attempts DELETE — RLS DELETE only matches super_admin.
-    const { data, error } = await studentClient
+    // teacher = different user, not super_admin → matches neither DELETE policy
+    // (user-delete-own needs user_id = auth.uid(); super_admin-delete-all needs role).
+    const { data, error } = await teacherClient
       .from('support_tickets')
       .delete()
       .eq('id', ticketId)
       .select('id');
 
-    expect(error).toBeNull(); // RLS does not throw, returns empty set.
-    expect(data?.length ?? 0).toBe(0); // 0 rows actually deleted.
+    expect(error).toBeNull(); // RLS returns an empty set, no throw.
+    expect(data?.length ?? 0).toBe(0); // 0 rows deleted — isolation preserved.
 
-    // Verify via super_admin that the row still exists.
     const { data: verify } = await superAdminClient
       .from('support_tickets')
       .select('id')
