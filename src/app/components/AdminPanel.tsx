@@ -270,7 +270,11 @@ function WidgetStudentHeatmap({
           <div
             className="grid grid-rows-[repeat(7,10px)] grid-flow-col gap-[2px] w-max"
             role="img"
-            aria-label={`Heatmap d'activité : ${totalCompletions} leçons complétées sur les ${HEATMAP_WEEKS} dernières semaines, jour le plus actif ${max}.`}
+            aria-label={
+              totalCompletions === 0
+                ? `Aucune activité sur les ${HEATMAP_WEEKS} dernières semaines.`
+                : `Heatmap d'activité : ${totalCompletions} leçons complétées sur les ${HEATMAP_WEEKS} dernières semaines, jour le plus actif ${max}.`
+            }
           >
             {cells.map((c) => (
               <span
