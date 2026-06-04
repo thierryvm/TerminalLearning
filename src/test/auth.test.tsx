@@ -42,45 +42,68 @@ function renderCompact() {
   );
 }
 
-// ── Card variant (sidebar) ────────────────────────────────────────────────────
+// ── Card variant (sidebar) — THI-341 : maintenant un menu avatar (dropdown ↑) ──
 
-describe('UserMenu card variant (sidebar)', () => {
+describe('UserMenu card variant (sidebar menu)', () => {
   beforeEach(() => {
     mockSignOut.mockResolvedValue(undefined);
     mockNavigate.mockClear();
     mockSignOut.mockClear();
   });
 
-  it('renders sign-out button directly without opening a dropdown', () => {
+  it('shows display name + sync label in the trigger (dropdown closed)', () => {
     renderCard();
-    expect(screen.getByRole('button', { name: /se déconnecter/i })).toBeInTheDocument();
+    expect(screen.getByText('test')).toBeInTheDocument(); // displayName from email
+    expect(screen.getByText('Local')).toBeInTheDocument(); // sync status
   });
 
-  it('shows display name derived from email', () => {
+  it('does not show sign-out before the dropdown is opened', () => {
     renderCard();
-    // displayName falls back to email prefix when user_metadata is empty
-    expect(screen.getByText('test')).toBeInTheDocument();
+    expect(screen.queryByText(/se déconnecter/i)).not.toBeInTheDocument();
   });
 
-  it('shows sync status label', () => {
+  it('opens the dropdown and shows sign-out on trigger click', () => {
     renderCard();
-    expect(screen.getByText('Local')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /compte de test/i }));
+    expect(screen.getByText(/se déconnecter/i)).toBeInTheDocument();
   });
 
-  it('calls signOut and navigates to "/" on click', async () => {
+  it('renders role-gated secondaryItems (link + action) in the dropdown', () => {
+    const onAction = vi.fn();
+    render(
+      <MemoryRouter>
+        <UserMenu
+          syncStatus="local"
+          secondaryItems={[
+            { label: 'Administration', to: '/app/admin', icon: <span /> },
+            { label: 'Aide & feedback', onClick: onAction, icon: <span /> },
+          ]}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /compte de test/i }));
+    expect(screen.getByRole('menuitem', { name: /administration/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: /aide & feedback/i }));
+    expect(onAction).toHaveBeenCalledOnce();
+  });
+
+  it('calls signOut and navigates to "/" from the dropdown', async () => {
     renderCard();
-    fireEvent.click(screen.getByRole('button', { name: /se déconnecter/i }));
+    fireEvent.click(screen.getByRole('button', { name: /compte de test/i }));
+    fireEvent.click(screen.getByText(/se déconnecter/i));
     await waitFor(() => expect(mockSignOut).toHaveBeenCalledOnce());
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true }));
   });
 
-  it('disables the button while signing out', async () => {
-    // signOut never resolves so the button stays disabled
-    mockSignOut.mockReturnValue(new Promise(() => {}));
+  it('closes the dropdown on sign-out click (item unmounts) and calls signOut', async () => {
+    mockSignOut.mockReturnValue(new Promise(() => {})); // never resolves
     renderCard();
-    const btn = screen.getByRole('button', { name: /se déconnecter/i });
-    fireEvent.click(btn);
-    await waitFor(() => expect(btn).toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: /compte de test/i }));
+    expect(screen.getByText(/se déconnecter/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/se déconnecter/i));
+    // handleSignOut sets open=false first → the dropdown (and its items) unmount.
+    await waitFor(() => expect(screen.queryByText(/se déconnecter/i)).not.toBeInTheDocument());
+    expect(mockSignOut).toHaveBeenCalledOnce();
   });
 });
 
