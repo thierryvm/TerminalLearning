@@ -134,7 +134,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
   // Se déconnecter. Langage couleur : liens = neutre→emerald au survol,
   // Se déconnecter = rouge (cohérent avec l'existant).
   const itemClass =
-    'flex items-center w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-text-primary)] font-mono hover:bg-emerald-500/10 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-inset';
+    'flex items-center w-full justify-start gap-2.5 px-4 py-3 text-sm text-[var(--github-text-primary)] font-mono hover:bg-emerald-500/10 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-inset';
 
   const menuItems = (
     <div className="py-1" role="none">
@@ -175,7 +175,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
         role="menuitem"
         onClick={handleSignOut}
         disabled={signingOut}
-        className="w-full justify-start gap-2.5 px-4 py-2.5 text-sm text-[var(--github-red)] font-mono hover:bg-[var(--github-red)]/10 hover:text-[var(--github-red)] rounded-none transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-inset"
+        className="w-full justify-start gap-2.5 px-4 py-3 text-sm text-[var(--github-red)] font-mono hover:bg-[var(--github-red)]/10 hover:text-[var(--github-red)] rounded-none transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-inset"
       >
         <LogOut size={14} aria-hidden="true" className="shrink-0" />
         {signingOut ? 'Déconnexion…' : 'Se déconnecter'}
@@ -208,7 +208,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
           onClick={() => setOpen((o) => !o)}
           aria-label={`Compte de ${displayName} — ${sync.label}`}
           aria-expanded={open}
-          aria-haspopup="true"
+          aria-haspopup="menu"
           className="relative rounded-full ring-2 ring-transparent hover:ring-emerald-500/50 hover:bg-transparent focus-visible:ring-emerald-500 focus-visible:ring-2 focus-visible:ring-offset-0 transition-all"
         >
           <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
@@ -221,10 +221,11 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
         {open && (
           <div
             ref={popoverRef}
+          tabIndex={-1}
             role="menu"
             aria-orientation="vertical"
             aria-label={`Menu utilisateur ${displayName}`}
-            className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-hidden"
+            className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[min(440px,calc(100dvh-200px))]"
           >
             {dropdownHeader}
             {menuItems}
@@ -245,8 +246,8 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
           onClick={() => setOpen((o) => !o)}
           aria-label={`Compte de ${displayName} — ${sync.label}. Menu`}
           aria-expanded={open}
-          aria-haspopup="true"
-          className="flex-1 flex items-center justify-start gap-2.5 px-3 py-2.5 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] hover:border-emerald-500/40 hover:bg-[var(--github-border-secondary)] transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0"
+          aria-haspopup="menu"
+          className="flex-1 flex items-center justify-start gap-2.5 px-3 py-2.5 min-h-11 rounded-lg bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] hover:border-emerald-500/40 hover:bg-[var(--github-border-secondary)] transition-colors focus-visible:ring-emerald-500/60 focus-visible:ring-2 focus-visible:ring-offset-0"
         >
           <span className="relative shrink-0">
             <UserAvatar avatarUrl={avatarUrl} initials={initials} size="sm" />
@@ -271,10 +272,11 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
       {open && (
         <div
           ref={popoverRef}
+          tabIndex={-1}
           role="menu"
           aria-orientation="vertical"
           aria-label={`Menu utilisateur ${displayName}`}
-          className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-hidden"
+          className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[min(440px,calc(100dvh-200px))]"
         >
           {dropdownHeader}
           {menuItems}

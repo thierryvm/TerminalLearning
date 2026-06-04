@@ -94,6 +94,17 @@ describe('UserMenu card variant (sidebar menu)', () => {
     await waitFor(() => expect(mockSignOut).toHaveBeenCalledOnce());
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true }));
   });
+
+  it('closes the dropdown on sign-out click (item unmounts) and calls signOut', async () => {
+    mockSignOut.mockReturnValue(new Promise(() => {})); // never resolves
+    renderCard();
+    fireEvent.click(screen.getByRole('button', { name: /compte de test/i }));
+    expect(screen.getByText(/se déconnecter/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/se déconnecter/i));
+    // handleSignOut sets open=false first → the dropdown (and its items) unmount.
+    await waitFor(() => expect(screen.queryByText(/se déconnecter/i)).not.toBeInTheDocument());
+    expect(mockSignOut).toHaveBeenCalledOnce();
+  });
 });
 
 // ── Compact variant (landing header) ─────────────────────────────────────────
