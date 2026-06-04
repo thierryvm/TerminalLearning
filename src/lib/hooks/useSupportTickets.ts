@@ -115,6 +115,10 @@ export function useSupportTickets(): UseSupportTicketsResult {
   // before a pending setUpdatingId has flushed, unlike a closure-captured state.
   const updatingIdRef = useRef<string | null>(null);
   const deletingIdRef = useRef<string | null>(null);
+  // Guard setState against an update/delete resolving after unmount (navigation
+  // away mid-flight) — same pattern as ScreenshotViewer below (code-reviewer).
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -147,7 +151,9 @@ export function useSupportTickets(): UseSupportTicketsResult {
         setError(new Error('Authentification requise'));
         return false;
       }
-      if (updatingIdRef.current) return false;
+      // Cross-guard: never run an update while a delete on any row is in flight
+      // (and vice versa) — avoids an UPDATE committing on a row a DELETE removed.
+      if (updatingIdRef.current || deletingIdRef.current) return false;
 
       updatingIdRef.current = id;
       setUpdatingId(id);
@@ -174,14 +180,18 @@ export function useSupportTickets(): UseSupportTicketsResult {
           throw new Error('Mise à jour du statut impossible. Réessaye dans un instant.');
         }
         // Optimistic local patch — the status-change audit trigger fires server-side.
-        setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+        if (isMountedRef.current) {
+          setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+        }
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Mise à jour impossible'));
+        if (isMountedRef.current) {
+          setError(err instanceof Error ? err : new Error('Mise à jour impossible'));
+        }
         return false;
       } finally {
         updatingIdRef.current = null;
-        setUpdatingId(null);
+        if (isMountedRef.current) setUpdatingId(null);
       }
     },
     [user],
@@ -193,7 +203,7 @@ export function useSupportTickets(): UseSupportTicketsResult {
         setError(new Error('Authentification requise'));
         return false;
       }
-      if (deletingIdRef.current) return false;
+      if (deletingIdRef.current || updatingIdRef.current) return false;
 
       deletingIdRef.current = id;
       setDeletingId(id);
@@ -213,14 +223,16 @@ export function useSupportTickets(): UseSupportTicketsResult {
           }
           throw new Error('Suppression impossible. Réessaye dans un instant.');
         }
-        setTickets((prev) => prev.filter((t) => t.id !== id));
+        if (isMountedRef.current) setTickets((prev) => prev.filter((t) => t.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Suppression impossible'));
+        if (isMountedRef.current) {
+          setError(err instanceof Error ? err : new Error('Suppression impossible'));
+        }
         return false;
       } finally {
         deletingIdRef.current = null;
-        setDeletingId(null);
+        if (isMountedRef.current) setDeletingId(null);
       }
     },
     [user],
