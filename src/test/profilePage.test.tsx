@@ -12,10 +12,10 @@
  *  - back-link points to /app dashboard
  *  - unauthenticated user → renders fallback guard message
  */
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { HelmetProvider } from 'react-helmet-async';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,13 @@ vi.mock('../app/context/EnvironmentContext', async () => {
     }),
   };
 });
+
+// THI-344 — ProfilePage edits the display_name via supabase.auth.updateUser
+// (dynamic import). hoisted so the factory can reference the spy.
+const { mockUpdateUser } = vi.hoisted(() => ({ mockUpdateUser: vi.fn() }));
+vi.mock('../lib/supabase', () => ({
+  supabase: { auth: { updateUser: mockUpdateUser } },
+}));
 
 import { ProfilePage } from '../app/components/ProfilePage';
 
@@ -152,5 +159,75 @@ describe('ProfilePage — authenticated user', () => {
     const backLink = screen.getByRole('link', { name: /retour au tableau de bord/i });
     expect(backLink).toBeInTheDocument();
     expect(backLink).toHaveAttribute('href', '/app');
+  });
+});
+
+// ── Display name edit (THI-344) ───────────────────────────────────────────────
+
+describe('ProfilePage — display name edit', () => {
+  beforeEach(() => {
+    mockUpdateUser.mockReset();
+    mockUpdateUser.mockResolvedValue({ error: null });
+    authState.user = {
+      email: 'edit@example.com',
+      user_metadata: { full_name: 'Old Name' },
+      app_metadata: { provider: 'email' },
+    };
+    authState.initialized = true;
+  });
+
+  it('enters edit mode showing the current name', () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    expect(screen.getByRole('textbox', { name: /nom affiché/i })).toHaveValue('Old Name');
+  });
+
+  it('saves an edited display name via updateUser and exits edit mode', async () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /nom affiché/i }), { target: { value: 'New Name' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+    await waitFor(() =>
+      expect(mockUpdateUser).toHaveBeenCalledWith({ data: { full_name: 'New Name' } }),
+    );
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument());
+  });
+
+  it('trims whitespace before saving', async () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /nom affiché/i }), { target: { value: '  Spaced  ' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+    await waitFor(() =>
+      expect(mockUpdateUser).toHaveBeenCalledWith({ data: { full_name: 'Spaced' } }),
+    );
+  });
+
+  it('rejects an empty name without calling updateUser', async () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /nom affiché/i }), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it('cancels edit mode without calling updateUser', () => {
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    fireEvent.click(screen.getByRole('button', { name: /annuler/i }));
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it('surfaces an error when updateUser fails', async () => {
+    mockUpdateUser.mockResolvedValue({ error: { message: 'Network down' } });
+    renderProfile();
+    fireEvent.click(screen.getByRole('button', { name: /modifier le nom affiché/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /nom affiché/i }), { target: { value: 'X' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/network down/i));
+    // stays in edit mode so the user can retry
+    expect(screen.getByRole('textbox', { name: /nom affiché/i })).toBeInTheDocument();
   });
 });
