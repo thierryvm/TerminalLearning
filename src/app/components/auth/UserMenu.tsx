@@ -227,7 +227,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
             role="menu"
             aria-orientation="vertical"
             aria-label={`Menu utilisateur ${displayName}`}
-            className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[min(440px,calc(100dvh-200px))]"
+            className="absolute right-0 top-full mt-2 z-50 w-60 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[calc(100dvh-200px)]"
           >
             {dropdownHeader}
             {menuItems}
@@ -278,7 +278,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
           role="menu"
           aria-orientation="vertical"
           aria-label={`Menu utilisateur ${displayName}`}
-          className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[min(440px,calc(100dvh-200px))]"
+          className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl shadow-2xl overflow-y-auto max-h-[calc(100dvh-200px)]"
         >
           {dropdownHeader}
           {menuItems}
