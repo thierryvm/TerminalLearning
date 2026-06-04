@@ -120,14 +120,16 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ??
     (user.user_metadata?.picture as string | undefined);
+  // `||` (not `??`) so an empty string ('' from a metadata-less / email-less
+  // account) also falls through to the next candidate instead of sticking (code-reviewer).
   const displayName =
-    (user.user_metadata?.full_name as string | undefined) ??
-    (user.user_metadata?.user_name as string | undefined) ??
-    user.email?.split('@')[0] ??
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    (user.user_metadata?.user_name as string | undefined)?.trim() ||
+    user.email?.split('@')[0]?.trim() ||
     'Utilisateur';
 
   const sync = SYNC_CONFIG[syncStatus];
-  const initials = displayName[0].toUpperCase();
+  const initials = (displayName[0] ?? 'U').toUpperCase();
 
   // ── Items du dropdown (partagés card + compact) ───────────────────────────────
   // secondaryItems d'abord (déjà role-gated par l'appelant), puis Mon profil +
