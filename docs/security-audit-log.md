@@ -5,6 +5,39 @@ This log is updated after each security audit and serves as institutional memory
 
 ---
 
+## Rattrapage traçabilité — runs Sprint 2.C + break-ins agents (consolidé 4 juin 2026)
+
+**Date**: 4 juin 2026 (consolidation rétroactive)
+**Auteur**: CC Terminal Learning (Opus 4.8) — drift détecté au startup : ce log n'avait pas été appendé depuis le 17 mai alors que ~5 runs `security-auditor` 9.x/10 ont eu lieu pendant Sprint 2.C.
+**Méthode**: consolidation depuis les décisions `_index.md` (Obsidian) + memos session + PRs mergées. **Scores non ré-exécutés** — repris des verdicts d'origine (traçabilité, pas nouveau run).
+
+### Runs Sprint 2.C (système support)
+
+| Date | Run | Score / Verdict | PR | Ticket |
+|---|---|---|---|---|
+| 1 juin | `security-auditor` (route Resend `api/support/notify.ts`) | 9.2/10, 0 CRIT/HIGH | #360 | THI-319 |
+| 1 juin | `route-attack-auditor` (notify endpoint, curl live) | SHIP, tout PASS | #360 | THI-319 |
+| 2 juin | `security-auditor` (triage signalements `/app/admin`) | 9.5/10 | #364 | THI-320 |
+| 2 juin | `security-auditor` (« Mes signalements » `/app/support`, isolation RLS REST+JWT prouvée) | 9.6/10 | #366 | THI-325 |
+| 2 juin | `supabase-backend-auditor` (verdict **inline** — agent non chargé runtime, YAML cassé) | H1 MIME-spoof signalé | #364 | THI-326 |
+
+### Break-ins agents (4 juin — session démarrage)
+
+| Run | Verdict | Suite |
+|---|---|---|
+| `supabase-backend-auditor` — re-run WS3 (1er run sous-agent réel post-fix #365) | ⚠️ SHIP — prod SÛRE, H1 MIME-spoof confirmé empiriquement & atténué (rendu `<img>` JSX-only) | THI-339 (PR #368, triggers élargis aux routes `api/*`) |
+| `user-forensics-auditor` — sonde chargement (post-#365) | ✅ chargement runtime confirmé (Sonnet 4.6) | — |
+| `legal-compliance-auditor` — break-in #1 | **6.5/10** — base B2C OK, **non prêt B2B mineurs** (3 HIGH : consentement parental <13 BE, DPA Art. 28, claim `/privacy` trompeur) | THI-340 (umbrella) |
+
+### Note de contexte
+
+THI-326 a prouvé (cause racine js-yaml) que `supabase-backend-auditor` + `user-forensics-auditor` n'étaient **pas chargés au runtime** (un `:` + espace cassait leur frontmatter YAML) jusqu'au fix PR #365 — d'où le verdict « inline » du 2 juin pour `supabase-backend-auditor`. Les deux sont **confirmés invocables le 4 juin** (WS3 clos).
+
+**Last Updated**: 4 juin 2026
+**Next Review**: prochain run `security-auditor` (THI-234 widgets analytics — nouvelles RPC cross-user `SECURITY DEFINER`)
+
+---
+
 ## Validation Voie B post-merge THI-207 (#246) -- 17 mai 2026 ~21h CEST
 
 **Date**: 17 mai 2026 (soirée)
