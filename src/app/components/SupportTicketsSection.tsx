@@ -251,6 +251,7 @@ function TicketCard({ ticket, updating, deleting, onStatusChange, onDelete }: Ti
                 className="min-h-11 font-mono text-xs"
                 onClick={() => setConfirming(false)}
                 disabled={deleting}
+                aria-label={`Annuler la suppression du signalement #${ticket.id.slice(0, 8)}`}
               >
                 Annuler
               </Button>

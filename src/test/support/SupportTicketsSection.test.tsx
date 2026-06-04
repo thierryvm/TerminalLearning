@@ -182,7 +182,7 @@ describe('SupportTicketsSection', () => {
     h.state.tickets = [ticket({ id: 'tdel' })];
     render(<SupportTicketsSection />);
     fireEvent.click(screen.getByRole('button', { name: /Supprimer le signalement/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Annuler$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Annuler la suppression/ }));
     expect(h.state.deleteTicket).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /Supprimer le signalement/ })).toBeInTheDocument();
   });
