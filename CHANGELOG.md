@@ -5,6 +5,34 @@
 
 ---
 
+## 🔍 6 juin 2026 — Audit complet avant la pause : on vérifie que tout tient avant de couper (THI-342)
+*PR #375 · security-auditor 9.4/10 · content-auditor · mobile-responsive-auditor · route-attack-auditor · Sentry · e2e Chrome*
+
+Avant une pause de maintenance (l'outil reste en ligne mais sans correctifs rapides pendant un temps), on a passé l'application au crible pour garantir que **tout ce qui est en ligne fonctionne parfaitement**. Cinq angles d'audit en parallèle + un test de bout en bout dans le navigateur.
+
+- **Sécurité : solide.** Audit black-hat complet (OWASP, CSP, RLS, auth, chaîne d'approvisionnement) → **9.4/10, zéro faille critique**. Les 8 livraisons du 4 juin sont toutes confirmées sûres. Un signalement « SSRF » sur le tunnel d'erreurs s'est révélé être un **faux positif** après vérification du code (l'URL de destination est figée en dur, la valeur fournie par le client ne l'atteint jamais). **Décision : on ne touche pas aux routes serveur** — modifier du code déjà sûr juste avant une pause ajoute du risque pour un gain nul.
+- **Mobile (THI-342) : corrigé.** Le formulaire de signalement débordait sur iPhone. Cause : le champ de description était en 14px, et **iOS Safari zoome automatiquement tout champ sous 16px** au focus, ce qui décalait la mise en page. Passé en 16px sur mobile (14px conservé sur ordinateur). Au passage, une cible tactile de menu sécurisée à 44px.
+- **Honnêteté de diagnostic.** Une seconde hypothèse (le nom de fichier du screenshot qui déborderait) a été **testée puis écartée empiriquement** — la troncature CSS le gère déjà. On documente ce qu'on a vérifié, pas ce qu'on suppose.
+- **Contenu pédagogique.** Deux petits défauts d'affichage repérés dans la leçon « Scripts » (le simulateur n'exécute pas encore `./script.sh` ni la redirection `2>`) : **non bloquants** (la leçon se valide quand même), à polir à la reprise.
+- **Monitoring & santé.** Sentry de production : **propre** (un seul événement bénin, auto-réparé). Parcours cœur (accueil → tableau de bord → leçon → **le terminal s'exécute**) : zéro erreur.
+
+Décision produit : les chantiers nouveaux et **irréversibles** (suppression de compte RGPD THI-345, gestion CRUD des classes/institutions THI-347) sont **différés** après la reprise — on ne met pas de l'irréversible en ligne juste avant une fenêtre sans correctifs.
+
+---
+
+## 🗂️ 4 juin 2026 — Journée dense : tableau de bord analytics, navigation mobile repensée, profil éditable
+*PRs #368→#374 · THI-234 · THI-341 · THI-344 · THI-346 · THI-347 · THI-334*
+
+Huit livraisons en une journée, toutes vérifiées (sécurité, UI, revue de code, validation visuelle).
+
+- **Tableau de bord analytics (THI-234)** : widgets « Santé Supabase » + carte de chaleur d'activité dans le panneau d'administration — agrégats anonymes, aucune donnée individuelle, via des fonctions base sécurisées (rôle vérifié côté serveur). Budget 0 €.
+- **Navigation mobile repensée (THI-341)** : la barre latérale se concentre sur l'essentiel (tableau de bord, référence, **modules/leçons**, environnement) ; le secondaire (profil, paramètres, aide, signalements, déconnexion) passe dans un **menu avatar façon GitHub**. Construit en React/Tailwind « maison » pour rester compatible avec la politique de sécurité stricte (pas de styles injectés).
+- **Profil éditable (THI-344)** : on peut enfin modifier son nom affiché depuis « Mon Profil », avec correction du contraste du champ en thème sombre.
+- **Correctif menu (THI-346)** : suppression d'une barre de défilement redondante sur le menu avatar.
+- **Suppression de signalement + fix racine (THI-347 volet 3 / THI-334)** : le mainteneur peut supprimer un ticket depuis le triage. La migration associée corrige aussi **à la racine** une pollution de la base par les tests (le nettoyage de fin de test échouait silencieusement faute de droit de suppression).
+
+---
+
 ## 📋 2 juin 2026 — Tes signalements suivis : l'utilisateur voit où en sont ses retours (THI-325)
 *PR #366 · /app/support · useMySupportTickets · ticketDisplay (source unique badges/libellés) · security-auditor 9.6/10 (isolation RLS prouvée REST+JWT) + ui-auditor + code-review + Voie A desktop/tablette/mobile 390px*
 
