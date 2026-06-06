@@ -119,6 +119,13 @@ export function useSupportTickets(): UseSupportTicketsResult {
   // away mid-flight) — same pattern as ScreenshotViewer below (code-reviewer).
   const isMountedRef = useRef(true);
   useEffect(() => () => { isMountedRef.current = false; }, []);
+  // Mirror `tickets` into a ref so updateStatus can read the current row (to
+  // preserve an existing resolution stamp when closing) WITHOUT taking `tickets`
+  // as a useCallback dep — that would rebuild the callback on every ticket change
+  // and re-render every TicketCard it's passed to (Sourcery PR #377). The ref is
+  // always current by the time a user-triggered updateStatus runs.
+  const ticketsRef = useRef<SupportTicket[]>([]);
+  useEffect(() => { ticketsRef.current = tickets; }, [tickets]);
 
   const refresh = useCallback(async () => {
     if (!user || !supabase) {
@@ -168,7 +175,7 @@ export function useSupportTickets(): UseSupportTicketsResult {
       // already-resolved ticket; stamp now/self when entering a terminal state
       // directly from open/in_progress.
       const isTerminal = next === 'resolved' || next === 'closed';
-      const current = tickets.find((t) => t.id === id);
+      const current = ticketsRef.current.find((t) => t.id === id);
       const patch = {
         status: next,
         resolved_at: isTerminal ? (current?.resolved_at ?? new Date().toISOString()) : null,
@@ -201,7 +208,7 @@ export function useSupportTickets(): UseSupportTicketsResult {
         if (isMountedRef.current) setUpdatingId(null);
       }
     },
-    [user, tickets],
+    [user],
   );
 
   const deleteTicket = useCallback(
