@@ -159,13 +159,20 @@ export function useSupportTickets(): UseSupportTicketsResult {
       setUpdatingId(id);
       setError(null);
 
-      // resolved_* are only meaningful for the resolved state; clear them on any
-      // other transition so a re-opened ticket doesn't keep a stale resolver.
-      const isResolved = next === 'resolved';
+      // 'resolved' AND 'closed' are BOTH terminal states: the DB constraint
+      // `support_tickets_resolved_consistency` requires resolved_at + resolved_by
+      // to be non-null for either, and null for open/in_progress. Clearing them
+      // on a transition to 'closed' violated the constraint → the UPDATE was
+      // rejected and the UI showed "Mise à jour impossible" (closing any ticket
+      // was broken). Preserve an existing resolution stamp when closing an
+      // already-resolved ticket; stamp now/self when entering a terminal state
+      // directly from open/in_progress.
+      const isTerminal = next === 'resolved' || next === 'closed';
+      const current = tickets.find((t) => t.id === id);
       const patch = {
         status: next,
-        resolved_at: isResolved ? new Date().toISOString() : null,
-        resolved_by: isResolved ? user.id : null,
+        resolved_at: isTerminal ? (current?.resolved_at ?? new Date().toISOString()) : null,
+        resolved_by: isTerminal ? (current?.resolved_by ?? user.id) : null,
       };
 
       try {
@@ -194,7 +201,7 @@ export function useSupportTickets(): UseSupportTicketsResult {
         if (isMountedRef.current) setUpdatingId(null);
       }
     },
-    [user],
+    [user, tickets],
   );
 
   const deleteTicket = useCallback(

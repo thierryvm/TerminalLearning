@@ -177,6 +177,46 @@ describe('useSupportTickets — updateStatus', () => {
     expect(result.current.tickets[0].resolved_at).toBeNull();
   });
 
+  it('keeps the original resolved_at + resolved_by when CLOSING an already-resolved ticket', async () => {
+    // Regression: 'closed' is a terminal state too. The DB constraint
+    // support_tickets_resolved_consistency requires resolved_at/by non-null for
+    // 'closed' — clearing them (old isResolved-only logic) violated it and broke
+    // closing any ticket. We must preserve the existing resolution stamp.
+    h.orderMock.mockResolvedValue({
+      data: [ticket({ status: 'resolved', resolved_at: '2026-06-05T04:27:00Z', resolved_by: 'admin-9' })],
+      error: null,
+    });
+    const { result } = renderHook(() => useSupportTickets());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.updateStatus('t1', 'closed');
+    });
+
+    expect(h.updateMock).toHaveBeenCalledWith({
+      status: 'closed',
+      resolved_at: '2026-06-05T04:27:00Z',
+      resolved_by: 'admin-9',
+    });
+    expect(result.current.tickets[0].status).toBe('closed');
+    expect(result.current.tickets[0].resolved_at).toBe('2026-06-05T04:27:00Z');
+  });
+
+  it('stamps resolved_at + resolved_by when closing directly from a non-terminal state', async () => {
+    h.orderMock.mockResolvedValue({ data: [ticket({ status: 'open' })], error: null });
+    const { result } = renderHook(() => useSupportTickets());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.updateStatus('t1', 'closed');
+    });
+
+    const patch = h.updateMock.mock.calls[0][0] as { status: string; resolved_at: string | null; resolved_by: string | null };
+    expect(patch.status).toBe('closed');
+    expect(typeof patch.resolved_at).toBe('string');
+    expect(patch.resolved_by).toBe('admin-1');
+  });
+
   it('maps an RLS denial (42501) to a friendly FR error', async () => {
     h.orderMock.mockResolvedValue({ data: [ticket()], error: null });
     h.eqMock.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
