@@ -210,6 +210,9 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
               >
                 Description
               </label>
+              {/* text-base (16px) on mobile prevents iOS Safari focus auto-zoom (any
+                  input < 16px triggers it), the cause of the THI-342 viewport overflow
+                  after focus. md:text-sm restores 14px on desktop (MessageInput pattern). */}
               <textarea
                 id={descId}
                 value={description}
@@ -219,7 +222,7 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
                 required
                 aria-describedby={descHintId}
                 placeholder="Que s'est-il passé ? Ce que tu faisais, ce qui n'a pas marché, et ce que tu attendais. Plus c'est précis, plus on peut aider vite."
-                className="w-full rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] px-3 py-2 text-sm text-[var(--github-text-primary)] placeholder:text-[var(--github-text-secondary)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                className="w-full rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)] px-3 py-2 text-base md:text-sm text-[var(--github-text-primary)] placeholder:text-[var(--github-text-secondary)] outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
               />
               <p id={descHintId} className="mt-1 text-xs text-[var(--github-text-secondary)]">
                 {trimmedLength < DESCRIPTION_MIN
