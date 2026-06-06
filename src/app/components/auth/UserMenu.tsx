@@ -136,7 +136,7 @@ export function UserMenu({ syncStatus, variant = 'card', extraActions, secondary
   // Se déconnecter. Langage couleur : liens = neutre→emerald au survol,
   // Se déconnecter = rouge (cohérent avec l'existant).
   const itemClass =
-    'flex items-center w-full justify-start gap-2.5 px-4 py-3 text-sm text-[var(--github-text-primary)] font-mono hover:bg-emerald-500/10 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-inset';
+    'flex items-center w-full justify-start min-h-11 gap-2.5 px-4 py-3 text-sm text-[var(--github-text-primary)] font-mono hover:bg-emerald-500/10 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-inset';
 
   const menuItems = (
     <div className="py-1" role="none">
