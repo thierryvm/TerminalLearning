@@ -114,12 +114,15 @@ describe('signup path', () => {
   it('never turns an unusable date into a block or a pass', async () => {
     renderModal();
     goToSignup();
-    // `required` + `max` mean the browser refuses to submit an empty or future
-    // date, and the date input refuses an impossible day (30 February) outright
-    // — so the handler's "ask again" branch is a defensive guard rather than a
-    // reachable screen. What matters at this level is that none of these ever
-    // opens the form or writes a verdict. The branch itself is covered
-    // directly in ageGate.test.ts.
+    // The two runtimes disagree about how far an unusable value travels, so
+    // this asserts the outcome both share rather than the message only one
+    // shows. jsdom enforces `required`/`max` and swallows the submit; real
+    // Chrome (verified on the production build, 19/08/2026) runs the handler
+    // with an empty value and renders "Cette date ne semble pas valide" — the
+    // "ask again" branch is genuinely reachable, not dead code. An impossible
+    // day (30 February) never arrives either way: the date input refuses it.
+    // What must hold everywhere is that none of these opens the form or writes
+    // a verdict. The branch's own logic is covered in ageGate.test.ts.
     for (const unusable of ['', `${new Date().getFullYear() + 3}-01-01`]) {
       answerGate(unusable);
 
