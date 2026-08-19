@@ -64,7 +64,7 @@ export function PrivacyPolicy() {
             <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">2. Données collectées</h2>
             <p className="mb-3">
               <strong className="text-[var(--github-text-primary)]">Aucun compte n'est requis pour utiliser Terminal Learning.</strong>{' '}
-              Ce que nous traitons dépend de si tu crées, ou non, un compte optionnel.
+              Ce que nous traitons dépend du fait que tu crées, ou non, un compte optionnel.
             </p>
             <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Sans compte (par défaut)</h3>
             <ul className="list-disc list-inside space-y-2 ml-2 mb-4">
