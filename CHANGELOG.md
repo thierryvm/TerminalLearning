@@ -5,6 +5,23 @@
 
 ---
 
+## 🚸 19 août 2026 — La page promettait, le produit applique enfin : garde-fou d'âge à la création de compte (THI-340)
+*PR #380 · migration 035 · `ageGate.ts` + `AgeGateStep` · 36 tests · RGPD Art. 8 — Belgique = 13 ans*
+
+Le matin même, la refonte de `/privacy` (PR #379) écrivait noir sur blanc : « en dessous de 13 ans, la création d'un compte requiert le consentement d'un parent ou tuteur légal ». Exact en droit — et **faux dans le produit** : rien, nulle part, ne vérifiait quoi que ce soit. Une page qui promet une protection que le code n'applique pas, c'est précisément le défaut que la PR #379 venait de corriger ailleurs. Cette livraison ferme l'écart, et le ferme dans le bon sens : on aligne d'abord le produit sur la loi, puis le texte sur le produit.
+
+- **Décision produit : sous 13 ans, pas de compte — et rien n'est perdu.** Plutôt que de construire un circuit de consentement parental (email d'un parent, lien de confirmation, comptes en attente), on refuse simplement la création. C'est possible parce que **tout Terminal Learning fonctionne sans compte** : les leçons, le terminal, les exercices. Le compte ne sert qu'à retrouver sa progression sur un autre appareil. Résultat : zéro donnée d'enfant collectée, donc aucune base légale à justifier et aucun email de parent à stocker — et l'enfant garde 100 % du contenu pédagogique.
+- **Un écran neutre, pas une case à cocher.** L'écran demande une date de naissance et ne souffle jamais le seuil. Une case « je confirme avoir 13 ans ou plus » apprend à l'utilisateur quelle réponse débloque le formulaire ; une date, non. C'est la recommandation des régulateurs, et c'est vérifié par un test dédié.
+- **La date n'est jamais transmise.** Elle est évaluée dans le navigateur puis jetée. Ce qui remonte au serveur est **un seul horodatage** — « ce compte a passé l'écran ce jour-là » — qui satisfait l'obligation de traçabilité (Art. 5(2)) sans ajouter un octet de donnée personnelle.
+- **Le trou qu'on a failli laisser : `signInWithOAuth` crée le compte.** Le bouton « Continuer avec GitHub » affiché sous le titre **Connexion** est, pour un nouveau visiteur, une porte d'inscription — le même appel sert à se connecter et à s'inscrire. Le garde-fou couvre donc les deux boutons OAuth dans les deux modes. À l'inverse, la connexion par email reste **volontairement** sans écran d'âge : elle ne peut authentifier qu'un compte déjà existant, la bloquer ajouterait de la friction pour rien.
+- **Preuve non falsifiable côté serveur (migration 035).** Un déclencheur `BEFORE UPDATE` rend l'horodatage **write-once** et **choisi par le serveur**. Vérifié en conditions réelles dans une transaction annulée : une tentative d'antidater à l'an 2000 est réécrite en `now()`, une seconde écriture est refusée, un effacement aussi. Aucune nouvelle fonction `SECURITY DEFINER` exposée — la colonne était déjà bornée à son propriétaire par la règle RLS existante, il ne manquait que l'intégrité de la valeur.
+- **Les comptes existants ne sont pas re-questionnés.** L'Art. 8 s'applique au moment de la collecte, qui est passé pour eux ; re-gater serait hostile. Leur horodatage reste vide, ce qui dit honnêtement « jamais demandé » plutôt que de bricoler une valeur après coup.
+- **Asymétrie assumée du stockage.** La réponse permissive vit dans l'onglet et meurt à sa fermeture ; le refus, lui, tient sur l'appareil et **expire tout seul le jour des 13 ans**. Un visiteur refusé ne rouvre pas un onglet pour répondre autrement, et aucun enfant n'est enfermé à vie.
+
+Ce qui n'est **pas** fermé, et c'est dit : une déclaration reste une déclaration. Un visiteur qui ment obtient un compte, et aucun contrôle serveur ne peut le détecter. Le garde-fou est « l'effort raisonnable » que le règlement demande au regard de la technologie disponible — proportionné à un service gratuit et bénévole qui collecte un email et une ligne de progression. Le circuit de consentement parental reste en réserve pour le jour où des écoles avec des moins de 13 ans arriveront vraiment.
+
+---
+
 ## 🔍 6 juin 2026 — Audit complet avant la pause : on vérifie que tout tient avant de couper (THI-342)
 *PR #375 · security-auditor 9.4/10 · content-auditor · mobile-responsive-auditor · route-attack-auditor · Sentry · e2e Chrome*
 

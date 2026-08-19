@@ -80,11 +80,12 @@ export function PrivacyPolicy() {
             <ul className="list-disc list-inside space-y-2 ml-2">
               <li>Ton <strong className="text-[var(--github-text-primary)]">adresse email</strong> et, en cas de connexion OAuth, les informations de profil transmises par GitHub ou Google (identifiant, nom d'affichage, avatar).</li>
               <li>Ta <strong className="text-[var(--github-text-primary)]">progression synchronisée</strong> (leçons complétées, scores), stockée sur les serveurs Supabase.</li>
+              <li>La <strong className="text-[var(--github-text-primary)]">date de validation de l'écran d'âge</strong> — un simple horodatage, jamais ta date de naissance (voir « Mineurs » ci-dessous).</li>
             </ul>
             <div className="mt-4 p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
               <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Mineurs</h3>
               <p className="text-sm">
-                En Belgique, l'âge du consentement numérique est fixé à <strong className="text-[var(--github-text-primary)]">13 ans</strong>. En dessous de 13 ans, la création d'un compte requiert le consentement d'un parent ou tuteur légal. L'usage anonyme (sans compte) reste accessible sans condition d'âge.
+                En Belgique, l'âge du consentement numérique est fixé à <strong className="text-[var(--github-text-primary)]">13 ans</strong>. En dessous de cet âge, <strong className="text-[var(--github-text-primary)]">nous ne créons pas de compte</strong> : un écran demande ta date de naissance avant toute inscription, et l'inscription est refusée sous 13 ans. Cette date est vérifiée dans ton navigateur — elle n'est ni transmise ni conservée ; seule la date à laquelle cet écran a été validé est enregistrée avec ton compte. L'usage anonyme reste accessible sans condition d'âge et donne accès à la totalité des leçons.
               </p>
             </div>
           </section>

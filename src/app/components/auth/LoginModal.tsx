@@ -4,6 +4,8 @@ import { supabase } from '../../../lib/supabase';
 import { useFocusTrap } from '../../../lib/hooks/useFocusTrap';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { AgeGateStep } from './AgeGateStep';
+import { getAgeBlockedUntil, isAgeVerified } from '../../../lib/auth/ageGate';
 
 const emailSchema = z.string().email('Email invalide');
 const passwordSchema = z.string().min(8, 'Minimum 8 caractères');
@@ -15,6 +17,18 @@ interface LoginModalProps {
 
 type Mode = 'login' | 'signup';
 
+/**
+ * What the age gate is currently standing in front of (THI-340).
+ *
+ * `'signup'` gates the whole creation form. A provider name gates that single
+ * OAuth button: `signInWithOAuth` silently creates an account for a first-time
+ * visitor, so "Continuer avec GitHub" is an account-creation surface even when
+ * the modal says "Connexion". Email login is absent on purpose — it can only
+ * authenticate an account that already exists, so gating it would add friction
+ * for returning users while protecting nobody.
+ */
+type GateTarget = 'signup' | 'github' | 'google';
+
 export function LoginModal({ open, onClose }: LoginModalProps) {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
@@ -23,6 +37,8 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false);
   const [loadingOAuth, setLoadingOAuth] = useState<'github' | 'google' | null>(null);
   const [success, setSuccess] = useState(false);
+  const [blockedUntil, setBlockedUntil] = useState<string | null>(null);
+  const [gateTarget, setGateTarget] = useState<GateTarget | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(open, dialogRef);
@@ -45,8 +61,41 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     setSuccess(false);
   };
 
-  const handleClose = () => { resetForm(); onClose(); };
-  const switchMode = (next: Mode) => { setSuccess(false); setError(null); setMode(next); };
+  // Closing resets the modal to its initial state, mode included. Without that
+  // reset, reopening after closing on the signup tab would land straight on the
+  // creation form with gateTarget already cleared — i.e. past the gate. Doing
+  // it here keeps the flags out of render: getAgeBlockedUntil() deletes the key
+  // once it has lapsed, so reading it during render would be a side effect.
+  const handleClose = () => {
+    resetForm();
+    setMode('login');
+    setGateTarget(null);
+    setBlockedUntil(null);
+    onClose();
+  };
+
+  /**
+   * Read the gate flags fresh from storage. A blocked device must see the
+   * refusal again; a device that has not answered must answer.
+   */
+  const readGateState = (): { needed: boolean; blocked: string | null } => {
+    const blocked = getAgeBlockedUntil();
+    return { needed: blocked !== null || !isAgeVerified(), blocked };
+  };
+
+  const switchMode = (next: Mode) => {
+    setSuccess(false);
+    setError(null);
+    setMode(next);
+
+    if (next !== 'signup') {
+      setGateTarget(null);
+      return;
+    }
+    const { needed, blocked } = readGateState();
+    setBlockedUntil(blocked);
+    setGateTarget(needed ? 'signup' : null);
+  };
 
   const validate = (): string | null => {
     const emailResult = emailSchema.safeParse(email);
@@ -69,7 +118,17 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     const { error: authError } =
       mode === 'login'
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+        : await supabase.auth.signUp({
+            email,
+            password,
+            // THI-340. Email signup returns no session (confirmation is on), so
+            // the client cannot stamp the profile afterwards — the declaration
+            // rides along in user metadata and handle_new_user() turns it into
+            // a server-chosen timestamp at profile creation (migration 035).
+            // The form only renders once the gate has passed, so reaching here
+            // means the screen was answered.
+            options: { data: { age_confirmed: true } },
+          });
 
     setLoading(false);
 
@@ -98,6 +157,30 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       setError(oauthError.message);
       setLoadingOAuth(null);
     }
+  };
+
+  /**
+   * OAuth entry point. Stands the gate up first when this device has not
+   * answered yet — see GateTarget for why login-mode OAuth is gated too.
+   */
+  const requestOAuth = (provider: 'github' | 'google') => {
+    const { needed, blocked } = readGateState();
+    if (needed) {
+      setBlockedUntil(blocked);
+      setGateTarget(provider);
+      return;
+    }
+    void handleOAuth(provider);
+  };
+
+  const handleGateVerified = () => {
+    // AgeGateStep has already written the pass flag to sessionStorage, so the
+    // next readGateState() will see it — no duplicate state to keep in sync.
+    const target = gateTarget;
+    setGateTarget(null);
+    // The gate stood in front of a specific provider button — resume the action
+    // the visitor originally asked for instead of making them click twice.
+    if (target === 'github' || target === 'google') void handleOAuth(target);
   };
 
   return (
@@ -138,6 +221,42 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               Vérifie ta boîte mail pour confirmer ton adresse.
             </p>
           </div>
+        ) : gateTarget !== null ? (
+          <>
+            <AgeGateStep
+              onVerified={handleGateVerified}
+              onDismiss={handleClose}
+              blockedUntil={blockedUntil}
+            />
+            <p className="mt-4 text-center text-xs text-[var(--github-text-secondary)] font-mono">
+              {gateTarget === 'signup' ? (
+                <>
+                  {'Déjà un compte ? '}
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="link-inline"
+                    onClick={() => switchMode('login')}
+                    className="text-emerald-400 hover:text-emerald-300 hover:no-underline focus-visible:underline focus-visible:ring-0 transition-colors"
+                  >
+                    Se connecter
+                  </Button>
+                </>
+              ) : (
+                // Gate raised by an OAuth click — let the visitor step back to
+                // the form they came from rather than trapping them.
+                <Button
+                  type="button"
+                  variant="link"
+                  size="link-inline"
+                  onClick={() => setGateTarget(null)}
+                  className="text-emerald-400 hover:text-emerald-300 hover:no-underline focus-visible:underline focus-visible:ring-0 transition-colors"
+                >
+                  Retour
+                </Button>
+              )}
+            </p>
+          </>
         ) : (
           <>
             {/* OAuth buttons */}
@@ -146,7 +265,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 type="button"
                 variant="ghost-gh"
                 size="tl-install-cta"
-                onClick={() => handleOAuth('github')}
+                onClick={() => requestOAuth('github')}
                 disabled={loadingOAuth !== null}
                 className="bg-[var(--github-bg)] text-[var(--github-text-primary)] hover:text-[var(--github-text-primary)] hover:border-emerald-500/50 focus-visible:border-[var(--github-border-primary)] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -161,7 +280,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 type="button"
                 variant="ghost-gh"
                 size="tl-install-cta"
-                onClick={() => handleOAuth('google')}
+                onClick={() => requestOAuth('google')}
                 disabled={loadingOAuth !== null}
                 className="bg-[var(--github-bg)] text-[var(--github-text-primary)] hover:text-[var(--github-text-primary)] hover:border-emerald-500/50 focus-visible:border-[var(--github-border-primary)] font-mono disabled:opacity-60 disabled:cursor-not-allowed"
               >

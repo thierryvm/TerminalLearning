@@ -22,6 +22,7 @@ export interface Database {
           sector: string | null;
           institution_id: string | null;
           role_requested_at: string | null;
+          age_confirmed_at: string | null;
         };
         Insert: {
           id: string;
@@ -34,6 +35,7 @@ export interface Database {
           sector?: string | null;
           institution_id?: string | null;
           role_requested_at?: string | null;
+          age_confirmed_at?: string | null;
         };
         Update: {
           id?: string;
@@ -46,6 +48,7 @@ export interface Database {
           sector?: string | null;
           institution_id?: string | null;
           role_requested_at?: string | null;
+          age_confirmed_at?: string | null;
         };
         Relationships: [
           {
