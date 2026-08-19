@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { consumeReturnTo } from '@/lib/auth/returnToStorage';
 import { defaultRouteForRole } from '@/lib/auth/defaultRouteForRole';
+import { isAgeVerified } from '@/lib/auth/ageGate';
+import { stampAgeConfirmation } from '@/lib/auth/stampAgeConfirmation';
 import type { UserRole } from '../../types/database';
 
 /**
@@ -24,6 +26,9 @@ import type { UserRole } from '../../types/database';
  *      super_admin → /app/admin, teacher → /app/teacher, others → /app.
  *   3. RPC failure or no session → safe fallback `/app` (student-style).
  *   4. On failed login (no session at all), send back to landing.
+ *
+ * Also stamps the age confirmation for the OAuth path (THI-340) — see the
+ * inline note below for why email signup does not go through here.
  */
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -72,6 +77,18 @@ export function AuthCallback() {
           safeNavigate('/app');
           return;
         }
+
+        // THI-340 — OAuth half of the age gate. signInWithOAuth carries no user
+        // metadata, so unlike email signup the declaration cannot ride along to
+        // handle_new_user(); the profile row is stamped here instead. The gate
+        // ran in THIS tab just before the redirect, so its sessionStorage flag
+        // is still there. Awaited but never fatal: a failed stamp leaves
+        // age_confirmed_at NULL, which the schema treats as a valid state, and
+        // the next gated login retries.
+        if (isAgeVerified() && session.user?.id) {
+          await stampAgeConfirmation(supabase, session.user.id);
+        }
+
         const { data, error } = await supabase.rpc('get_my_role');
         if (error) {
           // RPC failed (RLS recursion, network, etc.) — safe fallback.
