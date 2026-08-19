@@ -5,8 +5,9 @@ import { Button } from './ui/button';
 
 /**
  * @component PrivacyPolicy
- * @description Politique de confidentialité conforme RGPD belge/européen.
- * Aucune collecte de données personnelles directe.
+ * @description Politique de confidentialité (RGPD belge/européen).
+ * Usage anonyme sans collecte ; compte optionnel (Supabase Auth) = données
+ * personnelles collectées, décrites aux §2 et §3.
  */
 export function PrivacyPolicy() {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export function PrivacyPolicy() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[var(--github-text-primary)]">Politique de confidentialité</h1>
-            <p className="text-[var(--github-text-secondary)] text-sm">Dernière mise à jour : 10 mai 2026</p>
+            <p className="text-[var(--github-text-secondary)] text-sm">Dernière mise à jour : 19 août 2026</p>
           </div>
         </div>
 
@@ -62,14 +63,30 @@ export function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">2. Données collectées</h2>
             <p className="mb-3">
-              <strong className="text-[var(--github-text-primary)]">Terminal Learning ne collecte aucune donnée personnelle directement.</strong>
+              <strong className="text-[var(--github-text-primary)]">Aucun compte n'est requis pour utiliser Terminal Learning.</strong>{' '}
+              Ce que nous traitons dépend du fait que tu crées, ou non, un compte optionnel.
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Aucune inscription ni compte utilisateur n'est requis pour utiliser l'application.</li>
-              <li>La progression d'apprentissage est stockée <strong className="text-[var(--github-text-primary)]">localement</strong> dans ton navigateur
-                  (<code className="text-emerald-400 text-sm">localStorage</code>), jamais sur nos serveurs.</li>
+            <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Sans compte (par défaut)</h3>
+            <ul className="list-disc list-inside space-y-2 ml-2 mb-4">
+              <li>Aucune donnée personnelle n'est collectée par Terminal Learning.</li>
+              <li>Ta progression est stockée <strong className="text-[var(--github-text-primary)]">localement</strong> dans ton navigateur
+                  (<code className="text-emerald-400 text-sm">localStorage</code>) — elle ne quitte pas ton appareil.</li>
               <li>Aucun cookie de tracking ou publicitaire n'est utilisé.</li>
             </ul>
+            <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Avec un compte optionnel (email ou OAuth GitHub / Google)</h3>
+            <p className="text-sm mb-2">
+              Si tu choisis de créer un compte pour synchroniser ta progression entre appareils, nous traitons alors des données personnelles via <strong className="text-[var(--github-text-primary)]">Supabase</strong> (voir §3) :
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>Ton <strong className="text-[var(--github-text-primary)]">adresse email</strong> et, en cas de connexion OAuth, les informations de profil transmises par GitHub ou Google (identifiant, nom d'affichage, avatar).</li>
+              <li>Ta <strong className="text-[var(--github-text-primary)]">progression synchronisée</strong> (leçons complétées, scores), stockée sur les serveurs Supabase.</li>
+            </ul>
+            <div className="mt-4 p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+              <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Mineurs</h3>
+              <p className="text-sm">
+                En Belgique, l'âge du consentement numérique est fixé à <strong className="text-[var(--github-text-primary)]">13 ans</strong>. En dessous de 13 ans, la création d'un compte requiert le consentement d'un parent ou tuteur légal. L'usage anonyme (sans compte) reste accessible sans condition d'âge.
+              </p>
+            </div>
           </section>
 
           <section>
@@ -79,10 +96,38 @@ export function PrivacyPolicy() {
               <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
                 <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Vercel (hébergement)</h3>
                 <p className="text-sm">
-                  L'application est hébergée sur Vercel. Vercel peut collecter des données
-                  de connexion (adresse IP, navigateur) à des fins de sécurité et de performance.
-                  Ces données sont gérées par Vercel conformément à leur politique de confidentialité.
-                  Vercel est certifié conforme RGPD.
+                  L'application est hébergée sur Vercel (Vercel Inc., États-Unis). Vercel
+                  peut collecter des données de connexion (adresse IP, configuration du
+                  navigateur) à des fins de sécurité et de performance, conformément à sa{' '}
+                  <a href="https://vercel.com/legal/privacy-notice" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">politique de confidentialité</a>.
+                  Vercel adhère au cadre de protection des données UE–États-Unis (EU–U.S.
+                  Data Privacy Framework) pour l'encadrement des transferts hors UE.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Supabase (comptes &amp; synchronisation) — uniquement si tu crées un compte</h3>
+                <p className="text-sm">
+                  Si tu crées un compte, l'authentification (email / OAuth GitHub / Google)
+                  et la synchronisation de ta progression reposent sur{' '}
+                  <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">Supabase</a>{' '}
+                  (Supabase Pte. Ltd, Singapour), agissant comme sous-traitant. La base de
+                  données est hébergée dans l'Union européenne (région <code className="text-emerald-400 text-sm">eu-west-1</code>, Irlande).
+                  Supabase recourt à des sous-traitants d'infrastructure (Amazon Web Services,
+                  Google, Cloudflare, Fly.io, Upstash) ; les transferts de données hors UE
+                  sont encadrés par les clauses contractuelles types de l'UE (2021/914),
+                  conformément à son{' '}
+                  <a href="https://supabase.com/legal/customer-resources/data-processing-addendum" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">accord de traitement des données</a>.
+                  Aucune donnée n'est transmise à Supabase tant que tu n'as pas créé de compte.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+                <h3 className="text-[var(--github-text-primary)] font-medium mb-2">Mesure d'audience &amp; suivi d'erreurs</h3>
+                <p className="text-sm">
+                  Terminal Learning utilise Vercel Analytics (mesure d'audience{' '}
+                  <strong className="text-[var(--github-text-primary)]">sans cookie</strong> ni identifiant publicitaire)
+                  et Sentry (suivi des erreurs techniques, point d'ingestion dans l'UE, données purgées des informations personnelles).
                 </p>
               </div>
 
@@ -97,6 +142,13 @@ export function PrivacyPolicy() {
               (Bring Your Own Key) — tu apportes ta propre clé API du provider de
               ton choix. Cette section décrit précisément quelles données circulent,
               qui les voit, et combien de temps elles sont conservées.
+            </p>
+            <p className="mb-3 text-sm">
+              Au sens du Règlement européen sur l'intelligence artificielle (AI Act —
+              Règlement UE 2024/1689), le tuteur IA est un{' '}
+              <strong className="text-[var(--github-text-primary)]">système d'IA à risque limité</strong> :
+              tu es informé que tu interagis avec une IA, et son rôle se limite à t'aider
+              à apprendre — il n'évalue pas, ne note pas et ne conditionne aucun accès.
             </p>
 
             <div className="space-y-4">
@@ -197,9 +249,9 @@ export function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--github-text-primary)] mb-3">5. Cookies</h2>
             <p>
-              Terminal Learning n'utilise pas de cookies de tracking, publicitaires ou analytiques.
-              Seul le <code className="text-emerald-400 text-sm">localStorage</code> du navigateur
-              est utilisé pour sauvegarder ta progression — cette donnée ne quitte jamais ton appareil.
+              Terminal Learning n'utilise pas de cookies de tracking ou publicitaires.
+              Ta progression est sauvegardée dans le <code className="text-emerald-400 text-sm">localStorage</code> du navigateur ;
+              elle ne quitte ton appareil que si tu crées un compte optionnel pour la synchroniser (voir §2 et §3).
             </p>
           </section>
 
@@ -217,6 +269,11 @@ export function PrivacyPolicy() {
               <li><strong className="text-[var(--github-text-primary)]">Droit à l'effacement</strong> : supprimer tes données locales via les paramètres de ton navigateur.</li>
               <li><strong className="text-[var(--github-text-primary)]">Droit à la portabilité</strong> : exporter tes données de progression depuis ton navigateur.</li>
             </ul>
+            <p className="mt-3 text-sm">
+              Si tu as créé un compte, ces droits s'appliquent aussi aux données associées
+              (email, profil, progression synchronisée) : contacte-nous pour l'accès, la
+              rectification, l'effacement ou la portabilité de ces données.
+            </p>
             <p className="mt-3">
               Pour toute question relative à la vie privée, contacte-nous via GitHub :
               <a href="https://github.com/thierryvm/TerminalLearning/issues"
