@@ -368,6 +368,7 @@ Pattern source: `F:/PROJECTS/Apps/ankora/.claude/agents/mobile-ios-auditor.md`
 (40 checkpoints, 10 sections). This Terminal Learning version retains the
 core 10 sections, drops Next.js-specific items (Server Components,
 `next/font`, `next/image`, `app/[locale]/...` routes), and adds:
+
 - Section 6 renamed "Env Toggle Mobile" (TL-specific Linux/macOS/Windows/
   WSL pill, where Ankora has "Theme Toggle Mobile")
 - Section 4 bonus checkpoint 19 on chat bubble word-break (drawer AI
@@ -385,6 +386,7 @@ core 10 sections, drops Next.js-specific items (Server Components,
 
 Bonus checkpoints to backport to Ankora `mobile-ios-auditor` if relevant
 to Ankora's product surface:
+
 - Chat bubble word-break (if Ankora has chat surfaces)
 - Drawer header truncation pattern
 - **BUG-FAB-001** §3 #14 + §8 #36a + §8 #36b (universal — any FAB

@@ -39,6 +39,7 @@ Le brief @cowork initial proposait un **gating de rôle** : afficher le modèle 
 Argument original : « préserve guardrail anti-prompt-injection ».
 
 **Challenge & rejet @cc-tl + verrouillage @thierry** :
+
 1. Le modèle n'est pas un secret (visible DevTools Network, bundle JS client, bibliothèques de prompts publiques)
 2. Security through obscurity = anti-pattern
 3. Un user BYOK paye sa propre clé → droit éthique de savoir ce qu'il paye
@@ -68,6 +69,7 @@ Le guardrail anti-prompt-injection reste **côté backend** (system prompt v1.1.
 Preview URL : `terminal-learning-git-fix-12841b-thierry-vanmeeterens-projects.vercel.app`
 
 **Page `/app/settings`** :
+
 - OpenRouter — Modèle utilisé : `anthropic/claude-haiku-4-5`
 - Anthropic — Modèle utilisé : `claude-sonnet-4-6`
 - OpenAI — Modèle utilisé : `gpt-4o-mini`
@@ -85,6 +87,7 @@ Preview URL : `terminal-learning-git-fix-12841b-thierry-vanmeeterens-projects.ve
 ## Hors scope PR-A (différé PR-B)
 
 À implémenter post-merge dans une PR séparée :
+
 1. Constantes `<PROVIDER>_MODELS: ModelOption[]` curées (liste de modèles validés pour la pédagogie, avec warns sur Haiku 4.5 artefacts et Llama 3.3 70B reliability)
 2. Picker UI inline dans le drawer (user-side choice du modèle par provider)
 3. Persistence localStorage `ai-tutor-model-<provider>`
@@ -97,6 +100,7 @@ ADR proposée : ADR-009 « Curation policy modèles IA Tuteur » — critères p
 ## Anomalie résiduelle signalée (hors code)
 
 Variable Vercel **Preview** `VITE_AI_TUTOR_OPENROUTER_MODEL` :
+
 - État initial : `anthropic/claude-haiku-4-5` (17j)
 - État après opérations CLI : SUPPRIMÉE (mon `vercel env rm` initial a réussi, mais `vercel env add` post-merge a échoué — CLI 54.1.0 requiert git-branch interactif que `--yes` ne skip pas)
 - Conséquence : futures previews fallback sur `OPENROUTER_DEFAULT_MODEL` = `meta-llama/llama-3.3-70b-instruct:free`

@@ -21,23 +21,28 @@ Moodle, Canvas, Blackboard représentent 20 ans de développement par des équip
 ## Conséquences
 
 ### Positives
+
 - Effort concentré sur la différenciation pédagogique (pas de reconstruction d'infra LMS)
 - Adoption virale possible via installation LTI en 1 clic dans Moodle/Canvas/Smartschool
 - Compatible avec écosystème existant des écoles — zéro migration forcée
 - Posture défendable : "on ne remplace pas votre LMS, on le complète"
 
 ### Négatives / risques
+
 - Dépendance à l'adoption LTI par les écoles (certaines n'ont pas activé LTI dans leur Smartschool)
 - Effort initial LTI 1.3 significatif (1-2 mois)
 - Obligation de maintenir compatibilité LTI dans le temps
 
 ### Alternatives rejetées
+
 - **LMS complet** : effort 5+ ans, burnout garanti pour solo maintainer
 - **Standalone seulement** (statu quo) : plafond d'adoption B2B institutionnel
 - **SCORM 2004** : standard plus ancien, moins adopté 2026, inférieur à LTI 1.3 pour interop temps réel
 
 ## Implémentation prioritaire
+
 Voir `docs/processes/next-session-plan.md` section "LTI 1.3 + SSO OIDC".
 
 ## Mémoires liées
+
 - `project_platform_vision_v2.md`

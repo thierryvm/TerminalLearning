@@ -7,6 +7,7 @@
 ## Vector 1: Malicious PRs from Compromised / Rogue LLMs
 
 ### Attack Pattern
+
 1. Attacker runs local LLM with repo context
 2. LLM generates malicious PR: adds credential exfiltration, backdoor logic, or prompt injection
 3. PR auto-merges if CI passes (weak gate)
@@ -41,6 +42,7 @@
 ## Vector 2: Unsigned Commits via Workflow / Local Pushes
 
 ### Attack Pattern
+
 1. Attacker compromises GitHub token or local git config
 2. Pushes unsigned commits that appear to be from Thierry
 3. CI trusts commit and auto-merges (no signature verification)
@@ -54,6 +56,7 @@ git verify-commit HEAD || { echo "Commit must be signed"; exit 1; }
 ```
 
 **Setup (local):**
+
 ```bash
 git config --global commit.gpgsign true
 git config --global user.signingkey <GPG_KEY_ID>
@@ -68,6 +71,7 @@ git config --global user.signingkey <GPG_KEY_ID>
 ## Vector 3: Action Runner Token Compromise
 
 ### Attack Pattern
+
 1. GitHub Action runner (`ubuntu-latest`) is compromised or hijacked
 2. Runner exfiltrates secrets (VERCEL_TOKEN, SENTRY_DSN, etc.)
 3. Attacker uses secrets to deploy malicious code to production
@@ -75,11 +79,13 @@ git config --global user.signingkey <GPG_KEY_ID>
 ### Defense: Pin Action SHA (not tag mutable)
 
 **Current (vulnerable):**
+
 ```yaml
 - uses: actions/setup-node@v20  # ❌ Tag is mutable
 ```
 
 **Fixed (resilient):**
+
 ```yaml
 - uses: actions/setup-node@507323e2bf4a8c5ca2d5a8a4e3e7c9d0f1a2b3c4d  # ✅ SHA pinned
 ```
@@ -95,6 +101,7 @@ git config --global user.signingkey <GPG_KEY_ID>
 ## Vector 4: Supply Chain — Typosquatting + Malicious Dependencies
 
 ### Attack Pattern
+
 1. Attacker publishes `@my-namespace/class-variance-auth0rity` (typo of class-variance-authority)
 2. npm audit doesn't catch it (not in package.json CVE databases)
 3. Transitive dependency pulls malicious code
@@ -115,6 +122,7 @@ npm ci  # CI always uses lock file (never npm install)
 ## Vector 5: Sentry Tunnel Abuse (SSRF via Own Infrastructure)
 
 ### Attack Pattern
+
 1. Attacker finds Sentry tunnel endpoint `/api/sentry-tunnel` (public)
 2. Uses it as proxy to scan internal AWS/Supabase endpoints
 3. Exfiltrates API keys from internal services
@@ -122,6 +130,7 @@ npm ci  # CI always uses lock file (never npm install)
 ### Defense: Sentry Tunnel Validation + Rate Limiting
 
 **Implemented (Phase 7b):**
+
 - DSN validation: only `sentry.io` allowed, no proxy to arbitrary hosts
 - Rate limiting: 50 req/min per IP (Edge Function isolated)
 - Scrubbing: all payloads scrubbed before relay (C3 layer)
@@ -135,6 +144,7 @@ npm ci  # CI always uses lock file (never npm install)
 ## Vector 6: Prompt Injection via GitHub Issues / PRs (Indirect)
 
 ### Attack Pattern
+
 1. Attacker opens GitHub Issue with malicious prompt injection payload
 2. Thierry/LLM agent reads issue, payload injects into system prompt
 3. Agent bypasses guardrails and executes unauthorized code
@@ -142,6 +152,7 @@ npm ci  # CI always uses lock file (never npm install)
 ### Defense: Sanitize External Input in Prompts
 
 **Tools in place:**
+
 - `prompt-guardrail-auditor` agent (gates before THI-111 AiTutorPanel)
 - Input sanitizer: user-supplied content escapes HTML/markdown before prompt injection
 

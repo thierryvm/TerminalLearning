@@ -9,6 +9,7 @@
 ## Contexte d'entrée
 
 Session précédente (18 avril 2026) :
+
 - PR #151 mergée, THI-115 Done (doc alignment ADR-002 + ADR-005)
 - PR #152 mergée, THI-116 Done (sync CLAUDE.md + next-session-plan.md)
 - PR #153 mergée, THI-109 Done (agent `prompt-guardrail-auditor`)
@@ -16,6 +17,7 @@ Session précédente (18 avril 2026) :
 - PR #155 mergée, **THI-110 Done** (key manager V1 — localStorage plain + IndexedDB AES-GCM + PBKDF2 210k, 32 tests, premier audit `prompt-guardrail-auditor` PASS)
 
 **Findings ouverts en Backlog à partir de la session du 18 avril** :
+
 - **THI-118** (High) — perf regression LCP sur `/` (3.87s → 9.31s, ×2.4) — investigation à tête reposée
 - **THI-119** (Medium) — filtre Sentry `text/html` MIME type variant — quick win
 - **THI-120** (High) — scrubber Sentry `beforeSend` — **gate avant THI-111**

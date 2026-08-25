@@ -90,6 +90,7 @@ Le tuteur a détecté que la réponse de l'IA contenait quelque chose qui ressem
 ### Erreur "invalid_key"
 
 Ta clé est rejetée par le provider. Vérifie :
+
 - Que tu as bien copié la clé entière (sans espace en début/fin)
 - Que la clé n'est pas expirée ou révoquée
 - Que tu es sur le bon provider (clé OpenAI dans le slot OpenAI, etc.)
@@ -103,6 +104,7 @@ Ta clé est rejetée par le provider. Vérifie :
 **Dans ton navigateur uniquement**, sur ce poste. Aucun serveur Terminal Learning ne la voit jamais. C'est le principe **BYOK** ("Bring Your Own Key") : tu paies ton propre quota IA, en échange d'une vie privée totale.
 
 Concrètement, en V1 :
+
 - Stockage : `localStorage` du navigateur, en clair.
 - Le mode chiffré (avec passphrase + AES-GCM) arrive dans une prochaine version.
 

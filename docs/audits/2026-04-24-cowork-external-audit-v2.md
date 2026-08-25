@@ -44,13 +44,16 @@ Pas une implémentation prod. Objectif : **dérisquer Phase 7c** avant qu'elle c
 ## 3. Réponses @thierry aux 4 questions @cc-terminal
 
 ### Q1 — Timing LTI
+
 **Réponse** : Phase 7c accepté + **SPIKE 1 semaine en parallèle Phase 7b** (contre-challenge @cowork ci-dessus). Communication aux écoles potentielles : "LTI integration, Q3 2026".
 
 ### Q2 — Contributeurs pédagogues externes
+
 **Réponse @thierry** : **ZÉRO pour l'instant**. Projet 100 % solo, pas de pédagogue externe actif ni prévu court terme.
 **Décision** : Phase A CSV livrée (quick win pour collecte feedback future), Phase B YAML en backlog **avec deadline fin Q3 2026** pour forcer revue décision objective.
 
 ### Q3 — Sustain plan
+
 **Réponse @thierry (intégrale, à respecter)** :
 > "Pas les moyens de prendre quelqu'un avec moi. Je forme un excellent combo avec vos instances Claude et mes agents mis en places par projet. Motivation à toute épreuve sur mes 2 projets pour ma future reconversion pro. Si mes projets décollent, j'ai une base solide pour démontrer mes compétences et comment j'ai été augmenté avec Claude, sans le moindre compromis y compris sur la sécurité globale."
 
@@ -65,6 +68,7 @@ Puisque @thierry travaille seul et forme un combo IA+agents satisfaisant, le sus
 ### (a) ADR-007 "Solo-sustainable practices"
 
 Formaliser dans un ADR les règles :
+
 - **Rest cycle hebdo** — 1 jour off minimum (typiquement dimanche), pas de commit ni review
 - **Alerts Sentry fine-tuned** — jamais un bug prod ne doit réveiller @thierry la nuit (severity-based routing)
 - **Documentation vivante** — toute décision humaine critique doit vivre dans `docs/processes/`, pas uniquement dans la tête de @thierry
@@ -74,6 +78,7 @@ Formaliser dans un ADR les règles :
 ### (b) Nouvel agent `.claude/agents/sustain-auditor.md`
 
 Audit **mensuel automatique** de la charge cognitive :
+
 - PRs stale (ouvertes > 14 jours)
 - Issues stale (sans activité > 30 jours)
 - Commits tardifs (> 23h heure belge) — signal fatigue

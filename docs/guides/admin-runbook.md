@@ -50,11 +50,13 @@ Voir `docs/processes/gdpr-data-request.md`
 1. Admin Panel → Utilisateurs → [Email] → Voir progression
 2. Module par module → Réinitialiser
 3. Ou : exécution SQL directe (Supabase Dashboard → SQL Editor) :
+
    ```sql
    DELETE FROM progress WHERE user_id = '<uuid>';
    DELETE FROM quiz_results WHERE user_id = '<uuid>';
    -- NE PAS supprimer le profil sauf demande explicite de l'utilisateur
    ```
+
 4. Logger dans `audit_log`
 
 ## Surveillance hebdomadaire

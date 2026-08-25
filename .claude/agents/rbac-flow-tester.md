@@ -20,10 +20,12 @@ You use **curl** against the Supabase REST API for server-side checks AND inspec
 ## Prerequisites
 
 Before running, check that the following env vars are available in `.env.local`:
+
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
 And retrieve the service role key via:
+
 ```bash
 SERVICE_KEY=$(supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv --output json \
   | python3 -c "import sys,json; keys=json.load(sys.stdin); print(next(k['api_key'] for k in keys if k['name']=='service_role'))")
@@ -40,6 +42,7 @@ SERVICE_KEY=$(supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv --ou
 | student            | test.student@terminallearning.dev              | ...111105   |
 
 Passwords: each account has a unique password in `.env.test` (never hardcode):
+
 - `TEST_SUPERADMIN_PASSWORD`, `TEST_INSTITUTIONADMIN_PASSWORD`, `TEST_TEACHER_PASSWORD`
 - `TEST_PENDINGTEACHER_PASSWORD`, `TEST_STUDENT_PASSWORD`
 
@@ -65,6 +68,7 @@ Passwords: each account has a unique password in `.env.test` (never hardcode):
 ## How to run each check
 
 ### Login
+
 ```bash
 TOKEN=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
@@ -74,6 +78,7 @@ TOKEN=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
 ```
 
 ### get_my_role() RPC
+
 ```bash
 curl -s -X POST "${SUPABASE_URL}/rest/v1/rpc/get_my_role" \
   -H "apikey: ${ANON_KEY}" \
@@ -83,6 +88,7 @@ curl -s -X POST "${SUPABASE_URL}/rest/v1/rpc/get_my_role" \
 ```
 
 ### RLS SELECT check
+
 ```bash
 curl -s "${SUPABASE_URL}/rest/v1/profiles?select=id" \
   -H "apikey: ${ANON_KEY}" \
@@ -91,6 +97,7 @@ curl -s "${SUPABASE_URL}/rest/v1/profiles?select=id" \
 ```
 
 ### RLS INSERT check (expect error)
+
 ```bash
 curl -s -X POST "${SUPABASE_URL}/rest/v1/classes" \
   -H "apikey: ${ANON_KEY}" \
@@ -100,6 +107,7 @@ curl -s -X POST "${SUPABASE_URL}/rest/v1/classes" \
 ```
 
 ### Role escalation check (expect error)
+
 ```bash
 curl -s -X PATCH "${SUPABASE_URL}/rest/v1/profiles?id=eq.${STUDENT_UUID}" \
   -H "apikey: ${ANON_KEY}" \
@@ -109,6 +117,7 @@ curl -s -X PATCH "${SUPABASE_URL}/rest/v1/profiles?id=eq.${STUDENT_UUID}" \
 ```
 
 ### Restore student role (use service_role key)
+
 ```bash
 curl -s -X PATCH "${SUPABASE_URL}/rest/v1/profiles?id=eq.${STUDENT_UUID}" \
   -H "apikey: ${SERVICE_KEY}" \
@@ -147,6 +156,7 @@ Le bug data leak inter-users THI-186 a montré que le scope REST API seul est in
 ### 4.1 — signOut wipe pattern
 
 Vérifier que `AuthContext.signOut()` flush bien :
+
 - `localStorage` keys préfixées `ai_*` (clés API tutor — THI-207 doctrine)
 - `localStorage` `ai_consent_v1`, `ai_tutor_provider`, `ai_rate_v1`, `ai_tutor_mode`
 - `sessionStorage` `auth_return_to` (PR #269 returnTo flow)
@@ -198,6 +208,7 @@ grep -n "onAuthStateChange\|TOKEN_REFRESHED\|SIGNED_IN" \
 ## Invocation timing
 
 Run this agent:
+
 - Before each Phase 9 release
 - After any migration that touches `auth.users`, `profiles`, or RLS policies
 - After a Supabase upgrade or service restart

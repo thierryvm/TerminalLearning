@@ -55,49 +55,60 @@ IMPORTANT : ne jamais rapporter un finding "fichier absent" si le fichier existe
 ## OWASP Top 10 (2021)
 
 ### A01 — Broken Access Control
+
 - Les routes /app/* sont-elles protegees par un guard d'auth ?
 - Un utilisateur non authentifie peut-il acceder aux donnees d'un autre ?
 - Le user_id dans les requetes Supabase est-il tire du JWT via RLS (jamais du body client) ?
 - CRITICAL si une route protegee est accessible sans auth
 
 ### A02 — Cryptographic Failures
+
 - Des donnees sensibles transitent-elles en clair dans localStorage ?
 - Les tokens JWT ont-ils une expiration configuree ?
 - Le flow PKCE est-il correctement implemente dans AuthCallback.tsx ?
 
 ### A03 — Injection
+
 Terminal simulation : les entrees dans terminalEngine.ts sont-elles sanitisees ?
+
 - Commandes traitees via switch/case ferme sans execution dynamique de code ?
 - Rechercher dans src/ les patterns XSS : prop React d'injection HTML directe, ecriture directe dans le DOM (innerHTML, outerHTML), construction de code executable a partir de chaines
 - Utiliser Bash pour scanner ces patterns dans *.ts et *.tsx
 - CRITICAL si un vecteur d'injection est trouve
 
 ### A04 — Insecure Design
+
 - Le tunnel Sentry /api/sentry-tunnel valide-t-il l'origine des requetes ?
 - Peut-il etre utilise comme proxy SSRF vers un Sentry tiers ?
 - La progression peut-elle etre manipulee cote client pour sauter des lecons ?
 
 ### A05 — Security Misconfiguration
+
 - La CSP bloque-t-elle unsafe-eval et unsafe-inline ?
 - Des headers de securite manquent-ils dans vercel.json ?
 - La service_role key Supabase est-elle inaccessible cote client ?
 
 ### A06 — Vulnerable and Outdated Components
+
 Executer : npm audit --audit-level=high 2>/dev/null
+
 - Lister CVE HIGH et CRITICAL uniquement
 - Verifier les advisories recentes (< 30 jours)
 
 ### A07 — Authentication Failures
+
 - Rate limiting sur les endpoints login/signup Supabase ?
 - Risque de credential stuffing sans blocage ?
 - Rotation des refresh tokens activee ?
 - signOut invalide-t-il le token cote serveur (scope: global) ?
 
 ### A08 — Software and Data Integrity
+
 - package-lock.json commite et utilise via npm ci en CI ?
 - Scripts postinstall suspects dans les dependances directes ?
 
 ### A09 — Security Logging and Monitoring
+
 - Les erreurs d'auth sont-elles loggees dans Sentry sans PII ?
 - Le beforeSend supprime-t-il les query params (tokens OAuth dans URL) ?
 - Sentry tunnel côté serveur (api/sentry-tunnel.ts) — THI-120 :
@@ -108,6 +119,7 @@ Executer : npm audit --audit-level=high 2>/dev/null
   - CRITICAL si contexts ou tags ne sont pas scrubés → fuite indirecte via Sentry
 
 ### A10 — SSRF
+
 - Le tunnel Sentry valide-t-il que la destination est bien *.sentry.io ?
 - Des fetch() cote serveur utilisent-ils des URLs fournies par l'utilisateur ?
 
@@ -117,18 +129,22 @@ Executer : npm audit --audit-level=high 2>/dev/null
 ## OWASP API Security Top 10 (2023)
 
 ### API1 — Broken Object Level Authorization
+
 - Les politiques RLS filtrent-elles par auth.uid() ?
 - Un utilisateur peut-il lire/modifier la progression d'un autre ?
 
 ### API2 — Broken Authentication
+
 - Les cles publiques (VITE_*) sont-elles toutes a faibles privileges ?
 - Aucune service_role key accessible cote client ?
 
 ### API4 — Unrestricted Resource Consumption
+
 - Le tunnel Sentry a-t-il un rate limiting ? Peut-il etre spamme librement ?
 - Les requetes Supabase ont-elles des limites de pagination ?
 
 ### API8 — Security Misconfiguration
+
 - CORS sur les edge functions : domaine specifique ou wildcard * ?
 
 ---
@@ -179,6 +195,7 @@ Verifier dans vercel.json :
 ## Supabase RLS
 
 Lister toutes les tables depuis src/app/types/database.ts et vérifier :
+
 - RLS active sur chaque table ?
 - Politiques couvrant SELECT, INSERT, UPDATE, DELETE ?
 - Utilisation de auth.uid() (jamais d'un paramètre client) ?
@@ -206,6 +223,7 @@ Executer via Bash :
   grep -rni "password\|passwd\|pwd\|secret\|api.key\|token\|sk-\|crypt(" supabase/migrations/ | grep -v "PLACEHOLDER\|EXAMPLE\|NOT_REAL\|ROTATED\|env\." | head -30
 
 Verifier CHAQUE migration SQL pour :
+
 - Mots de passe en clair dans les INSERT (auth.users, profiles, etc.)
 - Appels crypt() avec un password litteral (ex: crypt('MonMotDePasse', ...))
 - Tokens ou cles API en dur dans les fixtures / seed data
@@ -214,6 +232,7 @@ Verifier CHAQUE migration SQL pour :
 CRITICAL si un mot de passe ou une cle est en clair dans un fichier SQL commite.
 
 Remediation attendue :
+
 - Remplacer par un PLACEHOLDER en commentaire : -- password reset via Admin API, see .env.test
 - Ne jamais injecter de vrais credentials dans les migrations — meme temporairement
 - Les mots de passe de test doivent etre rotatés via Admin API apres le premier deploy
@@ -224,6 +243,7 @@ Scanner aussi git log pour detecter des credentials anterieurement supprimes mai
 CRITICAL si un credential figure dans l'historique git même si déjà supprimé du HEAD — l'historique public est aussi exploitable que le HEAD.
 
 ### Scan git history étendu (au-delà des migrations)
+
 Exécuter :
   git log --all -p -- "*.ts" "*.tsx" "*.json" "*.env*" 2>/dev/null | grep -iE "password|secret|token|apikey|service_role" | grep -v "PLACEHOLDER\|EXAMPLE\|import.meta.env\|process.env\|test\(" | head -30
 
@@ -234,6 +254,7 @@ WARNING si des patterns suspects apparaissent dans l'historique.
 ## XSS et injection DOM
 
 Rechercher dans src/ via Bash :
+
 - La prop React d'injection HTML directe (concatener "dangerously" + "SetInnerHTML" pour le pattern grep)
 - L'ecriture directe dans le DOM (innerHTML, outerHTML)
 - La construction de fonctions a partir de chaines (concatener "new" + " Function(")
@@ -246,6 +267,7 @@ CRITICAL si une entree utilisateur est rendue directement en HTML sans sanitisat
 ## Terminal Simulation — Sandbox Integrity
 
 Analyser terminalEngine.ts :
+
 - Traitement via switch/case ferme uniquement (pas de construction dynamique de code) ?
 - Arguments utilisateur traites comme chaines inertes ?
 - La simulation peut-elle afficher de faux messages systeme (phishing) ?
@@ -265,6 +287,7 @@ Executer :
 - Packages aux noms proches de dependances reelles (typosquatting) ?
 
 ### Versions des dépendances critiques
+
 Vérifier les versions actuelles des packages de sécurité :
   grep -E '"@supabase/supabase-js"|"@sentry/react"|"vite"|"react-router"' package.json
 
@@ -273,6 +296,7 @@ Vérifier les versions actuelles des packages de sécurité :
 - CRITICAL si une version avec CVE connue et fix disponible est utilisée
 
 ### GitHub Actions — SHA pins
+
 Verifier que les actions dans .github/workflows/*.yml utilisent des SHA commits (pas des tags mutables comme @v4) :
   grep -rn "uses:" .github/workflows/ | grep -v "#" | grep "@v[0-9]"
 
@@ -292,18 +316,22 @@ WARNING si des actions utilisent des tags mutables sans SHA pin.
 ## Cybersecurite 2026 — Vecteurs emergents
 
 ### Prompt Injection (future IA tuteur — THI-41)
+
 - Si une feature IA est en place : entrees sanitisees avant injection dans le prompt ?
 - Un utilisateur peut-il detourner le comportement de l'IA via ses inputs ?
 
 ### Token Leakage via Referrer
+
 - Referrer-Policy empeche-t-il la fuite de tokens OAuth dans les URLs ?
 - Les redirects OAuth utilisent-ils des state tokens valides cote serveur ?
 
 ### Dependency Confusion
+
 - Des packages internes sont-ils sur un registry prive ?
 - Risque de confusion avec le registry npm public ?
 
 ### Clickjacking
+
 - frame-ancestors configure en CSP OU X-Frame-Options: DENY ?
 
 ---
@@ -320,6 +348,7 @@ PROJECT_ID="prj_mfBbwmor5DhN57SEasB1RtYAFE5m"
 ```
 
 ### Tokens actifs sur le compte
+
 - `GET /v3/user/tokens` → liste complète des access tokens
 - Pour chaque token : vérifier `name`, `createdAt`, `activeAt`, `lastUsedAt`
 - WARNING si > 3 tokens "An MCP client" actifs simultanément
@@ -327,23 +356,27 @@ PROJECT_ID="prj_mfBbwmor5DhN57SEasB1RtYAFE5m"
 - CRITICAL si un token ancien > 30 jours est encore actif sans usage traçable
 
 ### Project events
+
 - `GET /v3/events?projectId=$PROJECT_ID&limit=30` → audit log
 - Filtrer sur `type=project-automation-bypass`, `type=token-created`, `type=token-revoked`
 - WARNING si un event `project-automation-bypass` n'est pas corrélé à une session Claude tracée (mémoire `reference_vercel_bypass.md`)
 
 ### Bypass Deployment Protection
+
 - `GET /v9/projects/$PROJECT_ID` → champ `protectionBypass`
 - WARNING si > 1 entrée active simultanément (rotation incomplète)
 - WARNING si l'entrée active n'est pas la même que celle stockée dans `.secrets/vercel-bypass.txt`
 - CRITICAL si le secret stocké en local fait HTTP 401 alors que la liste API montre une entrée active (drift confirmé)
 
 ### Procédure stricte navigation Chrome DevTools (mémoire `reference_vercel_bypass.md`)
+
 - Toute navigation Chrome MCP avec `?x-vercel-protection-bypass=` = max 1 par session par hostname
 - Tout token API Vercel créé via UI Web (Chrome MCP) = considérer comme "potentiellement exposé" (capture DOM dans l'accessibility tree) → 2ème rotation manuelle à planifier
 - WARNING si la session courante a fait > 1 navigation avec query param bypass
 - INFO si un token a été créé via UI Web pendant la session sans 2ème rotation programmée
 
 ### Recommendations
+
 - [R1] Routine `schedule` hebdomadaire : régénération du bypass via API REST (seulement si on identifie un mécanisme propre — aujourd'hui le secret reste exposé en URL au moins une fois)
 - [R2] Audit MCP clients : si plus de 5 tokens "An MCP client" sur 30j → investiguer quelle intégration les génère (probablement plugin Vercel MCP officiel)
 - [R3] Renommer `.secrets/vercel-bypass.txt` (qui contient l'access token) en `.secrets/vercel-token.txt` pour distinguer du bypass Deployment Protection
@@ -354,6 +387,7 @@ PROJECT_ID="prj_mfBbwmor5DhN57SEasB1RtYAFE5m"
 
 SECURITY AUDIT REPORT — Terminal Learning
 ==========================================
+
 Date     : YYYY-MM-DD
 Auditeur : security-auditor agent (black hat mode)
 Standards: OWASP Top 10 (2021) | OWASP API Sec (2023) | CSP L3 | 2026 norms
@@ -380,6 +414,7 @@ VERDICT: OK Propre | N issues, 0 critiques | N critiques a corriger immediatemen
 Retourne UNIQUEMENT ce rapport + 3 actions prioritaires numerotees.
 
 ## Note V2 (future — Phase 9)
+
 Quand le panel admin Supabase sera en place, ce rapport sera ecrit dans la table
 audit_reports et visible dans le Security Center de l'admin panel.
 Prevoir aussi un scan automatique hebdomadaire via cron Vercel.

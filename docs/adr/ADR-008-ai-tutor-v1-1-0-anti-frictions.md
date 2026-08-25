@@ -76,17 +76,20 @@ L'audit re-baseline `llm-security-auditor` du 10 mai PM (9.0/10 confirmé) a ide
 ## Conséquences
 
 ### Positives
+
 - 4 frictions sémantiquement liées résolues en un seul bump (un audit guardrail + une eval suite + une PR au lieu de 4)
 - Frozen pattern v1.0.0/v1.0.1 préservé (rollback safety, git blame propre)
 - Eval suite hybride (a)+(b) en place pour les bumps futurs (réutilisable v1.2.0+)
 - Trajectoire `llm-security-auditor` 9.0 → 9.1 absorbée dans la même PR (M4-AI fallback bundled)
 
 ### Négatives / risques
+
 - 4 frictions corrigées simultanément = surface de test plus large, risque de régression non-détectée par eval suite si elle n'est pas représentative.
 - **Mitigation** : eval suite (a) couvre minimum 2 cas par friction (8/15 questions sur les frictions, 7/15 sur cas pédagogiques standards). Eval suite (b) capture le diff comportemental empirique sur Haiku.
 - **Garde-fou ship** : si eval suite (b) révèle régression sur une friction → on ne ship pas v1.1.0, on découpe en patches v1.0.2 → 1.0.5.
 
 ### Alternatives rejetées
+
 - **Découpage v1.0.2 → 1.0.5 (4 patches successifs)** : noise dans CHANGELOG, 4 audits guardrail, 4 eval suites — pour 4 frictions sémantiquement liées (toutes "tone & flow"), surcoût sans bénéfice.
 - **Édition in-place de tutor-v1.0.1.ts** : rollback impossible, git blame pollué, contredit la convention frozen établie depuis v1.0.0.
 - **Eval suite (a) seulement** : évalue le PROMPT pas le MODÈLE — angle aveugle sur la qualité empirique réelle.

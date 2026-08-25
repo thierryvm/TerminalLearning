@@ -522,6 +522,7 @@ C'est la décision la plus fondamentale du projet, et aussi la plus contraignant
 On aurait pu utiliser xterm.js connecté à un backend qui exécute de vraies commandes dans des containers isolés. C'est ce que font la plupart des plateformes professionnelles (Katacoda, Play with Docker, etc.).
 
 On a choisi la simulation pour plusieurs raisons :
+
 - **Sécurité** : un utilisateur ne peut pas faire de dégâts dans notre app. Pas de `rm -rf`, pas d'accès réseau, pas d'escalade de privilèges.
 - **Coût** : des containers éphémères à la demande coûtent. Une simulation en mémoire coûte zéro.
 - **Pédagogie** : pour apprendre les commandes de base, la simulation est suffisamment fidèle. Le gap avec un vrai terminal est négligeable pour un débutant.
@@ -579,6 +580,7 @@ Le moment où la règle a prouvé son utilité : une refactorisation de `process
 À un moment du projet, on a décidé de faire un audit de sécurité sérieux — pas une checklist rapide, mais une analyse black-hat complète : OWASP Top 10, API Security, CSP Level 3, Row Level Security, auth flow, supply chain.
 
 Ce qu'on a trouvé :
+
 - 6 bugs RLS non détectés par les tests unitaires — des politiques qui paraissaient correctes mais laissaient passer des cas limites
 - Un `unsafe-inline` dans la CSP nécessaire pour Motion/Framer — acceptable temporairement, problème structurel à terme
 - Un endpoint Sentry tunnel sans rate limiting — potentiellement exploitable pour de l'abus

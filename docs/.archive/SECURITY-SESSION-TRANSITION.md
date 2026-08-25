@@ -9,22 +9,26 @@
 ## Ce qui a été fait cette session
 
 ### 1. Audit Opus Finalisé
+
 - 3 findings (HIGH/MEDIUM/LOW) tous fixés
 - Documentation créée: `docs/security-audit-log.md`
 - Protocole CLAUDE.md renforcé
 
 ### 2. Analyse de Sécurité IA Complète
+
 - OWASP LLM Top 10 pour Terminal Learning
 - 8 vecteurs d'attaque spécifiques identifiés
 - Menaces 2026 (IA booster) documentées
 - Fichiers de mémoire créés (persistent)
 
 ### 3. Nouvelles Règles de Session
+
 - 10 règles non-négociables pour Phase 7b
 - Checklist de session obligatoire
 - Violations critiques = revert immédiat
 
 ### 4. Tests & Infra
+
 - 44 fuzz tests qui passent
 - 979 tests totaux passant
 - Tous les agents prêts à l'emploi
@@ -34,7 +38,9 @@
 ## Comment Appliquer à la Prochaine Session
 
 ### Étape 1: Charger les Mémoires
+
 Demande au démarrage:
+
 ```
 /remember security_ai_comprehensive_analysis
 /remember security_new_session_rules
@@ -43,7 +49,9 @@ Demande au démarrage:
 Ou vérifie le fichier: `C:\Users\thier\.claude\projects\f--PROJECTS-Apps-Terminal-Learning\memory\MEMORY.md` (lignes 40-41)
 
 ### Étape 2: Checklist de Sécurité Dès le Départ
+
 Avant de coder, demande:
+
 ```
 Checklist de sécurité THI-120?
 - [ ] Sentry scrubber prêt?
@@ -53,6 +61,7 @@ Checklist de sécurité THI-120?
 ```
 
 ### Étape 3: Agent Obligatoire pour Chaque PR
+
 **Si la PR touche**: Auth / RBAC / RLS / API / Crypto  
 → `security-auditor` AVANT coding (non-négociable)
 
@@ -60,13 +69,17 @@ Checklist de sécurité THI-120?
 → `prompt-guardrail-auditor` AVANT coding (non-négociable)
 
 ### Étape 4: Archiver les Rapports d'Agent
+
 Avant de merger:
+
 ```bash
 gh pr comment <NUMBER> --body "$(cat <agent-report.txt>)"
 ```
 
 ### Étape 5: Vérifier les Violations Critiques
+
 Avant chaque merge, vérifier:
+
 - ❌ Clé API exposée au LLM? → REVERT
 - ❌ HTML/JS dans sanitizer? → REVERT
 - ❌ Historique terminal à OpenRouter? → REVERT
@@ -142,6 +155,7 @@ THI-113: Final Audit
 ## Métrique de Succès
 
 Après Phase 7b:
+
 - [ ] 0 clés API exposées en logs
 - [ ] 0 réussites jailbreak (15+ patterns testés)
 - [ ] 100% sanitizer tests passent

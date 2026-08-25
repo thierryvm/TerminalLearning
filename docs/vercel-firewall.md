@@ -38,17 +38,21 @@ Header requis : `Authorization: Bearer <VERCEL_TOKEN>`.
 ## Custom rules — actives
 
 ### Rule 1 — Block Common Attack Paths
+
 - **ID** : `rule_block_common_attack_paths_vdZOUZ`
 - **Action** : `deny` (403 avec header `x-vercel-mitigated: deny`)
 - **Type** : `path` avec opérateur `re` (regex)
 - **Pattern** :
+
   ```
   ^/(wp-admin|wp-login\.php|wp-content|wp-includes|wp-config|xmlrpc\.php|\.env|\.git|phpmyadmin|phpMyAdmin|pma|administrator|wordpress|adminer|cgi-bin)
   ```
+
 - **Rationale** : chemins que jamais aucun user légitime ne visite sur un SPA Vite. Bloque les scanners WordPress/Joomla/phpMyAdmin avant qu'ils ne consomment une invocation Fluid Compute.
 - **Faux positifs possibles** : aucun identifié. `.env` et `.git` ne sont pas servis en prod (`.gitignore` + Vite dist).
 
 ### Rule 2 — Block Scanner User Agents
+
 - **ID** : `rule_block_scanner_user_agents_JRvc3A`
 - **Action** : `deny`
 - **Type** : `user_agent` avec opérateur `sub` (substring, case-sensitive)
@@ -72,6 +76,7 @@ Header requis : `Authorization: Bearer <VERCEL_TOKEN>`.
 Si une rule cause un faux positif en prod :
 
 1. **Désactiver sans supprimer** (réversible en 1 call) :
+
    ```bash
    curl -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" \
      -H "Content-Type: application/json" \
@@ -80,6 +85,7 @@ Si une rule cause un faux positif en prod :
    ```
 
 2. **Supprimer définitivement** :
+
    ```bash
    curl -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" \
      -H "Content-Type: application/json" \
@@ -88,6 +94,7 @@ Si une rule cause un faux positif en prod :
    ```
 
 3. **Désactiver tout le firewall** (dernier recours) :
+
    ```bash
    curl -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" \
      -H "Content-Type: application/json" \

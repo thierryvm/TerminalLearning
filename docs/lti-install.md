@@ -55,6 +55,7 @@ Terminal Learning est un **outil pédagogique spécialisé** (pas un LMS). Vous 
 ### 2. Provisionner l'outil dans votre LMS
 
 #### Canvas (Cloud)
+
 1. **Admin** → **Developer Keys** → **+ LTI Key**
 2. **Method** : Enter URL → coller `https://terminallearning.dev/api/lti/config.json` *(à venir, voir Roadmap)*
 3. **Pour V1**, configurer manuellement avec les paramètres ci-dessus
@@ -62,6 +63,7 @@ Terminal Learning est un **outil pédagogique spécialisé** (pas un LMS). Vous 
 5. **Sub-Accounts** → **Settings** → **Apps** → **+ App** → **By Client ID**
 
 #### Moodle 3.9+
+
 1. **Site administration** → **Plugins** → **Activity modules** → **External tool** → **Manage tools**
 2. **Add tool** → Configuration manually
 3. Tool URL : `https://terminallearning.dev/api/lti/launch`
@@ -70,6 +72,7 @@ Terminal Learning est un **outil pédagogique spécialisé** (pas un LMS). Vous 
 6. Initiate login URL : `https://terminallearning.dev/api/lti/launch`
 
 #### Smartschool (Belgique)
+
 *Documentation à finaliser avec un partenaire pilote — contact thierryvm@gmail.com pour validation V1.*
 
 ### 3. Tester avec un compte de classe

@@ -40,6 +40,7 @@ N'utilise PAS un flag pour :
 `VITE_<DOMAIN>_<FEATURE>_ENABLED` ou `VITE_<DOMAIN>_<FEATURE>_<MODE>`.
 
 Exemples :
+
 - `VITE_AI_TUTOR_ENABLED` ✅
 - `VITE_LTI_DEEP_LINKING_ENABLED` ✅
 - `VITE_BILLING_MODE` (avec valeurs `none|stripe|manual`) ✅
@@ -132,6 +133,7 @@ Si une feature posent un problème en prod (bug critique, fuite de données, abu
 ## Anti-patterns connus
 
 ❌ **Ne pas** lire le flag plusieurs fois pendant le render :
+
 ```tsx
 function Bad() {
   if (import.meta.env.VITE_X !== 'true') return null;  // re-eval each render

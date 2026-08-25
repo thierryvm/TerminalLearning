@@ -56,6 +56,7 @@ cd "$(git rev-parse --show-toplevel)" && npx vitest run 2>&1
 ```
 
 Extrait uniquement :
+
 - Nombre total : pass / fail / skip
 - Pour chaque test en FAIL : nom du test + message d'erreur (1 ligne max)
 - Tests skippés si > 5
@@ -72,6 +73,7 @@ grep -rnE "\b(it|describe|test|suite)\.(only|skip)\(" src/test/ e2e/ 2>/dev/null
 ```
 
 Filtres :
+
 - Pattern précis `(it|describe|test|suite)\.(only|skip)\(` → évite les faux positifs sur des strings comme `"using .only("` ou des références hors test (`Object.skip`).
 - Post-filter `grep -v` exclut les lignes dont le contenu commence par un commentaire JS (`//`, `/*`, ` *`).
 

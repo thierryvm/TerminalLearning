@@ -55,6 +55,7 @@ Speed Insights data accessible aussi via Drains uniquement (`/docs/drains/refere
 5. **THI-77 student heatmap** : data dans Supabase `progress` table, agrégat per day, palette emerald (GitHub-style)
 
 **v2 post-deadline 10 juin** (si écoles paient ou si revenus permettent) :
+
 - Upgrade Pro Vercel ($20/mois)
 - Endpoint `api/drains/analytics` reçoit Vercel events
 - Table Supabase `analytics_events` (RLS read super_admin only)

@@ -42,6 +42,7 @@ Idée : script `scripts/release-sync.ts` qui prend une version + résumé et pro
 ## Claims à vérifier avant release publique
 
 Voir `docs/GUIDELINES.md` section "Crédibilité B2B". Avant tout texte public :
+
 - ❌ Aucun claim non vérifiable
 - ❌ Aucune métrique inventée
 - ❌ Aucune référence à des features pas encore live

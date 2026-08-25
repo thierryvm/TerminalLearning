@@ -8,12 +8,14 @@
 ## Quick Navigation
 
 ### Strategic & Architecture
+
 - **[ROADMAP.md](ROADMAP.md)** — Public product roadmap (phases 0–7b, feature timeline, community tracking)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — System design, layer breakdown, data flows, security model
 - **[plan.md](plan.md)** — Detailed implementation roadmap with milestones, dependencies, and risks
 - **[CONVENTIONS.md](CONVENTIONS.md)** — Coding standards, commit format, branch strategy, style guide
 
 ### Decision Records
+
 - **[adr/](adr/)** — Architecture Decision Records (ADR-001 through ADR-007 ; ADR-008 reserved for THI-144 system prompt v1.1.0)
   - ADR-001: LTI-first positioning (institutional adoption strategy)
   - ADR-002: OpenRouter BYOK tiers (AI cost model)
@@ -24,26 +26,31 @@
   - ADR-007: Solo maintainer sustainability practices (rest cycle, oncall hygiene, quarterly reviews)
 
 ### Security & Compliance
+
 - **[SECURITY.md](SECURITY.md)** — Security policy, vulnerability disclosure, threat model, OWASP Top 10 coverage
 - **[security-audit-log.md](security-audit-log.md)** — Audit trail of security findings, fixes, and verifications (timestamp-indexed)
 - **[vercel-firewall.md](vercel-firewall.md)** — Vercel Firewall WAF rules, custom patterns, rate limiting configuration, and rollback procedures
 
 ### User Guides
+
 - **[guides/student-guide.md](guides/student-guide.md)** — Getting started for learners (curriculum structure, progress tracking, authentication)
 - **[guides/teacher-guide.md](guides/teacher-guide.md)** — Classroom management, student assignment, progress monitoring
 - **[guides/institution-guide.md](guides/institution-guide.md)** — LTI integration, bulk enrollment, RBAC roles, reporting
 - **[guides/admin-runbook.md](guides/admin-runbook.md)** — Operations manual for system administrators (maintenance, troubleshooting, backups, incident response)
 
 ### Processes
+
 - **[processes/release-sync-checklist.md](processes/release-sync-checklist.md)** — Pre-release verification steps (CI, tests, docs, analytics, deploy)
 - **[processes/gdpr-data-request.md](processes/gdpr-data-request.md)** — Handling user data access/deletion requests (legal compliance)
 - **[processes/teacher-approval.md](processes/teacher-approval.md)** — Vetting flow for institutional teacher accounts
 - **[processes/adr-template.md](processes/adr-template.md)** — Template for proposing new architectural decisions
 
 ### Troubleshooting
+
 - **[troubleshooting/auth-issues.md](troubleshooting/auth-issues.md)** — Common authentication problems and solutions
 
 ### Reference
+
 - **[ATTRIBUTIONS.md](ATTRIBUTIONS.md)** — Credits and open-source licenses used in the project
 - **[GUIDELINES.md](GUIDELINES.md)** — Development guidelines and best practices
 
@@ -52,6 +59,7 @@
 ## Archived Documentation
 
 Historical and session-transition documents have been moved to `.archive/`:
+
 - **AGENT-RESILIENCE.md** — Theoretical defense strategies (planned, never implemented)
 - **SECURITY-SESSION-TRANSITION.md** — Briefing for next session (now stale)
 - **processes/next-session-plan.md** — Session planning (obsoleted by CLAUDE.md)
@@ -64,18 +72,23 @@ These files remain in `.archive/` for historical reference. Current session prot
 ## Key Files by Role
 
 ### For Product Managers
+
 → ROADMAP.md, plan.md, guides/
 
 ### For Engineers
+
 → ARCHITECTURE.md, CONVENTIONS.md, adr/, security-audit-log.md, plan.md
 
 ### For Security Auditors
+
 → SECURITY.md, security-audit-log.md, vercel-firewall.md, ADR-005
 
 ### For Teachers & Institutions
+
 → guides/teacher-guide.md, guides/institution-guide.md, guides/admin-runbook.md
 
 ### For System Admins
+
 → guides/admin-runbook.md, security-audit-log.md, processes/
 
 ---

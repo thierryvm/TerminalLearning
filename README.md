@@ -86,6 +86,7 @@ Full architecture, data flow diagrams, and database schema are documented in [do
 ## 🔒 Security
 
 Security is built in from day one — multi-agent audit (17 May 2026) :
+
 - `security-auditor` (app-layer OWASP) : **8.8/10**
 - `llm-security-auditor` (AI Tutor BYOK) : **9.4/10**
 - `lti-auditor` (LTI 1.3 crypto chain) : **9.5/10**

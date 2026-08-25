@@ -165,6 +165,7 @@ ADR-001 a positionné Terminal Learning comme **outil pédagogique spécialisé 
 ## Testing Strategy (SPIKE + Phase 7c)
 
 ### SPIKE E2E (minimal)
+
 ```bash
 # Canvas sandbox login flow
 1. Click LTI activity in Canvas course
@@ -176,6 +177,7 @@ ADR-001 a positionné Terminal Learning comme **outil pédagogique spécialisé 
 ```
 
 ### Phase 7c E2E (full)
+
 ```bash
 # With Playwright
 1. Canvas login (selenium/canvas API)
@@ -192,17 +194,20 @@ ADR-001 a positionné Terminal Learning comme **outil pédagogique spécialisé 
 ## Security & RLS
 
 ### JWT Validation
+
 - **Public key trust**: Fetch Canvas public key from `.well-known/openid-configuration`, cache 24h
 - **Signature verify**: ALWAYS verify HMAC-SHA256 (Canvas uses RS256 typically)
 - **Exp + iat**: Verify `exp > now` and `iat < now + 5min` (clock skew tolerance)
 - **Issuer claim**: MUST match expected Canvas instance URL
 
 ### RLS Policies
+
 - `lti_users`: user_id can only view own row (privacy)
 - `lti_sessions`: user_id can only manage own sessions
 - Grade passback: only Terminal Learning (authenticated as app) can write lineitem scores
 
 ### Audit log
+
 - Every `/api/lti/launch` logged: timestamp, LMS, user_id, role, result (success/failure)
 - Every grade passback logged: lineitem_url, score, timestamp, response
 
@@ -226,11 +231,13 @@ ADR-001 a positionné Terminal Learning comme **outil pédagogique spécialisé 
 ## Go/No-Go Criteria (SPIKE completion)
 
 ✅ **GO** if:
+
 - Canvas JWT validation successful
 - `/api/lti/launch` endpoint receives + parses JWT correctly
 - No critical unknowns surface
 
 🛑 **NO-GO** if:
+
 - Canvas public key URL format incompatible
 - JWT signature validation fundamentally broken
 - AGS endpoint unreachable / auth scheme mismatch

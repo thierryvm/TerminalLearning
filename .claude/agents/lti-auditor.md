@@ -60,12 +60,14 @@ VERDICT: ✅ Pas de surface LTI runtime à auditer pour l'instant (api/lti/launc
 Lire `src/lib/lti/verifyJwt.ts`. Pour chaque check, **citer fichier:ligne** :
 
 ### Check 1 — RS256 signature verification (CRITICAL si KO)
+
 - ✅ Doit utiliser `jose.jwtVerify(token, JWKS, { algorithms: ['RS256'] })` ou équivalent strict
 - ❌ Anti-pattern : `algorithms` absent → autorise alg=none par défaut sur certaines libs
 - ❌ Anti-pattern : `algorithms: ['HS256', 'RS256']` → autorise HMAC, attaquant peut signer avec la clé publique connue
 - ❌ Anti-pattern : `ignoreExpiration: true` ou `clockTolerance > 60s`
 
 ### Check 2 — iss (issuer) whitelist (CRITICAL si KO)
+
 - ✅ Doit valider `iss` contre `ALLOWED_ISSUERS` (allowlist hardcodée ou env strict)
 - ✅ Issuers attendus : `https://canvas.instructure.com`, `https://moodlecloud.com`, `https://smartschool.be`
 - ❌ Anti-pattern : pas de check iss → SSRF possible vers JWKS attaquant
@@ -73,32 +75,38 @@ Lire `src/lib/lti/verifyJwt.ts`. Pour chaque check, **citer fichier:ligne** :
 - ❌ Anti-pattern : iss lu depuis le JWT et utilisé pour fetcher JWKS sans validation préalable
 
 ### Check 3 — aud (audience) match (CRITICAL si KO)
+
 - ✅ Doit valider `aud === TL_CLIENT_ID` (env `LTI_CLIENT_ID` ou équivalent)
 - ❌ Anti-pattern : pas de check aud → un JWT valide pour une AUTRE app peut ouvrir une session TL
 - ❌ Anti-pattern : aud accepté en tableau sans filtre
 
 ### Check 4 — exp/iat strict ≤5min skew (HIGH si KO)
+
 - ✅ `clockTolerance` doit être ≤ `30` secondes (`'30s'` jose syntaxe)
 - ✅ `iat` doit être présent et passé (pas dans le futur)
 - ❌ Anti-pattern : `ignoreExpiration: true`
 - ❌ Anti-pattern : `clockTolerance: '5m'` ou plus
 
 ### Check 7 — kid matches JWKS (HIGH si KO)
+
 - ✅ `createRemoteJWKSet(jwksUri, { cooldownDuration, timeoutDuration })` — jose gère kid matching natif
 - ✅ `cooldownDuration` ≥ 30s (limite re-fetch en cas d'attaque DOS sur JWKS)
 - ✅ `timeoutDuration` ≤ 5s (évite slowloris depuis le LMS attaquant)
 - ❌ Anti-pattern : extraction manuelle de kid + key lookup custom (bug-prone)
 
 ### Check 8 — alg ≠ none (CRITICAL si KO)
+
 - ✅ Garanti par check 1 (algorithms allowlist)
 - ❌ Anti-pattern : décoder le header JWT pour lire `alg` côté code avant verify → si on bypass verify, alg=none passe
 
 ### Check 9 — deployment_id présent (HIGH si KO)
+
 - ✅ Claim `https://purl.imsglobal.org/spec/lti/claim/deployment_id` doit être présent et non-vide
 - ✅ Idéalement validé contre une liste de `(iss, deployment_id)` connue par TL (Phase 9 admin panel)
 - ❌ Anti-pattern : ignorer le claim → un LMS valide mais non-provisionné peut ouvrir des sessions
 
 ### Check 10 — target_link_uri same-origin (CRITICAL si KO)
+
 - ✅ Claim `https://purl.imsglobal.org/spec/lti/claim/target_link_uri` doit être présent
 - ✅ Doit match `https://terminallearning.dev` (`new URL(target_link_uri).origin === ALLOWED_ORIGIN`)
 - ❌ Anti-pattern : redirect vers `target_link_uri` sans validation → open redirect / session hijack via subdomain takeover
@@ -110,6 +118,7 @@ Lire `src/lib/lti/verifyJwt.ts`. Pour chaque check, **citer fichier:ligne** :
 Lire `src/lib/lti/nonceStore.ts`. Pour chaque check :
 
 ### Check 5 — nonce store collision detection (CRITICAL si KO)
+
 - ✅ Store doit rejeter un `jti` déjà vu dans la fenêtre TTL
 - ✅ Store doit être indexé par `jti` (clé) et stocker au minimum `expiresAt`
 - ✅ Cleanup automatique des entrées expirées (TTL ≥ 5min, ≤ 1h)
@@ -117,6 +126,7 @@ Lire `src/lib/lti/nonceStore.ts`. Pour chaque check :
 - ❌ Anti-pattern : check + insert non-atomique → race condition (deux requêtes parallèles avec même jti passent)
 
 ### Check 6 — jti uniqueness window (HIGH si KO)
+
 - ✅ TTL nonce ≥ JWT exp - iat (sinon replay possible juste après TTL expiry mais avant JWT expiry)
 - ✅ Pour LTI : JWT exp typique = 5 minutes → nonce TTL ≥ 5 minutes recommandé
 - ✅ Note dans le code : "nonce store is best-effort (memory-only); DB UNIQUE(jti) sur lti_launches est la garantie canonique"
@@ -210,7 +220,9 @@ VERDICT : ✅ Propre (safe to merge) | ⚠ N warnings, 0 critiques | ❌ N criti
 Retourne UNIQUEMENT ce rapport + 3 actions prioritaires numérotées.
 
 ## Note V2 (post-MVP)
+
 Quand la persistence Supabase + AGS grade passback seront en place :
+
 - Joindre `lti_launches.jti` ↔ `lti_grades.jti` pour audit chain complet
 - Vérifier signature OAuth 2.0 Bearer token AGS (POST lineitem.url)
 - Vérifier que TL ne fait jamais SELECT sur `lti_launches` côté client (RLS doit refuser)

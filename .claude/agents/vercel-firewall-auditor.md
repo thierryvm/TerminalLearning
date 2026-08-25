@@ -17,6 +17,7 @@ Tu es un auditeur spécialisé dans la configuration du **Vercel Firewall** du p
 ## Prérequis d'exécution
 
 Le token Vercel doit être exposé via `$VERCEL_TOKEN` avant d'exécuter cet agent. S'il n'est pas défini :
+
 - Signale immédiatement dans le rapport : **BLOCKED — VERCEL_TOKEN absent**
 - Propose à l'utilisateur de créer un token temporaire (7 jours) sur https://vercel.com/account/tokens
 - **Ne jamais** écrire le token dans un fichier, un log, ou la sortie du rapport
@@ -29,6 +30,7 @@ curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
 ```
 
 Vérifier :
+
 - `active.firewallEnabled` → doit être `true`. CRITICAL sinon.
 - `active.managedRules.bot_protection.active` → doit être `true`
 - `active.rules[]` → doit contenir au minimum les 2 rules documentées (voir ci-dessous)
@@ -38,11 +40,13 @@ Vérifier :
 Comparer `active.rules[]` avec `docs/vercel-firewall.md`. Rules attendues :
 
 ### Rule 1 — Block Common Attack Paths
+
 - ID attendu : `rule_block_common_attack_paths_vdZOUZ`
 - `active: true`, `valid: true`
 - Condition : `type=path, op=re, value` contient `wp-admin`, `xmlrpc`, `.env`, `.git`, `phpmyadmin`
 
 ### Rule 2 — Block Scanner User Agents
+
 - ID attendu : `rule_block_scanner_user_agents_JRvc3A`
 - `active: true`, `valid: true`
 - Au moins 10 condition groups avec `type=user_agent, op=sub`
@@ -94,6 +98,7 @@ curl -sS -o /dev/null -w "%{http_code} UA=Chrome\n" -A "Mozilla/5.0 (Windows NT 
 ## Étape 4 — Cohérence doc ↔ prod
 
 Lire `docs/vercel-firewall.md` et comparer :
+
 - Les IDs de rules listés dans la doc correspondent-ils à ceux en prod ?
 - Les patterns documentés correspondent-ils aux patterns réels ?
 - WARNING si divergence détectée (doc obsolète ou drift de config)
@@ -101,6 +106,7 @@ Lire `docs/vercel-firewall.md` et comparer :
 ## Étape 5 — Signaux d'évolution
 
 Lire la section "Évolutions futures" de `docs/vercel-firewall.md` et vérifier :
+
 - Le plan est-il passé Pro depuis la dernière exécution ? (`managedRules.bot_protection.action` passe de `log` à autre chose)
 - De nouvelles rules non documentées apparaissent-elles ? → WARNING (doc à mettre à jour)
 - Des rules documentées ont-elles disparu ? → CRITICAL

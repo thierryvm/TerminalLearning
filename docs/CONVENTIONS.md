@@ -15,6 +15,7 @@
 | Chore | `chore/THI-XX-description` | `chore/THI-3-update-deps` |
 
 **Règles :**
+
 - Toujours partir de `main` à jour
 - Jamais de commit direct sur `main`
 - Inclure l'identifiant Linear (`THI-XX`) dans le nom de branche → lie automatiquement la PR à l'issue
@@ -30,6 +31,7 @@ type(scope): description courte en anglais
 **Types autorisés :** `feat` `fix` `docs` `chore` `refactor` `test` `security`
 
 **Exemples :**
+
 ```
 feat(curriculum): add git basics module
 fix(terminal): handle empty input without crash
@@ -45,6 +47,7 @@ chore(deps): upgrade vite to 6.2
 **Exemple :** `feat(THI-12): add git basics module`
 
 **Template body :**
+
 ```
 ## Summary
 - Ce que cette PR fait (1-3 bullets)
@@ -62,6 +65,7 @@ Pourquoi ce changement est nécessaire.
 ```
 
 **Règles :**
+
 - CI doit passer avant merge
 - Au moins 1 review si collaborateur présent
 - Squash merge préféré pour garder `main` propre
@@ -79,9 +83,11 @@ Pourquoi ce changement est nécessaire.
 | **Done** | PR mergée dans `main` |
 
 **Convention de nommage :**
+
 ```
 type: description courte en anglais
 ```
+
 Exemples : `feat: add progress export`, `fix: lesson 3 typo`, `docs: update roadmap`
 
 ---
@@ -207,6 +213,7 @@ revoke execute on function public.<nom_fonction>() from public;
 ### Cas particulier : SECURITY DEFINER functions
 
 Pour les fonctions `SECURITY DEFINER` :
+
 - Si **trigger-only** (pas appelée en RPC) : `revoke execute from PUBLIC` + `revoke execute from anon, authenticated` (defense in depth)
 - Si **RLS-essential** (invoquée par USING clauses) : **NE PAS REVOKE** — PostgreSQL exige EXECUTE même pour invocation via RLS. Solution structurelle : déplacer dans schema `private` non-exposé par PostgREST.
 
@@ -226,6 +233,7 @@ Vu empiriquement migration 015 : `REVOKE FROM anon, authenticated` ne suffit pas
 | `CLAUDE.md` | Règle projet ou décision technique durable |
 
 **Règle anti-doublon :**
+
 - `plan.md` = état du projet (phases, to-do, décisions en attente)
 - `CONVENTIONS.md` = règles de travail (git, PR, workflow)
 - `README.md` = documentation publique (stack, démo, setup)
