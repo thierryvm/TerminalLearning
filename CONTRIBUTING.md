@@ -13,6 +13,7 @@ npm run dev
 ```
 
 **Env vars** (see `.env.example`):
+
 - `VITE_SUPABASE_URL` — Supabase dashboard → Settings → API
 - `VITE_SUPABASE_ANON_KEY` — same location (public anon key, safe for client)
 - `VITE_SENTRY_DSN` — optional, Sentry project DSN
@@ -51,6 +52,7 @@ Each command **must** have a test in `src/test/terminalEngine.test.ts`.
 ## Adding Lessons
 
 Lessons live in `src/app/data/curriculum.ts`. Each lesson needs:
+
 - A unique `id` (slug), `title`, `description`, `blocks` (content), optional `exercise`
 
 ## Auth-Gated Features (Phase 3+)

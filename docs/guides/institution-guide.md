@@ -22,11 +22,13 @@ Exemple : si vous configurez `@ulb.be`, tout enseignant s'inscrivant avec une ad
 ## 3. Gérer les enseignants
 
 **Approuver une demande d'enseignant :**
+
 1. Admin Panel → Enseignants → Demandes en attente
 2. Vérifier l'identité et l'institution
 3. Approuver → l'enseignant reçoit l'accès immédiatement
 
 **Révoquer un accès enseignant :**
+
 1. Admin Panel → Enseignants → [Nom] → Désaffilier
 2. L'enseignant repasse en `student`
 3. Ses classes restent accessibles aux étudiants jusqu'à réassignation

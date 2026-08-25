@@ -95,6 +95,7 @@ export function NomComposant({ prop }: NomComposantProps) {
 ```
 
 Règles :
+
 - Un composant = un fichier = une responsabilité
 - Pas de logique métier dans les composants UI (extraire dans des hooks)
 - Hooks custom dans `src/app/hooks/`
@@ -158,6 +159,7 @@ E2E : **Playwright** (3 suites dans `e2e/` : accessibility, mobile, seo — excl
 | E2E | Parcours utilisateur complets | Playwright (pre-release) |
 
 Règles :
+
 - **Chaque nouvelle commande dans `terminalEngine.ts` = test obligatoire** dans `src/test/terminalEngine.test.ts`
 - **Chaque modification de `curriculum.ts`** : invoquer l'agent `curriculum-validator` avant
 - Coverage minimum cible : **80%** sur les parties critiques (terminal engine, auth, routing)
@@ -168,6 +170,7 @@ Règles :
 ## 7. Workflow Git
 
 ### Branches
+
 ```
 main        → production (protégée, déploiement Vercel auto)
 feature/xxx → nouvelles features
@@ -177,6 +180,7 @@ release/vX.Y.Z → préparation de la release
 ```
 
 ### Format des commits
+
 ```
 type(scope): description courte
 
@@ -188,6 +192,7 @@ Exemples :
 ```
 
 ### Avant chaque merge
+
 1. CI verte (type-check + lint + test + build)
 2. Sourcery review vérifié : `gh pr view N --comments 2>&1 | grep -A 15 -i "sourcery"`
 3. Validation visuelle Vercel Preview (Thierry — Chrome + mobile)

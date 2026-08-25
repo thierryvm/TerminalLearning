@@ -32,33 +32,41 @@ Si une surface est absente → la signaler en mode pré-chantier (checks documen
 Pour chaque fichier `supabase/functions/<name>/index.ts` :
 
 ### 1.1 Secret handling (CRITICAL)
+
 - [ ] `RESEND_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / toute clé lus via `Deno.env.get()` — **jamais** hardcodés.
 - [ ] Aucune clé ne fuit dans : `console.log`, le body de réponse, un message d'erreur renvoyé au client, un header de réponse.
 - [ ] En cas d'erreur upstream (Resend 4xx/5xx) → message générique au client, détail loggé côté serveur sans la clé.
 
 ### 1.2 Auth & JWT verify (CRITICAL)
+
 - [ ] `verify_jwt` activé (déploiement) SAUF si auth custom documentée (API key, webhook signé). Si désactivé → vérifier la raison.
 - [ ] Le caller est authentifié AVANT toute action sensible.
 
 ### 1.3 BOLA / autorisation objet (CRITICAL)
+
 - Si la fonction agit sur un objet identifié par un input client (ex : `ticket_id`) → **vérifier que l'objet appartient au caller** avant d'agir.
 - Test empirique : user A appelle la fonction avec le `ticket_id` de user B → doit être refusé (403/404), pas exécuté.
   - Exemple Resend notify : user A peut-il déclencher un email sur le ticket de user B ? (fuite PII + spam)
 
 ### 1.4 SSRF & destination
+
 - [ ] La destination des appels sortants (ex : `api.resend.com`) est **hardcodée**, jamais influencée par un input user (pas de `fetch(userProvidedUrl)`).
 - [ ] Permissions Deno minimales si configurées (`--allow-net` restreint au domaine cible idéalement).
 
 ### 1.5 CORS
+
 - [ ] `Access-Control-Allow-Origin` = origine spécifique (`terminallearning.dev`), pas `*` si la fonction lit des credentials/cookies.
 
 ### 1.6 Rate limiting / abuse
+
 - [ ] La fonction peut-elle être spammée (ex : notify appelé 1000×/s → flood Resend quota + flood email @thierry) ? Rate limit par user_id ou throttle.
 
 ### 1.7 Input validation
+
 - [ ] Zod (ou équivalent) sur le body. Taille max. Types stricts.
 
 ### Test empirique Edge Function (curl)
+
 ```bash
 # Obtenir un JWT (user A)
 # puis invoquer la fonction avec un id appartenant à user B → expect 403/404
@@ -77,16 +85,19 @@ curl -sS -X POST "$VITE_SUPABASE_URL/functions/v1/<name>" -d '{}' -w "\nHTTP %{h
 Pour chaque bucket (ex : `support_screenshots`, futurs imports) :
 
 ### 2.1 Bucket visibility (CRITICAL)
+
 - [ ] `public` vs `private` : un bucket contenant des PII (screenshots users, potentiellement visage/écran perso) DOIT être **private** + signed URLs TTL court.
 - [ ] Test : `GET .../storage/v1/object/public/<bucket>/<path>` en anon → si le bucket est private, expect 400/403.
 
 ### 2.2 RLS sur storage.objects (CRITICAL)
+
 - [ ] Policy INSERT : authenticated, scoped au `user_id` du caller (chemin `<user_id>/...` matche `auth.uid()`).
 - [ ] Policy SELECT : own files only (ou super_admin all si triage).
 - [ ] **Pas** de policy permettant à anon de lister/lire.
 - Test empirique (curl + JWT) : user A upload dans son dossier OK ; user A lit le fichier de user B → expect 0 rows / 403.
 
 ### 2.3 Naming & path traversal (HIGH)
+
 - [ ] Le nom de fichier stocké est **généré côté serveur** (`<user_id>/<uuid>.<ext>`), JAMAIS le nom fourni par le client (sinon `../../` path traversal ou collision).
 - [ ] L'extension est dérivée d'une whitelist, pas du nom client.
 
@@ -97,17 +108,21 @@ Pour chaque bucket (ex : `support_screenshots`, futurs imports) :
 Applicable à : screenshots (Étape 2) + import curriculum (X3b — flaggé Urgent THI-286).
 
 ### 3.1 Type & contenu
+
 - [ ] MIME validé **côté serveur** (Edge Function ou policy), pas seulement `accept=""` côté `<input>` (trivialement contournable).
 - [ ] **Magic bytes** vérifiés : le contenu réel matche le type déclaré (un `.png` qui commence par `<script>` ou `PK\x03\x04` est rejeté).
 - [ ] Taille max imposée (ex : 5 MB) — côté serveur.
 
 ### 3.2 Vecteurs XSS / exécution
+
 - [ ] **SVG rejeté** (ou sanitizé) — un SVG peut embarquer `<script>` → XSS au rendu dans le panel super_admin.
 - [ ] Pas de `.html`, `.js`, `.svg`, `.xml` acceptés pour un screenshot (whitelist images raster uniquement : png/jpg/webp).
 - [ ] Au rendu super_admin : `screenshot_url` jamais injectée en `javascript:`/`data:` (cf. CHECK constraint migration 029 — vérifier qu'elle tient).
 
 ### 3.3 Vecteurs archive (X3b import — CRITICAL)
+
 Si import accepte un zip/SCORM :
+
 - [ ] **Zip slip** : entrées d'archive avec `../` dans le path → rejet. Tester avec une archive malveillante.
 - [ ] **Decompression bomb** : ratio compressé/décompressé plafonné, taille décompressée max.
 - [ ] **XXE** : si parsing XML (SCORM 2004), entités externes désactivées (`libxml` no-network, no-entity).
@@ -115,6 +130,7 @@ Si import accepte un zip/SCORM :
 - [ ] Chemins internes whitelist (pas de symlinks, pas de fichiers hors structure attendue).
 
 ### 3.4 Sandbox commandes (X3b — cohérence content-auditor)
+
 - [ ] Chaque commande/exercice du curriculum importé est pré-validée dans le sandbox `terminalEngine.ts` AVANT publication (whitelist commandes + block fork bomb / recursive delete / network exfil / secrets refs). Cf. ticket THI-286 + prompt-guardrail-auditor pour la sanitization avant injection AI Tutor.
 
 ---

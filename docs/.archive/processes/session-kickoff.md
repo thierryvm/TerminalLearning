@@ -20,6 +20,7 @@ Si **1+ signal rouge** → proposer explicitement pause ou scope réduit avant d
 ## Étape 2 — Invocation `linear-sync`
 
 Lancer l'agent `linear-sync` :
+
 - Vérifie cohérence PRs GitHub ↔ statuts Linear
 - Détecte issues orphelines, branches orphelines, PR↔Linear mismatches
 - Si CRITICAL détecté → corriger avant de continuer
@@ -29,6 +30,7 @@ Lancer l'agent `linear-sync` :
 ## Étape 3 — État Git
 
 Commandes parallèles :
+
 ```bash
 git status
 git log --oneline -5
@@ -50,6 +52,7 @@ Si Thierry a une issue `In Progress` assignée, la lire intégralement avant tou
 `docs/processes/next-session-plan.md` contient le plan préparé à la session précédente.
 
 Si le fichier existe :
+
 - Lire intégralement
 - Proposer à Thierry de démarrer par la priorité #1 listée
 - Ne pas commencer sans son "go" explicite
@@ -61,6 +64,7 @@ Si le fichier n'existe pas : demander à Thierry ce qu'il veut faire cette sessi
 ## Étape 6 — Vérifier contexte mémoire
 
 Vérifier que les mémoires suivantes sont fraîches (< 30 jours) :
+
 - `project_platform_vision_v2.md` — **SOURCE DE VÉRITÉ** stratégique
 - `project_terminal_learning.md` — état phases
 - `user_health_signals.md` — règle slow-down
@@ -73,6 +77,7 @@ Si > 30 jours non modifié sur un fichier core → flag à Thierry pour refresh 
 ## Étape 7 — Vérification fichiers CLAUDE.md
 
 Les CLAUDE.md (global + projet) sont injectés automatiquement dans le contexte système par Claude Code. Vérifier :
+
 - `C:\Users\thier\.claude\CLAUDE.md` — règles globales dev
 - `f:\PROJECTS\Apps\Terminal Learning\CLAUDE.md` — règles projet
 

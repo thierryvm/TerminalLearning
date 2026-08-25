@@ -59,12 +59,14 @@ Pas de Llama 4 (non hosté sur OpenRouter au 24/05/2026). Pas de Grok/Mistral/No
 **Légende verdicts (rappel)** : PASS = heuristique satisfaite, WARN = limite franchie partiellement, FAIL = limite cassée, N/A = catégorie non auto-gradée (F3 multi-turn / standard pédagogique). Sur 14 fixtures, 8 sont auto-gradées (max PASS = 8/8).
 
 **Frictions ChatGPT cross-validation** (rappel ADR-008) :
+
 - **F1 compound** : la consigne « UNE SEULE question » doit faire éclater une question composée en bullets numérotés
 - **F2 over-explanation** : la consigne « éviter mécaniques internes » doit raccourcir les réponses < 800 chars
 - **F3 repeated hint** : reformulation d'angle attendue sur 2e tentative — multi-turn obligatoire pour grader (N/A en single-turn)
 - **F4 satisfaction signal** : la consigne « fermer par un récap, pas une question » doit éliminer les `?` finaux
 
 **Lecture par friction** :
+
 - **F2 = ✅ TOUS** sauf DeepSeek V3.2 (1/2). La consigne v1.1.0 fonctionne universellement pour cure mécanique.
 - **F4 = ✅ ÉCRASANTE MAJORITÉ** (8/10 modèles à 4/4). Régression frontier marquée : Haiku 4.5 chute à 2/4 (était 4/4 hier sur même fixture set), Qwen 3.7 Max 3/4 (incluant 1 ERROR rate-limit transient sur F4-fr-dir).
 - **F1 = ⚠️ régression spécifique** : Opus 4.7 + GPT-5.5 + Qwen 3.7 Max = 2/2 parfaits. Sonnet 4.6 + DeepSeek V3.2 = 1/2 (mi-temps). Les 5 autres = 0/2 (régression cruciale sur compound). Cette friction reste l'épreuve discriminante du run.
@@ -83,6 +85,7 @@ Pas de Llama 4 (non hosté sur OpenRouter au 24/05/2026). Pas de Grok/Mistral/No
 - **Haiku 4.5** : 4/8 (régression nette vs 6/8 hier sur même matrice). F4 chute à 2/4. **Variance fixture-by-fixture problématique** — réessayer en multi-run pour confirmer si signal stable ou bruit run-to-run.
 
 **Observation méta — frontier vs legacy** :
+
 - **Le gros gain frontier 2025-2026 est la latence** (GPT-5.5 440 ms, GPT-5-mini 344 ms) — pas le score. Opus 4.7 et GPT-5.5 sont 8/8 comme l'étaient Opus 4.7 et GPT-4o hier.
 - **Coût premium frontier ÷ 30 % vs legacy équivalent** sur Anthropic (pricing stable), mais ×4 sur OpenAI (gpt-4o $0.029 → gpt-5.5 $0.117 same matrix).
 - **Qwen frontier saut prix mais pas qualité** : Qwen 2.5 72B (7/8, $0.004) → Qwen 3.7 Max (7/8, $0.130) = 32× plus cher pour identique sur cette matrice. À éviter à moins de cas d'usage très spécifiques.
@@ -90,24 +93,29 @@ Pas de Llama 4 (non hosté sur OpenRouter au 24/05/2026). Pas de Grok/Mistral/No
 ## Recommandation whitelist (à valider @thierry post-lecture verbatim)
 
 ### Tier 1 — Premium recommandés (8/8)
+
 - **`openai/gpt-5.5`** : 8/8 PASS, $0.117/run, **440 ms**. Le **nouveau top performer**, meilleur ratio qualité/latence du tier premium. Privilégier pour rôles power-users (super_admin, institution_admin) où la responsivité prime.
 - **`anthropic/claude-opus-4.7`** : 8/8 PASS, $0.116/run, 1574 ms. Pour scope long/raisonneur (analyse curriculum, debug pédagogique multi-étapes). Latence 3.5× supérieure à GPT-5.5 mais réputation Anthropic plus stable sur refus/jailbreak (à confirmer par audit `llm-security-auditor` post-eval).
 
 ### Tier 2 — Default & alternatives crédibles (7/8)
+
 - **`anthropic/claude-sonnet-4.6`** *(default production actuel)* : 7/8 — stable, default prudent. $0.054/run, latence moyenne. À garder en default tant que l'écart prix vs GPT-5.5 (×2.2) reste justifié par stabilité.
 - **`qwen/qwen3.7-max`** : 7/8 mais **$0.130/run** (le plus cher du run, 1× plus que Opus 4.7). **NON recommandé** — pas de gain qualité justifiant le saut de prix. Mentionner picker UI comme « alternative chinoise » pour diversité provider, mais avec warning prix explicite.
 
 ### Tier 3 — Budget acceptables (6/8)
+
 - **`openai/gpt-5-mini`** : 6/8, **$0.017/run, 344 ms**. **Le meilleur ratio cheap du run**. À privilégier pour rôle élève (volume d'appels, sensibilité prix). Régression F1 acceptable (consistante avec tous les modèles éco).
 - **`google/gemini-2.5-flash-lite`** : 6/8, **$0.001/run**, 597 ms. Ultra-cheap, alternative diversifiée pour quotas. Régression F1 et F4 sur même fixtures que GPT-5-mini — comportement éco-modèle cohérent.
 - **`openai/gpt-5`** : 6/8, $0.083/run — pas indispensable si GPT-5.5 et GPT-5-mini disponibles. À retirer ou garder comme option intermédiaire.
 - **`deepseek/deepseek-v3.2`** : 6/8, $0.003/run — éco asiatique, à conserver pour diversité provider, mais avec warning F2 partiel.
 
 ### Tier 4 — À éviter ou flagger « instable »
+
 - **`google/gemini-3.5-flash`** : 6/8 mais **2769 ms (lent)** et $0.081/run. Pas convaincant face à Gemini 2.5 Flash Lite (même score, 80× moins cher, 4× plus rapide). À retirer du picker UI.
 - **`anthropic/claude-haiku-4.5`** : 4/8 sur ce run (régression vs 6/8 hier). Variance run-to-run suspecte. À reconduire en multi-run avant verdict final.
 
 ### Décisions UI suggérées (Stage B3)
+
 - **Default production** : conserver Sonnet 4.6 (stable, $0.054/run). Évolution possible vers GPT-5.5 si latence devient prioritaire après validation `llm-security-auditor`.
 - **Picker élève (rôle student)** : Sonnet 4.6 + GPT-5-mini + Gemini 2.5 Flash Lite + DeepSeek V3.2 (4 options, budget/qualité/diversité).
 - **Picker enseignant (rôle teacher)** : ajouter Opus 4.7 + GPT-5.5 (besoin raisonneur sur scope curriculum/correction).

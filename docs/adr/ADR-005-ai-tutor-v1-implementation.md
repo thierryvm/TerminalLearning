@@ -53,17 +53,20 @@ ADR-002 fige l'architecture BYOK 4-tiers avec OpenRouter prioritaire (zéro clé
 ## Conséquences
 
 ### Positives
+
 - V1 shippable rapidement — aucun blocker architectural non-résolu
 - Progressive disclosure : zéro friction pour Tier 0 free, sécurité max opt-in pour Tier 2
 - Agent guardrail crée le test harness avant l'implémentation, pas après
 - Décisions tracées : chaque report à V1.5 est documenté, pas oublié
 
 ### Négatives / risques
+
 - Plain localStorage par défaut = clé lisible par extensions browser → mitigé par warning explicite + opt-in chiffrement
 - Pas de rate limit hard V1 → si un user partage massivement sa clé OpenRouter, problème OR↔user, pas notre responsabilité
 - Sonnet pour l'agent guardrail = coût API (budget Thierry, ~quelques euros par audit)
 
 ### Alternatives rejetées
+
 - **Supabase Vault server-side decryption** : contredit ADR-002 "zéro clé serveur"
 - **Passphrase obligatoire pour tous les tiers** : friction prohibitive pour un apprenant A1 CEFR qui découvre la notion de clé API
 - **Edge Function proxy rate-limit V1** : anticipation sans signal d'abus observé, contredit ADR-002, nouvelle surface
@@ -77,6 +80,7 @@ ADR-002 fige l'architecture BYOK 4-tiers avec OpenRouter prioritaire (zéro clé
 - **CSP** : ajouter `https://openrouter.ai`, `https://api.anthropic.com`, `https://api.openai.com` dans `connect-src` (vercel.json) au moment de l'implémentation de `AiTutorPanel`
 
 ## Mémoires liées
+
 - `project_ai_agent_byok.md` (mise à jour en même temps que cette ADR)
 - `project_platform_vision_v2.md`
 - `feedback_doc_alignment.md`

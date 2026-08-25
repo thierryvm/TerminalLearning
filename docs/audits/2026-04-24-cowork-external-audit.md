@@ -25,6 +25,7 @@ Tu as documenté le positionnement LTI-first, les personae (student/teacher/inst
 ### ② TTFR comme KPI unique : poétiquement juste, techniquement fragile
 
 ADR-003 choisit "Time To First Real-world command" comme Nord. Le problème :
+
 - Validation = regex sur input utilisateur copié-collé (auto-report, trichable)
 - Biais massif : ceux qui oublient l'étape = pas enregistrés
 - Impossible à prouver fiablement sans accès système externe
@@ -69,6 +70,7 @@ lessons:
 ```
 
 Puis `src/app/data/curriculum.ts` = **generated from YAML**, pas manually edited. Tooling :
+
 - Script `npm run curriculum:validate` qui vérifie structure + prérequis + commandes testées
 - Script `npm run curriculum:export` qui génère CSV/Google Sheets pour enseignants
 
@@ -77,6 +79,7 @@ Puis `src/app/data/curriculum.ts` = **generated from YAML**, pas manually edited
 ### #3 — Sustain plan (PRIORITÉ HAUTE — humain, pas technique)
 
 Identifier UNE personne (même pas co-maintainer, juste **pair programming 2h/semaine**). Objectifs :
+
 - Réduire la charge mentale des audits sécurité
 - Transférer du contexte (bus factor > 1)
 - Donner une deadline externe (accountability naturelle)

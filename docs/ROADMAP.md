@@ -21,27 +21,32 @@ professionals who leverage AI as a tool, not a replacement.
 ---
 
 ## Phase 0 — Deployment ✅
+
 - [x] Vite + React + TypeScript app deployed on Vercel
 - [x] SPA routing + security headers
 - [x] GitHub Actions CI (type-check → lint → test → build)
 
 ## Phase 1 — Landing + Content ✅
+
 - [x] Landing page + routing (/, /app, /privacy)
 - [x] Interactive terminal engine
 - [x] Lesson curriculum + progress tracking
 - [x] GDPR + SEO + OpenGraph image
 
 ## Phase 2 — Observability ✅
+
 - [x] Vercel Analytics (cookieless, GDPR-compliant)
 - [x] Sentry error tracking (frontend) — EU endpoint (ingest.de.sentry.io)
 
 ## Phase 3 — User Accounts ✅
+
 - [x] Supabase Auth — email/password + OAuth GitHub + Google
 - [x] DB schema + RLS (profiles + progress tables)
 - [x] Progress sync: localStorage + Supabase hybrid (never downgrades)
 - [x] Security hardening: HSTS, CSP, rate limiting
 
 ## Phase 3.5 — UX & Auth upgrade ✅
+
 - [x] Animated terminal hero
 - [x] Sidebar auth (UserMenu, sync badge)
 - [x] OAuth loading states, TOKEN_REFRESHED sync fix
@@ -50,6 +55,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [ ] **Password strength meter + generator (THI-79):** `<PasswordStrengthBar />` (zxcvbn, score 0–4, labels FR), générateur 16 chars via `crypto.getRandomValues()`, clipboard copy — signup uniquement. Policy : students 8 chars min, teachers/admins 12 chars (Phase 9). Tests dans `passwordStrength.test.ts`.
 
 ## Phase 4 — Curriculum v2 + Environment Selection ✅
+
 - [x] Multi-environment support: Linux, macOS, Windows
 - [x] Environment selector on landing + sidebar
 - [x] Terminal engine: 30+ PowerShell aliases, macOS/Windows commands
@@ -62,6 +68,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] 192 unit tests
 
 ## Phase 4b — Perf & Quality ✅
+
 - [x] Google Fonts → self-hosted Geist — FCP 1.8s → 0.6s (PR #73)
 - [x] Custom domain terminallearning.dev live (PR #74)
 - [x] iOS zoom fix on terminal input — `font-size: 16px` mobile (PR #74)
@@ -71,6 +78,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Sitemap — terminallearning.dev domain, 42 URLs (PR #79)
 
 ## Phase 4c — Bundle Optimization ✅
+
 - [x] Remove curriculum from Landing critical path — −112 kB (PR #96, THI-81)
 - [x] Defer Supabase SDK loading — −194 kB FCP (PR #96, THI-82)
 - [x] Fix INP 592ms regression — instant scroll + MAX_LINES cap (PR #99, THI-83)
@@ -80,6 +88,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] INP fix — `setEnvironment` wrappé dans `startTransition` au context owner, lab CPU 4× : 515ms → 26ms (−95%) sur env switcher (PR #114, THI-90)
 
 ## Phase 4d — Design System Compliance ✅ Done (THI-85 / THI-91 / THI-105 / THI-106 / THI-107)
+
 - [x] Migrate custom components to shadcn/ui — NotFound (THI-85), Dashboard (THI-95), LessonPage (THI-91 chunk D), Landing chunk B/C (THI-91 chunks B/C), Sidebar (THI-91 chunk A), LoginModal / UserMenu / PrivacyPolicy / App FallbackUI (THI-107)
 - [x] `ui-auditor` agent integrated into mandatory session protocol (THI-86)
 - [x] A11y harmonisation on Button CVA variants — focus-visible rings emerald, native `disabled` on Sidebar locked rows (THI-106)
@@ -87,6 +96,7 @@ professionals who leverage AI as a tool, not a replacement.
 - [x] Zero native `<button>` in src/app/ except 2 intentional exceptions: `src/app/components/ui/sidebar.tsx` (shadcn internal) + `src/app/components/Landing.tsx:153` env toggle — ce dernier reste à migrer dans un follow-up dédié (nécessite une size `tl-env-pill-lg` non incluse dans THI-105)
 
 ## Phase 4e — Web 2026 Compliance 🔄 Epic THI-96 (14–16 April 2026)
+>
 > Full desktop + mobile conformance to 2026 web standards. 6/8 sub-issues shipped in 48h. Target users: iPhone SE 2016, Chromebook 2019, keyboard-only navigators (motor accessibility), photosensitive users.
 
 - [x] **THI-97** — `viewport-fit=cover` + `min-h-dvh` — iPhone notch + iOS dynamic URL bar (PR #121, 14 April 2026)
@@ -99,37 +109,44 @@ professionals who leverage AI as a tool, not a replacement.
 - [ ] **CSS moderne 2026** — container queries, `@property`, `color-mix()` where it simplifies the codebase
 
 ## Phase 5 — Curriculum Expansion 🔄 In progress
+
 Full-stack developer path — 11 modules ✅ (66 lessons, 1035 unit tests)
 
 ### Modules 1–7 ✅ (Phases 1–4)
+
 - [x] Navigation, Fichiers & Dossiers, Lecture de fichiers, Permissions, Processus, Redirection & Pipes (Modules 1–6)
 - [x] Variables & Scripts (Module 7) — `export`, `$PATH`, `.env`, bash scripts, cron — PR #36
 - [x] Multi-environment: Linux / macOS / Windows — env-aware exercises + terminal profiles
 - [x] 579 unit tests (12 test files) + 176 E2E tests (Playwright — 3 suites)
 
 ### Module 8 — Réseau & SSH ✅ THI-27 (PR #XX)
+
 - [x] `ping`, `traceroute`/`tracert`, `nslookup`, `dig`
 - [x] `curl` (HTTP requests, headers, REST APIs), `wget`
 - [x] SSH: key generation (`ssh-keygen`), `ssh`, `scp`, `rsync`
 - [x] Per-environment: `ip`/`ifconfig`/`ipconfig`, `netstat`/`ss`
 
 ### Module 9 — Git Fondamentaux ✅ THI-28 (PR #72)
+
 - [x] `init`, `add`, `commit`, `log`, `diff`, `status`
 - [x] `.gitignore`, branches (`branch`, `checkout`, `merge`)
 - [x] Conflict resolution, stash, tags
 
 ### Module 10 — GitHub & Collaboration ✅ THI-28 (PR #72, combined with Module 9)
+
 - [x] Remotes, push/pull, PRs, Issues, forks
 - [x] GitHub Actions CI basics
 - [x] Linear workflow integration
 
 ### Module 11 — L'IA comme outil dev ✅ THI-29 (PR #103 — 13 April 2026)
+
 - [x] 12 lessons: intro, capabilities, limits, basic prompts, advanced prompts, validation, debugging, security, Claude CLI, career paths, senior posture, complete workflow
 - [x] `ai-help` command with 11 subcommands in terminal engine
 - [x] 15 unit tests for ai-help command
 - [x] Level 5 module — prerequisite: GitHub & Collaboration (Module 10)
 
 ### Planned additions (next sprints)
+
 - [ ] **Monitoring & System Tools**: `htop` dedicated module, `ps`, `lsof`, `df`/`du`, `free`
 - [ ] **Text Editors**: nano (quick edits) + vim/neovim (full interactive course with exercises)
   - nano: basics, save, exit, search
@@ -138,6 +155,7 @@ Full-stack developer path — 11 modules ✅ (66 lessons, 1035 unit tests)
 - [ ] **Full dedicated courses** (long-term vision): Git deep-dive, Docker, shell scripting masterclass
 
 ## Phase 5b — Exercise Quality Uplift + CBE Foundation 🔮
+
 - [ ] 3–5 exercises per lesson (currently 1)
 - [ ] New exercise types: `fill-flag`, `objective-result`, `error-fix`, `pipeline`, `scenario`
 - [ ] Progressive hint system: after 2 attempts → partial hint, after 4 → suggested command
@@ -150,6 +168,7 @@ Full-stack developer path — 11 modules ✅ (66 lessons, 1035 unit tests)
   - Full-Stack track → Node.js/web context; Sysadmin track → systemd/server context
 
 ## Phase 5c — Advanced Modules (fullstack → expert networks/servers) 🔮
+
 Full module track for senior fullstack + network/server expert + security fundamentals:
 
 | Module | Title | Level |
@@ -166,6 +185,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 | 17 | AI as a Dev Tool | 3 | *(Note: Module 11 ia-dev already covers this at Level 5 — Phase 5c may refine or replace)* |
 
 ## Phase 5.5 — Terminal Sentinel ✅ THI-36 (PR #90 — 12 April 2026)
+>
 > Automated security audit tool — professional security showcase for schools and universities.
 
 - [x] **Component A — GitHub Actions weekly** (`.github/workflows/security-sentinel.yml`)
@@ -179,15 +199,18 @@ Full module track for senior fullstack + network/server expert + security fundam
 - Results feed into Admin Panel Security Center (Phase 9)
 
 ## Phase 6 — Terminal Multi-Session 🔮
+
 - [ ] Tab system: multiple independent terminal sessions
 - [ ] Each session has its own isolated TerminalState
 - [ ] Mobile: max 3 sessions, full-screen with compact tab switcher
 - [ ] Desktop: optional split-pane view
 
 ## Phase 6b — Embedded IDE + Mobile-First Refactor 🔮
+>
 > Required for Full-Stack Developer and Automation tracks. Biggest UX challenge of the project.
 
 ### Embedded IDE (sandboxed code editor)
+
 - [ ] Code editor with syntax highlighting — Bash, Python, JS/TS, HTML/CSS, JSON, YAML
   *(current preference: CodeMirror 6 — mobile-native, tree-sitter, lightweight; to be validated at implementation time)*
 - [ ] **Sandboxed execution** — 100% client-side, never server-side execution of student code
@@ -201,6 +224,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Integration with track Full-Stack Developer and Automation & Scripting
 
 ### Mobile-First Refactor (transversal — affects all components)
+
 - [ ] **Virtual keyboard bar** above native keyboard: Tab, ↑↓, Ctrl+C, `|`, `>`, `"`, `$`
 - [ ] **Adaptive layout**: mobile = terminal fullscreen + slide-up lesson panel
 - [ ] **Swipe navigation**: lesson ↔ terminal ↔ exercise on mobile
@@ -211,6 +235,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Dedicated **Mobile UX Agent** validates every PR touching layout components
 
 ## Phase 7 — Member Space + Full RBAC + Pedagogical Platform 🔄 THI-37
+>
 > DB layer ✅ Done 12 April 2026 (PR #92). UI (teacher pages, student profile, admin panel) = Phase 9.
 > Role model validated 10 April 2026. Prerequisite for Admin Panel and school/university rollout.
 > Extended 10 April 2026: CEFR levels, tracks, predictive analytics, institutional management pages.
@@ -227,12 +252,14 @@ Full module track for senior fullstack + network/server expert + security fundam
 **Teacher verification flow:** self-declare → `pending_teacher` → admin approval → `teacher` active *(no document upload — GDPR + complexity; optional v2: email domain whitelist per institution)*
 
 ### CEFR Competency Levels (hybrid display)
+
 - [ ] Add `cefrLevel` to each module in `curriculum.ts` (A1–C2)
 - [ ] Student-facing label: "B1 · Praticien" — institutional export label: "B1 (CEFR)"
 - [ ] EQF alignment: A1-A2 = EQF L3, B1 = EQF L4, B2-C1 = EQF L5
 - [ ] Certificate auto-issued on CEFR level-up (stored in `badges` table)
 
 ### Learning Tracks
+
 - [ ] New file `src/app/data/tracks.ts` — 3 initial tracks:
   - **Full-Stack Developer**: Navigation → Fichiers → Lecture → Variables → Git → GitHub → Réseau
   - **System Administrator**: Navigation → Permissions → Processus → Redirection → Variables → Réseau → SSH
@@ -242,6 +269,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Teacher can assign a track to the entire class
 
 ### Student Pages (`/app/profile`, `/app/my-progress`)
+
 - [ ] CEFR level display + progress to next level
 - [ ] Active track + progression in chosen path
 - [ ] Progress heatmap (GitHub-style calendar)
@@ -250,6 +278,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Exercise attempt history (score, attempts, hints used)
 
 ### Teacher Pages (`/app/teacher/class/:classId`)
+
 - [ ] **Class dashboard**: CEFR level per student, real-time
 - [ ] **Mastery heatmap**: who is stuck on which module, for how long (color = duration)
 - [ ] **Automatic alerts**: students inactive >7 days, score stuck <50% after 3 attempts
@@ -262,18 +291,21 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Export: CSV/PDF of certified competencies (for official school reports)
 
 ### Institution Admin Pages (`/app/admin/institution/:id`)
+
 - [ ] All classes of institution + teachers
 - [ ] Aggregate metrics: completion rate, average CEFR level, badges distributed
 - [ ] Teacher approval queue (pending_teacher flow)
 - [ ] EQF export for institutional accreditation
 
 ### Badge System
+
 - [ ] Badge types: first-command, module-complete, streak, speed-runner, no-hints, explorer, track-complete, cefr-level-up
 - [ ] Internal badges (visual) first — schema is natively compatible with Open Badges 3.0
 - [ ] Open Badges 3.0 export: Phase 11 (no data migration needed — schema-ready from day 1)
 - [ ] Shareable URL per badge (public verification page)
 
 ### DB Schema — Canonical Reference (Phase 7)
+>
 > Single source of truth for all new tables and column extensions introduced in Phase 7+.
 > Later phases (5b, 11b) reference this section rather than redefining fields.
 
@@ -297,6 +329,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] `security_reports (id, run_at, score, findings jsonb, component)` — Phase 5.5/9
 
 ## Phase 8 — Ticket System 🔮
+
 - [ ] Floating feedback button (accessible from all `/app/*` pages)
 - [ ] Types: bug / suggestion / improvement / content_request
 - [ ] Auto-captured context: selected env, current module/lesson, last command
@@ -305,6 +338,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] DB: `tickets` table — see canonical schema in Phase 7
 
 ## Phase 9 — Admin Panel 🔮
+>
 > After Phase 7 (RBAC) + meaningful traffic signal. Inspired by Grafana, Sentry, Linear.
 > Visual stack: Recharts + Supabase Realtime + dark theme `#0d1117`.
 
@@ -323,6 +357,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Weekly security report (Edge Function → email)
 
 ## Phase 10 — Automated Content Updates 🔮
+
 - [ ] Command catalogue versioned in Supabase DB
 - [ ] Content scheduler: unlock new commands/lessons every 2 weeks (Edge Function + cron)
 - [ ] In-app notification when new content available
@@ -330,6 +365,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] Admin can manually adjust release schedule
 
 ## Phase 11 — Changelog & Community 🔄 Partial (THI-84 — 13 avril 2026)
+
 - [x] Public changelog page `/changelog` — structured release notes with metrics (PR #101–102)
 - [x] Project story page `/story` — living narrative journal, human+AI collaboration (PR #101–102)
 - [x] Trust badges on landing — A+ Security Rating, 876 tests CI green (PR #100)
@@ -337,6 +373,7 @@ Full module track for senior fullstack + network/server expert + security fundam
 - [ ] School/university partnership program
 
 ## Phase 11b — Career Branches + Open Credentials 🔮
+>
 > Full professional track system + verifiable credentials for employers and institutions.
 
 **6 Career Branches:**
@@ -358,6 +395,7 @@ Each branch = set of tracks + branch certificate + student portfolio (IDE projec
 - [ ] Branch selector in onboarding flow
 
 ## Multi-Agent Architecture (implementation governance)
+>
 > Required to manage complexity without drift. Each domain has a dedicated agent with strict scope.
 
 | Agent | Scope | Hard constraints |
@@ -372,6 +410,7 @@ Each branch = set of tracks + branch certificate + student portfolio (IDE projec
 | QA Agent | Vitest + Playwright (desktop + mobile) | 80%+ critical coverage |
 
 ## Non-Goals
+
 - No hosted videos, no advertising, no paywall on core content
 - No desktop app (web-first, mobile-compatible)
 - No offensive security tools or CTF-style hacking challenges

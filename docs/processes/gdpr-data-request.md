@@ -7,10 +7,12 @@
 ## Article 15 — Droit d'accès (export des données)
 
 L'utilisateur peut demander l'export de toutes ses données via :
+
 - Profil → Zone danger → Télécharger mes données (automatique)
 - Email à l'adresse de contact → traitement manuel sous 30 jours
 
 **Données à exporter :**
+
 ```sql
 SELECT p.*, pr.*, b.*, qr.*
 FROM profiles p
@@ -43,6 +45,7 @@ DELETE FROM profiles WHERE id = '<uuid>';
 > **Clé API AI Tutor** : pas de suppression serveur nécessaire — la clé est stockée côté client (ADR-002 / ADR-005). L'utilisateur la révoque via `/app/settings` ou en vidant le storage de son navigateur.
 
 **Logger dans audit_log :**
+
 ```sql
 INSERT INTO audit_log (actor_id, action, target_id, metadata)
 VALUES ('<admin_uuid>', 'gdpr_erasure', '<user_uuid>',
@@ -56,6 +59,7 @@ Mêmes données qu'Article 15, format JSON machine-readable.
 ## Notification CNIL (incident de sécurité)
 
 Si des données personnelles sont exposées :
+
 - Délai : 72 heures maximum après détection
 - Formulaire : notifications.cnil.fr
 - Contenu : nature de la violation, données concernées, mesures prises

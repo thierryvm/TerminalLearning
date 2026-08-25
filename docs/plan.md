@@ -8,6 +8,7 @@
 ## Vision consolidée (21 avril 2026 — Phase 7b Security Hardening ✅ THI-120)
 
 Décisions stratégiques ancrées dans les 5 ADRs :
+
 - [ADR-001](./adr/ADR-001-lti-first-positioning.md) — **Positionnement LTI-first** : tool pédagogique spécialisée intégrable dans Moodle/Smartschool/Classroom via LTI 1.3, pas un LMS complet
 - [ADR-002](./adr/ADR-002-openrouter-byok-tiers.md) — **BYOK 4-tiers** : OpenRouter free prioritaire pour apprenants sans budget API, un seul SDK compatible OpenAI
 - [ADR-003](./adr/ADR-003-ttfr-kpi.md) — **TTFR KPI** : Time To First Real-world command comme mesure de valeur pédagogique réelle
@@ -15,6 +16,7 @@ Décisions stratégiques ancrées dans les 5 ADRs :
 - [ADR-005](./adr/ADR-005-ai-tutor-v1-implementation.md) — **AI Tutor V1** : `localStorage` plain défaut + opt-in Web Crypto, rate-limit soft client-side, agent `prompt-guardrail-auditor` créé avant implémentation, Web Worker isolation différée V1.5
 
 Chantiers structurants qui en découlent (voir `docs/ROADMAP.md` Phases 10-13) :
+
 - Demo interactive landing ("try-before-signup" 30 secondes)
 - Tuteur IA socratique transversal (BYOK + garde-fous + OpenRouter)
 - Audit multi-tenancy RLS (fondation B2B institutionnel)
@@ -118,10 +120,12 @@ Projet open source, 100% gratuit, IA-assisted dev.
 ## ⚠️ Alertes critiques (ne pas ignorer)
 
 ### Licence MIT
+
 Tout le monde peut copier/modifier/vendre le code sans rétribution.
 Acceptable pour portfolio. Alternative AGPL-3.0 si protection commerciale souhaitée plus tard.
 
 ### RGPD Belgique ✅ TRAITÉ
+
 Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cookie.
 
 ---
@@ -129,11 +133,13 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 ## Statut des phases
 
 ### ✅ Phase 0 — Déploiement (TERMINÉ)
+
 - [x] Build validé, vercel.json, .gitignore
 - [x] Déployé sur Vercel — https://terminallearning.dev
 - [x] Headers sécurisés (CSP, X-Frame-Options, etc.)
 
 ### ✅ Phase 1 — Landing + Routing + CI (TERMINÉ)
+
 - [x] Landing page (hero animé, features, roadmap, support)
 - [x] Routing : `/` Landing, `/app` Dashboard, `/privacy` RGPD
 - [x] SEO + OpenGraph + og-image.png (1200×630, Twitter/X compatible)
@@ -142,12 +148,14 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [x] Documentation : README, CONTRIBUTING, SECURITY, ARCHITECTURE
 
 ### ✅ Phase 2 — Analytics + Monitoring (TERMINÉ)
+
 - [x] Vercel Analytics (GDPR-friendly, sans cookies)
 - [x] Sentry free tier — projet `terminal-learning`, DSN configuré dans Vercel env vars
 
 ### ✅ Phase 3 — Supabase Auth (TERMINÉ — en production)
 
 #### Implémenté et mergé
+
 - [x] Supabase project `jdnukbpkjyyyjpuwgxhv` — `ACTIVE_HEALTHY`, eu-west-1
 - [x] Migration SQL appliquée : `profiles` + `progress` + RLS
 - [x] `src/lib/supabase.ts` — client typé, null-safe (fallback localStorage)
@@ -166,12 +174,14 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - [x] Sentry projet `terminal-learning` créé et connecté à Vercel
 
 #### Complété post-Phase 3 (3 avril 2026)
+
 - [x] OAuth GitHub activé — App créée sur github.com/settings/developers
 - [x] OAuth Google activé — Projet Google Cloud Console "Terminal Learning"
 - [x] Supabase URL Configuration : Site URL + Redirect URLs prod + localhost
 - [x] Sidebar : UserMenu + lien Accueil dans le footer (PR #19)
 
 #### Tech debt noté
+
 → Voir `CLAUDE.md § Tech debt Phase 3` (source de vérité unique)
 
 ### ✅ Phase 4 — Curriculum v2 + Environment Selection (TERMINÉ — 8 avril 2026)
@@ -186,6 +196,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 ### 🔄 Phase 5 — Curriculum Expansion (EN COURS — démarré 9 avril 2026)
 
 #### ✅ Livré (PR #36 + PR #37 + PR #38 + PR #40 + PR #43)
+
 - Module 7 — Variables & Scripts (6 leçons) : `export`, `$PATH`, `.env`, shell config, scripts bash, `cron`
 - Enrichissement modules 4–6 : permissions (chown, sudo, security), processus (top, bg/fg), redirection (stderr, tee)
 - CommandReference entièrement env-aware : filtres par env, syntaxe + exemples par env, badge environnement
@@ -197,19 +208,23 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - Script `generate-demo-gif.cjs` : capture GIF de l'animation env-switching via Playwright — `npm run generate-demo`
 
 #### ✅ README rewrite (THI-32 — branche `docs/readme-rewrite`)
+
 - Réécriture README orientée débutants + contributeurs
 - Tagline courte, hook émotionnel, section dédiée environment switching
 - Section Multi-Agent Architecture retirée → docs/ARCHITECTURE.md
 - Stack corrigée (Vite 6 + React 18, non Next.js)
 
 #### 🔄 Lazy loading routes (THI-33 — branche `perf/lazy-routes`)
+>
 > ⚠️ PRIS EN CHARGE par session Claude Code #1 (session README/docs) à la demande de Thierry.
 > L'autre session Claude Code active NE DOIT PAS travailler sur ce ticket.
+
 - `React.lazy()` + `Suspense` sur tous les composants de route dans `src/app/routes.ts`
 - Fallback `<PageLoader>` accessible dans `App.tsx`
 - Objectif : réduire le bundle initial de ~30-40%, améliorer LCP/TTI landing
 
 #### ✅ Fixes UI & Auth (THI-47 + THI-48 — mergés 10-11 avril 2026)
+
 - `UserMenu` refonte complète : variant `card` (sidebar) + variant `compact` (landing header)
 - Guest card : "Mode invité" + "Se connecter" → redirige vers `/` (plus de modal dans l'app)
 - Auth `signOut` : `scope:'local'` → `scope:'global'` — corrige la reconnexion OAuth automatique
@@ -217,15 +232,18 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 - 15 tests auth mis à jour (card + compact variants)
 
 #### ✅ Module 8 — Réseau & SSH (THI-27 — mergé 10 avril 2026)
+
 - `ping`, `curl`, `wget`, `nslookup`, `dig`, `Resolve-DnsName`, `ssh`, `ssh-keygen`, `scp` + PowerShell `iwr`
 - 6 leçons × 3 environnements, 39 tests unitaires
 - Invoke-WebRequest/iwr simulé (Windows), curl generic (urlHost dynamique), ssh-keygen banner dynamique
 
 #### 🔜 Modules planifiés
+
 - **Module 9 + 10 — Git Fondamentaux + GitHub & Collaboration** (THI-28) : `init`, `add`, `commit`, branches, remotes, PRs, Issues, GitHub Actions
 - **Module 11 — L'IA comme outil dev** (THI-29) : Claude Code CLI, prompts contextuels, limites et risques
 
 #### 🔮 Couches additionnelles (backlog)
+
 - **Monitoring & Outils système** : module dédié `htop`, `ps`, `lsof`, `df`/`du`, `free`
 - **Éditeurs de texte** : nano (éditions rapides) + vim/neovim (cours complet interactif avec exercices)
   - nano : bases, sauvegarder, quitter, rechercher
@@ -238,6 +256,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
 > Inspiré de : OverTheWire (niveaux enchaînés), Missing Semester MIT (contexte réel), cmdchallenge (one-liners)
 
 #### Principes (best practices 2026)
+
 - **Niveau 1–2** : 3–5 exercices guidés + 1 défi libre par leçon
 - **Niveau 3** : 5–7 exercices dont 2 en contexte réel (ex. "structure un projet")
 - **Niveau 4–5** : 3–5 exercices ouverts, validés par output attendu (pas par commande exacte)
@@ -251,6 +270,7 @@ Page `/privacy` créée. Vercel Analytics sans cookies → pas de bannière cook
   5. `scenario-context` — scénario réaliste (déployer, déboguer, analyser un log)
 
 #### Nouveaux champs à ajouter à `Exercise`
+
 ```typescript
 type ExerciseType = 'fill-flag' | 'objective' | 'error-fix' | 'pipeline' | 'scenario' | 'quiz-mcq' | 'quiz-recall'
 // Exercise.type?: ExerciseType
@@ -272,11 +292,13 @@ Philosophie : **"apprendre à apprendre"** — pas de progression sans preuve de
 | C1–C2 | Hard gate | 80% en max 3 tentatives — niveau employabilité |
 
 **Quiz final par module** : 5–8 questions SANS terminal, SANS hints :
+
 - `quiz-mcq` : QCM — reconnaissance (A1-A2)
 - `quiz-recall` : saisie libre — production de mémoire (B1+)
 - Questions scénario : *"Tu arrives sur un serveur inconnu, quelles sont tes 3 premières commandes ?"*
 
 **Nouvelle table Supabase** :
+
 ```sql
 CREATE TABLE quiz_results (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -331,6 +353,7 @@ Implémentation : `help` + `help <cmd>` dans `terminalEngine.ts`, contextualisé
 | 17 | L'IA comme outil dev | 3 | THI-30 |
 
 #### Catégories de commandes manquantes identifiées
+
 **Fullstack** : `sed`, `awk`, `xargs`, `find` (regex), `ln`, `which`, `type`, `nohup`, `apt`/`brew`, `dpkg`, scripts bash (boucles, conditions, fonctions), Git avancé (`stash`, `rebase`, `bisect`, `reflog`)
 
 **Réseaux/Serveurs** : `ping`, `traceroute`/`mtr`, `netstat`/`ss`, `curl` (avancé), `wget`, `rsync`, `scp`, `sftp`, `systemctl`, `journalctl`, `ufw`, `iptables`, `df`/`du`/`free`, `iostat`, `lsof`, Docker CLI, Nginx config via CLI
@@ -346,11 +369,13 @@ Implémentation : `help` + `help <cmd>` dans `terminalEngine.ts`, contextualisé
 > Outil d'audit de sécurité périodique — vitrine de sécurité professionnelle et signal de confiance pour les écoles/universités.
 
 #### Principe
+
 - **Audite les défenses** — ne simule pas d'attaque active sur la production (risque ban Vercel/Supabase)
 - Résultats visibles dans le Security Center (Phase 9)
 - Open source : démontre la maturité sécurité du projet
 
 #### Composant A — GitHub Actions hebdomadaire
+
 ```yaml
 # .github/workflows/security-sentinel.yml
 # Cron : lundi 06:00 UTC + dispatch manuel
@@ -365,6 +390,7 @@ output:
 ```
 
 #### Composant B — Script Playwright local
+
 ```bash
 # scripts/security-audit.cjs — avant chaque release majeure
 node scripts/security-audit.cjs [--url https://terminallearning.dev]
@@ -380,6 +406,7 @@ output:
 ```
 
 #### Tests requis
+
 - Tests unitaires : fonctions de parsing et scoring des rapports
 - Dry-run CI : le workflow GitHub Actions est valide syntaxiquement
 
@@ -401,6 +428,7 @@ output:
 #### Content Auditor V1 — analyse statique
 
 Vérifications effectuées :
+
 1. **Couverture env** : `instructionByEnv`, `hintByEnv`, `contentByEnv` pour linux/macos/windows
 2. **Cohérence curriculum ↔ terminalEngine** : chaque commande enseignée est simulée
 3. **Couverture tests** : chaque `case` du moteur a ≥ 1 test
@@ -443,6 +471,7 @@ Vérifications effectuées :
 | `public` | Non authentifié | Lecture curriculum | Anonyme — pas de compte requis |
 
 #### Flow de vérification enseignant
+
 ```
 1. Inscription → role_request = 'teacher' + nom institution
 2. Compte passe en statut pending_teacher
@@ -453,6 +482,7 @@ Vérifications effectuées :
 ```
 
 #### DB — nouvelles tables/colonnes
+
 ```sql
 -- profiles (extensions)
 ALTER TABLE profiles ADD COLUMN
@@ -527,10 +557,12 @@ CREATE TABLE audit_log (
 ```
 
 #### Sécurité — RLS obligatoire sur toutes les nouvelles tables
+
 - `institutions` : lecture publique du nom, écriture → super_admin uniquement
 - `classes` : visible par teacher + ses enrolled students + institution_admin
 - `class_enrollments` : teacher peut inscrire des étudiants, student voit les siennes, admin voit tout
 - `audit_log` : **insert-only** — uniquement pour les utilisateurs authentifiés (les anonymes n'écrivent jamais dans l'audit) — stratégie RLS explicite :
+
   ```sql
   -- INSERT : réservé aux utilisateurs authentifiés uniquement (pas aux anonymes)
   CREATE POLICY "audit_log_insert" ON audit_log FOR INSERT
@@ -541,9 +573,11 @@ CREATE TABLE audit_log (
     USING (auth.role() = 'super_admin');
   -- UPDATE et DELETE : aucune policy → interdits par défaut (RLS enforced)
   ```
+
   *Note : pas de trigger nécessaire — l'absence de policy UPDATE/DELETE suffit avec RLS activé.*
 
 #### Composants `/app/profile`
+
 - `ProfilePage.tsx` — stats globales, badges, préférences
 - `ProgressHeatmap.tsx` — calendrier de complétion (style GitHub)
 - `SkillRadar.tsx` — radar chart des compétences par module (Recharts)
@@ -552,6 +586,7 @@ CREATE TABLE audit_log (
 - `ClassroomView.tsx` — vue professeur : liste élèves + progression
 
 #### Badges à implémenter (exemples)
+
 `first-command`, `module-complete`, `week-streak`, `speed-runner`, `no-hints`, `explorer` (tous les envs)
 
 ---
@@ -626,6 +661,7 @@ Audit obligatoire avant chaque PR qui modifie `systemPrompt.ts` : agent `prompt-
 #### Évolution future (SaaS B2B)
 
 Options par ordre de pertinence (à figer dans nouvelle ADR quand déclenchée) :
+
 - **Tier 0 upgrade** : passer d'OpenRouter free aux modèles Claude Haiku via Anthropic DPA officiel → gratuit pour étudiants (Terminal Learning paie)
 - **AWS Bedrock EU region** → data residency Belgique/EU garanti
 - **SaaS B2B** : institutions paient (tarif enseignant), étudiants restent gratuits
@@ -711,6 +747,7 @@ src/lib/ai/
 #### Deux composantes
 
 **1. Docs statiques dans le repo** (pour contributeurs et admin interne) :
+
 ```
 docs/
 ├── guides/
@@ -730,6 +767,7 @@ docs/
 ```
 
 **2. Help Center in-app** (`/help/*`) gated par rôle :
+
 - `/help` — public (FAQ générale, premiers pas)
 - `/help/teacher` — enseignant+ (gestion classe, suivi progression, exports)
 - `/help/institution` — institution admin+ (onboarding, approbation enseignants, rapports EQF)
@@ -738,6 +776,7 @@ docs/
 Contenu Markdown → React Markdown. Recherche Fuse.js client-side. Lien "Je n'ai pas trouvé → ouvrir un ticket" (Phase 8).
 
 #### SEO / LLM-friendly
+
 - Articles Markdown indexables (Context7, RAG, assistants IA)
 - Structured data FAQ schema sur articles publics
 - `robots.txt` exclut `/help/admin`
@@ -750,12 +789,14 @@ Contenu Markdown → React Markdown. Recherche Fuse.js client-side. Lien "Je n'a
 > `UserMenu.tsx` existe déjà (Phase 3) — c'est une évolution, pas une réécriture.
 
 #### Menu dropdown
+
 - Avatar + display_name + email + badge CEFR
 - Liens role-aware (étudiant / enseignant / admin)
 - Switcher d'environnement rapide (Linux / macOS / Windows)
 - Lien Admin Panel conditionnel (super admin uniquement)
 
 #### Profil par rôle
+
 | Rôle | Champs spécifiques |
 |------|-------------------|
 | Étudiant | Avatar, pseudo, bio, langue, CEFR, track, env préféré, notifications, clé IA |
@@ -764,6 +805,7 @@ Contenu Markdown → React Markdown. Recherche Fuse.js client-side. Lien "Je n'a
 | Super Admin | Pas de profil public — settings système dans l'Admin Panel |
 
 #### Supabase Storage
+
 - Bucket `avatars` — RLS : lecture publique, écriture propriétaire uniquement
 - Bucket `institution-logos` — RLS : lecture publique, écriture institution_admin
 - Fallback : initiales générées côté client si pas d'avatar
@@ -776,6 +818,7 @@ Contenu Markdown → React Markdown. Recherche Fuse.js client-side. Lien "Je n'a
 > Bug reports, suggestions, améliorations — directement depuis l'app
 
 #### DB
+
 ```sql
 CREATE TABLE tickets (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -793,6 +836,7 @@ CREATE TABLE tickets (
 ```
 
 #### UX
+
 - Bouton flottant `?` accessible depuis toutes les pages `/app/*`
 - Contexte capturé automatiquement (env, module, leçon en cours)
 - Utilisateur suit ses tickets : `/app/my-tickets`
@@ -807,6 +851,7 @@ CREATE TABLE tickets (
 > Stack visuelle : Recharts + Supabase Realtime + dark theme `#0d1117` cohérent avec l'app.
 
 #### Sécurité admin — 8 couches (normes 2026)
+
 | Couche | Mécanisme |
 |--------|-----------|
 | Auth | Supabase Auth + 2FA TOTP obligatoire (authenticator app) |
@@ -821,6 +866,7 @@ CREATE TABLE tickets (
 #### Sections du panel admin
 
 **1. Dashboard santé en temps réel**
+
 - Uptime (UptimeRobot webhook → Supabase)
 - Latence API (p50/p95/p99 via Vercel Analytics)
 - Taux d'erreur Sentry (widget live)
@@ -828,6 +874,7 @@ CREATE TABLE tickets (
 - Alertes actives (rouge/orange/vert)
 
 **2. Analytics utilisateurs** (graphiques Recharts/Tremor)
+
 - DAU/MAU avec tendance
 - Heatmap horaire d'activité
 - Taux de complétion par module (funnel)
@@ -837,6 +884,7 @@ CREATE TABLE tickets (
 - Nouveaux comptes par jour
 
 **3. Security Center** *(alimenté par Terminal Sentinel — Phase 5.5)*
+
 - Rapports Terminal Sentinel : historique des audits hebdomadaires, score de santé, tendances
 - Tentatives de connexion échouées (carte géo IP si disponible)
 - Rate limit hits (par IP, par endpoint)
@@ -848,12 +896,14 @@ CREATE TABLE tickets (
 - Rapport hebdomadaire auto (Edge Function → email)
 
 **4. Gestion contenu**
+
 - Activer/désactiver modules
 - Planificateur de contenu (scheduler commandes)
 - Éditeur de catalogue commandes (CRUD)
 - Prévisualisation leçon par env
 
 **5. Gestion utilisateurs**
+
 - Liste membres (filtre par rôle/secteur/activité)
 - Modifier rôle (student ↔ teacher)
 - Suspendre/réactiver compte
@@ -861,18 +911,21 @@ CREATE TABLE tickets (
 - Voir progression détaillée d'un utilisateur
 
 **6. Tickets & Feedback**
+
 - Vue Kanban : open → in_review → resolved
 - Assignation, changement priorité, réponse
 - Export CSV
 - Filtres : type / priorité / module concerné
 
 **7. Health Monitor**
+
 - Supabase : quota DB, connexions actives, latence requêtes
 - Vercel : bandwidth, build time derniers déploiements
 - Sentry : issues non résolues, régression détectée
 - npm audit : vulnérabilités connues (cron quotidien)
 
 #### Fichiers à créer (Phase 9)
+
 ```
 src/app/components/admin/
 ├── AdminLayout.tsx           # Shell /admin avec nav + auth guard (RBAC)
@@ -907,18 +960,21 @@ supabase/functions/
 > Chaque commande de chaque environnement référencée, déverrouillée progressivement
 
 #### Principe
+
 - Le catalogue de commandes (`commandCatalogue.ts`) versionné en DB Supabase
 - Scheduler (Edge Function + cron) : nouveau contenu toutes les **2 semaines**
 - Notification in-app quand nouveau module/leçon disponible
 - Admin peut ajuster le calendrier manuellement
 
 #### Sources des commandes (exhaustivité)
+
 - Linux : `man -k .` + pages tldr + SS64.com + cheat.sh
 - macOS : `man` pages Apple + Homebrew formula list
 - Windows : PowerShell Get-Command + cmdlets documentation Microsoft
 - Cross-platform : Node CLI, Git, Docker, curl
 
 #### DB — table scheduler
+
 ```sql
 CREATE TABLE content_releases (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -973,6 +1029,7 @@ TS = Terminal Sentinel (audit périodique → Security Center)
 | QA | Tests Vitest, Playwright, Lighthouse | Bash, Write |
 
 **Règles d'activation :**
+
 - Security obligatoire dès qu'un sujet touche auth, secrets, webhooks, RBAC, inputs utilisateur
 - Backend obligatoire dès qu'une migration SQL est nécessaire
 - QA obligatoire après chaque feature (unit + E2E avant merge)
@@ -992,6 +1049,7 @@ Fichiers : `public/logo.svg` ✅, `public/favicon.svg` ✅, `public/og-image.png
 ## Sentry — validation en prod requise
 
 Sentry est configuré et déployé via Vercel. Pour confirmer que les events remontent :
+
 1. Vérifier que `VITE_SENTRY_DSN` est bien présent dans Vercel → Settings → Environment Variables
 2. Sur le live, ouvrir la console DevTools et taper `throw new Error("test sentry")`
 3. Vérifier dans le dashboard Sentry que l'event est bien reçu
@@ -1006,12 +1064,14 @@ Sentry est configuré et déployé via Vercel. Pour confirmer que les events rem
 > Validé comme approche finale — 10 avril 2026.
 
 **Valeur ajoutée pour le contexte scolaire :**
+
 - Installable sur tablette/mobile/PC sans App Store (icône écran d'accueil)
 - Offline partiel : leçons déjà visitées accessibles sans wifi (idéal pour les salles informatiques sans internet stable)
 - `display: standalone` : supprime la barre d'adresse → immersion terminal authentique
 - Push notifications : "nouveau module disponible", "streak en danger"
 
 **Stack :** `vite-plugin-pwa` + Workbox, stratégie `NetworkFirst`
+
 - Supabase Auth incompatible avec `CacheFirst` → NetworkFirst obligatoire
 - Service Worker scope limité : ne pas mettre en cache les appels Supabase RLS
 - Manifest : icônes 192px + 512px, `theme_color: #0d1117`, `background_color: #0d1117`

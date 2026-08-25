@@ -9,6 +9,7 @@
 ## Contexte
 
 Terminal Learning est maintenu par un bénévole solo qui combine :
+
 - Maladie chronique (5 ans) + dépression historique → énergie cognitive limitée
 - Engagement long terme (10+ ans vision) + accumulation de responsabilité technique
 - Risque documenté de burnout sans intervention structurelle
@@ -90,17 +91,20 @@ IA ne remplace pas, mais _augmente_ :
 ## Implémentation
 
 ### Phase 1 (THI-129 — now)
+
 1. Write ADR-007 (this doc) ✓
 2. Draft `sustain-auditor` agent spec (see below)
 3. Update CLAUDE.md + memory with explicit rest cycle + doc guidelines
 4. Commit + publish for transparency
 
 ### Phase 2 (post-Phase 7b)
+
 1. Integrate sustain-auditor agent into session protocol
 2. Run first quarterly review (3 months post-go-live)
 3. Adjust practices based on real metrics
 
 ### Metrics to track
+
 - **Rest compliance** : % of no-commit days met (target: 100%)
 - **Doc freshness** : CLAUDE.md + plan.md age (target: updated within 2 weeks of PR)
 - **Memory utilization** : cross-session decisions informed by prior memory (target: >70%)
@@ -113,18 +117,21 @@ IA ne remplace pas, mais _augmente_ :
 A new agent (`sustain-auditor`) runs quarterly to audit sustainability metrics :
 
 ### Inputs
+
 - `CLAUDE.md` freshness (date last updated)
 - `memory/MEMORY.md` size + age of entries
 - Git logs for commit patterns (weekends, night time, streaks)
 - Sentry alert patterns (night pages, frequency)
 
 ### Outputs
+
 - **Health score** (1-10) on sustainability trajectory
 - **Warnings** : "3-day commit streak detected", "CLAUDE.md outdated by 14 days"
 - **Recommendations** : "Consider reducing Phase 8 scope" or "Rest week suggested"
 - **Trend** : Improving / Stable / Declining
 
 ### Trigger
+
 - Manual : `gh issue comment --issue THI-<number> --body "run sustain-auditor"`
 - Scheduled : Quarterly (April, July, October, January)
 - Ad-hoc : If Thierry feels burnout, comments "sustainability check"
@@ -134,18 +141,21 @@ A new agent (`sustain-auditor`) runs quarterly to audit sustainability metrics :
 ## Definitions & Guardrails
 
 ### "Rest cycle" means:
+
 - NO git commits (code/docs/config)
 - NO PR reviews/merges
 - NO Sentry alerts in inbox (filters prevent them)
 - ALLOWED: reading docs, thinking, planning next quarter, message replies
 
 ### "Living documentation" means:
+
 - Decision + rationale in writing (not email, not Slack)
 - Accessible to future Thierry + future maintainer
 - Validated by Claude (agents check inconsistencies)
 - Durable format (Markdown, not video, not voice memo)
 
 ### "Augmented intelligence" means:
+
 - Claude is _decision support_, not decision-maker
 - Thierry retains veto on all technical + ethical choices
 - Agents flag issues, Thierry decides action

@@ -29,6 +29,7 @@ Terminal Learning a son premier utilisateur organique identifié le 24 mai 2026 
 **Source** : `auth.users` + `profiles` Supabase.
 
 Données à extraire (uniquement) :
+
 - Provider OAuth (`github` / `google` / autre)
 - Username public du provider (ex: `jimblu` pour GitHub — c'est public sur leur profil)
 - `id` Supabase UUID (référence interne, pas une donnée perso)
@@ -42,11 +43,13 @@ Si la demande est une RGPD Art. 15 (droit d'accès du user lui-même sur ses pro
 **Source** : `auth.sessions.user_agent` + dernière IP de session.
 
 Pour chaque IP unique observée :
+
 - Lookup `WebFetch` sur `https://ipinfo.io/<ip>/json` (pas de token requis pour lookups simples)
 - Extraire : pays, FAI (`org`), type (résidentiel / datacenter / VPN connu)
 - **JAMAIS l'IP complète dans le rapport** : masquer le dernier octet (ex: `91.166.x.x` → `Belgique, Proximus résidentiel`)
 
 Drapeaux à signaler :
+
 - VPN/Tor/datacenter IP (signal potentiel anti-abuse — peut être légitime)
 - Bascule pays rapide (compte créé en BE, login depuis CN 2h après → possible compromission)
 - IP partagée avec d'autres comptes (signal réseau test/centre formation)
@@ -56,6 +59,7 @@ Drapeaux à signaler :
 **Source** : `auth.sessions.user_agent` (parse).
 
 Extraire :
+
 - OS (Windows / macOS / Linux / iOS / Android)
 - Browser (Chrome / Firefox / Safari / Brave / Edge)
 - Mobile vs desktop
@@ -66,6 +70,7 @@ Extraire :
 **Source** : `auth.users.created_at` + `auth.sessions` + `progress`.
 
 Construire la timeline factuelle :
+
 - Premier login (date + delay vs created_at)
 - Première leçon complétée (lesson_id + delay)
 - Pattern de progression (linéaire ? sauts de modules ? quels jours actifs ?)
@@ -73,6 +78,7 @@ Construire la timeline factuelle :
 - Gap silence (combien de jours depuis dernière leçon)
 
 Si l'utilisateur fait partie d'une `class_enrollments`, ajouter le contexte :
+
 - Quelle classe, quand enrolled
 - Le teacher de cette classe est-il actif lui aussi (signal pédagogique vs abandon individuel)
 
@@ -81,12 +87,14 @@ Si l'utilisateur fait partie d'une `class_enrollments`, ajouter le contexte :
 **Source** : `auth.users` × `profiles` × `progress` × `class_enrollments` × `audit_logs` (si rôle teacher/admin/super_admin).
 
 Vérifier :
+
 - `auth.users.id` = `profiles.user_id` ?
 - `profiles.role` cohérent avec les RLS observées dans `progress` (un student n'a pas de write sur autres `progress.user_id`)
 - `class_enrollments.user_id` n'est pas orphelin (la classe existe, le teacher de la classe est actif)
 - Pour rôle staff : `audit_logs` reflète-t-il l'activité staff documentée (approbation teachers, modifs classe, etc.) ?
 
 Drapeaux à signaler :
+
 - Profile manquant pour un `auth.users.id` (signal flag bug onboarding)
 - `progress` rows en double même `(user_id, lesson_id)` (signal race condition)
 - `class_enrollments` orphelins (classe supprimée mais enrollment pas cleanup)
@@ -151,6 +159,7 @@ Fréquence attendue : **faible (1-5 fois par mois max)**. Si ça monte au-delà,
 ## Référence cas Jimmy Pez (premier usage 24/05/2026)
 
 Le cas qui a motivé la création de cet agent. Pattern reproductible :
+
 - GitHub OAuth user `jimblu` (public GitHub profile)
 - 28 leçons complétées en 8 jours (1-8 mai 2026)
 - Silence 16 jours (dernière leçon 8 mai, session refresh 18 mai sans activité)

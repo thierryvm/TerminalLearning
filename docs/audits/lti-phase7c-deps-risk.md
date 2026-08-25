@@ -50,9 +50,11 @@ fixAvailable: { name: '@vercel/node', version: '4.0.0', isSemVerMajor: true }
 ## Pourquoi pas un `package.json` override `undici@^6` ?
 
 Tentation : ajouter
+
 ```json
 "overrides": { "@vercel/node": { "undici": "^6.0.0" } }
 ```
+
 Risque : `@vercel/node@5.x` n'a pas été testé contre `undici@6.x` upstream. Casse potentielle au cold-start Vercel Function (cf. incident **THI-134** où `jsonwebtoken` top-level import crashait le cold-start `api/lti/launch`). **Risque > bénéfice** pour V1.
 
 ## Plan de remédiation
@@ -67,6 +69,7 @@ Risque : `@vercel/node@5.x` n'a pas été testé contre `undici@6.x` upstream. C
 ## Décision finale (gates fermés pour PR #1)
 
 ✅ **GO PR #1** avec :
+
 - Risque H2 undici documenté et accepté
 - `LTI_ENABLED=false` en prod (feature flag protège tout)
 - 19 tests crypto verts (1405 suite totale)

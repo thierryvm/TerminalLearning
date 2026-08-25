@@ -3,6 +3,7 @@
 > Snapshot Lighthouse 12.6.1 + headless Chrome sur `https://terminallearning.dev` en production. Capturé en début de Sprint 2.5 (SEO/GEO + Phase 9 Admin Panel) pour mesurer objectivement les gains des sprints à venir. **Toute PR future touchant la performance doit comparer ses scores à cette baseline** — anti-régression mesurable.
 
 **Configuration** :
+
 - Lighthouse `12.6.1` (npm global)
 - Chrome headless `--headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage`
 - Throttling : Lighthouse default (Slow 4G simulated, CPU 4× slowdown)

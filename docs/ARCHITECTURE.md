@@ -188,6 +188,7 @@ TS = Terminal Sentinel — periodic security audit feeding Security Center (Phas
 ## Database Schema
 
 **Phase 3 (live):**
+
 ```sql
 profiles (id uuid PK, username text UNIQUE, created_at timestamptz)
 progress (user_id uuid FK, lesson_id text, completed bool,
@@ -195,6 +196,7 @@ progress (user_id uuid FK, lesson_id text, completed bool,
 ```
 
 **Phase 7 (live — RBAC, migrations 005+006, 12 April 2026):**
+
 ```sql
 institutions (id, name, domain_whitelist[], admin_id)         -- ✅ live
 classes (id, teacher_id, institution_id, name)                -- ✅ live
@@ -207,6 +209,7 @@ admin_audit_log (id, actor_id, action, target_type, target_id, metadata jsonb, c
 ```
 
 **Phase 7+ (planned):**
+
 ```sql
 -- progress extensions: time_spent_seconds, attempts_count, hints_used
 badges (user_id, badge_id, earned_at)

@@ -58,6 +58,7 @@
 ## 7. Processus — Demander une modification de contenu
 
 Pour signaler une erreur dans une leçon ou proposer une amélioration :
+
 1. Dans la leçon concernée → bouton "Signaler un problème"
 2. Ou : [ouvrir un ticket](/app/tickets/new) avec le type `content_request`
 3. Délai de traitement : 7 jours ouvrables

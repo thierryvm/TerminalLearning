@@ -15,6 +15,7 @@
 > Re-run `security-auditor` agent before THI-111 ship for an updated official score.
 
 ### Critical Issues (Blocking)
+
 1. **[C1] Git History Credential Exposure**
    - **Commits:** 051b25a (feat: RBAC test kit), 5ff9377 (fix: migration 006)
    - **Exposed:** Test user password `TerminalLearning2026!`
@@ -93,5 +94,6 @@ Sensitive endpoints can be gated via Vercel environment variables. They default 
 ---
 
 **See also:**
+
 - `.claude/agents/agent-resilience.md` — 6-vector LLM attack resilience guide
 - `.husky/pre-commit` — credential detection patterns (word boundary enforcement)

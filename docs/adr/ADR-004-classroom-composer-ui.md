@@ -36,7 +36,9 @@ Moodle, Canvas, Blackboard n'offrent pas d'équivalent : un prof qui crée un su
    - Format documenté dans `docs/ARCHITECTURE.md` section "Classroom Composer Format"
 
 ### Bibliothèque de templates forkables
+
 5 parcours par défaut à livrer avec V1 :
+
 - 6e secondaire FWB (humanités générales)
 - 5e-6e humanités (option info)
 - CAP / CESS informatique
@@ -46,24 +48,29 @@ Moodle, Canvas, Blackboard n'offrent pas d'équivalent : un prof qui crée un su
 ## Conséquences
 
 ### Positives
+
 - Onboarding enseignant zéro-friction : "je forke le parcours de ma collègue"
 - Effet réseau enseignant : la communauté enrichit la plateforme
 - Différenciation concurrentielle majeure (personne ne fait ça bien dans l'edtech EU)
 - JSON préservé en arrière-plan = versioning Git possible pour profs techniques
 
 ### Négatives / risques
+
 - Gros chantier UI (estimation 2-3 semaines réparties)
 - Risque de sur-complexité si trop de features drag-and-drop (YAGNI strict)
 - Schéma JSON doit être stable dans le temps (breaking changes = migrations)
 
 ### Alternatives rejetées
+
 - **JSON édition directe** : inaccessible aux profs non-tech
 - **Pas de composition** (parcours fixes) : perte d'adaptabilité pédagogique
 - **Composer Drag-and-drop ultra-riche** (conditions, branchements) : over-engineering V1
 
 ## Implémentation
+
 - Priorité : après LTI 1.3 (sans LTI, pas d'usage classe réel)
 - Validé par agent `classroom-template-validator` (créé au 2e usage)
 
 ## Mémoires liées
+
 - `project_platform_vision_v2.md`

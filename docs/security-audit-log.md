@@ -216,6 +216,7 @@ Gains +0.3 (REVOKE trigger functions, UNIQUE jti, SSRF defendu, X-Frame-Options 
 Code livre dans PR #236 + #237 correctement structure pour un SPIKE gate. Surfaces cryptographiques (verifyJwt.ts, nonceStore, DB UNIQUE jti) solides. Migration 014 propre et idempotente.
 
 Blockers avant LTI_ENABLED=true (PR #2+):
+
 1. H1 -- undici@5.28.4: surveiller @vercel/node patch
 2. M1 -- fusionner ALLOWED_ISSUERS en source de verite unique
 3. M2 -- nettoyer contexts.lti_launch Sentry
@@ -310,6 +311,7 @@ Blockers avant LTI_ENABLED=true (PR #2+):
 ### Senior reverse course #2 — découverte PUBLIC grant
 
 Migration 014 avait `REVOKE EXECUTE FROM anon, authenticated` mais **n'a pas effectivement fermé la surface** :
+
 - PostgreSQL accorde `EXECUTE` à `PUBLIC` par défaut sur toute nouvelle fonction
 - anon + authenticated **héritent de PUBLIC**
 - `REVOKE FROM anon, authenticated` retire les grants explicites mais PUBLIC reste actif
@@ -318,6 +320,7 @@ Migration 014 avait `REVOKE EXECUTE FROM anon, authenticated` mais **n'a pas eff
 Découvert empiriquement post-application via query SQL de vérification. Migration **015_revoke_execute_from_public.sql** ajoute le `REVOKE FROM PUBLIC` chirurgical sur les 3 fonctions trigger-only.
 
 **Verified live empirique** :
+
 ```sql
 SELECT proname, has_function_privilege('anon', 'public.' || proname || '()', 'EXECUTE') AS anon_exec
 FROM pg_proc WHERE proname IN ('handle_new_user', 'prevent_role_escalation', 'rls_auto_enable')
@@ -327,6 +330,7 @@ FROM pg_proc WHERE proname IN ('handle_new_user', 'prevent_role_escalation', 'rl
 RLS-essential functions (`get_my_role`, `get_my_institution_id`, `is_teacher_of_class`) **non touchées** par 015 — `anon_exec=true` + `auth_exec=true` préservé volontairement (sinon RLS USING clauses cassent). Tracker THI-182 (private schema migration) reste la solution structurelle long terme.
 
 **Validation post-application** :
+
 - 40 RBAC unit tests verts (no regression)
 - Suite totale 1405 pass / 20 skipped
 - Pattern leçon retenue : **PostgreSQL REVOKE doit toujours inclure PUBLIC** quand l'objectif est de fermer une surface, sinon le grant par défaut continue d'inheritance
@@ -719,11 +723,13 @@ L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres
 **Fix Applied**: Added explicit warning in saveKey() docstring marking plain mode as requiring UX guidance toward encryption per ADR-002 gate  
 
 **Reasoning**: 
+
 - Medium severity because Terminal Learning has no history of injection vulnerabilities (strict CSP, no unsafe HTML rendering)
 - But supply chain risk is real (dependency chain is long)
 - THI-112 (AiKeySetup onboarding) will default UI to encrypted mode
 
 **Prevention**:
+
 - THI-112 defaults onboarding to encrypted mode, not plain
 - Passphrase strength validation required
 - PR audit requires prompt-guardrail-auditor + security-auditor
@@ -740,6 +746,7 @@ L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres
 
 **Fix**: Updated policy to restrict teachers to their own institution or admin roles only  
 **Prevention**:
+
 - RLS audit before any Phase 8+ teacher features
 - Cross-institution access tests added to regression suite
 - security-auditor mandatory for all Supabase migration PRs
@@ -752,6 +759,7 @@ L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres
 **After**: security-auditor is mandatory for all PRs touching auth/RBAC/RLS/API/crypto
 
 **Updated Checklist** (added to CLAUDE.md):
+
 - Verify rate limiting uses Vercel-injected headers (not user-controlled)
 - Audit all RLS policies for overly permissive access
 - Test RBAC boundaries (role escalation, cross-org access)
@@ -813,6 +821,7 @@ L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres
 **Vector**: Bypass secret (32 chars, prefix `c96a`) inscribed in clear in a `new_page` URL during the audit session. Conversation logs (Claude Code session storage) potentially retain the secret.
 **Impact**: Bypass of Deployment Protection on preview deployments. Production not exposed (different protection layer).
 **Fix**:
+
 - Old bypass revoked via `PATCH /v1/projects/{id}/protection-bypass` with `{"revoke": {"secret": "...", "regenerate": false}}` — confirmed `protectionBypass: {}` post-revoke
 - New bypass generated via same API with new note — prefix `ItNg`
 - Vercel access token also rotated (provided by Thierry via direct channel, old token presumed compromised)
@@ -830,11 +839,13 @@ L'écart cohérent : `llm-security-auditor` se positionne **entre** les 2 autres
 ### Process Improvements (post-incident)
 
 **Before**:
+
 - No branch protection on `main` — any push allowed even with red CI
 - No model verification at session start
 - Bypass secret usage had no formal manipulation rules
 
 **After**:
+
 - **GitHub branch protection on `main`**: `required_status_checks: ["Type-check · Lint · Test · Build"]` + `strict: true` + `allow_force_pushes: false` + `allow_deletions: false` + `required_conversation_resolution: true`. Direct push or merge with red CI now structurally rejected.
 - **Phase 0 in `session_startup_process.md`**: verify Claude model on session start AND after each /compact. Stop if Haiku detected on complex task.
 - **Rule 10 in `working_discipline_rules.md`**: explicit matrix mapping task complexity to required model (Opus 4.7 mandatory for `vercel.json`, `supabase/`, `.github/workflows/`, `src/lib/ai/*`, multi-file refactors).

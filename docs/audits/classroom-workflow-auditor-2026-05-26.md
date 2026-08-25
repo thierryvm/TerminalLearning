@@ -61,6 +61,7 @@ Linear free plan quota dépassé au 26 mai 18h30 → impossible de créer des ti
 La table `progress` n'a aucune RLS policy permettant à un `teacher` de SELECT les rows de progression de ses élèves enrollés. Actuel `pg_policies` montre uniquement `user_id = auth.uid()` pour les 4 ops (SELECT/INSERT/UPDATE/DELETE).
 
 Le TeacherDashboard V1 actuel ne query PAS `progress` (zéro view de progression élève), donc ce n'est pas une régression visible aujourd'hui. **Mais** :
+
 1. L'UI dit déjà « suis leurs progressions » (TeacherDashboard description)
 2. Le prochain sprint qui ajoute une vue progression élève dans le dashboard teacher devra query `progress JOIN class_enrollments WHERE teacher_id = auth.uid()`
 3. Sans cette policy, ce query retournera **0 rows silencieusement** (no error, no data) → bug latent qui surface dès que la view est implémentée
@@ -83,6 +84,7 @@ create policy "progress: teacher select enrolled student"
 **Gate** : avant TeacherDashboard v2 avec progression élève visible (ou toute UI qui affiche progression cross-user).
 
 **Tests à ajouter** :
+
 - Vitest integration : teacher A → SELECT progress WHERE student_id IN (enrollments) → retourne rows ✅
 - Vitest integration : teacher A → SELECT progress WHERE student_id = non-enrolled student → retourne 0 ✅
 - Vitest integration : teacher B (cross-teacher intra-institution) → SELECT progress des students de teacher A → retourne 0 ✅
@@ -92,6 +94,7 @@ create policy "progress: teacher select enrolled student"
 **Problème (constat)** :
 
 Au début du run `classroom-workflow-auditor`, 4 classes test orphelines existaient en DB des runs précédents d'agents (probablement `institution-rbac-auditor` 1er break-in 26 mai matin) :
+
 - `E2E_TEST_1779210965`
 - `E2E_DEBUG`
 - `E2E_DEBUG_TEST`
@@ -107,6 +110,7 @@ Toutes avec `institution_id = NULL`, polluant la DB de test fixtures non-cleané
 4. **Crash safety** : utiliser `BEGIN ... EXCEPTION ... ROLLBACK` ou guard `DELETE` au startup même si crash mid-run
 
 **Files à update** :
+
 - `.claude/agents/institution-rbac-auditor.md` — ajouter section "E2E cleanup pattern"
 - `.claude/agents/classroom-workflow-auditor.md` — déjà documente le pattern (à promouvoir comme standard cross-agent)
 - `.claude/agents/rbac-flow-tester.md` — ajouter section
@@ -119,6 +123,7 @@ Toutes avec `institution_id = NULL`, polluant la DB de test fixtures non-cleané
 Le pattern Supabase CLI `set_config('role', 'authenticated', true)` documenté dans le frontmatter de `classroom-workflow-auditor` produit `current_user = authenticated` mais `session_user` reste `postgres`. PostgreSQL `relforcerowsecurity = false` (default) signifie que le **session owner** (postgres) peut bypass RLS selon l'ordre de résolution des privilèges.
 
 **Symptôme empirique** :
+
 - Via CLI impersonation : `institution_admin_b` retourne 7 classes (faux positif — semble voir cross-institution)
 - Via REST API + real JWT : `institution_admin_b` retourne 0 classes (correct — isolation respectée)
 
@@ -133,6 +138,7 @@ Le pattern Supabase CLI `set_config('role', 'authenticated', true)` documenté d
 3. **Anti-leak discipline** : JWT en variable shell, jamais dumpé en stdout (cf. mémoire `feedback_anti_leak_discipline_jwt_short_lived.md`)
 
 **Files à update** :
+
 - `.claude/agents/classroom-workflow-auditor.md` — ajouter caveat dans section impersonation pattern
 - `.claude/agents/institution-rbac-auditor.md` — ajouter caveat (ce pattern a possiblement aussi des faux positifs dans son scope)
 - `.claude/agents/rbac-flow-tester.md` — vérifier que le pattern utilise déjà REST API
@@ -149,6 +155,7 @@ Une classe `Bash 101` existe avec `teacher_id = a0c4a8cd-fb77-403a-bbaa-b2fc7094
 ## Doctrine validée
 
 L'agent `classroom-workflow-auditor` dormant 6 jours a généré **2 findings MEDIUM + 1 LOW** au premier break-in. Sans break-in, ces findings auraient été découverts :
+
 - F-A : seulement quand TeacherDashboard v2 ajouterait progression view → bug latent silencieux (0 rows retournés sans erreur)
 - F-B : seulement quand pollution DB tests s'accumulerait jusqu'à interférer avec un test
 - F-C : seulement quand un test isolation aurait un faux positif inquiétant

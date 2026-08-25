@@ -30,12 +30,14 @@ L'incident 24 avril 2026 (downgrade silencieux Opus → Haiku/Sonnet → push di
 **Pattern auto-amélioration — auto-critique de scope (effective 01/06/2026, @thierry)** : au-delà de l'intégration *passive* des leçons, **chaque agent termine son run par une section « Angle mort de mon propre scope »** — triggers manquants dans sa `description`, frontières floues avec un autre agent (dire ce qu'il n'a **PAS** testé pour qu'un autre complète), classes de défaut hors couverture — puis **recommande des updates concrets à sa propre définition**, que le main agent applique (commit `docs(agents)` séparé). Objectif : une flotte qui **s'améliore elle-même** au lieu de prompts figés qui rouillent. Déclencheur : le 1er run de `supabase-backend-auditor` (01/06, agent dormant réveillé sur le formulaire support) a spontanément proposé 2 améliorations de sa def — re-run obligatoire à l'Étape 4 (rendu de contenu uploadé) + frontière de scope vs `route-attack-auditor` sur endpoints partagés — appliquées immédiatement (PR #360). Rollout de la clause standard : **fait le 02/06/2026 (THI-321)** — les 18 agents qui ne la portaient pas l'ont reçue en fin de fichier (section « Auto-critique de scope (clause standard — fin de run) »), portant la flotte à **20/20** (les 2 autres l'intègrent nativement dans leur méthode multi-couches : `legal-compliance-auditor` Couche 5, `llm-security-auditor` Couche 7). Cf. mémoire CC `feedback_self_improving_agents.md` + Zettel cross-projet `[[202606021300-flotte-agents-auto-amelioration]]`. À articuler avec `feedback_agent_dormant_full_audit.md` (un agent dormant ne peut pas s'auto-améliorer — l'invoquer dans les 48h reste la pré-condition).
 
 **⛔ Règle anti-hallucination — dénombrement (tous agents, effective 29/05/2026)** : aucun agent ne **dénombre du code ou de la data de tête**. Tout nombre **descriptif** (leçons, modules, tests, `describe`, commandes, % de commits, leçons complétées par un user…) doit venir d'une **source déterministe exécutée** (commande `Bash` + citation), jamais d'une estimation mentale du LLM. Distinction :
+
 - ✅ **Compteur prescriptif** (taille de la checklist propre à l'agent : « 16 checks », « 5 personas », « 11 sections ») = constante définie dans l'agent, pas un risque.
 - ❌ **Compteur descriptif** (mesure du code/data réel) = **commande obligatoire**. Ex : `npx tsx -e "import('./src/app/data/curriculum.ts').then(m=>console.log(m.getTotalLessons()))"`, `grep -c`, `npx vitest run` (sortie réelle), `git log --pretty` piped. Si la source n'est pas exécutable → écrire « compte non vérifié », jamais un nombre approximatif présenté comme exact.
 
 Incidents fondateurs : `content-auditor` « 356+ describes » (réel 62, 23/05) puis « 63 leçons » (réel 65, 28/05 — a failli faire corriger une comm publique correcte). La vérité des compteurs leçons est verrouillée par `src/test/landingTotals.test.ts` (total + par-module) + `src/test/seo.test.ts` (Schema.org dérivé de `getTotalLessons()`). `content-auditor.md` porte la règle détaillée ; les autres agents qui produisent des compteurs descriptifs (`test-runner` via vitest, `sustain-auditor` via git log, `user-forensics-auditor` via SQL/REST) tirent déjà de commandes — cette doctrine le codifie pour eux + tout futur agent.
 
 **Patterns récurrents** :
+
 - **Début de session** : invoquer `linear-sync` (status PR↔Linear) puis optionnellement `session-orchestrator` mode `startup` pour récap freshness + tickets In Progress
 - **Fin de session** : invoquer `session-orchestrator` mode `shutdown` pour audit complet (git, Linear, docs vitaux freshness, agent coverage gaps, orphan cleanup, recommandations actions prioritaires) — évite à @thierry de répéter les process à chaque shutdown
 
@@ -215,6 +217,7 @@ sustain-auditor  # Quarterly health check ou à la demande
 ## Convention — ajouter un nouvel agent
 
 1. Créer le fichier `.claude/agents/<nom>.md` avec frontmatter YAML strict :
+
    ```yaml
    ---
    name: <nom-kebab-case>
@@ -223,6 +226,7 @@ sustain-auditor  # Quarterly health check ou à la demande
    model: <haiku | sonnet>  # haiku = pattern matching, sonnet = judgment
    ---
    ```
+
 2. **Ajouter une ligne dans la matrice** ci-dessus
 3. **Ajouter une fiche détaillée** dans la section "Fiches détaillées" (modèle, créé, contexte, lié)
 4. Si auto-trigger : mettre à jour `CLAUDE.md` projet section "Protocole de session"

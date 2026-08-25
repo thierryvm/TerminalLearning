@@ -10,15 +10,18 @@
 ## 0. Contexte & problème
 
 ### 0.1 État réel du dashboard (`/app/admin`)
+
 Aujourd'hui **100 % skeleton** : 4 widgets (Santé Supabase, Événements Sentry, Santé application, Activité élèves) affichent des libellés « Données live disponibles bientôt » + une heatmap vide « Skeleton — 91 jours × 1 cellule ». **Zéro donnée live, zéro interaction, zéro moyen d'agir.** Le lien « Voir analytics détaillées sur Vercel » sort de l'app.
 
 ### 0.2 Besoins du super_admin unique (@thierry)
+
 1. **Voir l'état réel** de la plateforme (users, leçons, erreurs, déploiements) — en **live**, pas en placeholder.
 2. **Agir** depuis le dashboard (trier/résoudre les tickets, pas seulement regarder).
 3. **Être notifié** sans dépendre de l'email (super_admin unique → besoin d'une alerte fiable).
 4. **Piper facilement le contenu d'un ticket vers le dev (Claude)**, en tant que responsable technique.
 
 ### 0.3 Menace 2026 (recherche)
+
 **Mythos** (Anthropic, avril 2026) prouve qu'une IA trouve/exploite des failles **au-dessus des experts humains** (faille 27 ans dans OpenBSD, 16 ans dans FFmpeg) — non public (Project Glasswing, ~50 partenaires défense). **On ne peut pas l'utiliser**, mais l'implication est nette : **l'attaquant 2026 = une IA qui chaîne des micro-failles automatiquement** (exactement ce que notre 2e passe `security-auditor` a démontré sur PR #326, finding H1). Doctrine : *assume AI-augmented attacker*.
 
 ---
@@ -48,14 +51,17 @@ Aujourd'hui **100 % skeleton** : 4 widgets (Santé Supabase, Événements Sentry
 | Sentry (erreurs 24h) | Sentry API | proxy Edge Function |
 
 ### 2.2 Couche d'accès sécurisée
+
 - **API externes (GitHub/Vercel/Sentry)** → Edge Functions Deno qui détiennent les tokens (`Deno.env`), vérifient le JWT super_admin (`verify_jwt` + `get_my_role() = 'super_admin'`), et ne renvoient que des agrégats non-sensibles. **Gate-zero : `supabase-backend-auditor`** (secret handling, BOLA, SSRF, CORS).
 - **Données internes Supabase** → RLS existante, agrégats via vues ou RPC `SECURITY DEFINER` scoped super_admin.
 - **Cache** → Vercel Runtime Cache / Edge Config pour limiter les appels API tiers (rate limits + coût).
 
 ### 2.3 Temps réel
+
 **Supabase Realtime** : le dashboard s'abonne aux `INSERT/UPDATE` sur `support_tickets` (et `progress`) → mise à jour live + badge non-lus, **sans polling, sans email**. Inclus dans le free tier (dans les limites de connexions concurrentes — 1 super_admin = négligeable).
 
 ### 2.4 Interactivité
+
 Section Tickets = liste filtrable (type bug/suggestion/question × statut open/in_progress/resolved/closed, index déjà présents), détail avec screenshot **re-signé à la lecture** (TTL 1h, jamais l'URL stockée), bouton **Marquer résolu** (RLS super_admin UPDATE, déjà testé E2E).
 
 ---
@@ -84,9 +90,11 @@ Section Tickets = liste filtrable (type bug/suggestion/question × statut open/i
 ## 5. Sécurité 2026
 
 ### 5.1 Modèle de menace « Mythos-era »
+
 Hypothèse de travail : l'attaquant dispose d'une IA capable de **scanner notre surface et chaîner des micro-failles** automatiquement. Conséquence : aucune faille « mineure » n'est négligeable (elle devient un maillon de chaîne), et le **defense-in-depth** + la **réduction de surface** priment sur l'obscurité.
 
 ### 5.2 OWASP Top 10 for Agentic Applications 2026 — mapping à nos surfaces
+
 Référentiel publié déc. 2025, distinct du LLM Top 10 2025 : il cible l'**autonomie** (mémoire, tools, credentials, multi-agent). **Nous sommes une application agentique** (agents sécu + tuteur IA + handoffs).
 
 | Risque | Notre exposition | À auditer |
@@ -105,13 +113,17 @@ Référentiel publié déc. 2025, distinct du LLM Top 10 2025 : il cible l'**aut
 Mitigations canoniques OWASP : **least privilege · isolation/sandbox · defense-in-depth · monitoring continu · human-in-loop sur actions critiques**.
 
 ### 5.3 Audit de nos agents de sécurité
+
 Auditer nos agents existants (`security-auditor`, `llm-security-auditor`, `prompt-guardrail-auditor`, `supabase-backend-auditor`, `route-attack-auditor`, `institution-rbac-auditor`, etc.) contre :
+
 1. **OWASP Agentic 2026** (couvrent-ils ASI01-10 ?).
 2. **Le modèle Mythos** (savent-ils chaîner les micro-failles ? — le 2e passe `security-auditor` a prouvé que oui quand on le mandate explicitement → en faire une **doctrine systématique**, pas un one-shot).
 3. **Least privilege de leurs propres tools** (un agent QA a-t-il accès à des tools qu'il ne devrait pas ?).
 
 ### 5.4 Terminal Sentinelle V2 — le pentester promis
+
 V1 (PR #90, avril) = automation contenu sécurité, couplé TL. **V2 = harnais de pentest continu** :
+
 - Agent/outil qui, **à chaque release**, rejoue des **chaînes d'attaque adversariales** contre nos surfaces (la méthode qui a trouvé H1 sur #326), **systématisé + récurrent + aligné OWASP Agentic 2026**.
 - Sortie : rapport de chaînes (exploitable maintenant / latent / réfuté) avec preuves empiriques.
 - C'est le « vérifier / tester / renforcer » demandé. Cross-projet à terme (TL + Ankora + GetPostCraft).
@@ -147,6 +159,7 @@ V1 (PR #90, avril) = automation contenu sécurité, couplé TL. **V2 = harnais d
 ---
 
 ## Sources (recherche web 30/05/2026)
+
 - Anthropic Mythos Preview — https://red.anthropic.com/2026/mythos-preview/
 - Project Glasswing — https://www.anthropic.com/glasswing
 - OWASP Top 10 for Agentic Applications 2026 — https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
