@@ -235,3 +235,26 @@ describe('email login — deliberately ungated', () => {
     expect(screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
   });
 });
+
+describe('age gate accessibility (ui-auditor H1)', () => {
+  it('moves focus to the refusal message when the answer is under the threshold', () => {
+    renderModal();
+    goToSignup();
+    answerGate(CHILD_DOB);
+    expect(document.activeElement?.textContent).toMatch(/tu peux apprendre sans compte/i);
+  });
+
+  it('announces an unusable date and ties the message to the field', () => {
+    renderModal();
+    goToSignup();
+    const field = screen.getByLabelText(/date de naissance/i);
+    // A date in the future is "not usable", not a refusal. Submit the form
+    // directly: jsdom would otherwise stop at the native `max` constraint.
+    fireEvent.change(field, { target: { value: '2999-01-01' } });
+    fireEvent.submit(field.closest('form')!);
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(/date ne semble pas valide/i);
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field.getAttribute('aria-describedby')).toContain(alert.id);
+  });
+});

@@ -12,7 +12,7 @@
  * The date never leaves the browser — it is evaluated here and dropped. Only a
  * yes/no crosses into the rest of the flow.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -44,6 +44,19 @@ export function AgeGateStep({ onVerified, onDismiss, blockedUntil = null }: AgeG
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<boolean>(blockedUntil !== null);
 
+  // The whole view swaps from the question to the refusal: without a focus
+  // move, a screen reader user gets no signal that anything changed
+  // (ui-auditor H1). Only on that transition — a visitor who opens the modal
+  // already blocked keeps the dialog's default focus.
+  const refusalRef = useRef<HTMLParagraphElement>(null);
+  const announceRefusal = useRef(false);
+  useEffect(() => {
+    if (blocked && announceRefusal.current) {
+      announceRefusal.current = false;
+      refusalRef.current?.focus();
+    }
+  }, [blocked]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -65,6 +78,7 @@ export function AgeGateStep({ onVerified, onDismiss, blockedUntil = null }: AgeG
     }
 
     markAgeBlocked(verdict.eligibleAt);
+    announceRefusal.current = true;
     setBlocked(true);
   };
 
@@ -76,7 +90,11 @@ export function AgeGateStep({ onVerified, onDismiss, blockedUntil = null }: AgeG
   if (blocked) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-[var(--github-text-primary)]">
+        <p
+          ref={refusalRef}
+          tabIndex={-1}
+          className="text-sm text-[var(--github-text-primary)] focus:outline-none"
+        >
           Tu peux apprendre sans compte.
         </p>
         <p className="text-sm text-[var(--github-text-secondary)]">
@@ -122,20 +140,31 @@ export function AgeGateStep({ onVerified, onDismiss, blockedUntil = null }: AgeG
           id="age-gate-birthdate"
           type="date"
           name="birthdate"
+          // A shared family device must not offer the date back to the next
+          // visitor (security-auditor L6).
+          autoComplete="off"
           max={todayIso()}
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
-          aria-describedby="age-gate-help"
-          className="w-full min-h-11 px-3 py-2.5 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg)] text-[var(--github-text-primary)] text-base md:text-sm font-mono focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
+          aria-describedby={error ? 'age-gate-help age-gate-error' : 'age-gate-help'}
+          aria-invalid={error ? true : undefined}
+          // The global <meta name="color-scheme"> is not enough for native
+          // controls: without this the date picker renders light-themed on
+          // the dark background (same fix as SupportTicketsSection, ui-auditor H2).
+          className="[color-scheme:dark] w-full min-h-11 px-3 py-2.5 rounded-lg border border-[var(--github-border-primary)] bg-[var(--github-bg)] text-[var(--github-text-primary)] text-base md:text-sm font-mono focus:outline-none focus:border-emerald-500/40 focus-visible:border-emerald-500/50 focus-visible:ring-2 focus-visible:ring-emerald-500/40 transition-colors"
           required
         />
         <p id="age-gate-help" className="text-xs text-[var(--github-text-secondary)]">
           Demandée une seule fois, pour savoir si un compte peut être créé.
-          Elle n'est ni enregistrée ni envoyée à nos serveurs.
+          Elle n'est jamais envoyée à nos serveurs.
         </p>
       </div>
 
-      {error && <p className="text-[var(--github-red)] text-xs font-mono">{error}</p>}
+      {error && (
+        <p id="age-gate-error" role="alert" className="text-[var(--github-red)] text-xs font-mono">
+          {error}
+        </p>
+      )}
 
       <Button
         type="submit"

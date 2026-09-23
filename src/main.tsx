@@ -3,8 +3,13 @@ import App from './app/App.tsx';
 import './styles/index.css';
 import { initSentry } from './lib/sentry.ts';
 import { isStaleChunkError, reloadOnceForStaleChunk } from './app/lib/lazyWithRetry.ts';
+import { purgeExpiredAgeBlock } from './lib/auth/ageGate.ts';
 
 initSentry();
+
+// THI-340 — erase an expired age-gate block on the first visit on or after the
+// eligibility date, whatever page is opened (the promise made in /privacy).
+purgeExpiredAgeBlock();
 
 // Stale chunk guards — after a new deployment, old chunk hashes no longer exist.
 // Vercel's SPA rewrite returns index.html (text/html) instead of the JS chunk,
