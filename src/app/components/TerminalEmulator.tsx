@@ -212,7 +212,12 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
       const result = processCommand(activeState, trimmed, environment);
 
       if (result.clear) {
-        setLines([]);
+        // A script can clear the screen and then print: keep what came after.
+        setLines(result.lines.map((l: OutputLine) => ({
+          id: nextId(),
+          type: l.type === 'error' ? 'error' as const : l.type === 'success' ? 'success' as const : 'output' as const,
+          text: l.text,
+        })));
         setTermState(result.newState);
         setInput('');
         setHistoryIndex(-1);

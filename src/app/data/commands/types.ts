@@ -51,6 +51,8 @@ export interface TerminalState {
   hostname: string;
   envVars: Record<string, string>;
   git?: GitState;
+  /** PowerShell execution policy set by Set-ExecutionPolicy (absent = Windows default, Restricted). */
+  executionPolicy?: string;
 }
 
 export interface CommandOutput {

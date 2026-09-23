@@ -5,12 +5,13 @@ import {
   gitRepoWithBranch,
   gitRepoWithCommit,
   gitRepoWithRemote,
+  powershellProfile,
   sshDirectory,
 } from '../app/data/lessonSetup';
 
 describe('lesson setups', () => {
   it('never mutate the state they receive', () => {
-    for (const setup of [gitRepoEmpty, gitRepoWithCommit, gitRepoWithRemote, gitRepoWithBranch('feature/x'), sshDirectory]) {
+    for (const setup of [gitRepoEmpty, gitRepoWithCommit, gitRepoWithRemote, gitRepoWithBranch('feature/x'), sshDirectory, powershellProfile]) {
       const base = createInitialState();
       const snapshot = JSON.stringify(base);
       setup.apply(base);
@@ -49,5 +50,12 @@ describe('lesson setups', () => {
 
   it('leave the default state untouched for lessons without a setup', () => {
     expect(processCommand(createInitialState(), 'ls -la ~/.ssh', 'linux').lines[0].type).toBe('error');
+  });
+
+  it('put the PowerShell profile where $PROFILE points (Windows)', () => {
+    const s = powershellProfile.apply(createInitialState());
+    const out = processCommand(s, 'cat $PROFILE', 'windows').lines;
+    expect(out.every((l) => l.type !== 'error')).toBe(true);
+    expect(out[0].text).toMatch(/Profil PowerShell/);
   });
 });

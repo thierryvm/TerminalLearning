@@ -643,19 +643,42 @@ function cmdChmod(state: TerminalState, args: string[]): { lines: OutputLine[]; 
   const node = getNode(newRoot, resolved);
   if (!node) return { lines: [{ text: `chmod: cannot access '${filePath}': No such file or directory`, type: 'error' }] };
 
-  // Apply permission change (simplified)
-  const permsMap: Record<string, string> = {
-    '755': 'rwxr-xr-x', '644': 'rw-r--r--', '600': 'rw-------',
-    '777': 'rwxrwxrwx', '700': 'rwx------', '444': 'r--r--r--',
-  };
-  const prefix = node.type === 'directory' ? 'd' : '-';
-  if (permsMap[mode]) {
-    node.permissions = prefix + permsMap[mode];
-  } else if (mode.includes('+x')) {
-    const cur = node.permissions;
-    node.permissions = cur.slice(0, 4) + 'x' + cur.slice(5, 7) + 'x' + cur.slice(8, 10) + 'x';
-  }
+  const next = applyChmodMode(node.permissions, mode);
+  if (!next) return { lines: [{ text: `chmod: invalid mode: '${mode}'`, type: 'error' }] };
+  node.permissions = next;
   return { lines: [{ text: `Mode de '${filePath}' changé`, type: 'success' }], newRoot };
+}
+
+/**
+ * Applies a chmod mode to a `ls -l` permission string (`-rw-r--r--`).
+ * Octal: `755`, `640`… Symbolic: `+x`, `u+x`, `go-w`, `a=r`, comma lists.
+ * Returns null for an invalid mode. (The previous version only knew six octal
+ * values, and `+x` wrote the bits one position too far: `-rw-r--r--` became
+ * `-rw-xr-xr-x`, so the owner still could not run the script.)
+ */
+function applyChmodMode(current: string, mode: string): string | null {
+  const type = current[0];
+  if (/^[0-7]{3}$/.test(mode)) {
+    const bits = mode.split('').map((d) => {
+      const n = Number(d);
+      return (n & 4 ? 'r' : '-') + (n & 2 ? 'w' : '-') + (n & 1 ? 'x' : '-');
+    });
+    return type + bits.join('');
+  }
+  const perms = current.slice(1).split(''); // 9 chars: owner, group, other
+  const offset: Record<string, number> = { u: 0, g: 3, o: 6 };
+  const index: Record<string, number> = { r: 0, w: 1, x: 2 };
+  for (const clause of mode.split(',')) {
+    const m = clause.match(/^([ugoa]*)([+\-=])([rwx]*)$/);
+    if (!m) return null;
+    const [, whoRaw, op, what] = m;
+    const who = !whoRaw || whoRaw.includes('a') ? ['u', 'g', 'o'] : [...new Set(whoRaw.split(''))];
+    for (const w of who) {
+      if (op === '=') for (const p of 'rwx') perms[offset[w] + index[p]] = '-';
+      for (const p of what) perms[offset[w] + index[p]] = op === '-' ? '-' : p;
+    }
+  }
+  return type + perms.join('');
 }
 
 // ─── Environment Variable Commands ───────────────────────────────────────────
@@ -761,9 +784,90 @@ function cmdEchoRedirect(
   return { lines: [], newRoot };
 }
 
-function cmdPipe(state: TerminalState, left: string, right: string): OutputLine[] {
+// ─── Scripts ──────────────────────────────────────────────────────────────────
+
+/** PowerShell's $PROFILE for the simulated user (C:\Users\user = ~ in this filesystem). */
+const PS_PROFILE_PATH = '~/documents/PowerShell/Microsoft.PowerShell_profile.ps1';
+const PS_PROFILE_DISPLAY = 'C:\\Users\\user\\documents\\PowerShell\\Microsoft.PowerShell_profile.ps1';
+
+/**
+ * A script that calls itself (or two that call each other) must not hang the
+ * tab. Depth alone is not enough: N lines each calling an N-line script is N³
+ * runs within the depth limit, so the whole call tree also shares a line budget.
+ */
+const MAX_SCRIPT_DEPTH = 3;
+const MAX_SCRIPT_LINES = 500;
+let scriptDepth = 0;
+let scriptLinesRun = 0;
+let scriptBudgetHit = false;
+
+interface ScriptCall {
+  /** As typed, for error messages (`./script.sh`, `.\script.sh`). */
+  invoked: string;
+  file: string;
+  /** `./x` needs the execute bit; `bash x` does not — the lesson on chmod relies on it. */
+  requireExec: boolean;
+}
+
+function scriptCall(parts: string[], env: TerminalEnv): ScriptCall | null {
+  const [first = '', second] = parts;
+  if (/^\.[\\/]./.test(first)) {
+    return { invoked: first, file: first.slice(2).replace(/\\/g, '/'), requireExec: env !== 'windows' };
+  }
+  if (['bash', 'sh', 'zsh'].includes(first.toLowerCase()) && second && !second.startsWith('-')) {
+    return { invoked: second, file: second.replace(/\\/g, '/'), requireExec: false };
+  }
+  return null;
+}
+
+function runScript(state: TerminalState, call: ScriptCall, env: TerminalEnv): CommandOutput {
+  const prefix = env === 'windows' ? '' : 'bash: ';
+  const fail = (reason: string): CommandOutput => ({
+    lines: [{ text: `${prefix}${call.invoked}: ${reason}`, type: 'error' }],
+    newState: state,
+  });
+  const node = getNode(state.root, resolvePath(state, call.file));
+  if (!node) return fail('No such file or directory');
+  if (node.type === 'directory') return fail('Is a directory');
+  if (call.requireExec && node.permissions[3] !== 'x') return fail('Permission denied');
+  if (scriptDepth >= MAX_SCRIPT_DEPTH) return fail('trop de scripts imbriqués (limite du simulateur)');
+
+  if (scriptDepth === 0) {
+    scriptLinesRun = 0;
+    scriptBudgetHit = false;
+  }
+  scriptDepth++;
+  try {
+    let s = state;
+    let lines: OutputLine[] = [];
+    let cleared = false;
+    for (const raw of node.content.split('\n')) {
+      const line = raw.trim();
+      if (!line || line.startsWith('#')) continue; // comments and the #! shebang
+      if (scriptBudgetHit) break;
+      if (++scriptLinesRun > MAX_SCRIPT_LINES) {
+        scriptBudgetHit = true;
+        lines = [...lines, { text: `${prefix}${call.invoked}: script interrompu après ${MAX_SCRIPT_LINES} lignes exécutées (limite du simulateur)`, type: 'error' }];
+        break;
+      }
+      const out = processCommand(s, line, env);
+      if (out.clear) cleared = true;
+      // `clear` wipes what the script printed so far; later lines still show.
+      lines = out.clear ? [...out.lines] : [...lines, ...out.lines];
+      s = out.newState;
+    }
+    // A script runs in a child shell: the files it writes stay, but its `cd`
+    // and the variables it exports vanish with it (the difference with
+    // `source`), and its lines never enter the caller's history.
+    return { lines, clear: cleared || undefined, newState: { ...state, root: s.root, git: s.git } };
+  } finally {
+    scriptDepth--;
+  }
+}
+
+function cmdPipe(state: TerminalState, left: string, right: string, env: TerminalEnv): OutputLine[] {
   // Execute left side and feed output to right side's stdin
-  const leftResult = processCommand(state, left, 'linux');
+  const leftResult = processCommand(state, left, env);
   const inputText = leftResult.lines.filter((l) => l.type === 'output').map((l) => l.text).join('\n');
 
   // Simulate stdin for right command
@@ -1302,7 +1406,7 @@ export function processCommand(state: TerminalState, input: string, env: Termina
   if (trimmed.includes('|')) {
     const [left, ...rest] = trimmed.split('|');
     const right = rest.join('|');
-    const pipeLines = cmdPipe(state, left.trim(), right.trim());
+    const pipeLines = cmdPipe(state, left.trim(), right.trim(), env);
     return { lines: pipeLines, newState };
   }
 
@@ -1353,10 +1457,33 @@ export function processCommand(state: TerminalState, input: string, env: Termina
     };
   }
 
+  if (env === 'windows') {
+    // `$PROFILE` alone prints the path of the profile script, like PowerShell.
+    if (/^\$profile$/i.test(trimmed)) {
+      return { lines: [{ text: PS_PROFILE_DISPLAY, type: 'output' }], newState };
+    }
+    // `(Get-Content file).Count` — number of lines, the PowerShell `wc -l`.
+    const psCount = trimmed.match(/^\(\s*(?:get-content|gc|cat)\s+(.+?)\s*\)\.count$/i);
+    if (psCount) {
+      const target = parseArgs(psCount[1]).map((p) => (/^\$profile$/i.test(p) ? PS_PROFILE_PATH : p));
+      const out = cmdCat(newState, target);
+      const errors = out.filter((l) => l.type === 'error');
+      return { lines: errors.length ? errors : [{ text: String(out.length), type: 'output' }], newState };
+    }
+  }
+
   // Parse command
-  const parts = parseArgs(trimmed);
+  let parts = parseArgs(trimmed);
   const cmd = parts[0]?.toLowerCase();
+  if (env === 'windows') {
+    // `$PROFILE` as an argument: a readable path for echo, the file itself otherwise.
+    const shown = ['echo', 'write-output', 'write-host'].includes(cmd ?? '');
+    parts = parts.map((p) => (/^\$profile$/i.test(p) ? (shown ? PS_PROFILE_DISPLAY : PS_PROFILE_PATH) : p));
+  }
   const args = parts.slice(1);
+
+  const script = scriptCall(parts, env);
+  if (script) return runScript(newState, script, env);
 
   // Dependencies for Windows/macOS alias handler
   const winDeps: WindowsCmdDeps = {

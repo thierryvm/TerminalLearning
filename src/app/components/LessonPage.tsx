@@ -213,7 +213,8 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const effectiveInstruction =
     lesson.exercise?.instructionByEnv?.[selectedEnv] ?? lesson.exercise?.instruction ?? '';
   const setup = lesson.exercise?.setup;
-  const setupNote = setup ? [stripInlineMarkdown(setup.note)] : [];
+  const setupNoteText = setup?.noteByEnv?.[selectedEnv] ?? setup?.note;
+  const setupNote = setupNoteText ? [stripInlineMarkdown(setupNoteText)] : [];
   const welcomeMessage = lesson.exercise
     ? exerciseCompleted
       ? [`📚 ${lesson.title}`, ``, ...setupNote, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
