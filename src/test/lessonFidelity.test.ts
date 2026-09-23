@@ -27,15 +27,6 @@ const KNOWN_DESYNCS = new Set<string>([
   'redirection/stderr [linux]',
   'redirection/stderr [macos]',
   'redirection/stderr [windows]', // + Get-Item is not simulated
-  // Scripts: `./script.sh` and `.\script.sh` are not executed.
-  'variables/scripts [linux]',
-  'variables/scripts [macos]',
-  'variables/scripts [windows]',
-  // $PROFILE is not expanded, the file does not exist.
-  'variables/shell-config [windows]',
-  // PowerShell cmdlets / expressions not simulated.
-  'lecture/wc [windows]', // (Get-Content …).Count
-  'permissions/chmod [windows]', // Set-ExecutionPolicy
 ]);
 
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim();

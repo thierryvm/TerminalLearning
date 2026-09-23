@@ -15,6 +15,8 @@ export interface WindowsCmdDeps {
   cmdEnv: (state: TerminalState) => OutputLine[];
 }
 
+const EXECUTION_POLICIES = ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass', 'Undefined', 'Default'];
+
 /**
  * Handles PowerShell aliases and Windows/macOS-specific commands.
  * Returns null if the command is not handled by this module (caller falls through to default).
@@ -164,6 +166,38 @@ export function handleWindows(
       if (newRoot) newState = { ...newState, root: newRoot };
       return { lines, newState };
     }
+
+    // ── script execution policy (PowerShell only) ─────────────────────────────
+    case 'set-executionpolicy': {
+      if (env !== 'windows') return null;
+      let value: string | undefined;
+      let scope = 'LocalMachine';
+      for (let i = 0; i < args.length; i++) {
+        const a = args[i].toLowerCase();
+        if (a === '-executionpolicy') value = args[++i];
+        else if (a === '-scope') scope = args[++i] ?? scope;
+        else if (!a.startsWith('-') && value === undefined) value = args[i];
+      }
+      if (!value) {
+        return { lines: [{ text: 'Set-ExecutionPolicy: indiquez une politique, par exemple Set-ExecutionPolicy RemoteSigned', type: 'error' }], newState };
+      }
+      const policy = EXECUTION_POLICIES.find((p) => p.toLowerCase() === value!.toLowerCase());
+      if (!policy) {
+        return {
+          lines: [{ text: `Set-ExecutionPolicy: Cannot bind parameter 'ExecutionPolicy'. Cannot convert value "${value}" to type "Microsoft.PowerShell.ExecutionPolicy".`, type: 'error' }],
+          newState,
+        };
+      }
+      // Real PowerShell prints nothing on success; the info line says what changed.
+      return {
+        lines: [{ text: `Politique d'exécution définie sur ${policy} (portée ${scope}). Vérifiez avec Get-ExecutionPolicy.`, type: 'info' }],
+        newState: { ...newState, executionPolicy: policy },
+      };
+    }
+
+    case 'get-executionpolicy':
+      if (env !== 'windows') return null;
+      return { lines: [{ text: newState.executionPolicy ?? 'Restricted', type: 'output' }], newState };
 
     // ── permissions ───────────────────────────────────────────────────────────
     case 'get-acl':

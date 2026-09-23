@@ -14,7 +14,7 @@ import {
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
 } from './validators';
 import {
-  gitRepoEmpty, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, sshDirectory,
+  gitRepoEmpty, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, powershellProfile, sshDirectory,
   type LessonSetup,
 } from './lessonSetup';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
@@ -1700,6 +1700,7 @@ export const curriculum: Module[] = [
             windows: 'Tapez: cat $PROFILE',
           },
           validate: validateShellConfig,
+          setup: powershellProfile,
           successMessage: 'Bien joué ! Voici votre configuration shell actuelle.',
         },
       },

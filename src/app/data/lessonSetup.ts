@@ -18,8 +18,10 @@ import type { DirectoryNode, FSNode, GitCommit, GitState, TerminalState } from '
 export interface LessonSetup {
   /** Pure: returns a new state, never mutates the one it receives. */
   apply: (state: TerminalState) => TerminalState;
-  /** Shown in the welcome message, e.g. "Dépôt Git prêt dans ~/projets". */
+  /** Shown in the welcome message, e.g. "Dépôt Git prêt dans ~/projets". Empty = no line. */
   note: string;
+  /** Per-environment override of `note`, like `instructionByEnv` on an exercise. */
+  noteByEnv?: Partial<Record<'linux' | 'macos' | 'windows', string>>;
 }
 
 // Fixed hashes and dates keep the prepared history deterministic (tests, and
@@ -90,6 +92,32 @@ export const gitRepoWithRemote: LessonSetup = {
       remotes: { origin: 'https://github.com/user/mon-projet.git' },
     }),
   note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin configuré).',
+};
+
+/**
+ * The PowerShell profile that `$PROFILE` points to (see terminalEngine), so
+ * `cat $PROFILE` shows a real profile instead of "file not found". It lives in
+ * ~/documents, the simulated C:\Users\user\Documents; on Linux and macOS it is
+ * just a folder the lesson never mentions.
+ */
+export const powershellProfile: LessonSetup = {
+  apply: (s) => ({
+    ...s,
+    root: withNode(s.root, ['home', 'user', 'documents', 'PowerShell'], {
+      type: 'directory',
+      permissions: 'drwxr-xr-x',
+      owner: 'user',
+      group: 'user',
+      children: {
+        'Microsoft.PowerShell_profile.ps1': file(
+          '# Profil PowerShell — chargé à chaque ouverture de PowerShell\nSet-Alias ll Get-ChildItem\n$env:EDITOR = "code"\nfunction gs { git status }',
+          '-rw-r--r--',
+        ),
+      },
+    }),
+  }),
+  note: '',
+  noteByEnv: { windows: 'Votre profil PowerShell ($PROFILE) existe déjà.' },
 };
 
 /** A `~/.ssh` directory with the permissions a correct setup has (700 / 600 / 644). */

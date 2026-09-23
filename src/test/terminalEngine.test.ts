@@ -2240,3 +2240,186 @@ describe('ai-help', () => {
     }
   });
 });
+
+// ─── Scripts, $PROFILE and PowerShell expressions (THI-353) ──────────────────
+
+describe('running a script', () => {
+  /** Runs commands in sequence from the default filesystem, returns the last output and state. */
+  function run(env: 'linux' | 'macos' | 'windows', ...cmds: string[]) {
+    let state = createInitialState();
+    let last = processCommand(state, 'pwd', env);
+    for (const c of cmds) {
+      last = processCommand(state, c, env);
+      state = last.newState;
+    }
+    return { out: last.lines, state };
+  }
+  const texts = (lines: { text: string }[]) => lines.map((l) => l.text);
+
+  it('./script.sh runs the lines of the script', () => {
+    const { out } = run('linux', 'cd projets', './script.sh');
+    expect(texts(out)).toEqual(['Bonjour le monde !', 'Ce script fonctionne !']);
+  });
+
+  it('bash <file> runs it without the execute bit, from any directory', () => {
+    expect(texts(run('linux', 'bash projets/script.sh').out)).toEqual(['Bonjour le monde !', 'Ce script fonctionne !']);
+    expect(texts(run('macos', 'cd projets', 'sh script.sh').out)).toHaveLength(2);
+  });
+
+  it('.\\script.sh runs on Windows, where there is no execute bit', () => {
+    const { out } = run('windows', 'cd projets', '.\\script.sh');
+    expect(out.every((l) => l.type !== 'error')).toBe(true);
+    expect(texts(out)).toContain('Bonjour le monde !');
+  });
+
+  it('./file without the execute bit is refused, as chmod teaches', () => {
+    const denied = run('linux', 'cd projets', './README.md').out;
+    expect(denied).toEqual([{ text: 'bash: ./README.md: Permission denied', type: 'error' }]);
+    const allowed = run('linux', 'cd projets', 'chmod +x README.md', './README.md').out;
+    expect(allowed.some((l) => /Permission denied/.test(l.text))).toBe(false);
+  });
+
+  it('reports a missing script or a directory', () => {
+    expect(run('linux', './absent.sh').out[0].text).toBe('bash: ./absent.sh: No such file or directory');
+    expect(run('linux', 'bash projets').out[0].text).toBe('bash: projets: Is a directory');
+  });
+
+  it('runs in a child shell: files stay, cd and exported variables do not', () => {
+    const { state } = run(
+      'linux',
+      'echo "cd /tmp" > s.sh',
+      'echo "export MARK=1" >> s.sh',
+      'echo "touch trace.txt" >> s.sh',
+      'bash s.sh',
+    );
+    expect(state.cwd).toEqual(['home', 'user']);
+    expect(state.envVars.MARK).toBeUndefined();
+    expect(processCommand(state, 'ls /tmp', 'linux').lines[0].text).toContain('trace.txt');
+  });
+
+  it('keeps only the invocation in the history', () => {
+    const { state } = run('linux', 'cd projets', './script.sh');
+    expect(state.commandHistory).toEqual(['cd projets', './script.sh']);
+  });
+
+  it('stops a script that calls itself instead of hanging', () => {
+    const { out } = run('linux', 'echo "bash loop.sh" > loop.sh', 'bash loop.sh');
+    expect(out.some((l) => l.type === 'error' && /imbriqués/.test(l.text))).toBe(true);
+  });
+});
+
+describe('PowerShell: $PROFILE, (Get-Content).Count, execution policy', () => {
+  const s = () => createInitialState();
+
+  it('$PROFILE prints the profile path on Windows', () => {
+    expect(processCommand(s(), '$PROFILE', 'windows').lines[0].text).toBe(
+      'C:\\Users\\user\\documents\\PowerShell\\Microsoft.PowerShell_profile.ps1',
+    );
+    expect(processCommand(s(), 'echo $PROFILE', 'windows').lines[0].text).toMatch(/Microsoft\.PowerShell_profile\.ps1$/);
+  });
+
+  it('$PROFILE means nothing in bash', () => {
+    expect(processCommand(s(), 'cat $PROFILE', 'linux').lines[0].type).toBe('error');
+  });
+
+  it('(Get-Content file).Count counts the lines', () => {
+    const lines = processCommand(s(), 'cat documents/rapport.md', 'linux').lines.length;
+    expect(processCommand(s(), '(Get-Content documents/rapport.md).Count', 'windows').lines).toEqual([
+      { text: String(lines), type: 'output' },
+    ]);
+    expect(processCommand(s(), '(gc documents/absent.md).Count', 'windows').lines[0].type).toBe('error');
+  });
+
+  it('Set-ExecutionPolicy changes what Get-ExecutionPolicy reports', () => {
+    expect(processCommand(s(), 'Get-ExecutionPolicy', 'windows').lines[0].text).toBe('Restricted');
+    const set = processCommand(s(), 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser', 'windows');
+    expect(set.lines[0].type).toBe('info');
+    expect(set.lines[0].text).toContain('CurrentUser');
+    expect(processCommand(set.newState, 'Get-ExecutionPolicy', 'windows').lines[0].text).toBe('RemoteSigned');
+    expect(processCommand(s(), 'Set-ExecutionPolicy -ExecutionPolicy bypass', 'windows').newState.executionPolicy).toBe('Bypass');
+  });
+
+  it('Set-ExecutionPolicy rejects a missing or unknown policy', () => {
+    expect(processCommand(s(), 'Set-ExecutionPolicy', 'windows').lines[0].type).toBe('error');
+    expect(processCommand(s(), 'Set-ExecutionPolicy Whatever', 'windows').lines[0].text).toMatch(/Cannot convert value "Whatever"/);
+  });
+
+  it('the execution policy cmdlets do not exist in bash', () => {
+    expect(processCommand(s(), 'Set-ExecutionPolicy RemoteSigned', 'linux').lines[0].text).toMatch(/commande introuvable/);
+  });
+});
+
+describe('chmod modes (THI-353)', () => {
+  function modeAfter(mode: string, file = 'projets/README.md') {
+    const s = processCommand(createInitialState(), `chmod ${mode} ${file}`, 'linux').newState;
+    const line = processCommand(s, `ls -l ${file}`, 'linux').lines[0].text;
+    return line.slice(0, 10);
+  }
+
+  it('+x makes the file executable for everyone (was shifted one position)', () => {
+    expect(modeAfter('+x')).toBe('-rwxr-xr-x');
+  });
+
+  it('u+x only for the owner, go-w removes write, a=r sets exactly read', () => {
+    expect(modeAfter('u+x')).toBe('-rwxr--r--');
+    expect(modeAfter('777')).toBe('-rwxrwxrwx');
+    expect(modeAfter('go-w', 'projets/script.sh')).toBe('-rwxr-xr-x');
+    expect(modeAfter('a=r')).toBe('-r--r--r--');
+    expect(modeAfter('u+x,g+w')).toBe('-rwxrw-r--');
+  });
+
+  it('accepts every octal mode, not only a fixed list', () => {
+    expect(modeAfter('750')).toBe('-rwxr-x---');
+    expect(modeAfter('640')).toBe('-rw-r-----');
+  });
+
+  it('rejects an invalid mode without changing the file', () => {
+    const r = processCommand(createInitialState(), 'chmod 9z9 projets/README.md', 'linux');
+    expect(r.lines[0]).toEqual({ text: "chmod: invalid mode: '9z9'", type: 'error' });
+    expect(modeAfter('+q')).toBe('-rw-r--r--');
+  });
+
+  it('keeps the directory marker', () => {
+    const s = processCommand(createInitialState(), 'chmod 700 documents', 'linux').newState;
+    const line = processCommand(s, 'ls -l', 'linux').lines.find((l) => l.text.endsWith(' documents'));
+    expect(line?.text.slice(0, 10)).toBe('drwx------');
+  });
+});
+
+describe('scripts — review follow-ups (THI-353)', () => {
+  function build(env: 'linux' | 'windows', ...cmds: string[]) {
+    let state = createInitialState();
+    for (const c of cmds) state = processCommand(state, c, env).newState;
+    return state;
+  }
+
+  it('clear inside a script clears the screen and keeps what follows', () => {
+    const s = build('linux', 'echo "echo avant" > c.sh', 'echo "clear" >> c.sh', 'echo "echo après" >> c.sh');
+    const r = processCommand(s, 'bash c.sh', 'linux');
+    expect(r.clear).toBe(true);
+    expect(r.lines.map((l) => l.text)).toEqual(['après']);
+  });
+
+  it('(Get-Content $PROFILE).Count counts the profile lines', () => {
+    const s = build('windows', 'mkdir -p documents/PowerShell', 'echo "ligne 1" > documents/PowerShell/Microsoft.PowerShell_profile.ps1', 'echo "ligne 2" >> documents/PowerShell/Microsoft.PowerShell_profile.ps1');
+    expect(processCommand(s, '(Get-Content $PROFILE).Count', 'windows').lines).toEqual([{ text: '2', type: 'output' }]);
+  });
+
+  it('a fan-out of scripts is cut by the shared line budget, quickly', () => {
+    // 30 lines, each calling the same 30-line script, 3 levels deep = 27 000 runs without a budget.
+    let s = build('linux', 'echo "bash big.sh" > big.sh');
+    for (let i = 0; i < 29; i++) s = processCommand(s, 'echo "bash big.sh" >> big.sh', 'linux').newState;
+    const t0 = performance.now();
+    const r = processCommand(s, 'bash big.sh', 'linux');
+    expect(performance.now() - t0).toBeLessThan(2000);
+    expect(r.lines.filter((l) => /script interrompu après 500 lignes/.test(l.text))).toHaveLength(1);
+    // The budget resets for the next command.
+    expect(processCommand(r.newState, 'bash projets/script.sh', 'linux').lines[0].text).toBe('Bonjour le monde !');
+  });
+
+  it('a pipe keeps the environment: a Windows script needs no execute bit there either', () => {
+    const s = build('windows', 'echo "echo trouvé" > outil.sh');
+    const r = processCommand(s, '.\\outil.sh | grep trouvé', 'windows');
+    expect(r.lines).toEqual([{ text: 'trouvé', type: 'output' }]);
+  });
+});
