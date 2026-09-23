@@ -217,6 +217,30 @@
     max-width: 100vw;
   }
 
+  /*
+   * Monospace text is what learners read and type character by character.
+   * JetBrains Mono ships programming ligatures (contextual alternates): `--`
+   * is drawn as one continuous line, `->` as an arrow, `!=` as `≠`. In a
+   * terminal course that hides the very characters being taught — a learner
+   * typing `--no-ff` saw one of the two dashes "disappear" as soon as the
+   * space was typed, and had to paste the command to succeed (reported
+   * 24 September 2026). The property is inherited, so this covers the
+   * terminal output, its input and every code block or inline code chip.
+   *
+   * Known limit: WebKit (Safari macOS / iOS) is documented as unable to turn
+   * off contextual alternates from CSS. Verified in Chrome only; if Safari
+   * still merges `--`, the fix is a ligature-free font (JetBrains Mono NL),
+   * tracked in THI-354.
+   */
+  .font-mono,
+  code,
+  kbd,
+  samp,
+  pre {
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0, "calt" 0;
+  }
+
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
