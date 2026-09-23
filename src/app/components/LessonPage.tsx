@@ -13,8 +13,8 @@ import { useAuth } from '../context/AuthContext';
 import { useEnvironment } from '../context/EnvironmentContext';
 import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
-import { renderInlineMarkdown } from '../../lib/renderInlineMarkdown';
-import { TerminalState } from '../data/terminalEngine';
+import { renderInlineMarkdown, stripInlineMarkdown } from '../../lib/renderInlineMarkdown';
+import { TerminalState, createInitialState } from '../data/terminalEngine';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
 import { AiTutorPanel } from './ai/AiTutorPanel';
@@ -212,11 +212,18 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
 
   const effectiveInstruction =
     lesson.exercise?.instructionByEnv?.[selectedEnv] ?? lesson.exercise?.instruction ?? '';
+  const setup = lesson.exercise?.setup;
+  const setupNote = setup ? [stripInlineMarkdown(setup.note)] : [];
   const welcomeMessage = lesson.exercise
     ? exerciseCompleted
-      ? [`📚 ${lesson.title}`, ``, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
-      : [`📚 ${lesson.title}`, ``, `Exercice : ${effectiveInstruction}`, ``]
+      ? [`📚 ${lesson.title}`, ``, ...setupNote, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
+      : [`📚 ${lesson.title}`, ``, ...setupNote, `Exercice : ${stripInlineMarkdown(effectiveInstruction)}`, ``]
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
+  // Read once per terminal mount (lesson change or « Réinitialiser » remount).
+  const buildInitialState = useCallback(
+    () => (setup ? setup.apply(createInitialState()) : createInitialState()),
+    [setup],
+  );
 
   return (
     <div className="h-full flex flex-col bg-[var(--github-bg)] text-[var(--github-text-primary)] overflow-hidden">
@@ -297,10 +304,10 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                 </div>
 
                 {exerciseMessage ? (
-                  <p className="text-emerald-400 text-sm">{exerciseMessage}</p>
+                  <p className="text-emerald-400 text-sm">{renderInlineMarkdown(exerciseMessage)}</p>
                 ) : (
                   <p className="text-[var(--github-text-primary)] text-sm">
-                    {lesson.exercise.instructionByEnv?.[selectedEnv] ?? lesson.exercise.instruction}
+                    {renderInlineMarkdown(effectiveInstruction)}
                   </p>
                 )}
 
@@ -331,7 +338,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                         aria-label="Indice"
                         className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
                       >
-                        💡 {lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint}
+                        💡 {renderInlineMarkdown(lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint)}
                       </p>
                     )}
                   </div>
@@ -382,6 +389,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             className="flex-1 min-h-0"
             username={terminalUsername}
             environment={selectedEnv}
+            initialState={buildInitialState}
           />
         </div>
       </div>

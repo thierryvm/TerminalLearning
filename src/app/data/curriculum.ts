@@ -13,6 +13,10 @@ import {
   validateAiHelpContext, validateAiHelpValidate, validateAiHelpDebug, validateAiHelpSecurity,
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
 } from './validators';
+import {
+  gitRepoEmpty, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, sshDirectory,
+  type LessonSetup,
+} from './lessonSetup';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
 
 export interface ContentBlock {
@@ -37,6 +41,11 @@ export interface Exercise {
   /** env is passed by LessonPage from EnvironmentContext. */
   validate: (command: string, env?: EnvId) => boolean;
   successMessage: string;
+  /**
+   * Terminal state the exercise starts from (e.g. an initialised Git repository).
+   * Absent = the default filesystem. See lessonSetup.ts.
+   */
+  setup?: LessonSetup;
 }
 
 export interface Lesson {
@@ -1092,6 +1101,7 @@ export const curriculum: Module[] = [
             windows: 'Tapez: Get-Acl $HOME | Format-List',
           },
           validate: validateSecurityPermissions,
+          setup: sshDirectory,
           successMessage: 'Excellent ! Vous intégrez maintenant la sécurité dans votre gestion de fichiers.',
         },
       },
@@ -1775,7 +1785,7 @@ export const curriculum: Module[] = [
           },
           hint: 'Faites d\'abord "cd projets" si ce n\'est pas déjà fait, puis "./script.sh"',
           hintByEnv: {
-            windows: 'Tapez ".\\script.sh" ou "bash script.sh"',
+            windows: 'Faites d\'abord "cd projets", puis ".\\script.sh" ou "bash script.sh"',
           },
           validate: validateScripts,
           successMessage: 'Bravo ! Vous venez d\'exécuter votre premier script bash.',
@@ -2275,6 +2285,7 @@ export const curriculum: Module[] = [
           instruction: 'Ajoutez tous les fichiers du répertoire courant à la zone de staging avec `git add .`.',
           hint: 'Tapez: git add .',
           validate: validateGitAddCommit,
+          setup: gitRepoEmpty,
           successMessage: 'Fichiers stagés ! Maintenant vous pouvez les committer avec git commit -m "message".',
         },
       },
@@ -2312,6 +2323,7 @@ export const curriculum: Module[] = [
           instruction: 'Affichez le statut de votre dépôt avec `git status`.',
           hint: 'Tapez: git status',
           validate: validateGitStatusLog,
+          setup: gitRepoWithCommit,
           successMessage: 'Vous savez lire l\'état de votre dépôt. git status sera votre commande la plus utilisée au quotidien.',
         },
       },
@@ -2353,6 +2365,7 @@ export const curriculum: Module[] = [
           instruction: 'Visualisez les différences actuelles dans votre dépôt avec `git diff`.',
           hint: 'Tapez: git diff',
           validate: validateGitDiffGitignore,
+          setup: gitRepoWithCommit,
           successMessage: 'Vous savez lire un diff Git. Les lignes en vert (+) sont les ajouts, en rouge (-) les suppressions.',
         },
       },
@@ -2393,6 +2406,7 @@ export const curriculum: Module[] = [
           instruction: 'Créez une nouvelle branche `feature/ma-feature` et basculez dessus avec `git checkout -b feature/ma-feature`.',
           hint: 'Tapez: git checkout -b feature/ma-feature',
           validate: validateGitBranch,
+          setup: gitRepoWithCommit,
           successMessage: 'Branche créée et activée ! Vous développez maintenant en isolation totale de main.',
         },
       },
@@ -2430,6 +2444,7 @@ export const curriculum: Module[] = [
           instruction: 'Fusionnez la branche `feature/ma-feature` dans la branche courante avec `git merge feature/ma-feature`.',
           hint: 'Tapez: git merge feature/ma-feature',
           validate: validateGitMerge,
+          setup: gitRepoWithBranch('feature/ma-feature'),
           successMessage: 'Fusion réussie ! Le travail de la branche est maintenant intégré. C\'est le coeur du workflow Git en entreprise.',
         },
       },
@@ -2484,6 +2499,7 @@ export const curriculum: Module[] = [
           instruction: 'Ajoutez un remote `origin` pointant vers `https://github.com/user/mon-projet.git` avec `git remote add origin https://github.com/user/mon-projet.git`.',
           hint: 'Tapez: git remote add origin https://github.com/user/mon-projet.git',
           validate: validateGitRemote,
+          setup: gitRepoWithCommit,
           successMessage: 'Remote ajouté ! Votre dépôt local est maintenant connecté à GitHub.',
         },
       },
@@ -2528,6 +2544,7 @@ export const curriculum: Module[] = [
           instruction: 'Envoyez vos commits vers GitHub avec `git push -u origin main`.',
           hint: 'Tapez: git push -u origin main',
           validate: validateGitPushPull,
+          setup: gitRepoWithRemote,
           successMessage: 'Push réussi ! Vos commits sont maintenant sur GitHub, visibles par toute votre équipe.',
         },
       },
@@ -2605,6 +2622,7 @@ export const curriculum: Module[] = [
           instruction: 'Simulez le début d\'un workflow PR : créez une branche `feature/nouvelle-feature` avec `git checkout -b feature/nouvelle-feature`.',
           hint: 'Tapez: git checkout -b feature/nouvelle-feature',
           validate: validatePullRequests,
+          setup: gitRepoWithCommit,
           successMessage: 'Branche feature créée ! Dans un vrai projet, vous développeriez ici puis ouvreriez une PR vers main.',
         },
       },
@@ -2651,6 +2669,7 @@ export const curriculum: Module[] = [
           instruction: 'Fusionnez la branche `feature/ma-feature` avec un **merge commit explicite** (option `--no-ff`) : `git merge --no-ff feature/ma-feature`.',
           hint: 'Tapez: git merge --no-ff feature/ma-feature',
           validate: validateMergeStrategies,
+          setup: gitRepoWithBranch('feature/ma-feature'),
           successMessage: 'Merge commit créé ! Votre branche reste identifiable dans l\'historique — utile pour retrouver le contexte d\'une feature 6 mois plus tard.',
         },
       },
@@ -2692,6 +2711,7 @@ export const curriculum: Module[] = [
           instruction: 'Fusionnez la branche `feature/nouvelle-feature` dans la branche courante avec `git merge feature/nouvelle-feature`.',
           hint: 'Tapez: git merge feature/nouvelle-feature',
           validate: validateConflicts,
+          setup: gitRepoWithBranch('feature/nouvelle-feature'),
           successMessage: 'Fusion effectuée ! En cas de conflit réel, vous savez maintenant comment les identifier et les résoudre.',
         },
       },
@@ -2737,6 +2757,7 @@ export const curriculum: Module[] = [
           instruction: 'Vérifiez l\'état de votre dépôt git avant un push avec `git status`.',
           hint: 'Tapez: git status',
           validate: validateGithubActions,
+          setup: gitRepoWithRemote,
           successMessage: 'Parfait ! Avant chaque push, vérifiez toujours l\'état de votre dépôt. GitHub Actions fera ensuite tourner automatiquement vos tests et votre build.',
         },
       },

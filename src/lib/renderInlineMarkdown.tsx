@@ -47,3 +47,16 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
     return <span key={i}>{part}</span>;
   });
 }
+
+/**
+ * Plain-text twin of `renderInlineMarkdown`, for surfaces that cannot render
+ * markup — the terminal welcome message showed the instruction's backticks and
+ * asterisks literally (check-up P1, 23 September 2026). Same token rules: only
+ * a complete `` `code` `` or `**bold**` span loses its markers; a lone
+ * backtick or asterisk stays verbatim.
+ */
+export function stripInlineMarkdown(text: string): string {
+  return text.replace(INLINE_TOKEN_RX, (part) =>
+    part.startsWith('`') ? part.slice(1, -1) : part.slice(2, -2),
+  );
+}
