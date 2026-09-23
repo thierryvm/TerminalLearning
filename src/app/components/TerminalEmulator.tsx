@@ -104,7 +104,16 @@ interface TerminalEmulatorProps {
   username?: string;
   /** Active environment — controls prompt style and display. Defaults to 'linux'. */
   environment?: SelectedEnvironment;
+  /** Builds the state the terminal starts from (lesson setup). Read once, on mount. */
+  initialState?: () => TerminalState;
 }
+
+/**
+ * Output keeps its spacing: `git branch` indents non-current branches, `git
+ * status` uses tabs, `ps` aligns columns. HTML collapses all of that by
+ * default. Long unbroken tokens (URLs, paths) still wrap instead of overflowing.
+ */
+const OUTPUT_TEXT = 'whitespace-pre-wrap break-words [word-break:break-word]';
 
 let lineCounter = 0;
 const nextId = () => ++lineCounter;
@@ -137,8 +146,8 @@ function useCoarsePointer(): boolean {
   return coarse;
 }
 
-export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux' }: TerminalEmulatorProps) {
-  const [termState, setTermState] = useState<TerminalState>(createInitialState);
+export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux', initialState }: TerminalEmulatorProps) {
+  const [termState, setTermState] = useState<TerminalState>(initialState ?? createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
     const welcome = welcomeMessage ?? ENV_MOTD[environment];
     return welcome.map((text) => ({ id: nextId(), type: 'info' as const, text }));
@@ -346,13 +355,13 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
                 <span className="text-[var(--github-text-primary)] break-all">{line.text}</span>
               </div>
             ) : line.type === 'error' ? (
-              <div className="text-[var(--github-red)]">{line.text}</div>
+              <div className={`${OUTPUT_TEXT} text-[var(--github-red)]`}>{line.text}</div>
             ) : line.type === 'success' ? (
-              <div className="text-[#3fb950]">{line.text}</div>
+              <div className={`${OUTPUT_TEXT} text-[#3fb950]`}>{line.text}</div>
             ) : line.type === 'info' ? (
-              <div className="text-[#58a6ff]">{line.text}</div>
+              <div className={`${OUTPUT_TEXT} text-[#58a6ff]`}>{line.text}</div>
             ) : (
-              <div className="text-[var(--github-text-primary)]">{line.text}</div>
+              <div className={`${OUTPUT_TEXT} text-[var(--github-text-primary)]`}>{line.text}</div>
             )}
           </div>
         ))}

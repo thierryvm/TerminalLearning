@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { renderInlineMarkdown } from '@/lib/renderInlineMarkdown';
+import { renderInlineMarkdown, stripInlineMarkdown } from '@/lib/renderInlineMarkdown';
 
 function renderInline(text: string) {
   return render(<div data-testid="out">{renderInlineMarkdown(text)}</div>);
@@ -68,5 +68,21 @@ describe('renderInlineMarkdown', () => {
     expect(container.querySelector('strong')).toBeNull();
     expect(container.querySelector('code')).toBeNull();
     expect(container.textContent).toBe('juste du texte normal');
+  });
+});
+
+describe('stripInlineMarkdown (terminal welcome message)', () => {
+  it('drops the markers of complete code and bold spans', () => {
+    expect(stripInlineMarkdown('Fusionnez `feature/x` avec un **merge commit** (`--no-ff`).')).toBe(
+      'Fusionnez feature/x avec un merge commit (--no-ff).',
+    );
+  });
+
+  it('keeps a lone backtick or asterisk verbatim', () => {
+    expect(stripInlineMarkdown('a ` b * c')).toBe('a ` b * c');
+  });
+
+  it('leaves plain text unchanged', () => {
+    expect(stripInlineMarkdown('Tapez: git status')).toBe('Tapez: git status');
   });
 });
