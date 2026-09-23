@@ -15,6 +15,7 @@ import {
   markAgeBlocked,
   markAgeVerified,
   parseBirthDate,
+  purgeExpiredAgeBlock,
   resetAgeGate,
 } from '../lib/auth/ageGate';
 
@@ -175,5 +176,26 @@ describe('resetAgeGate', () => {
     resetAgeGate();
     expect(isAgeVerified()).toBe(false);
     expect(getAgeBlockedUntil(new Date(2026, 7, 19))).toBeNull();
+  });
+});
+
+describe('purgeExpiredAgeBlock (app start)', () => {
+  // /privacy promises the eligibility date is erased on the first visit on or
+  // after that day — whatever page is opened, not only the login modal.
+  it('erases a block whose date has passed', () => {
+    markAgeBlocked('2020-01-10');
+    purgeExpiredAgeBlock(new Date(2020, 0, 10));
+    expect(localStorage.getItem('tl.age.blocked_until')).toBeNull();
+  });
+
+  it('keeps a block that is still running', () => {
+    markAgeBlocked('2031-05-20');
+    purgeExpiredAgeBlock(new Date(2026, 8, 23));
+    expect(localStorage.getItem('tl.age.blocked_until')).toBe('2031-05-20');
+  });
+
+  it('is a no-op when nothing is stored', () => {
+    expect(() => purgeExpiredAgeBlock(new Date())).not.toThrow();
+    expect(localStorage.getItem('tl.age.blocked_until')).toBeNull();
   });
 });

@@ -26,11 +26,12 @@
  * checkbox anywhere in this flow.
  *
  * ─── Data minimisation ───────────────────────────────────────────────────────
- * The date of birth is **never sent anywhere**. It is read, turned into a
- * yes/no, and dropped. What reaches the server is a single timestamp
+ * The date of birth is **never sent anywhere**. On a pass it is read, turned
+ * into a yes/no, and dropped; what reaches the server is a single timestamp
  * (`profiles.age_confirmed_at`) meaning "this account passed the age screen on
  * that date" — proof of the Art. 5(2) accountability duty without storing one
- * extra byte of personal data.
+ * extra byte of personal data. On a refusal, the eligibility date stays on the
+ * device only (see the storage asymmetry below).
  *
  * ─── Storage asymmetry (deliberate) ──────────────────────────────────────────
  * The permissive answer is short-lived, the restrictive answer is durable:
@@ -41,9 +42,13 @@
  *   - BLOCK → localStorage, survives tab close. A blocked visitor cannot simply
  *             reopen a tab and answer differently. It stores the date the
  *             visitor *becomes* eligible, so the block lifts by itself on their
- *             13th birthday — no permanent lockout, and still no date of birth
- *             at rest (a 13-year offset is not the birth date, and it never
- *             leaves the device).
+ *             13th birthday — no permanent lockout. Be honest about what that
+ *             value is: birth date + 13 years, so the birth date is trivially
+ *             recoverable from it. It never leaves the device and is deleted
+ *             on the first visit on or after that birthday
+ *             (`purgeExpiredAgeBlock`, run at app start). `/privacy` says
+ *             exactly that — do not describe the value as "not the birth
+ *             date", nor promise deletion "on that day" (security-auditor).
  *
  * Neither flag is a security control — a determined visitor can clear storage
  * or lie to the screen. They are the honest, documented "reasonable effort".
@@ -221,6 +226,17 @@ export function getAgeBlockedUntil(now: Date = new Date()): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Drop a block whose eligibility date has passed. Called once at app start
+ * (`main.tsx`) so the promise made in `/privacy` — the date is erased on the
+ * first visit on or after that day — holds whatever page is opened, not only
+ * when the login modal happens to call `getAgeBlockedUntil` (security-auditor,
+ * 23 September 2026). A block that is still running is left untouched.
+ */
+export function purgeExpiredAgeBlock(now: Date = new Date()): void {
+  getAgeBlockedUntil(now);
 }
 
 /** Test/maintenance helper — clears both flags. */

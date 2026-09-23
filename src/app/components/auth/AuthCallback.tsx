@@ -55,17 +55,13 @@ export function AuthCallback() {
       return;
     }
 
-    // 1. Explicit returnTo (user came from a gated route) takes priority.
+    // Read the one-shot returnTo synchronously, exactly as before, so nothing
+    // else can consume it while the async work below is in flight.
     const stored = consumeReturnTo();
-    if (stored !== null) {
-      navigate(stored, { replace: true });
-      return;
-    }
 
-    // 2. No explicit returnTo → adaptive route per role.
-    //    Async block : we cannot await directly inside useEffect, so wrap
-    //    in an IIFE. The redirected.current guard above already protects
-    //    against double-fires; isMounted.current guards against post-unmount navigate.
+    // Async block : we cannot await directly inside useEffect, so wrap
+    // in an IIFE. The redirected.current guard above already protects
+    // against double-fires; isMounted.current guards against post-unmount navigate.
     void (async () => {
       const safeNavigate = (target: string) => {
         if (!isMounted.current) return;
@@ -73,20 +69,32 @@ export function AuthCallback() {
       };
       try {
         const { supabase } = await import('@/lib/supabase');
-        if (!supabase) {
-          safeNavigate('/app');
-          return;
-        }
 
         // THI-340 — OAuth half of the age gate. signInWithOAuth carries no user
         // metadata, so unlike email signup the declaration cannot ride along to
         // handle_new_user(); the profile row is stamped here instead. The gate
         // ran in THIS tab just before the redirect, so its sessionStorage flag
         // is still there. Awaited but never fatal: a failed stamp leaves
-        // age_confirmed_at NULL, which the schema treats as a valid state, and
-        // the next gated login retries.
-        if (isAgeVerified() && session.user?.id) {
+        // age_confirmed_at NULL, which the schema treats as a valid state.
+        //
+        // It runs BEFORE any redirect branch. It used to sit after the returnTo
+        // early-return, so every login that came back through a gated route —
+        // a student opening a teacher's invite link, `/app/join?code=…` — was
+        // left unstamped (security-auditor M1, 23 September 2026).
+        if (supabase && isAgeVerified() && session.user?.id) {
           await stampAgeConfirmation(supabase, session.user.id);
+        }
+
+        // 1. Explicit returnTo (user came from a gated route) takes priority.
+        if (stored !== null) {
+          safeNavigate(stored);
+          return;
+        }
+
+        // 2. No explicit returnTo → adaptive route per role.
+        if (!supabase) {
+          safeNavigate('/app');
+          return;
         }
 
         const { data, error } = await supabase.rpc('get_my_role');
@@ -99,7 +107,9 @@ export function AuthCallback() {
         }
         safeNavigate(defaultRouteForRole(data as UserRole | null));
       } catch {
-        safeNavigate('/app');
+        // Keep the user's explicit destination if we had one — a failure in
+        // the stamp or the role lookup must not cost them their invite link.
+        safeNavigate(stored ?? '/app');
       }
     })();
   }, [initialized, session, navigate]);
