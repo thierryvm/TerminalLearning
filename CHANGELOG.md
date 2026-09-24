@@ -5,6 +5,33 @@
 
 ---
 
+## 🐚 24 septembre 2026 — Un vrai shell, et une théorie qui dit ce que le terminal répond (THI-353)
+
+*PR #389 · #390 · #391 · 198/198 exercices sans ligne rouge (ordinateur et mobile) · nouveau test permanent `lessonTheory` : 754 commandes de théorie rejouées*
+
+La livraison précédente avait réparé les exercices. Il restait deux écarts : le terminal ne comprenait pas la syntaxe du shell, et la théorie montrait parfois une sortie que le terminal n'affiche pas.
+
+- **Une vraie couche shell (#389).** `;`, `&&` et `||` enchaînent les commandes. Les pipes acceptent autant d'étapes qu'on veut. Les redirections `>`, `>>`, `2>`, `2>&1`, `&>` et `<` fonctionnent pour toutes les commandes, et `/dev/null` ou `$null` avalent vraiment la sortie. `tee` écrit réellement son fichier. `grep` sans résultat fait échouer la commande qui suit un `&&`, comme dans un vrai shell. Résultat : **plus aucun exercice ne se valide avec une ligne rouge**, sur les 198 combinaisons leçon × environnement, vérifié dans un navigateur, sur ordinateur et en mobile.
+- **Le terminal affiche ce qu'un vrai shell affiche (#390).**
+  - `pwd` donne le chemin complet, et `cd -` revient au dossier précédent.
+  - `export` comprend `$PATH`, et `wc` compte les vrais octets, accents compris.
+  - `ls` écrit un nom par ligne quand sa sortie part dans un pipe.
+  - `apt` refuse de s'exécuter sans `sudo`, et `sudo` demande le mot de passe une fois par session. `sudo whoami` répond `root`.
+  - `rm -rf /` est refusé, comme par GNU `rm`.
+- **La théorie corrigée, et surveillée (#391).**
+  - Treize exemples montraient une sortie que le terminal n'affiche pas : un `grep -n` qui annonçait la ligne 5 au lieu de la 6, un `wc` aux mauvais comptes, un `ls -l` sans heure, un `ping` Windows au mauvais TTL.
+  - Deux leçons montraient à l'élève Windows une commande bash à côté de sa version PowerShell. Chaque élève ne voit plus que la sienne.
+  - Sous Windows, `git init` affiche désormais `C:/Users/user/…`, comme Git pour Windows.
+  - Un test rejoue maintenant chaque session de terminal montrée dans une leçon, depuis l'état de départ de la leçon, dans les trois environnements, et compare avec ce qu'affiche le terminal. 390 commandes correspondent déjà.
+
+Ce qui reste, et c'est dit :
+
+- **174 écarts restent listés dans le test**, et cette liste ne peut que rétrécir. La plupart viennent des leçons Git et GitHub avancées : l'état de départ de ces leçons n'a pas encore l'historique (commits, branches, conflits) que leur théorie montre. Le reste concerne des outils pas encore simulés : `gh`, les tâches en arrière-plan.
+- **39 leçons montrent encore du bash à un élève Windows**, faute de variante PowerShell. Ce nombre est suivi par le même test et ne peut que baisser.
+- **Un bug grave découvert en chemin, corrigé dans la livraison suivante** : `mv fichier .` et `cp fichier dossier` écrasaient le dossier de destination au lieu d'y placer le fichier.
+
+---
+
 ## 🖥️ 24 septembre 2026 — Le terminal dit enfin ce que la leçon enseigne (THI-353)
 
 *PR #385 · #386 · #387 · test permanent `lessonFidelity` · 2558 tests · exercices « validés malgré une erreur » : 44 → 3*

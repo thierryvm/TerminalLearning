@@ -295,7 +295,8 @@ function formatLongEntry(name: string, node: FSNode): string {
   const perm = node.permissions;
   const owner = node.owner;
   const group = node.group;
-  const size = node.type === 'file' ? String(node.size).padStart(6) : '  4096';
+  // Bytes on disk, computed from the content (the stored `size` is not kept up to date on edits).
+  const size = node.type === 'file' ? String(textCounts(node.content).bytes).padStart(6) : '  4096';
   const date = 'Mar 30 10:00';
   const links = node.type === 'directory' ? ' 2' : ' 1';
   return `${perm}${links} ${owner} ${group} ${size} ${date} ${name}`;
@@ -1851,7 +1852,12 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   const psEnvSet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
   if (psEnvSet) {
     const [, varName, rawValue] = psEnvSet;
-    const varValue = rawValue.replace(/^["']|["']$/g, '');
+    // Double quotes expand `$env:X` (`"$env:PATH;C:\outils"`); single quotes keep it literal.
+    const shown = varsForEnv(newState.envVars, env);
+    const unquoted = rawValue.replace(/^["']|["']$/g, '');
+    const varValue = rawValue.startsWith("'")
+      ? unquoted
+      : unquoted.replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, ref: string) => shown[ref] ?? '');
     return {
       lines: [{ text: `$env:${varName} défini à "${varValue}"`, type: 'success' }],
       newState: { ...newState, envVars: { ...newState.envVars, [varName]: varValue } },

@@ -2538,6 +2538,18 @@ describe('theory ↔ terminal: engine fidelity', () => {
     expect(out(t, '$env:PATH', 'windows')).toBe('C:\\outils');
   });
 
+  it('Git for Windows prints C:/ paths with forward slashes', () => {
+    const r = processCommand(createInitialState(), 'git init mon-projet', 'windows');
+    expect(r.lines[0].text).toBe('Initialized empty Git repository in C:/Users/user/mon-projet/.git/');
+    const again = processCommand(build('windows', 'git init mon-projet', 'cd mon-projet'), 'git init', 'windows');
+    expect(again.lines[0].text).toBe('Reinitialized existing Git repository in C:/Users/user/mon-projet/.git/');
+  });
+
+  it('PowerShell $env:X = "..." expands $env: variables in its value', () => {
+    const s = build('windows', '$env:PATH = "$env:PATH;C:\\outils"');
+    expect(out(s, '$env:PATH', 'windows')).toBe('C:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\outils');
+  });
+
   it('git init <dir> creates the directory and the repository there', () => {
     const r = processCommand(createInitialState(), 'git init mon-projet', 'linux');
     expect(r.lines[0].text).toBe('Initialized empty Git repository in /home/user/mon-projet/.git/');
@@ -2600,6 +2612,16 @@ describe('theory ↔ terminal: engine fidelity', () => {
     expect(types(s, 'LS', 'macos')).not.toContain('error');
     expect(types(s, 'get-childitem', 'windows')).not.toContain('error');
     expect(out(s, 'Get-Locaton', 'windows')).toMatch(/^Get-Locaton: /);
+  });
+
+  it('ls -l shows the size in bytes, the same number as wc -c, and follows edits', () => {
+    const s = createInitialState();
+    expect(out(s, 'ls -l documents/notes.txt')).toContain(' 143 ');
+    // Real: printf '#!/bin/bash\necho "Bonjour le monde !"\necho "Ce script fonctionne !"\n' | wc -c -> 68
+    expect(out(s, 'ls -l projets/script.sh')).toContain(' 68 ');
+    const e = build('linux', 'echo abc > f.txt');
+    expect(out(e, 'ls -l f.txt')).toContain(' 4 ');
+    expect(out(processCommand(e, 'echo abcdef > f.txt', 'linux').newState, 'ls -l f.txt')).toContain(' 7 ');
   });
 
   it('sudo asks for the password the first time only, like its credential cache', () => {
