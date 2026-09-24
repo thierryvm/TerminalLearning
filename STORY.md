@@ -21,6 +21,18 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Le bug était dans la police, et 44 exercices qui mentaient poliment (23-24 septembre 2026)
+
+Le Grand Check-up de l'été avait posé un diagnostic que je n'aimais pas : pour décider qu'un exercice était réussi, Terminal Learning lisait la commande tapée — et jamais ce que le terminal répondait. J'ai rejoué la solution de chaque exercice, dans chaque environnement, et compté. Sur 198 cas, 44 se validaient alors que l'écran affichait une erreur en rouge. Un élève tapait `git status` comme on le lui demandait, lisait `fatal: not a git repository`, et recevait des félicitations juste en dessous. Un mensonge poli, mais un mensonge : l'outil disait « bravo » à quelqu'un qui venait de voir que ça ne marchait pas.
+
+La correction évidente aurait été de refuser la validation dès qu'une erreur s'affiche. Je ne l'ai pas faite en premier, et c'est la décision de ces deux jours que je défendrais le plus volontiers. Dans ces 44 cas, la faute n'était pas à l'élève mais au simulateur : les leçons Git s'ouvraient sans dépôt, les scripts ne s'exécutaient pas, PowerShell ignorait `$PROFILE`. Durcir la validation d'abord, c'était bloquer des élèves sur nos propres trous. On a donc réparé le moteur, groupe par groupe, en gardant un compteur honnête : un test qui liste explicitement les cas encore faux, et qui échoue si l'un d'eux se met à passer sans qu'on l'ait retiré de la liste. La liste ne peut que rétrécir. Elle est passée de 44 à 9, puis à 3.
+
+Au milieu de ce chantier, Thierry a signalé un bug d'apparence banale : en tapant `git merge --no-ff`, un tiret s'effaçait à l'espace et revenait à la validation. Il avait dû copier-coller la commande pour finir l'exercice. Mon premier réflexe allait vers la saisie — un gestionnaire de touches qui avalerait un caractère. J'ai préféré regarder avant de corriger : j'ai enregistré chaque événement clavier. Le champ contenait bien deux tirets et un espace, intacts. Rien n'était effacé. C'était la police, JetBrains Mono, qui dessine `--` en un seul trait continu : une ligature, jolie dans un éditeur de code, désastreuse dans un cours dont le sujet est précisément de taper `--`. Un correctif « de saisie » aurait été du code faux pour un bug d'affichage. Trois lignes de CSS ont suffi, et Thierry les a vérifiées sur son iPhone, là où je n'étais pas sûr que Safari obéisse.
+
+Le dernier épisode est celui qui m'a le plus appris. En faisant enfin exécuter les scripts, les tests ont révélé que `chmod +x` n'avait jamais fonctionné : il écrivait le droit une position trop loin, et le fichier ne devenait jamais exécutable pour son propriétaire. Le bug dormait depuis des mois, invisible, parce que rien ne lançait jamais le fichier. Un simulateur qui n'exécute pas ne peut pas découvrir qu'une permission est fausse. La leçon, je crois, dépasse le terminal : **un test qui regarde le résultat attrape des bugs que personne ne cherchait ; un test qui ne regarde que l'intention n'attrape que ceux qu'on avait déjà imaginés.**
+
+---
+
 ## Écrire une règle le matin, devoir la tenir le soir (19 août 2026)
 
 Le matin du 19 août, j'ai réparé la page `/privacy` parce qu'elle mentait. Elle affirmait que Terminal Learning ne collectait aucune donnée personnelle, alors que créer un compte envoie bel et bien une adresse email chez Supabase. On a réécrit la page, déclaré les sous-traitants, ajouté un encadré « Mineurs » avec une phrase parfaitement exacte en droit : en dessous de 13 ans, la création d'un compte requiert le consentement d'un parent. PR mergée, prod vérifiée, satisfaction légitime.
