@@ -207,6 +207,35 @@ describe('pipelines', () => {
     expect(text(run('linux', ...base, 'cat f | grep -c a').last)).toBe('3');
   });
 
+  it('a command that does not read stdin still runs after a pipe', () => {
+    const { state, last } = run('linux', 'echo hi | mkdir test');
+    expect(last).toEqual([]);
+    expect(text(processCommand(state, 'ls -1', 'linux').lines)).toContain('test/');
+    expect(text(run('linux', 'echo hi | whoami').last)).toBe('user');
+  });
+
+  it('claude after a pipe: an explanation, not a red line', () => {
+    // (not `git diff`: outside a repository its error is legitimate)
+    const { last } = run('linux', 'echo "une modification" | claude "explique"');
+    expect(errors(last)).toEqual([]);
+    expect(last.map((l) => l.type)).toEqual(['info']);
+    expect(text(last)).toContain('pas simulé');
+  });
+
+  it('a text tool the simulator lacks says so and lets the text through', () => {
+    const { last } = run('linux', 'echo abc | sed s/a/b/');
+    expect(errors(last)).toEqual([]);
+    expect(last[0]).toEqual({ text: 'abc', type: 'output' });
+    expect(last[1].type).toBe('info');
+  });
+
+  it('a cd inside a pipeline does not move the next command (subshell)', () => {
+    const { state } = run('linux', 'cd documents | tee out.txt');
+    expect(state.cwd).toEqual(['home', 'user']);
+    expect(cat(state, 'out.txt')).toBe('');
+    expect(text(processCommand(state, 'ls documents', 'linux').lines)).not.toContain('out.txt');
+  });
+
   it('records the whole line once in the history', () => {
     const { state } = run('linux', 'ls | wc -l', 'echo a && echo b');
     expect(state.commandHistory.slice(-2)).toEqual(['ls | wc -l', 'echo a && echo b']);
@@ -224,6 +253,15 @@ describe('command lists', () => {
   it('|| runs the next command only on failure', () => {
     expect(text(run('linux', 'ls absent || echo repli').last)).toContain('repli');
     expect(text(run('linux', 'pwd || echo repli').last)).not.toContain('repli');
+  });
+
+  it('grep without a match fails, like its exit code 1', () => {
+    const base = ['echo alpha > f.txt'];
+    expect(text(run('linux', ...base, 'grep zzz f.txt || echo repli').last)).toBe('repli');
+    expect(text(run('linux', ...base, 'cat f.txt | grep zzz || echo repli').last)).toBe('repli');
+    expect(text(run('linux', ...base, 'grep zzz f.txt && echo trouvé').last)).toBe('');
+    expect(text(run('linux', ...base, 'grep alpha f.txt && echo trouvé').last)).toBe('alpha\ntrouvé');
+    expect(text(run('windows', ...base, 'Get-Content f.txt | Select-String zzz || echo repli').last)).toBe('repli');
   });
 
   it('; always runs the next command', () => {

@@ -966,9 +966,10 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
       if (!regexResult.ok) return same([regexResult.error]);
       const invert = flags.some((f) => f.includes('v'));
       const matches = input.map((line, i) => ({ line, i })).filter(({ line }) => regexResult.regex.test(line) !== invert);
-      if (flags.some((f) => f.includes('c'))) return same(outLines([String(matches.length)]));
+      const status = matches.length ? 0 : 1;
+      if (flags.some((f) => f.includes('c'))) return { ...same(outLines([String(matches.length)])), status };
       const numbered = flags.some((f) => f.includes('n'));
-      return same(outLines(matches.map(({ line, i }) => (numbered ? `${i + 1}:${line}` : line))));
+      return { ...same(outLines(matches.map(({ line, i }) => (numbered ? `${i + 1}:${line}` : line)))), status };
     }
 
     case 'select-string':
@@ -979,7 +980,8 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
       const ignoreCase = cmd !== 'findstr' || args.some((a) => a.toLowerCase() === '/i');
       const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
       if (!regexResult.ok) return same([regexResult.error]);
-      return same(outLines(input.filter((line) => regexResult.regex.test(line))));
+      const matches = input.filter((line) => regexResult.regex.test(line));
+      return { ...same(outLines(matches)), status: matches.length ? 0 : 1 };
     }
 
     case 'sort': {
@@ -1098,8 +1100,21 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
       // Displayed as received: the simulator does not filter objects or JSON.
       return same(outLines(input));
 
+    case 'claude':
+      // `git diff | claude "…"`: the lessons teach the pattern; the tool runs on the learner's machine.
+      return same([{ text: `(claude reçoit ${input.length} ligne(s) par le pipe — Claude Code n'est pas simulé dans ce terminal, essayez-le sur votre machine.)`, type: 'info' }]);
+
+    case 'sed':
+    case 'awk':
+    case 'cut':
+    case 'tr':
+    case 'xargs':
+      // Not simulated yet: say so rather than pretend the text was transformed.
+      return same([...outLines(input), { text: `(${cmd} n'est pas encore simulé : le texte passe tel quel.)`, type: 'info' }]);
+
     default:
-      return same(outLines(input));
+      // A command that does not read standard input runs as usual (`echo x | mkdir d`).
+      return runSimple(state, text, env);
   }
 }
 
@@ -1114,6 +1129,9 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
   for (let i = 0; i < stages.length; i++) {
     const stage = stages[i];
     const isLast = i === stages.length - 1;
+    // Every command of a pipeline starts in the caller's directory and variables;
+    // only the files written by earlier commands are shared.
+    const base: TerminalState = i === 0 ? state : { ...state, root: s.root, git: s.git };
     const fds: Record<Fd, Sink> = { 1: isLast ? { kind: 'screen' } : { kind: 'pipe' }, 2: { kind: 'screen' } };
     const files = new Map<string, OpenFile>();
     let openError: OutputLine | undefined;
@@ -1127,7 +1145,7 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
       if (isNullDevice(r.target, env)) {
         sink = { kind: 'null' };
       } else {
-        const target = checkWritable(s, r.target, env);
+        const target = checkWritable(base, r.target, env);
         if ('error' in target) { openError = target.error; break; }
         const key = target.path.join('/');
         if (!files.has(key)) files.set(key, { path: target.path, typed: r.target, append: r.append, chunks: [] });
@@ -1138,7 +1156,7 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
 
     let stdin = piped;
     if (!openError && stage.stdinFile !== undefined) {
-      const node = getNode(s.root, resolvePath(s, stage.stdinFile));
+      const node = getNode(base.root, resolvePath(base, stage.stdinFile));
       if (node?.type === 'file') stdin = node.content;
       else openError = openFailure(stage.stdinFile, node ? 'Is a directory' : 'No such file or directory', env);
     }
@@ -1155,12 +1173,12 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
     stdoutIsTerminal = outerTerminal && fds[1].kind === 'screen';
     let result: CommandOutput;
     try {
-      result = stdin !== undefined ? runFilter(s, stage.text, stdin, env) : runSimple(s, stage.text, env);
+      result = stdin !== undefined ? runFilter(base, stage.text, stdin, env) : runSimple(base, stage.text, env);
     } finally {
       stdoutIsTerminal = outerTerminal;
     }
     if (result.clear) { screen = []; clear = true; }
-    ok = !result.lines.some((l) => l.type === 'error');
+    ok = result.status !== undefined ? result.status === 0 : !result.lines.some((l) => l.type === 'error');
 
     const toPipe: string[] = [];
     for (const line of result.lines) {
@@ -1869,8 +1887,11 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines, newState };
     }
 
-    case 'grep':
-      return { lines: cmdGrep(newState, args), newState };
+    case 'grep': {
+      const lines = cmdGrep(newState, args);
+      // Exit 1 when nothing matched, so `grep x f || …` works.
+      return { lines, newState, status: lines.some((l) => l.type === 'output') ? 0 : 1 };
+    }
 
     case 'head':
       return { lines: cmdHead(newState, args), newState };

@@ -59,6 +59,12 @@ export interface CommandOutput {
   lines: OutputLine[];
   clear?: boolean;
   newState: TerminalState;
+  /**
+   * Exit code, for commands that can fail without printing an error
+   * (`grep` without a match exits 1). When absent, a command fails if it
+   * printed an error line.
+   */
+  status?: number;
 }
 
 export interface OutputLine {
