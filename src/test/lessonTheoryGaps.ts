@@ -1,0 +1,224 @@
+/**
+ * Known gaps between what a lesson shows and what the terminal prints (THI-353).
+ * Generated from the replay in lessonTheory.test.ts; the list may only shrink.
+ *
+ * Remaining causes, by family (each has its own planned fix):
+ * - Git history: theory shows commits, branches, merges and conflicts the lesson's
+ *   starting state does not contain (richer Git setups).
+ * - gh (GitHub CLI), background jobs (`&`, `jobs`, `fg`, `Start-Job`), `code`,
+ *   `ssh-copy-id`, `git check-ignore`, `git mergetool`, `git remote rename`: not simulated yet.
+ * - PowerShell objects: property selection (`Select-Object Owner`), Get-Process columns.
+ * - Illustrative output in the lesson (placeholders like "[liste des fichiers]",
+ *   abbreviated help, an interactive prompt, a clock time): not meant to match.
+ *
+ * Key: `<module>/<lesson> b<block index> [<env>] <command>`.
+ */
+export const KNOWN_THEORY_GAPS = new Set<string>([
+  // navigation/orientation
+  "navigation/orientation b2 [linux] help",
+  "navigation/orientation b2 [macos] help",
+  "navigation/orientation b2 [windows] help",
+  // fichiers/mv
+  "fichiers/mv b1 [linux] ls",
+  "fichiers/mv b1 [macos] ls",
+  "fichiers/mv b2 [linux] mv notes.txt mes-notes.txt",
+  "fichiers/mv b2 [linux] ls",
+  "fichiers/mv b2 [macos] mv notes.txt mes-notes.txt",
+  "fichiers/mv b2 [macos] ls",
+  // fichiers/rm
+  "fichiers/rm b1 [linux] rm fichier.txt",
+  "fichiers/rm b1 [macos] rm fichier.txt",
+  "fichiers/rm b2 [linux] rm -r dossier",
+  "fichiers/rm b2 [macos] rm -r dossier",
+  // lecture/cat
+  "lecture/cat b2 [linux] cat fichier1.txt fichier2.txt",
+  "lecture/cat b2 [macos] cat fichier1.txt fichier2.txt",
+  // permissions/chmod
+  "permissions/chmod b2 [linux] chmod +x script.sh",
+  "permissions/chmod b2 [linux] chmod u+x script.sh",
+  "permissions/chmod b2 [linux] chmod o-r fichier.txt",
+  "permissions/chmod b2 [linux] chmod 644 fichier.txt",
+  "permissions/chmod b2 [macos] chmod +x script.sh",
+  "permissions/chmod b2 [macos] chmod u+x script.sh",
+  "permissions/chmod b2 [macos] chmod o-r fichier.txt",
+  "permissions/chmod b2 [macos] chmod 644 fichier.txt",
+  // permissions/chown
+  "permissions/chown b1 [windows] Get-Acl documents\\notes.txt | Select-Object Owner",
+  // permissions/sudo
+  "permissions/sudo b1 [macos] sudo dscacheutil -flushcache",
+  // processus/kill
+  "processus/kill b1 [linux] ps",
+  "processus/kill b1 [linux] kill 9999",
+  "processus/kill b1 [macos] ps",
+  "processus/kill b1 [macos] kill 9999",
+  "processus/kill b1 [windows] Get-Process",
+  // processus/top
+  "processus/top b1 [linux] top",
+  "processus/top b1 [macos] top",
+  "processus/top b1 [windows] Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 Name,CPU,WorkingSet",
+  // processus/background
+  "processus/background b1 [linux] long-task &",
+  "processus/background b1 [linux] jobs",
+  "processus/background b1 [linux] fg %1",
+  "processus/background b1 [linux] bg %1",
+  "processus/background b1 [macos] long-task &",
+  "processus/background b1 [macos] jobs",
+  "processus/background b1 [macos] fg %1",
+  "processus/background b1 [macos] bg %1",
+  "processus/background b1 [windows] $job = Start-Job -ScriptBlock { Start-Sleep 30; \"Terminé!\" }",
+  "processus/background b1 [windows] Get-Job",
+  "processus/background b1 [windows] Remove-Job -Id 1",
+  "processus/background b2 [linux] npm run dev &",
+  "processus/background b2 [linux] # Vous pouvez continuer à travailler ici",
+  "processus/background b2 [linux] jobs",
+  "processus/background b2 [macos] npm run dev &",
+  "processus/background b2 [macos] # Vous pouvez continuer à travailler ici",
+  "processus/background b2 [macos] jobs",
+  "processus/background b2 [windows] $devServer = Start-Job -ScriptBlock { npm run dev }",
+  "processus/background b2 [windows] # Continuez à travailler dans ce terminal",
+  // redirection/redirection-sortie
+  "redirection/redirection-sortie b4 [linux] cat liste-fichiers.txt",
+  "redirection/redirection-sortie b4 [macos] cat liste-fichiers.txt",
+  // redirection/pipes
+  "redirection/pipes b3 [linux] ls -la | grep \"^d\"",
+  "redirection/pipes b3 [macos] ls -la | grep \"^d\"",
+  // redirection/stderr
+  "redirection/stderr b1 [windows] Get-Item fichier-inexistant",
+  // redirection/tee
+  "redirection/tee b1 [linux] ls -la | tee liste.txt",
+  "redirection/tee b1 [macos] ls -la | tee liste.txt",
+  "redirection/tee b1 [windows] Get-ChildItem | Tee-Object -FilePath liste.txt",
+  // variables/scripts
+  "variables/scripts b2 [linux] ./mon-script.sh",
+  "variables/scripts b2 [macos] ./mon-script.sh",
+  // reseau/curl
+  "reseau/curl b1 [linux] curl -X POST https://api.example.com/data \\",
+  "reseau/curl b1 [macos] curl -X POST https://api.example.com/data \\",
+  // reseau/ssh
+  "reseau/ssh b2 [linux] ssh-keygen -t ed25519 -C \"mon@email.com\"",
+  "reseau/ssh b2 [linux] ssh-copy-id user@serveur.example.com",
+  "reseau/ssh b2 [macos] ssh-keygen -t ed25519 -C \"mon@email.com\"",
+  "reseau/ssh b2 [macos] ssh-copy-id user@serveur.example.com",
+  // git/git-config
+  "git/git-config b1 [linux] git config --list",
+  "git/git-config b1 [macos] git config --list",
+  // git/git-add-commit
+  "git/git-add-commit b1 [linux] git status",
+  "git/git-add-commit b1 [macos] git status",
+  "git/git-add-commit b2 [linux] git commit -m \"feat: ajouter la page d'accueil\"",
+  "git/git-add-commit b2 [macos] git commit -m \"feat: ajouter la page d'accueil\"",
+  // git/git-status-log
+  "git/git-status-log b1 [linux] git status",
+  "git/git-status-log b1 [macos] git status",
+  "git/git-status-log b2 [linux] git log",
+  "git/git-status-log b2 [linux] git log --oneline",
+  "git/git-status-log b2 [macos] git log",
+  "git/git-status-log b2 [macos] git log --oneline",
+  // git/git-diff-gitignore
+  "git/git-diff-gitignore b1 [linux] git diff",
+  "git/git-diff-gitignore b1 [macos] git diff",
+  "git/git-diff-gitignore b3 [linux] git check-ignore -v .env",
+  "git/git-diff-gitignore b3 [macos] git check-ignore -v .env",
+  // git/git-branch
+  "git/git-branch b1 [linux] git branch",
+  "git/git-branch b1 [linux] git checkout -b feature/panier",
+  "git/git-branch b1 [linux] git switch -c feature/panier",
+  "git/git-branch b1 [macos] git branch",
+  "git/git-branch b1 [macos] git checkout -b feature/panier",
+  "git/git-branch b1 [macos] git switch -c feature/panier",
+  "git/git-branch b2 [linux] git branch -d feature/login",
+  "git/git-branch b2 [linux] git branch -D feature/experimental",
+  "git/git-branch b2 [linux] git branch -a",
+  "git/git-branch b2 [macos] git branch -d feature/login",
+  "git/git-branch b2 [macos] git branch -D feature/experimental",
+  "git/git-branch b2 [macos] git branch -a",
+  // git/git-merge
+  "git/git-merge b1 [linux] git merge feature/panier",
+  "git/git-merge b1 [macos] git merge feature/panier",
+  "git/git-merge b2 [linux] git merge feature/login",
+  "git/git-merge b2 [macos] git merge feature/login",
+  // github-collaboration/git-remote
+  "github-collaboration/git-remote b1 [linux] git remote rename origin upstream",
+  "github-collaboration/git-remote b1 [macos] git remote rename origin upstream",
+  "github-collaboration/git-remote b2 [linux] git remote set-url origin git@github.com:user/repo.git",
+  "github-collaboration/git-remote b2 [macos] git remote set-url origin git@github.com:user/repo.git",
+  // github-collaboration/git-push-pull
+  "github-collaboration/git-push-pull b1 [linux] git push -u origin main",
+  "github-collaboration/git-push-pull b1 [macos] git push -u origin main",
+  "github-collaboration/git-push-pull b2 [linux] git pull",
+  "github-collaboration/git-push-pull b2 [macos] git pull",
+  // github-collaboration/git-fetch-clone
+  "github-collaboration/git-fetch-clone b1 [linux] git clone https://github.com/org/projet.git",
+  "github-collaboration/git-fetch-clone b1 [macos] git clone https://github.com/org/projet.git",
+  "github-collaboration/git-fetch-clone b2 [linux] git fetch origin",
+  "github-collaboration/git-fetch-clone b2 [linux] git fetch && git log HEAD..origin/main --oneline",
+  "github-collaboration/git-fetch-clone b2 [linux] git fetch --all",
+  "github-collaboration/git-fetch-clone b2 [linux] git diff main origin/main",
+  "github-collaboration/git-fetch-clone b2 [macos] git fetch origin",
+  "github-collaboration/git-fetch-clone b2 [macos] git fetch && git log HEAD..origin/main --oneline",
+  "github-collaboration/git-fetch-clone b2 [macos] git fetch --all",
+  "github-collaboration/git-fetch-clone b2 [macos] git diff main origin/main",
+  "github-collaboration/git-fetch-clone b3 [linux] git merge upstream/main",
+  "github-collaboration/git-fetch-clone b3 [macos] git merge upstream/main",
+  // github-collaboration/pull-requests
+  "github-collaboration/pull-requests b1 [linux] git push -u origin feature/THI-28-git-modules",
+  "github-collaboration/pull-requests b1 [linux] gh pr create --title \"feat(curriculum): add git module\" --body \"...\"",
+  "github-collaboration/pull-requests b1 [macos] git push -u origin feature/THI-28-git-modules",
+  "github-collaboration/pull-requests b1 [macos] gh pr create --title \"feat(curriculum): add git module\" --body \"...\"",
+  "github-collaboration/pull-requests b2 [linux] gh pr list",
+  "github-collaboration/pull-requests b2 [linux] gh pr view 42",
+  "github-collaboration/pull-requests b2 [linux] gh pr checkout 42",
+  "github-collaboration/pull-requests b2 [linux] gh pr review 42 --approve",
+  "github-collaboration/pull-requests b2 [linux] gh pr merge 42 --squash",
+  "github-collaboration/pull-requests b2 [macos] gh pr list",
+  "github-collaboration/pull-requests b2 [macos] gh pr view 42",
+  "github-collaboration/pull-requests b2 [macos] gh pr checkout 42",
+  "github-collaboration/pull-requests b2 [macos] gh pr review 42 --approve",
+  "github-collaboration/pull-requests b2 [macos] gh pr merge 42 --squash",
+  // github-collaboration/merge-strategies
+  "github-collaboration/merge-strategies b1 [linux] git merge --no-ff feature/panier",
+  "github-collaboration/merge-strategies b1 [linux] git log --oneline --graph",
+  "github-collaboration/merge-strategies b1 [macos] git merge --no-ff feature/panier",
+  "github-collaboration/merge-strategies b1 [macos] git log --oneline --graph",
+  "github-collaboration/merge-strategies b2 [linux] git merge --squash feature/panier",
+  "github-collaboration/merge-strategies b2 [linux] git log --oneline",
+  "github-collaboration/merge-strategies b2 [linux] gh pr merge 42 --squash --delete-branch",
+  "github-collaboration/merge-strategies b2 [macos] git merge --squash feature/panier",
+  "github-collaboration/merge-strategies b2 [macos] git log --oneline",
+  "github-collaboration/merge-strategies b2 [macos] gh pr merge 42 --squash --delete-branch",
+  "github-collaboration/merge-strategies b3 [linux] git checkout feature/panier",
+  "github-collaboration/merge-strategies b3 [linux] git merge feature/panier",
+  "github-collaboration/merge-strategies b3 [linux] git log --oneline",
+  "github-collaboration/merge-strategies b3 [linux] gh pr merge 42 --rebase --delete-branch",
+  "github-collaboration/merge-strategies b3 [macos] git checkout feature/panier",
+  "github-collaboration/merge-strategies b3 [macos] git merge feature/panier",
+  "github-collaboration/merge-strategies b3 [macos] git log --oneline",
+  "github-collaboration/merge-strategies b3 [macos] gh pr merge 42 --rebase --delete-branch",
+  // github-collaboration/conflicts
+  "github-collaboration/conflicts b1 [linux] git merge feature/login",
+  "github-collaboration/conflicts b1 [linux] git status",
+  "github-collaboration/conflicts b1 [macos] git merge feature/login",
+  "github-collaboration/conflicts b1 [macos] git status",
+  "github-collaboration/conflicts b2 [linux] code index.html",
+  "github-collaboration/conflicts b2 [macos] code index.html",
+  "github-collaboration/conflicts b3 [linux] git mergetool",
+  "github-collaboration/conflicts b3 [linux] git merge --abort",
+  "github-collaboration/conflicts b3 [linux] git pull --rebase origin main",
+  "github-collaboration/conflicts b3 [macos] git mergetool",
+  "github-collaboration/conflicts b3 [macos] git merge --abort",
+  "github-collaboration/conflicts b3 [macos] git pull --rebase origin main",
+  // github-collaboration/github-actions
+  "github-collaboration/github-actions b3 [linux] gh workflow list",
+  "github-collaboration/github-actions b3 [linux] gh run list",
+  "github-collaboration/github-actions b3 [linux] gh run view 12345",
+  "github-collaboration/github-actions b3 [linux] gh workflow run ci.yml",
+  "github-collaboration/github-actions b3 [linux] gh run download 12345",
+  "github-collaboration/github-actions b3 [macos] gh workflow list",
+  "github-collaboration/github-actions b3 [macos] gh run list",
+  "github-collaboration/github-actions b3 [macos] gh run view 12345",
+  "github-collaboration/github-actions b3 [macos] gh workflow run ci.yml",
+  "github-collaboration/github-actions b3 [macos] gh run download 12345",
+]);
+
+/** Lessons whose code blocks show bash to a Windows learner (no Windows variant). */
+export const BASH_SHOWN_ON_WINDOWS_MAX = 39;

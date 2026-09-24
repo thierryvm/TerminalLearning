@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Des tests qui se comparaient à eux-mêmes (24 septembre 2026)
+
+Après les exercices, Thierry m'a demandé de vérifier la théorie : « tester visuellement chaque exercice sur base de la théorie ». J'ai écrit un script qui rejoue chaque session de terminal affichée dans une leçon et compare avec ce que notre terminal répond. Les premiers écarts étaient attendus : un `grep -n` qui annonçait la ligne 5 d'un fichier dont le titre est à la ligne 6, un `wc` aux comptes faux.
+
+Le plus instructif est venu de `ls`. Envoyé dans un pipe ou dans un fichier, un vrai `ls` écrit un nom par ligne ; le nôtre les mettait tous sur une seule. Nos tests passaient pourtant, et pour une raison gênante : ils calculaient la valeur attendue en appelant le moteur lui-même. Le test demandait au terminal « combien de lignes vas-tu écrire ? », puis vérifiait que le terminal écrivait bien ce nombre. Il ne pouvait pas échouer. Un attendu doit venir de l'extérieur de ce qu'on teste : un vrai shell, une documentation, ou le texte même de la leçon. C'est pour cela que le nouveau garde-fou compare le terminal au texte des leçons, et jamais le terminal à lui-même.
+
+Ce même rejeu a trouvé le bug le plus grave de la journée, là où personne ne regardait. La leçon `mv` montre `mv documents/notes.txt .`, c'est-à-dire « ramène le fichier ici ». Dans notre simulateur, cette commande remplaçait le dossier personnel entier par le fichier : l'élève perdait toute son arborescence au deuxième module. `cp fichier dossier` faisait la même chose au dossier visé. Aucun exercice ne tapait cette commande, et aucun test ne l'essayait. Seule la théorie la montrait, et c'est en la rejouant qu'on l'a vue.
+
+---
+
 ## Le bug était dans la police, et 44 exercices qui mentaient poliment (23-24 septembre 2026)
 
 Le Grand Check-up de l'été avait posé un diagnostic que je n'aimais pas : pour décider qu'un exercice était réussi, Terminal Learning lisait la commande tapée — et jamais ce que le terminal répondait. J'ai rejoué la solution de chaque exercice, dans chaque environnement, et compté. Sur 198 cas, 44 se validaient alors que l'écran affichait une erreur en rouge. Un élève tapait `git status` comme on le lui demandait, lisait `fatal: not a git repository`, et recevait des félicitations juste en dessous. Un mensonge poli, mais un mensonge : l'outil disait « bravo » à quelqu'un qui venait de voir que ça ne marchait pas.

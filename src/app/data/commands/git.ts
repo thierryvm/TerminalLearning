@@ -6,6 +6,13 @@ function displayPath(cwd: string[]): string {
   return '/' + cwd.join('/');
 }
 
+/** Git for Windows writes `C:/Users/user/…` (drive letter, forward slashes). */
+function gitPath(cwd: string[], env: TerminalEnv): string {
+  if (env !== 'windows') return displayPath(cwd);
+  const home = cwd[0] === 'home' && cwd[1] === 'user';
+  return (home ? ['C:', 'Users', 'user', ...cwd.slice(2)] : ['C:', ...cwd]).join('/');
+}
+
 function getNode(root: DirectoryNode, path: string[]): FSNode | null {
   let current: FSNode = root;
   for (const seg of path) {
@@ -21,7 +28,7 @@ function makeHash(): string {
   return Array.from({ length: 7 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
 }
 
-export function handleGit(newState: TerminalState, args: string[], _env: TerminalEnv): CommandOutput {
+export function handleGit(newState: TerminalState, args: string[], env: TerminalEnv): CommandOutput {
   const sub = args[0]?.toLowerCase() ?? '';
 
   const requireRepo = (): OutputLine | null => {
@@ -36,7 +43,7 @@ export function handleGit(newState: TerminalState, args: string[], _env: Termina
     case 'init': {
       if (newState.git?.initialized) {
         return {
-          lines: [{ text: `Reinitialized existing Git repository in ${displayPath(newState.cwd)}/.git/`, type: 'info' }],
+          lines: [{ text: `Reinitialized existing Git repository in ${gitPath(newState.cwd, env)}/.git/`, type: 'info' }],
           newState,
         };
       }
@@ -53,7 +60,7 @@ export function handleGit(newState: TerminalState, args: string[], _env: Termina
       };
       return {
         lines: [
-          { text: `Initialized empty Git repository in ${displayPath(newState.cwd)}/.git/`, type: 'success' },
+          { text: `Initialized empty Git repository in ${gitPath(newState.cwd, env)}/.git/`, type: 'success' },
           { text: "Hint: Use 'git add <file>' to stage files, 'git commit -m' to record changes.", type: 'info' },
         ],
         newState,

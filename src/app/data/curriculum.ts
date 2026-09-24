@@ -239,7 +239,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ ls -l\ntotal 3\ndrwxr-xr-x 2 user user 4096 Mar 30 documents\ndrwxr-xr-x 2 user user 4096 Mar 30 downloads\ndrwxr-xr-x 2 user user 4096 Mar 30 projets',
+            content: '$ ls -l\ntotal 3\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 documents\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 downloads\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 projets',
             label: 'ls -l (format long)',
           },
           {
@@ -249,7 +249,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ ls -a\n.  ..  .bashrc  .profile  documents  downloads  projets',
+            content: '$ ls -a\n.  ..  .bashrc  .profile  .zshrc  documents  downloads  projets',
             label: 'ls -a (fichiers cachés)',
           },
           {
@@ -730,7 +730,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ grep -n "Section" documents/rapport.md\n5:## Section 1',
+            content: '$ grep -n "Section" documents/rapport.md\n6:## Section 1',
             label: 'grep -n (avec numéros de lignes)',
           },
           {
@@ -769,12 +769,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ wc documents/notes.txt\n 6 20 145 documents/notes.txt',
+            content: '$ wc documents/notes.txt\n 6 22 143 documents/notes.txt',
             label: 'wc complet (lignes mots octets)',
           },
           {
             type: 'code',
-            content: '$ wc -l documents/notes.txt\n6 documents/notes.txt\n\n$ wc -w documents/notes.txt\n20 documents/notes.txt\n\n$ wc -c documents/notes.txt\n145 documents/notes.txt',
+            content: '$ wc -l documents/notes.txt\n6 documents/notes.txt\n\n$ wc -w documents/notes.txt\n22 documents/notes.txt\n\n$ wc -c documents/notes.txt\n143 documents/notes.txt',
             label: 'Options -l (lignes) -w (mots) -c (octets)',
           },
           {
@@ -820,7 +820,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ ls -l\n-rw-r--r-- 1 user user 145 notes.txt\ndrwxr-xr-x 2 user user 4096 documents',
+            content: '$ ls -l\ntotal 3\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 documents\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 downloads\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 projets\n\n$ ls -l documents/notes.txt\n-rw-r--r-- 1 user user    143 Mar 30 10:00 documents/notes.txt',
             label: 'Affichage des permissions',
           },
           {
@@ -868,7 +868,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ chmod 755 projets/script.sh\n$ ls -l projets/script.sh\n-rwxr-xr-x 1 user user 56 script.sh',
+            content: '$ chmod 755 projets/script.sh\n$ ls -l projets/script.sh\n-rwxr-xr-x 1 user user     68 Mar 30 10:00 projets/script.sh',
             label: 'Notation octale (Linux/macOS)',
             contentByEnv: {
               windows: 'PS> icacls documents\\notes.txt\nnotes.txt BUILTIN\\Administrators:(I)(F)\n          NT AUTHORITY\\SYSTEM:(I)(F)\n          user:(I)(M)\n\nPS> Set-ExecutionPolicy RemoteSigned\n# Autorise les scripts locaux non signés',
@@ -936,7 +936,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ ls -l documents/notes.txt\n-rw-r--r-- 1 user user 145 notes.txt\n#              ↑    ↑\n#          proprio  groupe\n\n$ sudo chown alice notes.txt\n$ sudo chown alice:devs notes.txt\n$ sudo chown :devs notes.txt   # changer seulement le groupe',
+            content: '$ ls -l documents/notes.txt\n-rw-r--r-- 1 user user    143 Mar 30 10:00 documents/notes.txt\n#             ↑    ↑\n#          proprio  groupe\n\n$ sudo chown alice notes.txt\n$ sudo chown alice:devs notes.txt\n$ sudo chown :devs notes.txt   # changer seulement le groupe',
             label: 'chown — changer propriétaire (Linux/macOS)',
             contentByEnv: {
               windows: 'PS> Get-Acl documents\\notes.txt | Select-Object Owner\nOwner\n-----\nDESKTOP-ABC\\user\n\nPS> takeown /f documents\\notes.txt\n# Prendre possession du fichier\n\nPS> icacls documents\\notes.txt /setowner "BUILTIN\\Administrators"',
@@ -1000,7 +1000,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ sudo apt update\n[sudo] password for user: ****\nHit:1 http://archive.ubuntu.com/ubuntu jammy InRelease\n...\n\n$ sudo -i          # ouvrir un shell root\n$ sudo -l          # lister les commandes autorisées\n$ sudo !!          # relancer la dernière commande en sudo',
+            content: '$ sudo apt update\n[sudo] password for user: ****\nHit:1 http://archive.ubuntu.com/ubuntu noble InRelease\n...\n\n$ sudo -i          # ouvrir un shell root\n$ sudo -l          # lister les commandes autorisées\n$ sudo !!          # relancer la dernière commande en sudo',
             label: 'sudo — exemples courants (Linux)',
             contentByEnv: {
               macos: '$ sudo brew services restart nginx\n[sudo] password for user: ****\n...\n\n$ sudo -i          # ouvrir un shell root\n$ sudo dscacheutil -flushcache  # vider le cache DNS\n$ sudo -l          # lister les commandes autorisées',
@@ -1456,7 +1456,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ ls fichier-inexistant\nls: cannot access \'fichier-inexistant\': No such file or directory\n\n$ ls fichier-inexistant 2> erreurs.log\n# L\'erreur va dans le fichier, rien ne s\'affiche\n\n$ ls documents/ 2> erreurs.log\ndocuments/notes.txt  documents/rapport.md\n# stdout s\'affiche, stderr va dans le fichier',
+            content: '$ ls fichier-inexistant\nls: cannot access \'fichier-inexistant\': No such file or directory\n\n$ ls fichier-inexistant 2> erreurs.log\n# L\'erreur va dans le fichier, rien ne s\'affiche\n\n$ ls documents/ 2> erreurs.log\nnotes.txt  rapport.md\n# stdout s\'affiche, stderr va dans le fichier',
             label: '2> — rediriger stderr seul',
             contentByEnv: {
               windows: 'PS> Get-Item fichier-inexistant\nGet-Item : Cannot find path...\n\nPS> Get-Item fichier-inexistant 2> erreurs.txt\n# L\'erreur va dans le fichier\n\nPS> Get-Item documents 2> erreurs.txt\ndirectory: C:\\Users\\user\\documents',
@@ -1626,22 +1626,27 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '$ echo $PATH\n/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-            label: 'Afficher le PATH (Linux/macOS)',
+            label: 'Afficher le PATH',
+            contentByEnv: {
+              windows: 'PS> echo $env:PATH\nC:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin',
+            },
           },
           {
             type: 'code',
-            content: 'PS> echo $env:PATH\nC:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin',
-            label: 'Afficher le PATH (Windows)',
-          },
-          {
-            type: 'code',
-            content: '$ export PATH=$PATH:/opt/myapp/bin\n$ echo $PATH\n/usr/local/bin:/usr/bin:/bin:/opt/myapp/bin',
+            content: '$ export PATH=$PATH:/opt/myapp/bin\n$ echo $PATH\n/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/myapp/bin',
             label: 'Ajouter un répertoire au PATH',
+            contentByEnv: {
+              windows: 'PS> $env:PATH = "$env:PATH;C:\\outils"\nPS> $env:PATH\nC:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\outils',
+            },
           },
           {
             type: 'warning',
             content:
               'Modifier le PATH avec `export` dans le terminal est temporaire (jusqu\'à la fermeture). Pour le rendre permanent, ajoutez-le à votre fichier de config shell (`.bashrc`, `.zshrc`).',
+            contentByEnv: {
+              windows:
+                'Modifier `$env:PATH` dans PowerShell est temporaire (jusqu\'à la fermeture de la fenêtre). Pour le rendre permanent, ajoutez la même ligne à votre profil PowerShell (le fichier `$PROFILE`).',
+            },
           },
         ],
         exercise: {
@@ -1866,7 +1871,7 @@ export const curriculum: Module[] = [
               windows: 'Exemple (Windows)',
             },
             contentByEnv: {
-              windows: 'PS> ping google.com\nPinging google.com [142.250.74.46] with 32 bytes of data:\nReply from 142.250.74.46: bytes=32 time=12ms TTL=54\nReply from 142.250.74.46: bytes=32 time=11ms TTL=54\n\nPing statistics for 142.250.74.46:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)',
+              windows: 'PS> ping google.com\nPinging google.com [142.250.74.46] with 32 bytes of data:\nReply from 142.250.74.46: bytes=32 time=12ms TTL=117\nReply from 142.250.74.46: bytes=32 time=11ms TTL=117\n\nPing statistics for 142.250.74.46:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)',
             },
           },
           {
@@ -2180,13 +2185,11 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Créer un nouveau dépôt dans le répertoire courant\n$ git init\nInitialized empty Git repository in /home/user/mon-projet/.git/\n\n# Créer un dépôt avec un nom de répertoire\n$ git init mon-projet\nInitialized empty Git repository in /home/user/mon-projet/.git/',
-            label: 'git init (Linux/macOS)',
-          },
-          {
-            type: 'code',
-            content: '# PowerShell — même commande, multiplateforme\nPS> git init\nInitialized empty Git repository in C:\\Users\\user\\mon-projet\\.git\\\n\nPS> git init mon-projet',
-            label: 'git init (Windows PowerShell)',
+            content: '# Créer un dépôt dans un nouveau dossier\n$ git init mon-projet\nInitialized empty Git repository in /home/user/mon-projet/.git/\n$ cd mon-projet\n\n# Relancer git init dans un dépôt existant ne casse rien\n$ git init\nReinitialized existing Git repository in /home/user/mon-projet/.git/',
+            label: 'git init',
+            contentByEnv: {
+              windows: '# Même commande sous PowerShell (Git écrit les chemins avec des /)\nPS> git init mon-projet\nInitialized empty Git repository in C:/Users/user/mon-projet/.git/\nPS> cd mon-projet\n\nPS> git init\nReinitialized existing Git repository in C:/Users/user/mon-projet/.git/',
+            },
           },
           {
             type: 'info',
