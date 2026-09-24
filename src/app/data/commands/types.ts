@@ -49,6 +49,8 @@ export interface TerminalState {
   /** Directory before the last `cd` ($OLDPWD), for `cd -`. */
   previousCwd?: string[];
   commandHistory: string[];
+  /** sudo already asked for the password in this session (its credential cache). */
+  sudoAuthenticated?: boolean;
   user: string;
   hostname: string;
   envVars: Record<string, string>;

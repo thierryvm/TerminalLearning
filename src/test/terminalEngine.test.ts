@@ -899,7 +899,8 @@ describe('sudo — privilege elevation', () => {
   it('sudo -i opens root shell', () => {
     const state = makeState();
     const result = processCommand(state, 'sudo -i', 'linux');
-    expect(result.lines[0].text).toContain('root');
+    // The first sudo shows the password prompt before the root shell.
+    expect(result.lines.some((l) => l.text.includes('root@'))).toBe(true);
   });
 
   it('sudo without args returns error', () => {
@@ -2601,10 +2602,17 @@ describe('theory ↔ terminal: engine fidelity', () => {
     expect(out(s, 'Get-Locaton', 'windows')).toMatch(/^Get-Locaton: /);
   });
 
+  it('sudo asks for the password the first time only, like its credential cache', () => {
+    const first = processCommand(createInitialState(), 'sudo whoami', 'linux');
+    expect(first.lines[0]).toEqual({ text: '[sudo] password for user: ****', type: 'info' });
+    const second = processCommand(first.newState, 'sudo whoami', 'linux');
+    expect(second.lines.some((l) => l.text.startsWith('[sudo] password'))).toBe(false);
+  });
+
   it('rm -rf / hits the GNU safeguard and deletes nothing', () => {
     const s = createInitialState();
     const r = processCommand(s, 'sudo rm -rf /', 'linux');
-    expect(r.lines.map((l) => l.text)).toEqual([
+    expect(r.lines.filter((l) => l.type === 'error').map((l) => l.text)).toEqual([
       "rm: it is dangerous to operate recursively on '/'",
       'rm: use --no-preserve-root to override this failsafe',
     ]);

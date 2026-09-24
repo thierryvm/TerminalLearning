@@ -740,6 +740,17 @@ function cmdSudo(args: string[], state: TerminalState, env: TerminalEnv): Comman
   if (args.length === 0) {
     return { lines: [{ text: 'usage: sudo command [args...]', type: 'error' }], newState: state };
   }
+  // The first sudo of a session asks for the password; later ones reuse it (sudo's credential cache).
+  const result = cmdSudoRun(args, state, env);
+  if (state.sudoAuthenticated) return result;
+  return {
+    ...result,
+    lines: [{ text: `[sudo] password for ${state.user}: ****`, type: 'info' }, ...result.lines],
+    newState: { ...result.newState, sudoAuthenticated: true },
+  };
+}
+
+function cmdSudoRun(args: string[], state: TerminalState, env: TerminalEnv): CommandOutput {
   if (args[0] === '-i' || args[0] === '-s') {
     return { lines: [{ text: `root@${state.hostname}:~# (session root simulée — tapez "exit" pour revenir)`, type: 'success' }], newState: state };
   }
