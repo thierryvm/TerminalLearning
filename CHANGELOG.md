@@ -5,6 +5,19 @@
 
 ---
 
+## 📁 24 septembre 2026 — Déplacer un fichier ne détruit plus rien, et Windows comprend ses propres chemins (THI-353)
+
+*PR #392 · écarts théorie ↔ terminal : 174 → 162 · leçons montrant du bash sur Windows : 39 → 37*
+
+Le rejeu de la théorie avait trouvé le bug le plus grave de la journée, dans le module 2.
+
+- **`mv` et `cp` vers un dossier existant.** `mv documents/notes.txt .` remplaçait le dossier personnel entier par le fichier : l'élève perdait toute son arborescence. `cp fichier dossier` et `Move-Item fichier dossier` écrasaient de même le dossier visé. Désormais, comme dans un vrai shell, le fichier va *dans* le dossier. Plusieurs fichiers peuvent être déplacés d'un coup vers un dossier, `cp -r documents projets/` crée `projets/documents`, et un dossier ne peut pas être déplacé dans lui-même. Les options `-v`, `-n` et `-i` sont comprises. Comme le simulateur ne peut pas poser de question, `-i` répond « non » et le dit. Une option inconnue est refusée avec le message de GNU.
+- **Windows comprend ses propres chemins.** `documents\notes.txt`, `.\documents\rapport.md` et `C:\Users\user\projets` échouaient tous : seul le `/` fonctionnait. PowerShell accepte les deux séparateurs, le simulateur aussi. `cd ..` depuis le dossier personnel mène à `C:\Users`, et non plus à un `C:\home` qui n'existe pas sous Windows. Les exercices acceptent les deux écritures : `Get-Content documents\notes.txt` valide l'exercice au même titre que `documents/notes.txt`. Un test le vérifie pour chaque exercice Windows qui prend un chemin. La touche Tab complète aussi après un `\`.
+- **Les autres commandes Windows touchées.** `Remove-Item -Recurse` supprime un dossier avec son contenu (l'option était ignorée). `Copy-Item -Recurse` copie un dossier complet. `mkdir archives\2025` crée aussi le dossier parent, comme le fait PowerShell.
+- **Des exemples qui fonctionnent tels quels.** Les leçons `mv`, `rm` et `cat` montraient des fichiers qui n'existent pas (`fichier.txt`, `[contenu de fichier1]`). Chaque exemple crée maintenant ce qu'il utilise, et l'élève Windows voit la version PowerShell.
+
+---
+
 ## 🐚 24 septembre 2026 — Un vrai shell, et une théorie qui dit ce que le terminal répond (THI-353)
 
 *PR #389 · #390 · #391 · 198/198 exercices sans ligne rouge (ordinateur et mobile) · nouveau test permanent `lessonTheory` : 754 commandes de théorie rejouées*

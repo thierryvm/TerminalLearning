@@ -544,11 +544,17 @@ export const curriculum: Module[] = [
             type: 'code',
             content: '$ mv documents/notes.txt .\n$ ls\ndocuments  downloads  notes.txt  projets',
             label: 'Déplacer un fichier',
+            contentByEnv: {
+              windows: 'PS> Move-Item documents\\notes.txt .\n# notes.txt est maintenant dans C:\\Users\\user (le point « . » = ici)',
+            },
           },
           {
             type: 'code',
-            content: '$ mv notes.txt mes-notes.txt\n$ ls\ndocuments  downloads  mes-notes.txt  projets',
+            content: '$ mv documents/notes.txt documents/mes-notes.txt\n$ ls documents\nmes-notes.txt  rapport.md',
             label: 'Renommer un fichier',
+            contentByEnv: {
+              windows: 'PS> Move-Item documents\\notes.txt documents\\mes-notes.txt\n# Même dossier, nouveau nom : le fichier est renommé',
+            },
           },
           {
             type: 'info',
@@ -586,23 +592,40 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ rm fichier.txt\n$ ls\ndocuments  downloads  projets',
+            content: '$ touch brouillon.txt\n$ rm brouillon.txt\n$ ls\ndocuments  downloads  projets',
             label: 'Supprimer un fichier',
+            contentByEnv: {
+              windows: 'PS> New-Item brouillon.txt\n# PowerShell affiche les détails du fichier créé\nPS> Remove-Item brouillon.txt\n# Aucun message : le fichier est supprimé, sans passer par la corbeille',
+            },
           },
           {
             type: 'code',
-            content: '$ rm -r dossier\n$ ls\ndocuments  downloads  projets',
+            content: '$ mkdir -p archives/2025\n$ rm -r archives\n$ ls\ndocuments  downloads  projets',
             label: 'Supprimer un répertoire (-r)',
+            labelByEnv: {
+              windows: 'Supprimer un dossier (-Recurse)',
+            },
+            contentByEnv: {
+              windows: 'PS> mkdir archives\\2025\n# PowerShell affiche les détails du dossier créé\nPS> Remove-Item -Recurse archives\n# Le dossier et tout son contenu sont supprimés',
+            },
           },
           {
             type: 'warning',
             content:
               'La commande `rm -rf /` ou `rm -rf *` peut détruire votre système entier ! Ne l\'utilisez jamais sans être absolument certain de ce que vous faites.',
+            contentByEnv: {
+              windows:
+                '`Remove-Item -Recurse -Force *` supprime tout le dossier courant, sans confirmation ni corbeille. Lancé depuis `C:\\` avec des droits d\'administrateur, il peut rendre Windows inutilisable. Ne l\'utilisez jamais sans être absolument certain de ce que vous faites.',
+            },
           },
           {
             type: 'tip',
             content:
               'Utilisez `rm -i` pour demander une confirmation avant chaque suppression. C\'est une bonne habitude de sécurité.',
+            contentByEnv: {
+              windows:
+                'Ajoutez `-Confirm` (`Remove-Item brouillon.txt -Confirm`) pour que PowerShell demande une confirmation avant de supprimer. C\'est une bonne habitude de sécurité.',
+            },
           },
         ],
         exercise: {
@@ -642,12 +665,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ cat documents/notes.txt\nMes notes importantes\nTâches du jour:\n1. Apprendre les commandes bash\n2. Pratiquer la navigation',
+            content: '$ cat documents/notes.txt\nMes notes importantes\nTâches du jour:\n1. Apprendre les commandes bash\n2. Pratiquer la navigation\n3. Maîtriser les permissions\nFin du fichier',
             label: 'Afficher un fichier',
           },
           {
             type: 'code',
-            content: '$ cat fichier1.txt fichier2.txt\n[contenu de fichier1]\n[contenu de fichier2]',
+            content: '$ cat documents/notes.txt documents/rapport.md\n# Affiche notes.txt, puis rapport.md juste en dessous, sans séparation',
             label: 'Concaténer plusieurs fichiers',
           },
           {

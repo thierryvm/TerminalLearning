@@ -9,12 +9,15 @@ export interface WindowsCmdDeps {
   cmdMkdir: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdTouch: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdCp: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
-  cmdMv: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
+  cmdMv: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode; newCwd?: string[] };
   cmdRm: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdEcho: (args: string[], envVars?: Record<string, string>) => OutputLine[];
   cmdGrep: (state: TerminalState, args: string[]) => OutputLine[];
   cmdEnv: (state: TerminalState) => OutputLine[];
 }
+
+/** `-Recurse`, or any prefix PowerShell accepts for it (`-r`, `-rec`…). */
+const RECURSE_PARAM = /^-r(e(c(u(r(se?)?)?)?)?)?$/i;
 
 const EXECUTION_POLICIES = ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass', 'Undefined', 'Default'];
 
@@ -28,6 +31,19 @@ function psParam(args: string[], name: string): string | undefined {
 function psPath(args: string[]): string | undefined {
   const i = args.findIndex((a) => ['-path', '-literalpath'].includes(a.toLowerCase()));
   return i >= 0 ? args[i + 1] : args.find((a) => !a.startsWith('-'));
+}
+
+/** `Copy-Item a b`, or `-Path a -Destination b` in any order → `[a, b]`. */
+function psSourceAndDestination(args: string[]): string[] {
+  const NAMED = ['-path', '-literalpath', '-destination'];
+  const valueOf = (names: string[]) => {
+    const i = args.findIndex((a) => names.includes(a.toLowerCase()));
+    return i >= 0 ? args[i + 1] : undefined;
+  };
+  const positional = args.filter((a, i) => !a.startsWith('-') && !(i > 0 && NAMED.includes(args[i - 1].toLowerCase())));
+  const source = valueOf(['-path', '-literalpath']) ?? positional.shift();
+  const destination = valueOf(['-destination']) ?? positional.shift();
+  return [source, destination].filter((a): a is string => a !== undefined);
 }
 
 /**
@@ -128,8 +144,10 @@ export function handleWindows(
     case 'copy-item':
     case 'cpi':
     case 'copy': {
-      const cpArgs = args.filter((a) => !a.startsWith('-'));
-      const { lines, newRoot } = deps.cmdCp(newState, cpArgs);
+      const cpArgs = psSourceAndDestination(args);
+      // -Recurse copies a folder with its content, like `cp -r`.
+      const recurse = args.some((a) => RECURSE_PARAM.test(a));
+      const { lines, newRoot } = deps.cmdCp(newState, [...(recurse ? ['-r'] : []), '--', ...cpArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
       return { lines, newState };
     }
@@ -138,9 +156,10 @@ export function handleWindows(
     case 'move-item':
     case 'mi':
     case 'move': {
-      const mvArgs = args.filter((a) => !a.startsWith('-'));
-      const { lines, newRoot } = deps.cmdMv(newState, mvArgs);
+      const mvArgs = psSourceAndDestination(args);
+      const { lines, newRoot, newCwd } = deps.cmdMv(newState, ['--', ...mvArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
+      if (newCwd) newState = { ...newState, cwd: newCwd };
       return { lines, newState };
     }
 
@@ -150,7 +169,9 @@ export function handleWindows(
     case 'del':
     case 'erase': {
       const rmArgs = args.filter((a) => !a.startsWith('-'));
-      const { lines, newRoot } = deps.cmdRm(newState, rmArgs);
+      // -Recurse removes a folder with its content, like `rm -r`.
+      const recurse = args.some((a) => RECURSE_PARAM.test(a));
+      const { lines, newRoot } = deps.cmdRm(newState, recurse ? ['-r', ...rmArgs] : rmArgs);
       if (newRoot) newState = { ...newState, root: newRoot };
       return { lines, newState };
     }

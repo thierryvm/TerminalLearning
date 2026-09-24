@@ -9,8 +9,7 @@ function displayPath(cwd: string[]): string {
 /** Git for Windows writes `C:/Users/user/…` (drive letter, forward slashes). */
 function gitPath(cwd: string[], env: TerminalEnv): string {
   if (env !== 'windows') return displayPath(cwd);
-  const home = cwd[0] === 'home' && cwd[1] === 'user';
-  return (home ? ['C:', 'Users', 'user', ...cwd.slice(2)] : ['C:', ...cwd]).join('/');
+  return ['C:', ...(cwd[0] === 'home' ? ['Users', ...cwd.slice(1)] : cwd)].join('/');
 }
 
 function getNode(root: DirectoryNode, path: string[]): FSNode | null {

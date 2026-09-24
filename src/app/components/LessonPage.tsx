@@ -15,6 +15,7 @@ import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
 import { renderInlineMarkdown, stripInlineMarkdown } from '../../lib/renderInlineMarkdown';
 import { TerminalState, createInitialState } from '../data/terminalEngine';
+import { exerciseAccepts } from '../data/validators';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
 import { AiTutorPanel } from './ai/AiTutorPanel';
@@ -179,7 +180,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const handleCommand = useCallback(
     (command: string, _state: TerminalState) => {
       if (!lesson.exercise || exerciseCompleted) return;
-      if (lesson.exercise.validate(command, selectedEnv)) {
+      if (exerciseAccepts(lesson.exercise.validate, command, selectedEnv)) {
         completeLesson(moduleId, lessonId);
         setExerciseMessage(lesson.exercise.successMessage);
         setJustCompleted(true);

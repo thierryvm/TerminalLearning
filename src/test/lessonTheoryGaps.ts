@@ -18,21 +18,6 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
   "navigation/orientation b2 [linux] help",
   "navigation/orientation b2 [macos] help",
   "navigation/orientation b2 [windows] help",
-  // fichiers/mv
-  "fichiers/mv b1 [linux] ls",
-  "fichiers/mv b1 [macos] ls",
-  "fichiers/mv b2 [linux] mv notes.txt mes-notes.txt",
-  "fichiers/mv b2 [linux] ls",
-  "fichiers/mv b2 [macos] mv notes.txt mes-notes.txt",
-  "fichiers/mv b2 [macos] ls",
-  // fichiers/rm
-  "fichiers/rm b1 [linux] rm fichier.txt",
-  "fichiers/rm b1 [macos] rm fichier.txt",
-  "fichiers/rm b2 [linux] rm -r dossier",
-  "fichiers/rm b2 [macos] rm -r dossier",
-  // lecture/cat
-  "lecture/cat b2 [linux] cat fichier1.txt fichier2.txt",
-  "lecture/cat b2 [macos] cat fichier1.txt fichier2.txt",
   // permissions/chmod
   "permissions/chmod b2 [linux] chmod +x script.sh",
   "permissions/chmod b2 [linux] chmod u+x script.sh",
@@ -221,4 +206,4 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
 ]);
 
 /** Lessons whose code blocks show bash to a Windows learner (no Windows variant). */
-export const BASH_SHOWN_ON_WINDOWS_MAX = 39;
+export const BASH_SHOWN_ON_WINDOWS_MAX = 37;
