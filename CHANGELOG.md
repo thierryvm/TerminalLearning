@@ -5,6 +5,39 @@
 
 ---
 
+## 🖥️ 24 septembre 2026 — Le terminal dit enfin ce que la leçon enseigne (THI-353)
+
+*PR #385 · #386 · #387 · test permanent `lessonFidelity` · 2558 tests · exercices « validés malgré une erreur » : 44 → 3*
+
+Le Grand Check-up de l'été avait trouvé un défaut de fond : pour valider un exercice, Terminal Learning regardait la commande tapée, jamais ce que le terminal répondait. Mesuré sur les 66 leçons × 3 environnements : **44 exercices se validaient alors que le terminal affichait une erreur en rouge.** L'élève tapait exactement ce que la leçon demandait, lisait `fatal: not a git repository`, et recevait quand même ses félicitations. On a corrigé par le moteur d'abord, groupe par groupe.
+
+- **Chaque leçon démarre dans l'état qu'elle enseigne (#385).** Les leçons Git s'ouvrent dans `~/projets` avec le dépôt, la branche ou le dépôt distant dont elles ont besoin ; la leçon de sécurité dispose d'un `~/.ssh` simulé avec les permissions 700 / 600 / 644 qu'elle explique. Les 33 cas Git sont corrigés d'un coup. Au passage, la sortie du terminal garde son indentation (`git branch`, `git status`) et le markdown brut (accents graves, `**`) n'apparaît plus dans les consignes.
+- **Les scripts s'exécutent vraiment (#387).** `./script.sh`, `bash script.sh` et `.\script.sh` sous Windows lisent le fichier ligne par ligne. Lancé avec `./`, il faut le droit d'exécution — sinon `Permission denied`, exactement ce qu'enseigne la leçon `chmod`. Comme un vrai sous-shell, un script garde les fichiers qu'il écrit mais pas ses `cd` ni ses variables. Un script qui s'appelle lui-même ne peut plus bloquer l'onglet (profondeur 3, 500 lignes au plus par commande).
+- **PowerShell rattrape son retard (#387).** `$PROFILE`, `cat $PROFILE` (la leçon dispose désormais d'un vrai fichier de profil), `(Get-Content fichier).Count` et `Set-ExecutionPolicy` fonctionnent.
+- **Un vieux bug de `chmod`, débusqué par les nouveaux tests (#387).** `chmod +x` écrivait le droit une position trop loin : le fichier ne devenait jamais exécutable pour son propriétaire. Corrigé, avec tous les modes octaux et les formes symboliques (`u+x`, `go-w`, `a=r`).
+- **Le tiret qui « disparaissait » (#386).** Signalé par Thierry : en tapant `git merge --no-ff`, un des deux tirets s'effaçait à l'espace et revenait à la validation. Les touches enregistrées prouvaient que les caractères étaient intacts : c'était la police, JetBrains Mono, qui dessine `--` d'un seul trait (ligature). Les ligatures sont désactivées sur tout le texte monospace. **Vérifié sur un vrai iPhone** (THI-354).
+- **Un garde-fou permanent.** Un test rejoue, pour chaque leçon et chaque environnement, la commande que la leçon demande de taper, et exige qu'elle se valide **sans aucune ligne d'erreur**. Les 3 cas restants (la redirection `2>`) sont listés explicitement, et cette liste ne peut que rétrécir.
+
+Ce qui reste, et c'est dit : les redirections (`2>`, `>` pour toutes les commandes, `tee`) arrivent dans la prochaine livraison ; ensuite seulement, un exercice refusera de se valider si le terminal a affiché une erreur.
+
+---
+
+## 🔧 23 septembre 2026 — Reprise après la pause : dépendances corrigées, et une preuve d'âge qui ne se perd plus (THI-340)
+
+*PR #383 · #384 · npm audit 41 → 24 (critique 1 → 0) · +16 tests*
+
+Première journée de reprise après l'été et le Grand Check-up (sécurité, dépendances, marché, contenu, conformité). Les deux corrections prioritaires sont passées en premier.
+
+- **Dépendances (#383).** `react-router` 7.13 → 7.18.4 (avis de sécurité XSS / redirection ouverte), `vite` 6.4.3, et les correctifs compatibles des dépendances indirectes, dont `tar` (critique). Aucune version majeure changée. Les deux paquets dont la seule « correction » proposée était une rétrogradation (`@lhci/cli`, `@vercel/node`, de l'outillage absent du site servi) restent tels quels, en connaissance de cause.
+- **La preuve d'âge se perdait sur un chemin précis (#384).** Un élève qui ouvrait le lien d'invitation de son professeur, puis se connectait avec GitHub ou Google, passait bien l'écran d'âge — mais la redirection partait avant l'enregistrement de l'horodatage. La population la plus susceptible d'être mineure se retrouvait précisément sans trace. L'horodatage est désormais posé avant toute redirection.
+- **Les échecs se voient.** Un enregistrement raté est signalé à Sentry avec son seul code d'erreur — aucun identifiant, aucun message.
+- **`/privacy` dit exactement ce que fait le code** pour un visiteur refusé : la date d'éligibilité reste sur l'appareil et s'efface à la première visite après ce jour-là.
+- **Accessibilité de l'écran d'âge** : le refus est annoncé aux lecteurs d'écran et reçoit le focus, l'erreur est liée au champ, le sélecteur de date suit le thème sombre.
+
+Contrôles : `security-auditor` (0 critique, 0 élevé, avec une relecture de l'écran d'âge d'origine), `ui-auditor`, `feature-dev:code-reviewer` (SHIP). Chaque nouveau test a été vérifié rouge sur l'ancien code.
+
+---
+
 ## 🚸 19 août 2026 — La page promettait, le produit applique enfin : garde-fou d'âge à la création de compte (THI-340)
 
 *PR #380 · migration 035 · `ageGate.ts` + `AgeGateStep` · 36 tests · RGPD Art. 8 — Belgique = 13 ans*
@@ -20,6 +53,16 @@ Le matin même, la refonte de `/privacy` (PR #379) écrivait noir sur blanc : «
 - **Asymétrie assumée du stockage.** La réponse permissive vit dans l'onglet et meurt à sa fermeture ; le refus, lui, tient sur l'appareil et **expire tout seul le jour des 13 ans**. Un visiteur refusé ne rouvre pas un onglet pour répondre autrement, et aucun enfant n'est enfermé à vie.
 
 Ce qui n'est **pas** fermé, et c'est dit : une déclaration reste une déclaration. Un visiteur qui ment obtient un compte, et aucun contrôle serveur ne peut le détecter. Le garde-fou est « l'effort raisonnable » que le règlement demande au regard de la technologie disponible — proportionné à un service gratuit et bénévole qui collecte un email et une ligne de progression. Le circuit de consentement parental reste en réserve pour le jour où des écoles avec des moins de 13 ans arriveront vraiment.
+
+---
+
+## 🛡️ 18-19 août 2026 — Deux correctifs en base et une page `/privacy` qui dit enfin la vérité
+
+*PR #377 [HOTFIX] · #378 · #379*
+
+- **Fermer un ticket de support fonctionne à nouveau (#377).** Passer un signalement en « résolu » violait une contrainte de cohérence en base : le panneau d'administration ne pouvait plus clôturer un ticket. Correctif d'urgence.
+- **Moins de surface en base (#378).** Des fonctions `SECURITY DEFINER` réservées aux déclencheurs restaient exécutables par les rôles de l'API ; ce droit est retiré (avertissements 0028 / 0029 de l'analyseur de sécurité Supabase).
+- **`/privacy` corrigée (#379).** La page affirmait « aucune donnée personnelle collectée » — faux depuis l'arrivée des comptes. Elle distingue maintenant l'usage anonyme (rien ne quitte l'appareil) du compte optionnel (email, profil, progression chez Supabase), déclare Supabase et Vercel avec leurs garanties de transfert, et ajoute une note sur les mineurs et l'AI Act.
 
 ---
 

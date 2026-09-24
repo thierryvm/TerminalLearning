@@ -5,6 +5,26 @@ This log is updated after each security audit and serves as institutional memory
 
 ---
 
+## Grand Check-up, reprise — gates des PR #383 à #387 (23-24 septembre 2026)
+
+**Date**: 23-24 septembre 2026
+**Auteur**: CC Terminal Learning (Opus 5.5)
+**Méthode**: verdicts repris des descriptions de PR (traçabilité ; pas de nouveau run).
+
+| PR | Portée | Gates | Verdict |
+|---|---|---|---|
+| #383 `security(deps)` | react-router 7.18.4, vite 6.4.3, transitives (`tar` critique) | `feature-dev:code-reviewer` (CHANGELOG react-router 7.14 → 7.18.4 relu contre l'usage réel) | SHIP · npm audit 41 → 24, critique 0 |
+| #384 `fix(auth)` THI-340 | horodatage d'âge sur tous les retours OAuth, rapport Sentry sans PII | `security-auditor` ×2 (écran d'âge d'origine #380 + diff), `ui-auditor`, `feature-dev:code-reviewer` | 0 CRITICAL / 0 HIGH ; MEDIUM (horodatage manquant sur `returnTo`) corrigé ; ui H1/H2 corrigés ; SHIP |
+| #385 `feat(terminal)` THI-353 | état de départ par leçon | `curriculum-validator`, `test-runner`, `ui-auditor`, `feature-dev:code-reviewer` | GO · PASS · SHIP (aucun finding ≥ 80) |
+| #386 `fix(ui)` | ligatures monospace désactivées | `ui-auditor`, `feature-dev:code-reviewer` | PASS · limite Safari divulguée, puis vérifiée sur iPhone réel (THI-354 Done) |
+| #387 `fix(terminal)` THI-353 | exécution de scripts (profondeur 3, budget 500 lignes), `$PROFILE`, ExecutionPolicy, `chmod` | `curriculum-validator`, `test-runner`, `ui-auditor`, `feature-dev:code-reviewer` | FIX FIRST → 4/5 findings corrigés avec test ; le 5ᵉ (redirection de la sortie d'un script) rattaché à la PR redirections |
+
+**Constats hors périmètre, tracés** : THI-350 (tunnel Sentry : branche de scrub serveur inatteignable + query strings dans les breadcrumbs) ; `/api/sentry-tunnel` renvoie 429 après quelques centaines de chargements depuis une même IP → risque pour une classe derrière le NAT d'une école (relié à THI-88) ; THI-352 (pas de délai maximal sur l'horodatage avant redirection).
+
+**Dette de gates de #380 (écran d'âge d'origine)** : `security-auditor` et `ui-auditor` l'ont couvert via #384 ; reste une passe `feature-dev:code-reviewer` sur le code d'origine non modifié par #384.
+
+---
+
 ## Rattrapage traçabilité — runs Sprint 2.C + break-ins agents (consolidé 4 juin 2026)
 
 **Date**: 4 juin 2026 (consolidation rétroactive)
