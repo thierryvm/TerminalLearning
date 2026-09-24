@@ -1,8 +1,9 @@
 import type { TerminalState, TerminalEnv, CommandOutput, OutputLine, DirectoryNode } from './types';
+import { varsForEnv } from './shellVars';
 
 export interface WindowsCmdDeps {
   cmdPwd: (state: TerminalState, env: TerminalEnv) => OutputLine[];
-  cmdCd: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newCwd?: string[] };
+  cmdCd: (state: TerminalState, args: string[], env?: TerminalEnv) => { lines: OutputLine[]; newCwd?: string[] };
   cmdLs: (state: TerminalState, args: string[]) => OutputLine[];
   cmdCat: (state: TerminalState, args: string[]) => OutputLine[];
   cmdMkdir: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
@@ -16,6 +17,12 @@ export interface WindowsCmdDeps {
 }
 
 const EXECUTION_POLICIES = ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass', 'Undefined', 'Default'];
+
+/** Value that follows a PowerShell parameter (`-Verb RunAs`), case-insensitive. */
+function psParam(args: string[], name: string): string | undefined {
+  const i = args.findIndex((a) => a.toLowerCase() === name);
+  return i >= 0 ? args[i + 1] : undefined;
+}
 
 /** `-Path x`, `-LiteralPath x`, or the first positional argument. */
 function psPath(args: string[]): string | undefined {
@@ -43,8 +50,8 @@ export function handleWindows(
     // ── cd equivalents ────────────────────────────────────────────────────────
     case 'set-location':
     case 'sl': {
-      const { lines, newCwd } = deps.cmdCd(newState, args);
-      if (newCwd) newState = { ...newState, cwd: newCwd };
+      const { lines, newCwd } = deps.cmdCd(newState, args, env);
+      if (newCwd) newState = { ...newState, cwd: newCwd, previousCwd: newState.cwd };
       return { lines, newState };
     }
 
@@ -69,6 +76,25 @@ export function handleWindows(
         return { lines: [{ text: `Get-Item: Cannot find path '${full}' because it does not exist.`, type: 'error' }], newState };
       }
       return { lines: [{ text: target, type: 'output' }], newState };
+    }
+
+    // ── Start-Process: opens a program in a new window (nothing to show here) ──
+    case 'start-process':
+    case 'saps':
+    case 'start': {
+      if (env !== 'windows') return null;
+      const program = psParam(args, '-filepath') ?? args.find((a) => !a.startsWith('-'));
+      if (!program) return { lines: [{ text: 'Start-Process: indiquez un programme, par exemple Start-Process notepad', type: 'error' }], newState };
+      const asAdmin = args.some((a) => a.toLowerCase() === '-verb') && /runas/i.test(psParam(args, '-verb') ?? '');
+      return {
+        lines: [{
+          text: asAdmin
+            ? `(Windows demanderait une confirmation (UAC), puis ouvrirait « ${program} » en administrateur dans une nouvelle fenêtre.)`
+            : `(« ${program} » s'ouvrirait dans une nouvelle fenêtre.)`,
+          type: 'info',
+        }],
+        newState,
+      };
     }
 
     // ── cat equivalents ───────────────────────────────────────────────────────
@@ -132,7 +158,7 @@ export function handleWindows(
     // ── echo equivalents ──────────────────────────────────────────────────────
     case 'write-host':
     case 'write-output':
-      return { lines: deps.cmdEcho(args.filter((a) => !a.startsWith('-')), newState.envVars), newState };
+      return { lines: deps.cmdEcho(args.filter((a) => !a.startsWith('-')), varsForEnv(newState.envVars, env)), newState };
 
     // ── ps equivalents ────────────────────────────────────────────────────────
     case 'get-process':
@@ -319,6 +345,7 @@ export const WINDOWS_COMMANDS = new Set([
   'get-childitem', 'gci', 'dir',
   'get-content', 'gc',
   'get-item', 'gi',
+  'start-process', 'saps', 'start',
   'new-item', 'ni',
   'copy-item', 'cpi', 'copy',
   'move-item', 'mi', 'move',

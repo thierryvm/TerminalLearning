@@ -611,16 +611,17 @@ describe('displayPathForEnv — path formatting per env', () => {
 });
 
 describe('pwd — env-aware path output', () => {
-  it('linux → ~ for home directory', () => {
+  // A real pwd prints the absolute path; only the prompt shortens it to ~ (THI-353).
+  it('linux → /home/user for home directory', () => {
     const state = createInitialState();
     const result = processCommand(state, 'pwd', 'linux');
-    expect(result.lines[0].text).toBe('~');
+    expect(result.lines[0].text).toBe('/home/user');
   });
 
-  it('macos → ~ for home directory', () => {
+  it('macos → /home/user for home directory (the simulator keeps one home for bash and zsh)', () => {
     const state = createInitialState();
     const result = processCommand(state, 'pwd', 'macos');
-    expect(result.lines[0].text).toBe('~');
+    expect(result.lines[0].text).toBe('/home/user');
   });
 
   it('windows → C:\\Users\\user for home directory', () => {
@@ -898,7 +899,8 @@ describe('sudo — privilege elevation', () => {
   it('sudo -i opens root shell', () => {
     const state = makeState();
     const result = processCommand(state, 'sudo -i', 'linux');
-    expect(result.lines[0].text).toContain('root');
+    // The first sudo shows the password prompt before the root shell.
+    expect(result.lines.some((l) => l.text.includes('root@'))).toBe(true);
   });
 
   it('sudo without args returns error', () => {
@@ -1272,7 +1274,9 @@ describe('ls', () => {
   it('lists files and directories', () => {
     const result = processCommand(makeStateWithFS(), 'ls');
     const text = result.lines[0].text;
-    expect(text).toContain('docs/');
+    // Plain ls marks nothing (no trailing /); ls -F does (THI-353).
+    expect(text).toContain('docs');
+    expect(text).not.toContain('docs/');
     expect(text).toContain('test.txt');
   });
 
@@ -2487,5 +2491,153 @@ describe('Get-Item and pipeline cmdlets', () => {
   it('git log output goes through a pipe (coloured lines are standard output)', () => {
     const s = build('linux', 'mkdir p', 'cd p', 'git init', 'touch a', 'git add a', 'git commit -m "premier"');
     expect(out(s, 'git log | grep -c commit', 'linux')).toBe('1');
+  });
+});
+
+// ─── THI-353: what the lessons show must be what the terminal prints ─────────
+// Expected values come from real bash / PowerShell, never from this engine.
+
+describe('theory ↔ terminal: engine fidelity', () => {
+  type Env = 'linux' | 'macos' | 'windows';
+  function build(env: Env, ...cmds: string[]): TerminalState {
+    let s = createInitialState();
+    for (const c of cmds) s = processCommand(s, c, env).newState;
+    return s;
+  }
+  const out = (s: TerminalState, cmd: string, env: Env = 'linux') =>
+    processCommand(s, cmd, env).lines.map((l) => l.text).join('\n');
+  const types = (s: TerminalState, cmd: string, env: Env = 'linux') => processCommand(s, cmd, env).lines.map((l) => l.type);
+
+  it('pwd prints the absolute path, never ~', () => {
+    expect(out(createInitialState(), 'pwd')).toBe('/home/user');
+    expect(out(build('linux', 'cd documents'), 'pwd')).toBe('/home/user/documents');
+    expect(out(build('macos', 'cd documents'), 'pwd', 'macos')).toBe('/home/user/documents');
+    expect(out(createInitialState(), 'Get-Location', 'windows')).toBe('C:\\Users\\user');
+  });
+
+  it('cd - goes back to the previous directory and prints it', () => {
+    const s = build('linux', 'cd documents', 'cd ..');
+    const r = processCommand(s, 'cd -', 'linux');
+    expect(r.lines.map((l) => l.text)).toEqual(['/home/user/documents']);
+    expect(r.newState.cwd).toEqual(['home', 'user', 'documents']);
+    expect(processCommand(r.newState, 'cd -', 'linux').newState.cwd).toEqual(['home', 'user']);
+    expect(out(createInitialState(), 'cd -')).toBe('bash: cd: OLDPWD not set');
+  });
+
+  it('export expands the variables of its value', () => {
+    const s = build('linux', 'export PATH=$PATH:/opt/myapp/bin', 'export SALUT="Bonjour $USER"');
+    expect(out(s, 'echo $PATH')).toBe('/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/myapp/bin');
+    expect(out(s, 'echo $SALUT')).toBe('Bonjour user');
+  });
+
+  it('PowerShell shows a Windows PATH', () => {
+    const s = createInitialState();
+    expect(out(s, 'echo $env:PATH', 'windows')).toBe('C:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin');
+    expect(out(s, '$env:PATH', 'windows')).toBe('C:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin');
+    const t = build('windows', '$env:PATH = "C:\\outils"');
+    expect(out(t, '$env:PATH', 'windows')).toBe('C:\\outils');
+  });
+
+  it('git init <dir> creates the directory and the repository there', () => {
+    const r = processCommand(createInitialState(), 'git init mon-projet', 'linux');
+    expect(r.lines[0].text).toBe('Initialized empty Git repository in /home/user/mon-projet/.git/');
+    expect(r.newState.cwd).toEqual(['home', 'user']);
+    expect(out(r.newState, 'ls')).toContain('mon-projet');
+  });
+
+  it('wc counts bytes (UTF-8) and the final newline, like the real wc', () => {
+    // Real wc on this exact content: "6 22 143" (â and î are two bytes each).
+    const s = createInitialState();
+    expect(out(s, 'wc documents/notes.txt')).toBe(' 6 22 143 documents/notes.txt');
+    expect(out(s, 'wc -c documents/notes.txt')).toBe(' 143 documents/notes.txt');
+    const e = build('linux', 'touch vide.txt', 'echo x > x.txt');
+    expect(out(e, 'wc vide.txt')).toBe(' 0 0 0 vide.txt');
+    expect(out(e, 'wc x.txt')).toBe(' 1 1 2 x.txt');
+    // Real: printf 'pomme\npoire\n' | wc  ->  2 2 12
+    const p = build('linux', 'echo pomme > f', 'echo poire >> f');
+    expect(out(p, 'cat f | wc')).toBe('2 2 12');
+  });
+
+  it('ls sorts like ls (no directories-first) and marks nothing, -F adds the /', () => {
+    const s = build('linux', 'touch fichier.txt');
+    expect(out(s, 'ls')).toBe('documents  downloads  fichier.txt  projets');
+    expect(out(s, 'ls -F')).toBe('documents/  downloads/  fichier.txt  projets/');
+    expect(out(createInitialState(), 'ls -a')).toBe('.  ..  .bashrc  .profile  .zshrc  documents  downloads  projets');
+  });
+
+  it('!! repeats the previous command (sudo !!)', () => {
+    const s = build('linux', 'apt update');
+    const r = processCommand(s, 'sudo !!', 'linux');
+    expect(r.lines[0]).toEqual({ text: 'sudo apt update', type: 'info' });
+    expect(r.lines.some((l) => l.type === 'error')).toBe(false);
+    expect(r.newState.commandHistory[r.newState.commandHistory.length - 1]).toBe('sudo apt update');
+    expect(out(createInitialState(), 'sudo !!')).toBe('bash: !!: event not found');
+  });
+
+  it('apt needs root to change the system, sudo gives it', () => {
+    const s = createInitialState();
+    expect(types(s, 'apt update')).toContain('error');
+    expect(out(s, 'apt update')).toContain('are you root?');
+    expect(types(s, 'sudo apt update')).not.toContain('error');
+    expect(out(s, 'sudo apt install tree')).toContain('tree');
+    expect(types(s, 'apt search tree')).not.toContain('error');
+    expect(types(s, 'apt update', 'windows')).toContain('error');
+  });
+
+  it('killall and Start-Process exist', () => {
+    const s = createInitialState();
+    expect(processCommand(s, 'killall node', 'linux').lines).toEqual([]);
+    expect(types(s, 'killall')).toEqual(['error']);
+    expect(types(s, 'Start-Process powershell -Verb RunAs', 'windows')).toEqual(['info']);
+    expect(out(s, 'Start-Process powershell -Verb RunAs', 'windows')).toContain('administrateur');
+  });
+
+  it('Linux commands are case-sensitive; the error repeats what was typed', () => {
+    const s = createInitialState();
+    expect(types(s, 'LS')).toEqual(['error']);
+    expect(out(s, 'LS')).toMatch(/^LS: /);
+    // macOS (case-insensitive disk) and PowerShell accept any case.
+    expect(types(s, 'LS', 'macos')).not.toContain('error');
+    expect(types(s, 'get-childitem', 'windows')).not.toContain('error');
+    expect(out(s, 'Get-Locaton', 'windows')).toMatch(/^Get-Locaton: /);
+  });
+
+  it('sudo asks for the password the first time only, like its credential cache', () => {
+    const first = processCommand(createInitialState(), 'sudo whoami', 'linux');
+    expect(first.lines[0]).toEqual({ text: '[sudo] password for user: ****', type: 'info' });
+    const second = processCommand(first.newState, 'sudo whoami', 'linux');
+    expect(second.lines.some((l) => l.text.startsWith('[sudo] password'))).toBe(false);
+  });
+
+  it('sudo whoami answers root — the point of the sudo exercise', () => {
+    const s = createInitialState();
+    expect(out(s, 'whoami')).toBe('user');
+    const r = processCommand(s, 'sudo whoami', 'linux');
+    expect(r.lines.filter((l) => l.type === 'output').map((l) => l.text)).toEqual(['root']);
+    expect(out(r.newState, 'whoami')).toBe('user');
+  });
+
+  it('PowerShell 7 goes back with cd - / Set-Location -, silently', () => {
+    const s = build('windows', 'Set-Location documents', 'Set-Location ..');
+    const r = processCommand(s, 'Set-Location -', 'windows');
+    expect(r.lines).toEqual([]);
+    expect(r.newState.cwd).toEqual(['home', 'user', 'documents']);
+  });
+
+  it('rm -rf / hits the GNU safeguard and deletes nothing', () => {
+    const s = createInitialState();
+    const r = processCommand(s, 'sudo rm -rf /', 'linux');
+    expect(r.lines.filter((l) => l.type === 'error').map((l) => l.text)).toEqual([
+      "rm: it is dangerous to operate recursively on '/'",
+      'rm: use --no-preserve-root to override this failsafe',
+    ]);
+    expect(out(r.newState, 'ls')).toBe('documents  downloads  projets');
+  });
+
+  it('ping answers in the Windows format under PowerShell', () => {
+    const w = out(createInitialState(), 'ping google.com', 'windows');
+    expect(w).toMatch(/^Pinging google\.com \[142\.250\.74\.46\] with 32 bytes of data:/);
+    expect(w).toContain('Reply from 142.250.74.46: bytes=32');
+    expect(out(createInitialState(), 'ping google.com')).toMatch(/^PING google\.com/);
   });
 });
