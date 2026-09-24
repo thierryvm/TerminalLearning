@@ -2609,6 +2609,21 @@ describe('theory ↔ terminal: engine fidelity', () => {
     expect(second.lines.some((l) => l.text.startsWith('[sudo] password'))).toBe(false);
   });
 
+  it('sudo whoami answers root — the point of the sudo exercise', () => {
+    const s = createInitialState();
+    expect(out(s, 'whoami')).toBe('user');
+    const r = processCommand(s, 'sudo whoami', 'linux');
+    expect(r.lines.filter((l) => l.type === 'output').map((l) => l.text)).toEqual(['root']);
+    expect(out(r.newState, 'whoami')).toBe('user');
+  });
+
+  it('PowerShell 7 goes back with cd - / Set-Location -, silently', () => {
+    const s = build('windows', 'Set-Location documents', 'Set-Location ..');
+    const r = processCommand(s, 'Set-Location -', 'windows');
+    expect(r.lines).toEqual([]);
+    expect(r.newState.cwd).toEqual(['home', 'user', 'documents']);
+  });
+
   it('rm -rf / hits the GNU safeguard and deletes nothing', () => {
     const s = createInitialState();
     const r = processCommand(s, 'sudo rm -rf /', 'linux');

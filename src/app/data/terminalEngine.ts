@@ -362,7 +362,8 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
 function cmdCd(state: TerminalState, args: string[], env: TerminalEnv = 'linux'): { lines: OutputLine[]; newCwd?: string[] } {
   const target = args[0];
   if (target === '-') {
-    // `cd -` returns to $OLDPWD; bash prints where it lands, PowerShell stays silent.
+    // `cd -` returns to $OLDPWD; bash prints where it lands. PowerShell 6.2+ (the
+    // simulated 7.x) goes back in its location history silently; 5.1 did not have it.
     if (!state.previousCwd) {
       return { lines: env === 'windows' ? [] : [{ text: 'bash: cd: OLDPWD not set', type: 'error' }] };
     }
@@ -2044,7 +2045,8 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     }
 
     case 'whoami':
-      return { lines: [{ text: newState.user, type: 'output' }], newState };
+      // Under sudo the command runs as root: that is what `sudo whoami` demonstrates.
+      return { lines: [{ text: runningAsRoot ? 'root' : newState.user, type: 'output' }], newState };
 
     case 'hostname':
       return { lines: [{ text: newState.hostname, type: 'output' }], newState };
