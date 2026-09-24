@@ -46,6 +46,8 @@ export interface GitState {
 export interface TerminalState {
   root: DirectoryNode;
   cwd: string[];
+  /** Directory before the last `cd` ($OLDPWD), for `cd -`. */
+  previousCwd?: string[];
   commandHistory: string[];
   user: string;
   hostname: string;

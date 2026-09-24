@@ -163,7 +163,8 @@ describe('pipelines', () => {
 
   it('ls writes columns on screen, one name per line into a pipe or a file, and with -1', () => {
     expect(run('linux', 'ls').last).toHaveLength(1);
-    expect(text(run('linux', 'ls -1').last)).toBe(['documents/', 'downloads/', 'projets/'].join('\n'));
+    // Plain ls marks nothing; -F adds the / (THI-353).
+    expect(text(run('linux', 'ls -1').last)).toBe(['documents', 'downloads', 'projets'].join('\n'));
     expect(text(run('linux', 'ls | cat').last)).toBe('documents\ndownloads\nprojets');
   });
 
@@ -210,7 +211,7 @@ describe('pipelines', () => {
   it('a command that does not read stdin still runs after a pipe', () => {
     const { state, last } = run('linux', 'echo hi | mkdir test');
     expect(last).toEqual([]);
-    expect(text(processCommand(state, 'ls -1', 'linux').lines)).toContain('test/');
+    expect(processCommand(state, 'ls -1', 'linux').lines.map((l) => l.text)).toContain('test');
     expect(text(run('linux', 'echo hi | whoami').last)).toBe('user');
   });
 

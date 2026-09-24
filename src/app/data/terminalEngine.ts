@@ -10,6 +10,7 @@ import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
+import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
 import type { WindowsCmdDeps } from './commands/windows';
 
 // ─── Initial Filesystem ───────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ export function createInitialState(): TerminalState {
     user: 'user',
     hostname: 'terminal-lab',
     envVars: {
-      PATH: '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+      PATH: UNIX_DEFAULT_PATH,
       HOME: '/home/user',
       USER: 'user',
       SHELL: '/bin/bash',
@@ -302,8 +303,13 @@ function formatLongEntry(name: string, node: FSNode): string {
 
 // ─── Command Handlers ─────────────────────────────────────────────────────────
 
+/** The absolute path, as `pwd` prints it (the prompt shortens it to `~`, pwd never does). */
+function absolutePath(cwd: string[], env: TerminalEnv): string {
+  return env === 'windows' ? displayPathForEnv(cwd, env) : '/' + cwd.join('/');
+}
+
 function cmdPwd(state: TerminalState, env: TerminalEnv = 'linux'): OutputLine[] {
-  return [{ text: displayPathForEnv(state.cwd, env), type: 'output' }];
+  return [{ text: absolutePath(state.cwd, env), type: 'output' }];
 }
 
 function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
@@ -322,15 +328,10 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
       : [{ text: paths[0] || '', type: 'output' }];
   }
 
+  // Like `ls` in the C locale: one alphabetical list, hidden files first, no directories-first.
   const entries = Object.entries(node.children)
     .filter(([name]) => showAll || !name.startsWith('.'))
-    .sort(([a], [b]) => {
-      const aIsDir = node.children[a].type === 'directory';
-      const bIsDir = node.children[b].type === 'directory';
-      if (aIsDir && !bIsDir) return -1;
-      if (!aIsDir && bIsDir) return 1;
-      return a.localeCompare(b);
-    });
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
   if (showAll) {
     entries.unshift(['.', node], ['..', node]);
@@ -340,7 +341,13 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
     // Into a pipe or a file, a real `ls` writes one plain name per line
     // (that is what `ls | wc -l` counts); `-1` asks for it on screen too.
     if (!stdoutIsTerminal) return entries.map(([name]) => ({ text: name, type: 'output' as const }));
-    const names = entries.map(([name, n]) => (n.type === 'directory' ? name + '/' : name));
+    // `-F` marks directories with `/` and executables with `*`; plain `ls` marks nothing.
+    const classify = flags.some((f) => f.includes('F'));
+    const names = entries.map(([name, n]) => {
+      if (!classify || name === '.' || name === '..') return name;
+      if (n.type === 'directory') return name + '/';
+      return n.permissions[3] === 'x' ? name + '*' : name;
+    });
     if (flags.some((f) => f.includes('1'))) return names.map((text) => ({ text, type: 'output' as const }));
     return [{ text: names.join('  '), type: 'output' }];
   }
@@ -352,8 +359,16 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
   return lines;
 }
 
-function cmdCd(state: TerminalState, args: string[]): { lines: OutputLine[]; newCwd?: string[] } {
+function cmdCd(state: TerminalState, args: string[], env: TerminalEnv = 'linux'): { lines: OutputLine[]; newCwd?: string[] } {
   const target = args[0];
+  if (target === '-') {
+    // `cd -` returns to $OLDPWD; bash prints where it lands, PowerShell stays silent.
+    if (!state.previousCwd) {
+      return { lines: env === 'windows' ? [] : [{ text: 'bash: cd: OLDPWD not set', type: 'error' }] };
+    }
+    const lines: OutputLine[] = env === 'windows' ? [] : [{ text: absolutePath(state.previousCwd, env), type: 'output' }];
+    return { lines, newCwd: state.previousCwd };
+  }
   if (!target || target === '~') {
     return { lines: [], newCwd: ['home', 'user'] };
   }
@@ -468,6 +483,13 @@ function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; new
   const recursive = flags.some((f) => f.includes('r') || f.includes('R'));
 
   if (!paths.length) return { lines: [{ text: 'rm: missing operand', type: 'error' }] };
+  // GNU rm refuses to wipe the whole system (`rm -rf /`) unless forced explicitly.
+  if (recursive && paths.some((p) => resolvePath(state, p).length === 0) && !flags.includes('--no-preserve-root')) {
+    return { lines: [
+      { text: "rm: it is dangerous to operate recursively on '/'", type: 'error' },
+      { text: 'rm: use --no-preserve-root to override this failsafe', type: 'error' },
+    ] };
+  }
 
   const newRoot = deepCloneRoot(state.root);
 
@@ -619,6 +641,21 @@ function cmdTail(state: TerminalState, args: string[]): OutputLine[] {
   return cmdHeadTail(state, args, 'tail');
 }
 
+const utf8 = new TextEncoder();
+
+/**
+ * What `wc` counts. The simulator stores text without its final newline; a real
+ * file (and a real pipe) ends with one, and `wc -c` counts bytes, not characters.
+ */
+function textCounts(text: string): { lines: number; words: number; bytes: number } {
+  if (text === '') return { lines: 0, words: 0, bytes: 0 };
+  return {
+    lines: text.split('\n').length,
+    words: text.split(/\s+/).filter(Boolean).length,
+    bytes: utf8.encode(text).length + 1,
+  };
+}
+
 function cmdWc(state: TerminalState, args: string[]): OutputLine[] {
   const flags = args.filter((a) => a.startsWith('-'));
   const paths = args.filter((a) => !a.startsWith('-'));
@@ -629,9 +666,7 @@ function cmdWc(state: TerminalState, args: string[]): OutputLine[] {
     const node = getNode(state.root, resolvePath(state, p));
     if (!node) { lines.push({ text: `wc: ${p}: No such file or directory`, type: 'error' }); continue; }
     if (node.type === 'directory') { lines.push({ text: `wc: ${p}: Is a directory`, type: 'error' }); continue; }
-    const lc = node.content.split('\n').length;
-    const wc = node.content.split(/\s+/).filter(Boolean).length;
-    const cc = node.content.length;
+    const { lines: lc, words: wc, bytes: cc } = textCounts(node.content);
     if (flags.some((f) => f.includes('l'))) lines.push({ text: ` ${lc} ${p}`, type: 'output' });
     else if (flags.some((f) => f.includes('w'))) lines.push({ text: ` ${wc} ${p}`, type: 'output' });
     else if (flags.some((f) => f.includes('c'))) lines.push({ text: ` ${cc} ${p}`, type: 'output' });
@@ -718,9 +753,64 @@ function cmdSudo(args: string[], state: TerminalState, env: TerminalEnv): Comman
     ], newState: state };
   }
   // Run the command as root — just delegate but mark it as sudo
-  const subCmd = args.join(' ');
-  const subResult = processCommand(state, subCmd, env);
-  return subResult;
+  // Run the command as root. runLine, not processCommand: the history already
+  // holds `sudo …`, the inner command must not be recorded a second time.
+  const wasRoot = runningAsRoot;
+  runningAsRoot = true;
+  try {
+    return runLine(state, args.join(' '), env);
+  } finally {
+    runningAsRoot = wasRoot;
+  }
+}
+
+/** True while `sudo` runs a command (apt refuses to change the system otherwise). */
+let runningAsRoot = false;
+
+const APT_NEEDS_ROOT = new Set(['update', 'upgrade', 'install', 'remove', 'purge', 'autoremove', 'full-upgrade']);
+
+function cmdApt(cmd: string, args: string[]): OutputLine[] {
+  const sub = args[0] ?? '';
+  const pkgs = args.slice(1).filter((a) => !a.startsWith('-'));
+  if (!sub) return [{ text: `Usage: ${cmd} update | upgrade | install <paquet> | remove <paquet> | search <mot>`, type: 'error' }];
+  if (APT_NEEDS_ROOT.has(sub) && !runningAsRoot) {
+    return [
+      { text: 'E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)', type: 'error' },
+      { text: 'E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?', type: 'error' },
+    ];
+  }
+  switch (sub) {
+    case 'update':
+      return [
+        { text: 'Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease', type: 'output' },
+        { text: 'Get:2 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]', type: 'output' },
+        { text: 'Reading package lists... Done', type: 'output' },
+        { text: 'All packages are up to date.', type: 'success' },
+      ];
+    case 'upgrade':
+    case 'full-upgrade':
+      return [
+        { text: 'Reading package lists... Done', type: 'output' },
+        { text: '0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.', type: 'success' },
+      ];
+    case 'install':
+      if (!pkgs.length) return [{ text: 'E: Aucun paquet indiqué — par exemple : sudo apt install tree', type: 'error' }];
+      return [
+        { text: 'Reading package lists... Done', type: 'output' },
+        { text: `The following NEW packages will be installed: ${pkgs.join(' ')}`, type: 'output' },
+        ...pkgs.map((p) => ({ text: `Setting up ${p} ...`, type: 'success' as const })),
+      ];
+    case 'remove':
+    case 'purge':
+    case 'autoremove':
+      return pkgs.map((p) => ({ text: `Removing ${p} ...`, type: 'success' as const }));
+    case 'search':
+    case 'show':
+    case 'list':
+      return [{ text: `(recherche simulée : ${pkgs.join(' ') || 'tous les paquets'} — sur une vraie machine, apt interroge les dépôts Ubuntu)`, type: 'info' }];
+    default:
+      return [{ text: `E: Invalid operation ${sub}`, type: 'error' }];
+  }
 }
 
 function cmdTop(state: TerminalState): OutputLine[] {
@@ -950,13 +1040,11 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
 
   switch (cmd) {
     case 'wc': {
-      const lines = stdin.split('\n').filter(Boolean);
-      const words = stdin.split(/\s+/).filter(Boolean);
-      const bytes = stdin.length;
-      if (flags.some((f) => f.includes('l'))) return same(outLines([String(lines.length)]));
-      if (flags.some((f) => f.includes('w'))) return same(outLines([String(words.length)]));
+      const { lines, words, bytes } = textCounts(stdin);
+      if (flags.some((f) => f.includes('l'))) return same(outLines([String(lines)]));
+      if (flags.some((f) => f.includes('w'))) return same(outLines([String(words)]));
       if (flags.some((f) => f.includes('c'))) return same(outLines([String(bytes)]));
-      return same(outLines([`${lines.length} ${words.length} ${bytes}`]));
+      return same(outLines([`${lines} ${words} ${bytes}`]));
     }
 
     case 'grep': {
@@ -1704,12 +1792,43 @@ function getCmdHelp(cmdName: string, env: TerminalEnv = 'linux'): OutputLine[] |
 // ─── Main Command Processor ───────────────────────────────────────────────────
 
 export function processCommand(state: TerminalState, input: string, env: TerminalEnv = 'linux'): CommandOutput {
-  const trimmed = input.trim();
+  let trimmed = input.trim();
+  let expandedFrom: OutputLine | null = null;
+
+  // Bash history expansion: `!!` is the previous command (`sudo !!`), outside single quotes.
+  if (env !== 'windows' && hasHistoryBang(trimmed)) {
+    const previous = state.commandHistory[state.commandHistory.length - 1];
+    if (previous === undefined) return { lines: [{ text: 'bash: !!: event not found', type: 'error' }], newState: state };
+    trimmed = expandHistoryBang(trimmed, previous);
+    // Bash prints the expanded line before running it.
+    expandedFrom = { text: trimmed, type: 'info' };
+  }
+
   const newHistory = trimmed ? [...state.commandHistory, trimmed] : state.commandHistory;
   const newState: TerminalState = { ...state, commandHistory: newHistory };
 
   if (!trimmed) return { lines: [], newState };
-  return runLine(newState, trimmed, env);
+  const result = runLine(newState, trimmed, env);
+  return expandedFrom && !result.clear ? { ...result, lines: [expandedFrom, ...result.lines] } : result;
+}
+
+/** `!!` outside single quotes. */
+function hasHistoryBang(line: string): boolean {
+  return splitSingleQuoted(line).some((part, i) => i % 2 === 0 && part.includes('!!'));
+}
+
+function expandHistoryBang(line: string, previous: string): string {
+  return splitSingleQuoted(line).map((part, i) => (i % 2 === 0 ? part.split('!!').join(previous) : `'${part}'`)).join('');
+}
+
+/** Even indexes: outside single quotes; odd indexes: the quoted text, quotes removed. */
+function splitSingleQuoted(line: string): string[] {
+  return line.split("'");
+}
+
+/** The command name as typed (not lower-cased): that is what a real shell repeats. */
+function commandNotFound(typed: string, state: TerminalState): CommandOutput {
+  return { lines: [{ text: `${typed}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }], newState: state };
 }
 
 /** One command, without list, pipe or redirection — the shell layer handles those. */
@@ -1731,7 +1850,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   const psEnvGet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)$/);
   if (psEnvGet) {
     const [, varName] = psEnvGet;
-    const value = newState.envVars[varName];
+    const value = varsForEnv(newState.envVars, env)[varName];
     return {
       lines: value !== undefined
         ? [{ text: value, type: 'output' }]
@@ -1765,6 +1884,11 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   }
   const args = parts.slice(1);
 
+  // Linux looks commands up case-sensitively: `LS` is not `ls`. (macOS disks and
+  // PowerShell ignore case; names with a dash are PowerShell cmdlets.)
+  // Only bare names: a path (`./README.md`) keeps its case and is a file, not a command.
+  if (env === 'linux' && parts[0] !== cmd && !/[-/\\]/.test(parts[0])) return commandNotFound(parts[0], newState);
+
   const script = scriptCall(parts, env);
   if (script) return runScript(newState, script, env);
 
@@ -1782,8 +1906,8 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines: cmdLs(newState, args), newState };
 
     case 'cd': {
-      const { lines, newCwd } = cmdCd(newState, args);
-      if (newCwd) newState = { ...newState, cwd: newCwd };
+      const { lines, newCwd } = cmdCd(newState, args, env);
+      if (newCwd) newState = { ...newState, cwd: newCwd, previousCwd: newState.cwd };
       return { lines, newState };
     }
 
@@ -1803,7 +1927,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines: cmdCat(newState, args), newState };
 
     case 'echo':
-      return { lines: cmdEcho(args, newState.envVars), newState };
+      return { lines: cmdEcho(args, varsForEnv(newState.envVars, env)), newState };
 
     // ── Environment & scripts → commands/env.ts ───────────────────────────────
     case 'export':
@@ -1964,6 +2088,18 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       };
     }
 
+    case 'apt':
+    case 'apt-get':
+      // Debian / Ubuntu package manager: Linux only.
+      if (env !== 'linux') return commandNotFound(parts[0], newState);
+      return { lines: cmdApt(cmd, args), newState };
+
+    case 'killall':
+      if (env === 'windows') return commandNotFound(parts[0], newState);
+      // Real killall prints nothing on success.
+      if (!args.filter((a) => !a.startsWith('-')).length) return { lines: [{ text: 'killall: usage: killall [-s signal] nom', type: 'error' }], newState };
+      return { lines: [], newState };
+
     case 'kill':
       if (!args.length) return { lines: [{ text: 'kill: usage: kill PID', type: 'error' }], newState };
       return { lines: [{ text: `Signal envoyé au processus ${args[args.length - 1]}`, type: 'success' }], newState };
@@ -2042,11 +2178,21 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     case 'ssh':
     case 'ssh-keygen':
     case 'scp':
-      return handleNetwork(cmd, args, newState);
+      return handleNetwork(cmd, args, newState, env);
 
     // ── Git (Modules 9 & 10) → commands/git.ts ───────────────────────────────
-    case 'git':
+    case 'git': {
+      // `git init <dir>` creates the directory and initialises the repository inside it.
+      const initDir = args[0]?.toLowerCase() === 'init' ? args.slice(1).find((a) => !a.startsWith('-')) : undefined;
+      if (initDir) {
+        const made = cmdMkdir(newState, ['-p', initDir]);
+        if (!made.newRoot) return { lines: made.lines, newState };
+        const inside = { ...newState, root: made.newRoot, cwd: resolvePath(newState, initDir) };
+        const r = handleGit(inside, ['init'], env);
+        return { ...r, newState: { ...r.newState, cwd: newState.cwd } };
+      }
       return handleGit(newState, args, env);
+    }
 
     // ── IA (Module 11) → commands/ai.ts ──────────────────────────────────────
     case 'ai-help':
@@ -2056,10 +2202,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     default: {
       const winResult = handleWindows(cmd, args, newState, env, winDeps);
       if (winResult !== null) return winResult;
-      return {
-        lines: [{ text: `${cmd}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }],
-        newState,
-      };
+      return commandNotFound(parts[0], newState);
     }
   }
 }

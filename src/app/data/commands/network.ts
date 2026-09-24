@@ -1,10 +1,29 @@
-import type { TerminalState, CommandOutput } from './types';
+import type { TerminalState, TerminalEnv, CommandOutput } from './types';
 
-export function handleNetwork(cmd: string, args: string[], newState: TerminalState): CommandOutput {
+/** A stable address per host, so the output reads like the lessons. */
+function fakeIp(host: string): string {
+  return host === 'google.com' ? '142.250.74.46' : '93.184.216.34';
+}
+
+export function handleNetwork(cmd: string, args: string[], newState: TerminalState, env: TerminalEnv = 'linux'): CommandOutput {
   switch (cmd) {
     case 'ping': {
       const host = args.find((a) => !a.startsWith('-') && isNaN(Number(a))) ?? '';
       if (!host) return { lines: [{ text: 'Usage: ping <hostname>', type: 'error' }], newState };
+      if (env === 'windows') {
+        // Windows ping: 4 echo requests, its own wording.
+        const ip = fakeIp(host);
+        return {
+          lines: [
+            { text: `Pinging ${host} [${ip}] with 32 bytes of data:`, type: 'output' },
+            ...[12, 11, 12, 13].map((ms) => ({ text: `Reply from ${ip}: bytes=32 time=${ms}ms TTL=117`, type: 'output' as const })),
+            { text: '', type: 'output' },
+            { text: `Ping statistics for ${ip}:`, type: 'output' },
+            { text: '    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),', type: 'success' },
+          ],
+          newState,
+        };
+      }
       return {
         lines: [
           { text: `PING ${host}: 56 data bytes`, type: 'output' },

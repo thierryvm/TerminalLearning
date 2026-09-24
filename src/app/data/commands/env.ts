@@ -16,7 +16,11 @@ export function cmdExport(args: string[], state: TerminalState): { lines: Output
       lines.push({ text: '', type: 'output' });
     } else {
       const name = arg.slice(0, eqIdx);
-      const value = arg.slice(eqIdx + 1).replace(/^["']|["']$/g, '');
+      // Bash expands the value when it is assigned: `export PATH=$PATH:/opt/bin`.
+      const value = arg
+        .slice(eqIdx + 1)
+        .replace(/^["']|["']$/g, '')
+        .replace(/\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g, (_, ref: string) => newEnv[ref] ?? '');
       if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
         lines.push({ text: `export: '${name}': not a valid identifier`, type: 'error' });
       } else {
