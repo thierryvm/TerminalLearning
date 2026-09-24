@@ -2423,3 +2423,69 @@ describe('scripts — review follow-ups (THI-353)', () => {
     expect(r.lines).toEqual([{ text: 'trouvé', type: 'output' }]);
   });
 });
+
+// ─── Shell layer: new commands (full behaviour in shellLayer.test.ts) ─────────
+
+describe('Get-Item and pipeline cmdlets', () => {
+  function build(env: 'linux' | 'windows', ...cmds: string[]): TerminalState {
+    let s = createInitialState();
+    for (const c of cmds) s = processCommand(s, c, env).newState;
+    return s;
+  }
+  const out = (s: TerminalState, cmd: string, env: 'linux' | 'windows' = 'windows') =>
+    processCommand(s, cmd, env).lines.map((l) => l.text).join('\n');
+
+  it('Get-Item shows an existing item and names the full missing path', () => {
+    const s = createInitialState();
+    expect(out(s, 'Get-Item documents')).toBe('documents');
+    expect(out(s, 'Get-Item absent')).toBe("Get-Item: Cannot find path 'C:\\Users\\user\\absent' because it does not exist.");
+    expect(out(s, 'gi -Path documents')).toBe('documents');
+  });
+
+  it('Get-Item is PowerShell only', () => {
+    expect(processCommand(createInitialState(), 'Get-Item documents', 'linux').lines[0].type).toBe('error');
+  });
+
+  it('Sort-Object sorts a table by a column, header kept', () => {
+    const lines = out(createInitialState(), 'Get-Process | Sort-Object Id -Descending').split('\n');
+    expect(lines[0]).toContain('ProcessName');
+    expect(lines.slice(2).map((l) => l.trim().split(/\s+/)[6])).toEqual(['5678', '2048', '1234']);
+  });
+
+  it('Select-Object -First keeps the table header', () => {
+    const lines = out(createInitialState(), 'Get-Process | Select-Object -First 1').split('\n');
+    expect(lines).toHaveLength(3);
+    expect(lines[2]).toContain('WindowsTerminal');
+  });
+
+  it('Measure-Object -Line / -Word', () => {
+    const s = build('windows', 'echo "un deux" > f.txt', 'echo trois >> f.txt');
+    expect(out(s, 'Get-Content f.txt | Measure-Object -Line -Word')).toBe('Lines      : 2\nWords      : 3');
+  });
+
+  it('Add-Content appends, Set-Content replaces', () => {
+    let s = build('windows', 'echo a | Set-Content f.txt', 'echo b | Add-Content f.txt');
+    expect(out(s, 'Get-Content f.txt')).toBe('a\nb');
+    s = processCommand(s, 'echo c | Set-Content f.txt', 'windows').newState;
+    expect(out(s, 'Get-Content f.txt')).toBe('c');
+  });
+
+  it('Select-String and findstr filter piped lines', () => {
+    const s = build('windows', 'echo Alpha > f.txt', 'echo beta >> f.txt');
+    expect(out(s, 'Get-Content f.txt | Select-String alpha')).toBe('Alpha');
+    expect(out(s, 'Get-Content f.txt | findstr alpha')).toBe('');
+    expect(out(s, 'Get-Content f.txt | findstr /I alpha')).toBe('Alpha');
+  });
+
+  it('uniq -c and sort -k3rn on a pipe (Unix)', () => {
+    const s = build('linux', 'echo a > f', 'echo a >> f', 'echo b >> f');
+    expect(out(s, 'cat f | uniq -c', 'linux')).toBe('      2 a\n      1 b');
+    const t = build('linux', 'echo "x y 5" > g', 'echo "x y 40" >> g', 'echo "x y 9" >> g');
+    expect(out(t, 'cat g | sort -k3rn', 'linux')).toBe('x y 40\nx y 9\nx y 5');
+  });
+
+  it('git log output goes through a pipe (coloured lines are standard output)', () => {
+    const s = build('linux', 'mkdir p', 'cd p', 'git init', 'touch a', 'git add a', 'git commit -m "premier"');
+    expect(out(s, 'git log | grep -c commit', 'linux')).toBe('1');
+  });
+});

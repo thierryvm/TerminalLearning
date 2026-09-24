@@ -21,13 +21,12 @@ import { LESSON_SOLUTIONS } from './lessonSolutions';
 
 const ENVS: EnvId[] = ['linux', 'macos', 'windows'];
 
-/** Cases still broken in the engine — each one names the P1 cluster that fixes it. */
-const KNOWN_DESYNCS = new Set<string>([
-  // Redirection: `2>` does not capture stderr, the error is still printed.
-  'redirection/stderr [linux]',
-  'redirection/stderr [macos]',
-  'redirection/stderr [windows]', // + Get-Item is not simulated
-]);
+/**
+ * Cases still broken in the engine — each one names the P1 cluster that fixes it.
+ * Empty since the shell layer (redirections, THI-353): keep it empty. A new entry
+ * is only acceptable for a gap found by this test, with the fix already planned.
+ */
+const KNOWN_DESYNCS = new Set<string>([]);
 
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
 
