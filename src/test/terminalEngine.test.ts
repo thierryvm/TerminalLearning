@@ -1506,6 +1506,176 @@ describe('mv', () => {
   });
 });
 
+// ─── Windows paths ────────────────────────────────────────────────────────────
+// PowerShell accepts `\` and `/` as separators and drive paths; the simulated
+// /home is C:\Users. Bash treats `\` as an escape, so Linux must not accept them.
+
+describe('Windows paths in PowerShell', () => {
+  const run = (env: 'linux' | 'windows', ...cmds: string[]) => {
+    let state = createInitialState();
+    let lines: string[] = [];
+    for (const c of cmds) {
+      const r = processCommand(state, c, env);
+      state = r.newState;
+      lines = r.lines.map((l) => l.text);
+    }
+    return lines;
+  };
+
+  it('accepts backslash separators and .\\', () => {
+    expect(run('windows', 'Get-Content documents\\notes.txt')[0]).toBe('Mes notes importantes');
+    expect(run('windows', 'cat .\\documents\\rapport.md')[0]).toBe('# Rapport Mensuel');
+    expect(run('windows', 'cd documents\\', 'pwd')).toEqual(['C:\\Users\\user\\documents']);
+  });
+
+  it('accepts drive paths, C:\\Users is the parent of the home', () => {
+    expect(run('windows', 'ls C:\\Users\\user\\projets')).toEqual(['README.md  script.sh']);
+    expect(run('windows', 'cd C:\\Users\\user\\downloads', 'pwd')).toEqual(['C:\\Users\\user\\downloads']);
+    expect(run('windows', 'cd ..', 'pwd')).toEqual(['C:\\Users']);
+    expect(run('windows', 'cd \\', 'pwd')).toEqual(['C:\\']);
+  });
+
+  it('mkdir creates missing parent folders, like New-Item -ItemType Directory', () => {
+    expect(run('windows', 'mkdir archives\\2025', 'ls archives')).toEqual(['2025']);
+    expect(run('linux', 'mkdir archives/2025')[0]).toContain('No such file or directory');
+  });
+
+  it('Tab completes after a backslash on Windows, keeping the backslash', () => {
+    const state = createInitialState();
+    expect(getTabCompletions('cat documents\\n', state, 'windows')).toEqual(['cat documents\\notes.txt']);
+    expect(getTabCompletions('cd C:\\Users\\user\\doc', state, 'windows')).toEqual(['cd C:\\Users\\user\\documents\\']);
+    expect(getTabCompletions('cat documents\\n', state, 'linux')).toEqual([]);
+  });
+
+  it('C:\\ shows Users (never the internal home) for ls, cd and Tab', () => {
+    expect(run('windows', 'ls C:\\')).toEqual(['Users  tmp']);
+    expect(run('windows', 'cd \\', 'cd users', 'pwd')).toEqual(['C:\\Users']);
+    expect(getTabCompletions('cd C:\\U', createInitialState(), 'windows')).toEqual(['cd C:\\Users\\']);
+    expect(run('linux', 'ls /')).toEqual(['home  tmp']);
+  });
+
+  it('Copy-Item and Move-Item read -Path / -Destination in any order', () => {
+    expect(run('windows', 'Copy-Item -Destination downloads -Path documents/notes.txt', 'ls downloads')).toEqual(['notes.txt']);
+    expect(run('windows', 'Move-Item -Destination projets documents/rapport.md', 'ls projets')).toEqual(['README.md  rapport.md  script.sh']);
+  });
+
+  it('bash does not treat a backslash as a separator', () => {
+    expect(run('linux', 'cat documents\\notes.txt')[0]).toContain('No such file or directory');
+  });
+});
+
+// ─── cp / mv — GNU coreutils semantics ───────────────────────────────────────
+// Expected values are what GNU cp/mv print and do, not what the engine used to do:
+// a destination that is an existing directory receives the source INSIDE it.
+
+describe('cp / mv — destination directory (GNU semantics)', () => {
+  function session(env: 'linux' | 'windows', ...cmds: string[]) {
+    let state = createInitialState();
+    for (const c of cmds) state = processCommand(state, c, env).newState;
+    return { out: (c: string) => processCommand(state, c, env).lines.map((l) => l.text) };
+  }
+
+  it('mv file . moves it into the current directory — the home is not replaced', () => {
+    const { out } = session('linux', 'mv documents/notes.txt .');
+    expect(out('ls')).toEqual(['documents  downloads  notes.txt  projets']);
+    expect(out('ls documents')).toEqual(['rapport.md']);
+  });
+
+  it('mv into an existing directory keeps the name', () => {
+    const { out } = session('linux', 'mv documents/notes.txt projets');
+    expect(out('ls projets')).toEqual(['README.md  notes.txt  script.sh']);
+    expect(out('ls -F')).toEqual(['documents/  downloads/  projets/']);
+  });
+
+  it('mv several files needs a directory as last argument', () => {
+    const { out } = session('linux', 'mv documents/notes.txt documents/rapport.md downloads');
+    expect(out('ls downloads')).toEqual(['notes.txt  rapport.md']);
+    expect(out('mv projets/README.md projets/script.sh nouveau.txt')).toEqual(["mv: target 'nouveau.txt' is not a directory"]);
+  });
+
+  it('mv refuses to put a directory inside itself', () => {
+    const { out } = session('linux');
+    expect(out('mv documents documents/archive')).toEqual(["mv: cannot move 'documents' to a subdirectory of itself, 'documents/archive'"]);
+  });
+
+  it('mv of a directory you stand in takes you along', () => {
+    const { out } = session('linux', 'cd documents', 'mv ../documents ../docs');
+    expect(out('pwd')).toEqual(['/home/user/docs']);
+    expect(out('ls')).toEqual(['notes.txt  rapport.md']);
+  });
+
+  it('mv . is refused, like the kernel does', () => {
+    const { out } = session('linux');
+    expect(out('mv . ailleurs')).toEqual(["mv: cannot move '.' to 'ailleurs': Device or resource busy"]);
+  });
+
+  it('mv -v reports the rename; unknown options are rejected', () => {
+    const { out } = session('linux');
+    expect(out('mv -v documents/notes.txt documents/mes-notes.txt')).toEqual(["renamed 'documents/notes.txt' -> 'documents/mes-notes.txt'"]);
+    expect(out('mv -z a b')).toEqual(["mv: invalid option -- 'z'", "Try 'mv --help' for more information."]);
+  });
+
+  it('mv onto the same place is "the same file"', () => {
+    const { out } = session('linux');
+    expect(out('mv documents/notes.txt documents')).toEqual(["mv: 'documents/notes.txt' and 'documents/notes.txt' are the same file"]);
+  });
+
+  it('cp file dir copies inside the directory, the directory survives', () => {
+    const { out } = session('linux', 'cp projets/script.sh downloads');
+    expect(out('ls -F')).toEqual(['documents/  downloads/  projets/']);
+    expect(out('ls downloads')).toEqual(['script.sh']);
+    expect(out('ls projets')).toEqual(['README.md  script.sh']);
+  });
+
+  it('cp -r dir existing-dir/ creates existing-dir/dir', () => {
+    const { out } = session('linux', 'cp -r documents projets/');
+    expect(out('ls projets')).toEqual(['README.md  documents  script.sh']);
+    expect(out('ls projets/documents')).toEqual(['notes.txt  rapport.md']);
+  });
+
+  it('cp -r dir new-name creates a copy under the new name', () => {
+    const { out } = session('linux', 'cp -r documents sauvegarde');
+    expect(out('ls sauvegarde')).toEqual(['notes.txt  rapport.md']);
+    expect(out('ls documents')).toEqual(['notes.txt  rapport.md']);
+  });
+
+  it('cp refuses to copy a directory into itself', () => {
+    const { out } = session('linux');
+    expect(out('cp -r documents documents/copie')).toEqual(["cp: cannot copy a directory, 'documents', into itself, 'documents/copie'"]);
+  });
+
+  it('cp -i never overwrites in the simulator, and says so', () => {
+    const { out } = session('linux', 'cp projets/script.sh downloads');
+    const lines = out('cp -i documents/notes.txt downloads/script.sh');
+    expect(lines[0]).toBe("cp: overwrite 'downloads/script.sh'? n");
+  });
+
+  it('cp -rn into an existing directory keeps files already there, at any depth', () => {
+    const setup = ['mkdir backup', 'cp -r documents backup', 'echo modifié > documents/notes.txt'];
+    const kept = session('linux', ...setup, 'cp -rn documents backup');
+    expect(kept.out('cat backup/documents/notes.txt')[0]).toBe('Mes notes importantes');
+    const replaced = session('linux', ...setup, 'cp -r documents backup');
+    expect(replaced.out('cat backup/documents/notes.txt')).toEqual(['modifié']);
+  });
+
+  it('cp a file onto an existing directory name inside the target is refused', () => {
+    const { out } = session('linux', 'mkdir -p boite/notes.txt');
+    expect(out('cp documents/notes.txt boite')).toEqual(["cp: cannot overwrite directory 'boite/notes.txt' with non-directory"]);
+  });
+
+  it('Remove-Item -Recurse removes a folder with its content', () => {
+    const { out } = session('windows', 'mkdir archives', 'Remove-Item -Recurse archives');
+    expect(out('ls')).toEqual(['documents  downloads  projets']);
+  });
+
+  it('Move-Item and Copy-Item -Recurse follow the same rules on Windows', () => {
+    const { out } = session('windows', 'Move-Item documents/notes.txt projets', 'Copy-Item -Recurse documents downloads');
+    expect(out('ls projets').join('\n')).toContain('notes.txt');
+    expect(out('ls downloads').join('\n')).toContain('documents');
+    expect(out('ls').join('\n')).toContain('projets');
+  });
+});
+
 // ─── grep ─────────────────────────────────────────────────────────────────────
 
 describe('grep', () => {

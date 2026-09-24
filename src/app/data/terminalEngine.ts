@@ -113,7 +113,32 @@ function getNode(root: DirectoryNode, path: string[]): FSNode | null {
 }
 
 
-function resolvePath(state: TerminalState, input: string): string[] {
+/** True while a command runs in the Windows environment (see processCommand). */
+let windowsPaths = false;
+
+/**
+ * PowerShell accepts `\` as a separator and drive paths:
+ * `documents\notes.txt`, `.\script.ps1`, `C:\Users\user\projets` (= /home/user/projets).
+ */
+function fromWindowsPath(input: string): string {
+  const path = input.replace(/\\/g, '/');
+  const drive = path.match(/^[A-Za-z]:(\/.*)?$/);
+  return drive ? drive[1] ?? '/' : path;
+}
+
+/** The simulated /home is shown as C:\Users on Windows (see displayPathForEnv). */
+function windowsName(parentPath: string[], name: string, windows: boolean): string {
+  return windows && parentPath.length === 0 && name === 'home' ? 'Users' : name;
+}
+
+function resolvePath(state: TerminalState, rawInput: string): string[] {
+  const path = resolveSegments(state, windowsPaths ? fromWindowsPath(rawInput) : rawInput);
+  // `C:\Users`, `\Users` or `Users` from `C:\` all mean the simulated /home.
+  if (windowsPaths && path[0]?.toLowerCase() === 'users') path[0] = 'home';
+  return path;
+}
+
+function resolveSegments(state: TerminalState, input: string): string[] {
   if (!input || input === '~') return ['home', 'user'];
   if (input.startsWith('~/')) {
     const rest = input.slice(2).split('/').filter(Boolean);
@@ -150,12 +175,9 @@ function displayPath(cwd: string[]): string {
  */
 export function displayPathForEnv(cwd: string[], env: TerminalEnv = 'linux'): string {
   if (env === 'windows') {
-    if (cwd.length >= 2 && cwd[0] === 'home' && cwd[1] === 'user') {
-      const rest = cwd.slice(2);
-      const base = 'C:\\Users\\user';
-      return rest.length === 0 ? base : base + '\\' + rest.join('\\');
-    }
-    return 'C:\\' + cwd.join('\\');
+    // The simulated /home is C:\Users on Windows (so /home/user is C:\Users\user).
+    const parts = cwd[0] === 'home' ? ['Users', ...cwd.slice(1)] : cwd;
+    return 'C:\\' + parts.join('\\');
   }
   return displayPath(cwd);
 }
@@ -188,7 +210,7 @@ const COMPLETION_COMMANDS = [
  * - No space: completes command names
  * - With space: completes filesystem paths (relative or absolute)
  */
-export function getTabCompletions(input: string, state: TerminalState): string[] {
+export function getTabCompletions(input: string, state: TerminalState, env: TerminalEnv = 'linux'): string[] {
   const firstSpaceIdx = input.indexOf(' ');
 
   // No space yet → complete the command name
@@ -205,12 +227,23 @@ export function getTabCompletions(input: string, state: TerminalState): string[]
   let namePrefix: string;
   let pathPrefix: string;
 
-  if (partial.includes('/')) {
-    const slashIdx = partial.lastIndexOf('/');
+  // PowerShell also separates with `\` (`documents\n` → `documents\notes.txt`).
+  const slashIdx = env === 'windows'
+    ? Math.max(partial.lastIndexOf('/'), partial.lastIndexOf('\\'))
+    : partial.lastIndexOf('/');
+  const separator = slashIdx >= 0 ? partial[slashIdx] : '/';
+
+  if (slashIdx >= 0) {
     pathPrefix = partial.slice(0, slashIdx + 1); // e.g. "documents/"
     namePrefix = partial.slice(slashIdx + 1);    // e.g. "n"
     const dirPart = pathPrefix.length > 1 ? pathPrefix.slice(0, -1) : '/';
-    parentPath = resolvePath(state, dirPart);
+    const wasWindows = windowsPaths;
+    windowsPaths = env === 'windows';
+    try {
+      parentPath = resolvePath(state, dirPart);
+    } finally {
+      windowsPaths = wasWindows;
+    }
   } else {
     pathPrefix = '';
     namePrefix = partial;
@@ -220,12 +253,13 @@ export function getTabCompletions(input: string, state: TerminalState): string[]
   const parentNode = getNode(state.root, parentPath);
   if (!parentNode || parentNode.type !== 'directory') return [];
 
-  const matches = Object.keys(parentNode.children).filter((n) => n.startsWith(namePrefix));
+  const shown = (name: string) => windowsName(parentPath, name, env === 'windows');
+  const matches = Object.keys(parentNode.children).filter((n) => shown(n).startsWith(namePrefix));
 
   return matches.map((name) => {
     const node = (parentNode as DirectoryNode).children[name];
-    const suffix = node.type === 'directory' ? '/' : '';
-    return inputPrefix + pathPrefix + name + suffix;
+    const suffix = node.type === 'directory' ? separator : '';
+    return inputPrefix + pathPrefix + shown(name) + suffix;
   });
 }
 
@@ -331,6 +365,7 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
 
   // Like `ls` in the C locale: one alphabetical list, hidden files first, no directories-first.
   const entries = Object.entries(node.children)
+    .map(([name, child]): [string, FSNode] => [windowsName(targetPath, name, windowsPaths), child])
     .filter(([name]) => showAll || !name.startsWith('.'))
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
@@ -413,6 +448,16 @@ function cmdMkdir(state: TerminalState, args: string[]): { lines: OutputLine[]; 
     } else {
       const parentPath = resolved.slice(0, -1);
       const name = resolved[resolved.length - 1];
+      // PowerShell's mkdir (New-Item -ItemType Directory) creates missing parents.
+      if (windowsPaths) {
+        let cur: DirectoryNode = newRoot;
+        for (const seg of parentPath) {
+          if (!cur.children[seg]) cur.children[seg] = makeDir({});
+          const next = cur.children[seg];
+          if (next.type !== 'directory') break;
+          cur = next;
+        }
+      }
       const parent = getNode(newRoot, parentPath) as DirectoryNode;
       if (!parent || parent.type !== 'directory') {
         return { lines: [{ text: `mkdir: cannot create directory '${p}': No such file or directory`, type: 'error' }] };
@@ -513,63 +558,156 @@ function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; new
   return { lines: [], newRoot };
 }
 
-function cmdCp(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
-  const flags = args.filter((a) => a.startsWith('-'));
-  const paths = args.filter((a) => !a.startsWith('-'));
-  const recursive = flags.some((f) => f.includes('r') || f.includes('R'));
+// ─── cp / mv ──────────────────────────────────────────────────────────────────
+// GNU coreutils semantics: when the destination is an existing directory, each
+// source goes INSIDE it (`mv notes.txt .`, `cp -r docs backup/`); several
+// sources need a directory destination; a directory never lands inside itself.
 
-  if (paths.length < 2) return { lines: [{ text: 'cp: missing destination file operand', type: 'error' }] };
+type TransferResult = { lines: OutputLine[]; newRoot?: DirectoryNode; newCwd?: string[] };
 
-  const src = paths[0];
-  const dst = paths[1];
-  const newRoot = deepCloneRoot(state.root);
+const TRANSFER_LONG_OPTIONS: Record<string, string> = {
+  '--recursive': 'r', '--verbose': 'v', '--no-clobber': 'n', '--interactive': 'i', '--force': 'f',
+};
 
-  const srcResolved = resolvePath(state, src);
-  const srcNode = getNode(newRoot, srcResolved);
-  if (!srcNode) return { lines: [{ text: `cp: cannot stat '${src}': No such file or directory`, type: 'error' }] };
-  if (srcNode.type === 'directory' && !recursive) {
-    return { lines: [{ text: `cp: -r not specified; omitting directory '${src}'`, type: 'error' }] };
-  }
-
-  const dstResolved = resolvePath(state, dst);
-  const dstParentPath = dstResolved.slice(0, -1);
-  const dstName = dstResolved[dstResolved.length - 1];
-  const dstParent = getNode(newRoot, dstParentPath) as DirectoryNode;
-  if (!dstParent || dstParent.type !== 'directory') {
-    return { lines: [{ text: `cp: cannot create file '${dst}': No such file or directory`, type: 'error' }] };
-  }
-
-  dstParent.children[dstName] = cloneFSNode(srcNode, { n: 0 });
-  return { lines: [], newRoot };
+function isInside(inner: string[], outer: string[]): boolean {
+  return inner.length > outer.length && outer.every((seg, i) => inner[i] === seg);
 }
 
-function cmdMv(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
-  if (args.length < 2) return { lines: [{ text: 'mv: missing destination file operand', type: 'error' }] };
-  const src = args[0];
-  const dst = args[1];
+/**
+ * Copies every entry of `src` into `dst`, merging sub-directories like `cp -r`
+ * does. With `noClobber` (`-n` / `-i`), files already there are kept, at any depth.
+ */
+function mergeDirInto(dst: DirectoryNode, src: DirectoryNode, noClobber: boolean): void {
+  for (const [name, child] of Object.entries(src.children)) {
+    const existing = dst.children[name];
+    if (existing?.type === 'directory' && child.type === 'directory') mergeDirInto(existing, child, noClobber);
+    else if (!existing || (existing.type === child.type && !noClobber)) dst.children[name] = cloneFSNode(child, { n: 0 });
+  }
+}
+
+function transfer(cmd: 'cp' | 'mv', state: TerminalState, args: string[]): TransferResult {
+  const err = (text: string): OutputLine => ({ text: `${cmd}: ${text}`, type: 'error' });
+  const flags = new Set<string>();
+  const paths: string[] = [];
+  let endOfOptions = false;
+  for (const a of args) {
+    if (!endOfOptions && a === '--') { endOfOptions = true; continue; }
+    if (!endOfOptions && a.startsWith('--')) {
+      const short = TRANSFER_LONG_OPTIONS[a];
+      if (!short || (cmd === 'mv' && short === 'r')) {
+        return { lines: [err(`unrecognized option '${a}'`), { text: `Try '${cmd} --help' for more information.`, type: 'error' }] };
+      }
+      flags.add(short);
+      continue;
+    }
+    if (!endOfOptions && a.startsWith('-') && a.length > 1) {
+      for (const f of a.slice(1)) {
+        if (!(cmd === 'cp' ? 'rRavinf' : 'vinf').includes(f)) {
+          return { lines: [err(`invalid option -- '${f}'`), { text: `Try '${cmd} --help' for more information.`, type: 'error' }] };
+        }
+        flags.add(f);
+      }
+      continue;
+    }
+    paths.push(a);
+  }
+  if (paths.length === 0) return { lines: [err('missing file operand')] };
+  if (paths.length === 1) return { lines: [err(`missing destination file operand after '${paths[0]}'`)] };
+
+  const recursive = cmd === 'mv' || flags.has('r') || flags.has('R') || flags.has('a');
+  // -f overrides an earlier -i / -n, as in coreutils when it comes last; kept simple: -f wins.
+  const noClobber = !flags.has('f') && (flags.has('n') || flags.has('i'));
+  const dst = paths[paths.length - 1];
+  const sources = paths.slice(0, -1);
   const newRoot = deepCloneRoot(state.root);
+  const dstPath = resolvePath(state, dst);
+  const intoDir = getNode(newRoot, dstPath)?.type === 'directory';
+  if (sources.length > 1 && !intoDir) return { lines: [err(`target '${dst}' is not a directory`)] };
 
-  const srcResolved = resolvePath(state, src);
-  const srcParentPath = srcResolved.slice(0, -1);
-  const srcName = srcResolved[srcResolved.length - 1];
-  const srcParent = getNode(newRoot, srcParentPath) as DirectoryNode;
+  const lines: OutputLine[] = [];
+  let changed = false;
+  let newCwd: string[] | undefined;
+  for (const src of sources) {
+    const srcPath = resolvePath(state, src);
+    const typedName = src.replace(/\/+$/, '').split('/').pop() ?? src;
+    const isDotName = typedName === '.' || typedName === '..' || srcPath.length === 0;
+    const srcNode = getNode(newRoot, srcPath);
+    if (!srcNode) { lines.push(err(`cannot stat '${src}': No such file or directory`)); continue; }
+    if (srcNode.type === 'directory' && !recursive) { lines.push(err(`-r not specified; omitting directory '${src}'`)); continue; }
 
-  if (!srcParent || !srcParent.children[srcName]) {
-    return { lines: [{ text: `mv: cannot stat '${src}': No such file or directory`, type: 'error' }] };
+    // `cp -r . dir` copies the contents of `.` into `dir`; `mv .` is refused by the kernel.
+    const name = srcPath[srcPath.length - 1];
+    const targetPath = intoDir && !isDotName ? [...dstPath, name] : dstPath;
+    const shown = intoDir && !isDotName ? `${dst.replace(/\/+$/, '')}/${name}` : dst;
+    if (cmd === 'mv' && isDotName) { lines.push(err(`cannot move '${src}' to '${shown}': Device or resource busy`)); continue; }
+    if (targetPath.join('/') === srcPath.join('/')) { lines.push(err(`'${src}' and '${shown}' are the same file`)); continue; }
+    if (srcNode.type === 'directory' && isInside(targetPath, srcPath)) {
+      lines.push(err(cmd === 'mv'
+        ? `cannot move '${src}' to a subdirectory of itself, '${shown}'`
+        : `cannot copy a directory, '${src}', into itself, '${shown}'`));
+      continue;
+    }
+    const parent = getNode(newRoot, targetPath.slice(0, -1));
+    const trailingSlashOnFile = !intoDir && dst.endsWith('/');
+    if (!parent || parent.type !== 'directory' || trailingSlashOnFile) {
+      const reason = trailingSlashOnFile && parent ? 'Not a directory' : 'No such file or directory';
+      lines.push(err(cmd === 'mv'
+        ? `cannot move '${src}' to '${shown}': ${reason}`
+        : `cannot create ${srcNode.type === 'directory' ? 'directory' : 'regular file'} '${shown}': ${reason}`));
+      continue;
+    }
+
+    const targetName = targetPath[targetPath.length - 1];
+    const existing = targetPath.length ? parent.children[targetName] : newRoot;
+    if (existing) {
+      if (noClobber && !(cmd === 'cp' && existing.type === 'directory' && srcNode.type === 'directory')) {
+        if (flags.has('i')) {
+          lines.push({ text: `${cmd}: overwrite '${shown}'? n`, type: 'output' });
+          lines.push({ text: '(simulateur : la réponse est « n », rien n\'est écrasé)', type: 'info' });
+        }
+        continue;
+      }
+      if (existing.type === 'directory' && srcNode.type === 'file') { lines.push(err(`cannot overwrite directory '${shown}' with non-directory`)); continue; }
+      if (existing.type === 'file' && srcNode.type === 'directory') { lines.push(err(`cannot overwrite non-directory '${shown}' with directory '${src}'`)); continue; }
+      if (existing.type === 'directory' && srcNode.type === 'directory') {
+        if (cmd === 'mv' && Object.keys(existing.children).length) {
+          lines.push(err(`cannot move '${src}' to '${shown}': Directory not empty`));
+          continue;
+        }
+        if (cmd === 'cp') {
+          mergeDirInto(existing, srcNode, noClobber);
+          changed = true;
+          if (flags.has('v')) lines.push({ text: `'${src}' -> '${shown}'`, type: 'output' });
+          continue;
+        }
+      }
+    }
+
+    if (cmd === 'mv') {
+      const srcParent = getNode(newRoot, srcPath.slice(0, -1)) as DirectoryNode;
+      delete srcParent.children[name];
+      parent.children[targetName] = srcNode;
+      // Moving the directory you stand in (or one of its parents) takes you along.
+      const cwd = newCwd ?? state.cwd;
+      if (cwd.length >= srcPath.length && srcPath.every((seg, i) => cwd[i] === seg)) {
+        newCwd = [...targetPath, ...cwd.slice(srcPath.length)];
+      }
+      if (flags.has('v')) lines.push({ text: `renamed '${src}' -> '${shown}'`, type: 'output' });
+    } else {
+      parent.children[targetName] = cloneFSNode(srcNode, { n: 0 });
+      if (flags.has('v')) lines.push({ text: `'${src}' -> '${shown}'`, type: 'output' });
+    }
+    changed = true;
   }
+  return { lines, newRoot: changed ? newRoot : undefined, newCwd };
+}
 
-  const dstResolved = resolvePath(state, dst);
-  const dstParentPath = dstResolved.slice(0, -1);
-  const dstName = dstResolved[dstResolved.length - 1];
-  const dstParent = getNode(newRoot, dstParentPath) as DirectoryNode;
+function cmdCp(state: TerminalState, args: string[]): TransferResult {
+  return transfer('cp', state, args);
+}
 
-  if (!dstParent || dstParent.type !== 'directory') {
-    return { lines: [{ text: `mv: cannot move '${src}' to '${dst}': No such file or directory`, type: 'error' }] };
-  }
-
-  dstParent.children[dstName] = srcParent.children[srcName];
-  delete srcParent.children[srcName];
-  return { lines: [], newRoot };
+function cmdMv(state: TerminalState, args: string[]): TransferResult {
+  return transfer('mv', state, args);
 }
 
 const GREP_PATTERN_MAX_LEN = 200;
@@ -1821,7 +1959,14 @@ export function processCommand(state: TerminalState, input: string, env: Termina
   const newState: TerminalState = { ...state, commandHistory: newHistory };
 
   if (!trimmed) return { lines: [], newState };
-  const result = runLine(newState, trimmed, env);
+  const wasWindows = windowsPaths;
+  windowsPaths = env === 'windows';
+  let result: CommandOutput;
+  try {
+    result = runLine(newState, trimmed, env);
+  } finally {
+    windowsPaths = wasWindows;
+  }
   return expandedFrom && !result.clear ? { ...result, lines: [expandedFrom, ...result.lines] } : result;
 }
 
@@ -2024,8 +2169,9 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     }
 
     case 'mv': {
-      const { lines, newRoot } = cmdMv(newState, args);
+      const { lines, newRoot, newCwd } = cmdMv(newState, args);
       if (newRoot) newState = { ...newState, root: newRoot };
+      if (newCwd) newState = { ...newState, cwd: newCwd };
       return { lines, newState };
     }
 

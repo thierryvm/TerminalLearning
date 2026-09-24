@@ -2,6 +2,15 @@ import type { EnvId } from './curriculum';
 
 export type ValidateFn = (command: string, env?: EnvId) => boolean;
 
+/**
+ * Runs an exercise validator on what the learner typed. PowerShell accepts `\`
+ * and `/` as path separators, so on Windows `documents\notes.txt` counts the
+ * same as the `documents/notes.txt` the validators are written with.
+ */
+export function exerciseAccepts(validate: ValidateFn, command: string, env: EnvId): boolean {
+  return validate(env === 'windows' ? command.replace(/\\/g, '/') : command, env);
+}
+
 export const validateOrientation: ValidateFn = (cmd) => {
   const c = cmd.trim().toLowerCase();
   // The lesson teaches "how to find help", not one exact command. Accept the

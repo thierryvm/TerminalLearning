@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import { curriculum, type EnvId } from '../app/data/curriculum';
 import { createInitialState, processCommand, type TerminalState } from '../app/data/terminalEngine';
+import { exerciseAccepts } from '../app/data/validators';
 import { LESSON_SOLUTIONS } from './lessonSolutions';
 
 const ENVS: EnvId[] = ['linux', 'macos', 'windows'];
@@ -73,6 +74,45 @@ describe('lesson fidelity — the lesson command validates and prints no error',
       }
       expect(errors).toEqual([]);
       expect(exercise.validate(solution[solution.length - 1], env)).toBe(true);
+    });
+  }
+});
+
+/**
+ * `documents/notes.txt` → `documents\notes.txt`; URLs and options are left alone.
+ * Git commands too: `feature/ma-feature` is a branch name, not a path, and real
+ * Git on Windows does not accept `feature\ma-feature` for it either.
+ */
+const withBackslashes = (cmd: string) =>
+  /^git\s/.test(cmd)
+    ? cmd
+    : cmd.split(' ').map((t) => (t.includes('://') || t.startsWith('-') ? t : t.replace(/\//g, '\\'))).join(' ');
+
+describe('lesson fidelity — Windows paths written with backslashes', () => {
+  const windowsCases = cases.filter(({ key, env }) => {
+    if (env !== 'windows') return false;
+    const solution = LESSON_SOLUTIONS[key].windows ?? LESSON_SOLUTIONS[key].all ?? [];
+    return solution.some((cmd) => withBackslashes(cmd) !== cmd);
+  });
+
+  it('covers the Windows exercises that take a path', () => {
+    // Floor = today's count (cp, mv, rm, cat, head-tail, grep, wc, permissions ×2, scp).
+    expect(windowsCases.length).toBeGreaterThanOrEqual(10);
+  });
+
+  for (const { key, env, exercise } of windowsCases) {
+    it(`${key} [${env}] — same result with \\ as separator`, () => {
+      const solution = (LESSON_SOLUTIONS[key].windows ?? LESSON_SOLUTIONS[key].all ?? []).map(withBackslashes);
+      let state: TerminalState = createInitialState();
+      if (exercise.setup) state = exercise.setup.apply(state);
+      const errors: string[] = [];
+      for (const cmd of solution) {
+        const out = processCommand(state, cmd, env);
+        state = out.newState;
+        for (const line of out.lines) if (line.type === 'error') errors.push(`${cmd} → ${line.text}`);
+      }
+      expect(errors).toEqual([]);
+      expect(exerciseAccepts(exercise.validate, solution[solution.length - 1], env)).toBe(true);
     });
   }
 });

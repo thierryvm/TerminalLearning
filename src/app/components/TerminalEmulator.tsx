@@ -264,7 +264,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
   // Tab autocompletion. Shared by the keyboard handler and the mobile key bar.
   const triggerTabCompletion = useCallback(() => {
-    const completions = getTabCompletions(input, activeState);
+    const completions = getTabCompletions(input, activeState, environment);
     if (completions.length === 1) {
       setInput(completions[0]);
     } else if (completions.length > 1) {
