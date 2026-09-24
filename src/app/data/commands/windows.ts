@@ -17,6 +17,12 @@ export interface WindowsCmdDeps {
 
 const EXECUTION_POLICIES = ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass', 'Undefined', 'Default'];
 
+/** `-Path x`, `-LiteralPath x`, or the first positional argument. */
+function psPath(args: string[]): string | undefined {
+  const i = args.findIndex((a) => ['-path', '-literalpath'].includes(a.toLowerCase()));
+  return i >= 0 ? args[i + 1] : args.find((a) => !a.startsWith('-'));
+}
+
 /**
  * Handles PowerShell aliases and Windows/macOS-specific commands.
  * Returns null if the command is not handled by this module (caller falls through to default).
@@ -50,6 +56,20 @@ export function handleWindows(
         return { lines: deps.cmdEnv(newState), newState };
       }
       return { lines: deps.cmdLs(newState, args), newState };
+
+    // ── Get-Item: the item itself (not its content), or a "cannot find path" error ──
+    case 'get-item':
+    case 'gi': {
+      if (env !== 'windows') return null;
+      const target = psPath(args);
+      if (!target) return { lines: [{ text: 'Get-Item: indiquez un chemin, par exemple Get-Item documents', type: 'error' }], newState };
+      if (deps.cmdLs(newState, [target]).some((l) => l.type === 'error')) {
+        const cwd = deps.cmdPwd(newState, env)[0]?.text ?? '';
+        const full = /^([a-z]:|[\\/~])/i.test(target) ? target : `${cwd}\\${target.replace(/\//g, '\\')}`;
+        return { lines: [{ text: `Get-Item: Cannot find path '${full}' because it does not exist.`, type: 'error' }], newState };
+      }
+      return { lines: [{ text: target, type: 'output' }], newState };
+    }
 
     // ── cat equivalents ───────────────────────────────────────────────────────
     case 'get-content':
@@ -298,6 +318,7 @@ export const WINDOWS_COMMANDS = new Set([
   'get-location', 'gl', 'set-location', 'sl',
   'get-childitem', 'gci', 'dir',
   'get-content', 'gc',
+  'get-item', 'gi',
   'new-item', 'ni',
   'copy-item', 'cpi', 'copy',
   'move-item', 'mi', 'move',

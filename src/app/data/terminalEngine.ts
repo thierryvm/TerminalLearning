@@ -8,6 +8,8 @@ import { handleNetwork } from './commands/network';
 import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
+import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
+import type { Stage, Fd } from './commands/shellSyntax';
 import type { WindowsCmdDeps } from './commands/windows';
 
 // ─── Initial Filesystem ───────────────────────────────────────────────────────
@@ -335,7 +337,11 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
   }
 
   if (!longFormat) {
+    // Into a pipe or a file, a real `ls` writes one plain name per line
+    // (that is what `ls | wc -l` counts); `-1` asks for it on screen too.
+    if (!stdoutIsTerminal) return entries.map(([name]) => ({ text: name, type: 'output' as const }));
     const names = entries.map(([name, n]) => (n.type === 'directory' ? name + '/' : name));
+    if (flags.some((f) => f.includes('1'))) return names.map((text) => ({ text, type: 'output' as const }));
     return [{ text: names.join('  '), type: 'output' }];
   }
 
@@ -763,27 +769,6 @@ function cmdGetJob(): OutputLine[] {
 
 // cmdCrontab → moved to ./commands/env.ts
 
-function cmdEchoRedirect(
-  state: TerminalState,
-  text: string,
-  filePath: string,
-  append: boolean
-): { lines: OutputLine[]; newRoot?: DirectoryNode } {
-  const newRoot = deepCloneRoot(state.root);
-  const resolved = resolvePath(state, filePath);
-  const parentPath = resolved.slice(0, -1);
-  const name = resolved[resolved.length - 1];
-  const parent = getNode(newRoot, parentPath) as DirectoryNode;
-  if (!parent || parent.type !== 'directory') {
-    return { lines: [{ text: `bash: ${filePath}: No such file or directory`, type: 'error' }] };
-  }
-  const existing = parent.children[name];
-  const existingContent = existing?.type === 'file' ? existing.content : '';
-  const newContent = append ? existingContent + (existingContent ? '\n' : '') + text : text;
-  parent.children[name] = makeFile(newContent);
-  return { lines: [], newRoot };
-}
-
 // ─── Scripts ──────────────────────────────────────────────────────────────────
 
 /** PowerShell's $PROFILE for the simulated user (C:\Users\user = ~ in this filesystem). */
@@ -865,57 +850,380 @@ function runScript(state: TerminalState, call: ScriptCall, env: TerminalEnv): Co
   }
 }
 
-function cmdPipe(state: TerminalState, left: string, right: string, env: TerminalEnv): OutputLine[] {
-  // Execute left side and feed output to right side's stdin
-  const leftResult = processCommand(state, left, env);
-  const inputText = leftResult.lines.filter((l) => l.type === 'output').map((l) => l.text).join('\n');
+// ─── Shell layer: lists, pipelines, redirections ─────────────────────────────
 
-  // Simulate stdin for right command
-  const rightParts = parseArgs(right.trim());
-  const rightCmd = rightParts[0];
-  const rightArgs = rightParts.slice(1);
+/**
+ * Whether the command running now writes to the screen. Commands that format
+ * for a person (like `ls` in columns) switch to one item per line otherwise.
+ * Set around each command by runPipeline, restored after it.
+ */
+let stdoutIsTerminal = true;
 
-  if (rightCmd === 'wc') {
-    const flags = rightArgs.filter((a) => a.startsWith('-'));
-    const lines = inputText.split('\n').filter(Boolean);
-    const words = inputText.split(/\s+/).filter(Boolean);
-    const bytes = inputText.length;
-    if (flags.some((f) => f.includes('l'))) return [{ text: String(lines.length), type: 'output' }];
-    if (flags.some((f) => f.includes('w'))) return [{ text: String(words.length), type: 'output' }];
-    if (flags.some((f) => f.includes('c'))) return [{ text: String(bytes), type: 'output' }];
-    return [{ text: `${lines.length} ${words.length} ${bytes}`, type: 'output' }];
+/** Where a stream goes: the screen, the next command, a file, or nowhere. */
+type Sink = { kind: 'screen' } | { kind: 'pipe' } | { kind: 'null' } | { kind: 'file'; key: string };
+
+interface OpenFile { path: string[]; typed: string; append: boolean; chunks: string[] }
+
+interface PipelineResult { lines: OutputLine[]; newState: TerminalState; ok: boolean; clear: boolean }
+
+const outLines = (texts: string[]): OutputLine[] => texts.map((text) => ({ text, type: 'output' as const }));
+
+function openFailure(typed: string, reason: string, env: TerminalEnv): OutputLine {
+  return env === 'windows'
+    ? { text: `Out-File: Could not find a part of the path '${typed}'.`, type: 'error' }
+    : { text: `bash: ${typed}: ${reason}`, type: 'error' };
+}
+
+/** Checks a redirection target the way the shell opens it: before the command runs. */
+function checkWritable(state: TerminalState, typed: string, env: TerminalEnv): { path: string[] } | { error: OutputLine } {
+  const path = resolvePath(state, typed);
+  const parent = getNode(state.root, path.slice(0, -1));
+  if (!parent || parent.type !== 'directory' || path.length === 0) {
+    return { error: openFailure(typed, 'No such file or directory', env) };
+  }
+  if (getNode(state.root, path)?.type === 'directory') return { error: openFailure(typed, 'Is a directory', env) };
+  return { path };
+}
+
+/** Writes (or appends) text to a file; the target was already checked. */
+function writeFileAt(root: DirectoryNode, path: string[], content: string, append: boolean): DirectoryNode {
+  const newRoot = deepCloneRoot(root);
+  const parent = getNode(newRoot, path.slice(0, -1)) as DirectoryNode;
+  const name = path[path.length - 1];
+  const existing = parent.children[name];
+  const before = existing?.type === 'file' ? existing.content : '';
+  const text = append ? before + (before && content ? '\n' : '') + content : content;
+  parent.children[name] = existing?.type === 'file' ? { ...existing, content: text } : makeFile(text);
+  return newRoot;
+}
+
+/** `tee`, `Tee-Object`, `Out-File`… : write the piped text to each file. */
+function writeFromPipe(state: TerminalState, files: string[], text: string, append: boolean, env: TerminalEnv): { root: DirectoryNode; errors: OutputLine[] } {
+  let root = state.root;
+  const errors: OutputLine[] = [];
+  for (const f of files) {
+    const target = checkWritable({ ...state, root }, f, env);
+    if ('error' in target) errors.push(target.error);
+    else root = writeFileAt(root, target.path, text, append);
+  }
+  return { root, errors };
+}
+
+/** Value that follows a PowerShell parameter (`-FilePath x`), case-insensitive. */
+function psParam(args: string[], ...names: string[]): string | undefined {
+  const i = args.findIndex((a) => names.includes(a.toLowerCase()));
+  return i >= 0 ? args[i + 1] : undefined;
+}
+
+/** A table printed by the simulator (`Get-Process`, `ps aux`): header line + `----` line. */
+function splitHeader(lines: string[]): { header: string[]; rows: string[] } {
+  return lines.length >= 2 && /^[\s-]+$/.test(lines[1]) && lines[1].includes('--')
+    ? { header: lines.slice(0, 2), rows: lines.slice(2) }
+    : { header: [], rows: lines };
+}
+
+function compareValues(a: string, b: string, numeric: boolean): number {
+  if (numeric) return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+  return a.localeCompare(b);
+}
+
+/** A number of lines from `-n 5`, `-n5`, `-5` (head/tail), or the default. */
+function lineCount(args: string[], fallback: number): number {
+  const i = args.findIndex((a) => a === '-n');
+  if (i >= 0) return parseInt(args[i + 1] ?? '', 10) || fallback;
+  const attached = args.find((a) => /^-n?\d+$/.test(a));
+  return attached ? parseInt(attached.replace(/^-n?/, ''), 10) : fallback;
+}
+
+/**
+ * A command that reads standard input (the right side of `|`, or `< file`).
+ * Commands that do not read it run as usual; unknown readers pass the text through.
+ */
+function runFilter(state: TerminalState, text: string, stdin: string, env: TerminalEnv): CommandOutput {
+  const parts = parseArgs(text);
+  const cmd = (parts[0] ?? '').toLowerCase();
+  const args = parts.slice(1);
+  const flags = args.filter((a) => a.startsWith('-'));
+  const operands = args.filter((a) => !a.startsWith('-'));
+  const input = stdin === '' ? [] : stdin.split('\n');
+  const same = (lines: OutputLine[], s: TerminalState = state): CommandOutput => ({ lines, newState: s });
+
+  switch (cmd) {
+    case 'wc': {
+      const lines = stdin.split('\n').filter(Boolean);
+      const words = stdin.split(/\s+/).filter(Boolean);
+      const bytes = stdin.length;
+      if (flags.some((f) => f.includes('l'))) return same(outLines([String(lines.length)]));
+      if (flags.some((f) => f.includes('w'))) return same(outLines([String(words.length)]));
+      if (flags.some((f) => f.includes('c'))) return same(outLines([String(bytes)]));
+      return same(outLines([`${lines.length} ${words.length} ${bytes}`]));
+    }
+
+    case 'grep': {
+      const pattern = operands[0] ?? '';
+      const ignoreCase = flags.some((f) => f.includes('i'));
+      const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
+      if (!regexResult.ok) return same([regexResult.error]);
+      const invert = flags.some((f) => f.includes('v'));
+      const matches = input.map((line, i) => ({ line, i })).filter(({ line }) => regexResult.regex.test(line) !== invert);
+      const status = matches.length ? 0 : 1;
+      if (flags.some((f) => f.includes('c'))) return { ...same(outLines([String(matches.length)])), status };
+      const numbered = flags.some((f) => f.includes('n'));
+      return { ...same(outLines(matches.map(({ line, i }) => (numbered ? `${i + 1}:${line}` : line)))), status };
+    }
+
+    case 'select-string':
+    case 'sls':
+    case 'findstr': {
+      // Select-String ignores case by default; findstr only with /I.
+      const pattern = psParam(args, '-pattern') ?? args.find((a) => !a.startsWith('-') && !a.startsWith('/')) ?? '';
+      const ignoreCase = cmd !== 'findstr' || args.some((a) => a.toLowerCase() === '/i');
+      const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
+      if (!regexResult.ok) return same([regexResult.error]);
+      const matches = input.filter((line) => regexResult.regex.test(line));
+      return { ...same(outLines(matches)), status: matches.length ? 0 : 1 };
+    }
+
+    case 'sort': {
+      // `-r`, `-n`, `-k3`, and combined forms such as `-k3rn` or `-rn`.
+      const joined = flags.join('');
+      const keyArg = args.find((a) => /^-k\d/.test(a)) ?? (args.includes('-k') ? `-k${args[args.indexOf('-k') + 1]}` : undefined);
+      const key = keyArg ? parseInt(keyArg.slice(2), 10) : 0;
+      const numeric = /n/.test(joined);
+      const reverse = /r/.test(joined);
+      const field = (l: string) => (key ? l.trim().split(/\s+/)[key - 1] ?? '' : l);
+      const sorted = input.filter(Boolean).sort((a, b) => compareValues(field(a), field(b), numeric));
+      if (reverse) sorted.reverse();
+      return same(outLines(sorted));
+    }
+
+    case 'sort-object': {
+      const { header, rows } = splitHeader(input.filter(Boolean));
+      const prop = operands[0]?.toLowerCase();
+      const column = prop && header.length ? header[0].trim().split(/\s+/).findIndex((h) => h.toLowerCase() === prop) : -1;
+      const cell = (row: string) => (column >= 0 ? row.trim().split(/\s+/)[column] ?? '' : row);
+      const numeric = rows.length > 0 && rows.every((r) => !Number.isNaN(parseFloat(cell(r))));
+      const sorted = [...rows].sort((a, b) => compareValues(cell(a), cell(b), numeric));
+      if (flags.some((f) => f.toLowerCase().startsWith('-desc'))) sorted.reverse();
+      return same(outLines([...header, ...sorted]));
+    }
+
+    case 'head':
+      return same(outLines(input.slice(0, lineCount(args, 10))));
+
+    case 'tail': {
+      const n = lineCount(args, 10);
+      return same(outLines(input.slice(Math.max(0, input.length - n))));
+    }
+
+    case 'select-object': {
+      const { header, rows } = splitHeader(input);
+      const first = psParam(args, '-first');
+      const last = psParam(args, '-last');
+      const skip = parseInt(psParam(args, '-skip') ?? '0', 10) || 0;
+      let picked = rows.slice(skip);
+      if (first !== undefined) picked = picked.slice(0, parseInt(first, 10) || 0);
+      else if (last !== undefined) picked = picked.slice(Math.max(0, picked.length - (parseInt(last, 10) || 0)));
+      return same(outLines([...header, ...picked]));
+    }
+
+    case 'uniq': {
+      const groups: { line: string; count: number }[] = [];
+      for (const line of input) {
+        const prev = groups[groups.length - 1];
+        if (prev && prev.line === line) prev.count++;
+        else groups.push({ line, count: 1 });
+      }
+      const counted = flags.some((f) => f.includes('c'));
+      return same(outLines(groups.map((g) => (counted ? `${String(g.count).padStart(7)} ${g.line}` : g.line))));
+    }
+
+    case 'measure-object':
+    case 'measure': {
+      const items = input.filter((l) => l.trim() !== '');
+      const lower = flags.map((f) => f.toLowerCase());
+      if (lower.some((f) => ['-line', '-word', '-character'].includes(f))) {
+        const out: string[] = [];
+        if (lower.includes('-line')) out.push(`Lines      : ${items.length}`);
+        if (lower.includes('-word')) out.push(`Words      : ${stdin.split(/\s+/).filter(Boolean).length}`);
+        if (lower.includes('-character')) out.push(`Characters : ${stdin.length}`);
+        return same(outLines(out));
+      }
+      return same(outLines([`Count    : ${items.length}`, 'Average  :', 'Sum      :', 'Maximum  :', 'Minimum  :', 'Property :']));
+    }
+
+    case 'tee':
+    case 'tee-object': {
+      const append = flags.some((f) => ['-a', '--append', '-append'].includes(f.toLowerCase()));
+      const files = cmd === 'tee'
+        ? operands
+        : [psParam(args, '-filepath', '-path', '-literalpath') ?? (psParam(args, '-variable') ? undefined : operands[0])].filter((f): f is string => !!f);
+      const { root, errors } = writeFromPipe(state, files, stdin, append, env);
+      return same([...outLines(input), ...errors], { ...state, root });
+    }
+
+    case 'out-file':
+    case 'set-content':
+    case 'add-content': {
+      const file = psParam(args, '-filepath', '-path', '-literalpath') ?? operands[0];
+      if (!file) return same([{ text: `${parts[0]}: indiquez un fichier, par exemple ${parts[0]} sortie.txt`, type: 'error' }]);
+      const append = cmd === 'add-content' || flags.some((f) => f.toLowerCase() === '-append');
+      const { root, errors } = writeFromPipe(state, [file], stdin, append, env);
+      return same(errors, { ...state, root });
+    }
+
+    case 'out-null':
+      return same([]);
+
+    case 'stop-process':
+    case 'spps':
+      // The processes arrive through the pipe (`Get-Process node | Stop-Process`).
+      return same([{ text: 'Processus arrêté.', type: 'success' }]);
+
+    case 'cat':
+    case 'get-content':
+    case 'gc':
+      // With a file argument they read the file and ignore standard input.
+      return operands.length ? runSimple(state, text, env) : same(outLines(input));
+
+    case 'less':
+    case 'more':
+    case 'where-object':
+    case '?':
+    case 'format-list':
+    case 'fl':
+    case 'format-table':
+    case 'ft':
+    case 'out-host':
+    case 'out-string':
+    case 'jq':
+      // Displayed as received: the simulator does not filter objects or JSON.
+      return same(outLines(input));
+
+    case 'claude':
+      // `git diff | claude "…"`: the lessons teach the pattern; the tool runs on the learner's machine.
+      return same([{ text: `(claude reçoit ${input.length} ligne(s) par le pipe — Claude Code n'est pas simulé dans ce terminal, essayez-le sur votre machine.)`, type: 'info' }]);
+
+    case 'sed':
+    case 'awk':
+    case 'cut':
+    case 'tr':
+    case 'xargs':
+      // Not simulated yet: say so rather than pretend the text was transformed.
+      return same([...outLines(input), { text: `(${cmd} n'est pas encore simulé : le texte passe tel quel.)`, type: 'info' }]);
+
+    default:
+      // A command that does not read standard input runs as usual (`echo x | mkdir d`).
+      return runSimple(state, text, env);
+  }
+}
+
+/** Runs `a | b | c` with its redirections; `ok` is the status of the last command. */
+function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): PipelineResult {
+  let s = state;
+  let screen: OutputLine[] = [];
+  let piped: string | undefined;
+  let ok = true;
+  let clear = false;
+
+  for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
+    const isLast = i === stages.length - 1;
+    // Every command of a pipeline starts in the caller's directory and variables;
+    // only the files written by earlier commands are shared.
+    const base: TerminalState = i === 0 ? state : { ...state, root: s.root, git: s.git };
+    const fds: Record<Fd, Sink> = { 1: isLast ? { kind: 'screen' } : { kind: 'pipe' }, 2: { kind: 'screen' } };
+    const files = new Map<string, OpenFile>();
+    let openError: OutputLine | undefined;
+
+    for (const r of stage.redirects) {
+      if (r.kind === 'dup') {
+        fds[r.fd] = fds[r.to];
+        continue;
+      }
+      let sink: Sink;
+      if (isNullDevice(r.target, env)) {
+        sink = { kind: 'null' };
+      } else {
+        const target = checkWritable(base, r.target, env);
+        if ('error' in target) { openError = target.error; break; }
+        const key = target.path.join('/');
+        if (!files.has(key)) files.set(key, { path: target.path, typed: r.target, append: r.append, chunks: [] });
+        sink = { kind: 'file', key };
+      }
+      if (r.fd === 'both') { fds[1] = sink; fds[2] = sink; } else fds[r.fd] = sink;
+    }
+
+    let stdin = piped;
+    if (!openError && stage.stdinFile !== undefined) {
+      const node = getNode(base.root, resolvePath(base, stage.stdinFile));
+      if (node?.type === 'file') stdin = node.content;
+      else openError = openFailure(stage.stdinFile, node ? 'Is a directory' : 'No such file or directory', env);
+    }
+
+    piped = '';
+    if (openError) {
+      // Like bash: a redirection that cannot be opened stops this command only.
+      screen.push(openError);
+      ok = false;
+      continue;
+    }
+
+    const outerTerminal = stdoutIsTerminal;
+    stdoutIsTerminal = outerTerminal && fds[1].kind === 'screen';
+    let result: CommandOutput;
+    try {
+      result = stdin !== undefined ? runFilter(base, stage.text, stdin, env) : runSimple(base, stage.text, env);
+    } finally {
+      stdoutIsTerminal = outerTerminal;
+    }
+    if (result.clear) { screen = []; clear = true; }
+    ok = result.status !== undefined ? result.status === 0 : !result.lines.some((l) => l.type === 'error');
+
+    const toPipe: string[] = [];
+    for (const line of result.lines) {
+      // Simulator notes are for the learner, never part of a stream.
+      const sink = line.type === 'info' ? { kind: 'screen' as const } : fds[line.type === 'error' ? 2 : 1];
+      if (sink.kind === 'screen') screen.push(line);
+      else if (sink.kind === 'pipe') toPipe.push(line.text);
+      else if (sink.kind === 'file') files.get(sink.key)!.chunks.push(line.text);
+    }
+    piped = toPipe.join('\n');
+
+    s = result.newState;
+    for (const f of files.values()) s = { ...s, root: writeFileAt(s.root, f.path, f.chunks.join('\n'), f.append) };
   }
 
-  if (rightCmd === 'grep') {
-    const flags = rightArgs.filter((a) => a.startsWith('-'));
-    const pattern = rightArgs.find((a) => !a.startsWith('-')) || '';
-    const ignoreCase = flags.some((f) => f.includes('i'));
-    const showLineNumbers = flags.some((f) => f.includes('n'));
-    const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
-    if (!regexResult.ok) return [regexResult.error];
-    const lines = inputText.split('\n');
-    const matches = lines.map((line, i) => ({ line, i })).filter(({ line }) => regexResult.regex.test(line));
-    return matches.map(({ line, i }) => ({
-      text: showLineNumbers ? `${i + 1}:${line}` : line,
-      type: 'output' as const,
-    }));
-  }
+  // Each command of a real pipeline runs in a subshell: only what it writes to disk stays.
+  const newState = stages.length > 1 ? { ...state, root: s.root, git: s.git } : s;
+  return { lines: screen, newState, ok, clear };
+}
 
-  if (rightCmd === 'sort') {
-    const lines = inputText.split('\n').filter(Boolean);
-    const flags = rightArgs.filter((a) => a.startsWith('-'));
-    const sorted = [...lines].sort();
-    if (flags.some((f) => f.includes('r'))) sorted.reverse();
-    return sorted.map((l) => ({ text: l, type: 'output' as const }));
-  }
+function syntaxError(message: string, env: TerminalEnv): OutputLine {
+  return { text: env === 'windows' ? `ParserError: ${message}` : `bash: ${message}`, type: 'error' };
+}
 
-  if (rightCmd === 'head') {
-    const nFlag = rightArgs.find((a) => a.startsWith('-n'));
-    const n = nFlag ? parseInt(nFlag.slice(2)) || 10 : 10;
-    return inputText.split('\n').slice(0, n).map((l) => ({ text: l, type: 'output' as const }));
-  }
+/** A full command line: `a && b; c | d > f`. */
+function runLine(state: TerminalState, line: string, env: TerminalEnv): CommandOutput {
+  const parsed = parseCommandLine(line, env);
+  if (!parsed.ok) return { lines: [syntaxError(parsed.error, env)], newState: state };
+  // Plain command: exactly the historical path, character for character.
+  if (isPlainCommand(parsed.list)) return runSimple(state, line, env);
 
-  return leftResult.lines;
+  let s = state;
+  let screen: OutputLine[] = [];
+  let lastOk = true;
+  let clear = false;
+  for (const item of parsed.list) {
+    if (item.op === '&&' && !lastOk) continue;
+    if (item.op === '||' && lastOk) continue;
+    const r = runPipeline(s, item.stages, env);
+    if (r.clear) { screen = []; clear = true; }
+    screen = [...screen, ...r.lines];
+    s = r.newState;
+    lastOk = r.ok;
+  }
+  return { lines: screen, newState: s, clear: clear || undefined };
 }
 
 // ─── Help & Man (env-aware) ───────────────────────────────────────────────────
@@ -1398,40 +1706,15 @@ function getCmdHelp(cmdName: string, env: TerminalEnv = 'linux'): OutputLine[] |
 export function processCommand(state: TerminalState, input: string, env: TerminalEnv = 'linux'): CommandOutput {
   const trimmed = input.trim();
   const newHistory = trimmed ? [...state.commandHistory, trimmed] : state.commandHistory;
-  let newState: TerminalState = { ...state, commandHistory: newHistory };
+  const newState: TerminalState = { ...state, commandHistory: newHistory };
 
   if (!trimmed) return { lines: [], newState };
+  return runLine(newState, trimmed, env);
+}
 
-  // Handle pipes
-  if (trimmed.includes('|')) {
-    const [left, ...rest] = trimmed.split('|');
-    const right = rest.join('|');
-    const pipeLines = cmdPipe(state, left.trim(), right.trim(), env);
-    return { lines: pipeLines, newState };
-  }
-
-  // Handle output redirection
-  const appendMatch = trimmed.match(/^(.+?)\s*>>\s*(.+)$/);
-  const writeMatch = trimmed.match(/^(.+?)\s*>\s*(.+)$/);
-  if (appendMatch) {
-    const cmd = appendMatch[1].trim();
-    const file = appendMatch[2].trim();
-    const echoArgs = parseArgs(cmd);
-    if (echoArgs[0] === 'echo') {
-      const { lines, newRoot } = cmdEchoRedirect(state, echoArgs.slice(1).join(' '), file, true);
-      if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
-    }
-  } else if (writeMatch) {
-    const cmd = writeMatch[1].trim();
-    const file = writeMatch[2].trim();
-    const echoArgs = parseArgs(cmd);
-    if (echoArgs[0] === 'echo') {
-      const { lines, newRoot } = cmdEchoRedirect(state, echoArgs.slice(1).join(' '), file, false);
-      if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
-    }
-  }
+/** One command, without list, pipe or redirection — the shell layer handles those. */
+function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): CommandOutput {
+  let newState = state;
 
   // Handle PowerShell $env: variable assignment ($env:VAR = "value")
   const psEnvSet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
@@ -1604,8 +1887,11 @@ export function processCommand(state: TerminalState, input: string, env: Termina
       return { lines, newState };
     }
 
-    case 'grep':
-      return { lines: cmdGrep(newState, args), newState };
+    case 'grep': {
+      const lines = cmdGrep(newState, args);
+      // Exit 1 when nothing matched, so `grep x f || …` works.
+      return { lines, newState, status: lines.some((l) => l.type === 'output') ? 0 : 1 };
+    }
 
     case 'head':
       return { lines: cmdHead(newState, args), newState };
