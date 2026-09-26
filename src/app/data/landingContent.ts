@@ -79,7 +79,7 @@ export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
     group: 'Curriculum',
     items: [
       '11 modules progressifs (navigation → IA pour dev)',
-      'Terminal interactif avec validation',
+      'Terminal interactif : pipes, redirections, scripts',
       `Référence enrichie (${TOTAL_COMMANDS}+ commandes)`,
       'Parcours guidé par niveaux + Dashboard de progression',
     ],
@@ -88,6 +88,7 @@ export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
     group: 'Multi-OS',
     items: [
       'Linux / macOS / Windows — sélection + adaptation par OS',
+      'Chemins Windows natifs dans PowerShell (\\, C:\\Users)',
       'Partage natif (Web Share API)',
     ],
   },
@@ -95,7 +96,7 @@ export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
     group: 'Tuteur IA',
     items: [
       'Multi-rôles cloisonnés (élève / enseignant / institution / super-admin)',
-      '4 providers BYOK (OpenRouter / Anthropic / OpenAI / Gemini)',
+      'Ta propre clé (BYOK) : OpenRouter, Anthropic, Gemini',
       'Onboarding clé chiffrée (AES-GCM opt-in) + consent RGPD',
       'Audit IA security 9.2/10 (24 mai 2026)',
     ],
@@ -105,42 +106,36 @@ export const ROADMAP_AVAILABLE: readonly RoadmapGroup[] = [
     items: [
       'Espace enseignant — classes, code invitation, dashboard élèves',
       'Espace institution_admin — approbation enseignants + isolation cross-institution',
-      'Panel super-admin + 20 agents Claude Code spécialisés',
-      'LTI 1.3 Phase 7c — JWK validation + replay protection',
+      'Panel super-admin — santé de la base, activité, signalements',
+      'Signalement de bug intégré (capture d\'écran incluse)',
     ],
   },
   {
     group: 'Qualité',
     items: [
-      'Accessibilité WCAG 2.2 AAA (safe-area iOS, focus-visible)',
+      'Accessibilité WCAG 2.2 (cibles tactiles 44 px, focus visible, safe-area iOS)',
       'Sécurité durcie (CSP SHA-256, rate limiting, endpoints gated)',
-      'Sauvegarde locale + cloud (optionnel)',
+      'Âge minimum vérifié à l\'inscription (RGPD mineurs)',
+      'Chaque changement vérifié : 2 700+ tests + 21 agents d\'audit',
     ],
   },
 ];
 
 export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
   {
-    group: 'Tuteur IA V1.5',
+    group: 'Grand check-up qualité',
     items: [
-      'Stage B3 — picker UI modèle filtré par rôle',
-      'Stage B1.b — eval matrix multi-turn × 4 rôles',
-    ],
-  },
-  {
-    group: 'Plateforme B2B',
-    items: [
-      'Phase 9 Admin Panel — widgets gratuits (GitHub + Vercel + Supabase + Sentry)',
-      'Sprint 2.C — workflow rejection enseignants + statistiques institution',
-      'SEO/GEO/AEO — Schema.org + landing NL + DPA template écoles',
+      'Terminal fidèle à un vrai shell (bash et PowerShell)',
+      'Chaque exemple de leçon identique à ce que le terminal affiche',
+      'Messages d\'erreur PowerShell réalistes',
     ],
   },
   {
     group: 'Curriculum',
     items: [
-      'Extension nouveaux modules & exercices',
-      'Plus d\'exercices pratiques & quiz par section',
-      'Guide d\'installation PWA (iOS / Android / Desktop)',
+      'Page Référence plus pédagogique pour les débutants',
+      'Une variante PowerShell pour chaque leçon',
+      'Historique Git réaliste dans les leçons avancées',
     ],
   },
 ];
@@ -159,14 +154,15 @@ export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
       'Mode histoire narratif',
       'Badges & Open Badges 3.0 (CEFR + EQF)',
       'Révisions intelligentes',
+      'Guide d\'installation PWA (iOS / Android / Desktop)',
     ],
   },
   {
-    group: 'Architecture & V2',
+    group: 'Écoles & tuteur IA',
     items: [
-      'Web Worker isolation tuteur IA (V1.5, THI-114)',
+      'Intégration LMS (LTI 1.3 : Moodle, Canvas…)',
+      'Tuteur IA V1.5 — modèles filtrés par rôle, isolation Web Worker',
       'Parcours avancés (Docker, scripting, IA augmentée)',
-      'Tuteur IA chat assistant role-based (Phase 9+)',
     ],
   },
 ];
@@ -187,7 +183,7 @@ export const TRUST_BADGES = [
   { icon: Github, label: '100% Open Source', href: 'https://github.com/thierryvm/TerminalLearning' },
   { icon: Infinity, label: 'Free Forever', href: undefined },
   { icon: Lock, label: 'GDPR Compliant', href: undefined },
-  { icon: CheckCircle2, label: '1000+ tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
+  { icon: CheckCircle2, label: '2 700+ tests · CI verte', href: 'https://github.com/thierryvm/TerminalLearning/actions' },
 ] as const;
 
 // ── Module icons map ──────────────────────────────────────────────────────────
