@@ -1,5 +1,7 @@
 # Rapport agents Terminal Learning — Doctrine & justification modèles
 
+> ⚠️ **Remplacé pour l'attribution des modèles (24 septembre 2026).** La règle du 01/08/2026 s'applique désormais : **Opus = toute la sécurité** (OWASP, CSP, RLS, RBAC, auth, crypto, prompt injection, RGPD/AI Act, anti-fuite de secrets), Sonnet = qualité, contenu, tests. Plusieurs agents classés Sonnet ci-dessous sont passés en Opus, et le pin se fait par l'alias `"model": "opus"`, plus par un identifiant figé. Référence à jour : [`.claude/agents/README.md`](../../.claude/agents/README.md). Le contenu ci-dessous est conservé tel quel, comme trace historique.
+
 **Date** : 20 mai 2026
 **Destinataire** : @cowork
 **Auteur** : @cc-tl (Claude Code, Opus 4.7)

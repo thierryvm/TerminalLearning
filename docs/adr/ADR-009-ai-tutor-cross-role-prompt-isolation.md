@@ -10,7 +10,7 @@
 
 V1.1.0 (THI-144, PR #222) a livré un **seul system prompt** (`tutor/v1.1.0`, élève) servant tous les utilisateurs authentifiés peu importe leur rôle RBAC. Cette architecture a tenu jusqu'au 24 mai 2026 parce que :
 
-- L'audience anonyme + élève représentait 100% du trafic réel (premier user organique Jimmy Pez 24/05 = élève GitHub OAuth)
+- L'audience anonyme + élève représentait 100% du trafic réel (premier utilisateur organique, « utilisateur A » = élève GitHub OAuth)
 - Les rôles staff (`teacher`, `institution_admin`, `super_admin`) existaient en DB mais n'avaient pas d'usage AI Tutor en production
 - Le risque cross-role était théorique (« si un élève demande des infos teacher, le LLM va-t-il refuser ? »)
 

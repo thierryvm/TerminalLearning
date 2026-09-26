@@ -85,3 +85,48 @@ describe('Claude Code agent frontmatter — registry integrity (THI-326)', () =>
     }
   });
 });
+
+/**
+ * Model doctrine guard (24/09/2026).
+ *
+ * - Haiku is banned on every agent (@thierry, 28/05/2026).
+ * - Opus is pinned by ALIAS, never by a frozen id such as `claude-opus-4-8`:
+ *   a frozen id blocks upgrades as much as downgrades, and goes stale in
+ *   silence (the 28/05 pin stayed on 4.7 after the switch to 4.8).
+ * So `model:` must be exactly `opus` or `sonnet`.
+ */
+const ALLOWED_MODELS = ['opus', 'sonnet'];
+
+function topLevelValue(file: string, key: string): string | undefined {
+  for (const line of readFrontmatter(file).split(/\r?\n/)) {
+    if (line.startsWith(`${key}: `)) return line.slice(key.length + 2).trim();
+  }
+  return undefined;
+}
+
+describe('Claude Code agent frontmatter — model doctrine', () => {
+  it.each(agentFiles)('%s — model is the `opus` or `sonnet` alias', (file) => {
+    const model = topLevelValue(file, 'model');
+    expect(
+      ALLOWED_MODELS.includes(model ?? ''),
+      `${file}: model is ${JSON.stringify(model)} — must be exactly "opus" or "sonnet" (no haiku, no pinned id like claude-opus-4-8)`,
+    ).toBe(true);
+  });
+});
+
+/**
+ * README coverage guard: every agent file must be documented in the index.
+ * Deliberately loose (name appears anywhere in README.md) so that table or
+ * heading reformatting never breaks it; it only catches a forgotten agent.
+ */
+describe('Claude Code agents — README index coverage', () => {
+  const readme = readFileSync(resolve(AGENTS_DIR, 'README.md'), 'utf-8');
+
+  it.each(agentFiles)('%s — listed in .claude/agents/README.md', (file) => {
+    const name = file.replace(/\.md$/, '');
+    expect(
+      readme.includes(`\`${name}\``),
+      `${name} is missing from .claude/agents/README.md — add it to the matrix and give it a fiche`,
+    ).toBe(true);
+  });
+});

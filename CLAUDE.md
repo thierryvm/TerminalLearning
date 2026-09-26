@@ -127,7 +127,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - **`prompt-guardrail-auditor`** — audit sécurité LLM (OWASP LLM Top 10) du Tuteur IA (BYOK OpenRouter — ADR-002 + ADR-005) : prompt injection, jailbreaks, prompt leaks, role enforcement, bypass sanitizer, XSS sur rendu réponse, fuite clé API. **Obligatoire avant toute PR touchant `src/lib/ai/*` ou `src/app/components/ai/*`.** CRITICAL = bloque le merge. Créé AVANT implémentation (THI-109, gate zéro ADR-005) pour éviter la surprise en fin de chantier.
 - **`route-attack-auditor`** — audit HTTP-level black-hat des endpoints `api/*` : status code fingerprinting, verb tampering, cache poisoning via 503, slowloris, side-channel timing, header smuggling, CORS edge cases, body guards, rate limit bypass, info disclosure. Tests live via `curl`. **Obligatoire avant toute PR touchant `api/*` ou après création d'un nouvel endpoint.** Complémentaire à `security-auditor` (qui couvre l'app layer) et `vercel-firewall-auditor` (qui couvre WAF). Créé suite au sprint sécurité 1-2 mai (lacune route-level identifiée).
 - **`session-orchestrator`** — orchestrateur de session, exécute les phases startup et shutdown dans son contexte isolé (économie tokens main agent). Lit les memos CC `session_startup_process.md` et `session_shutdown_process.md`, fait les checks d'état (git + GitHub + Linear + health check prod + banner scan plan.md/ROADMAP.md + freshness markers), met à jour les .md vitaux en shutdown, et produit un rapport structuré 8 sections avec recommandation des sous-agents à lancer ensuite par le main agent. **À invoquer en début de chaque session (mode `startup`) ET en fin (mode `shutdown`)**. Ne peut pas invoquer d'autres agents (limitation runtime CC) — il RECOMMANDE leurs prompts prêts-à-coller.
-- **`legal-compliance-auditor`** — audit conformité juridique européenne et belge (Opus 4.7, méthode 5 couches, auto-update via WebSearch live). Scope : RGPD UE 2016/679, AI Act EU 2024/1689, DSA 2022/2065, recommandations CNIL Éducation, droit belge DPA, eIDAS, droits mineurs (consentement parental). Audite `/privacy`, mentions légales, cookie banner, JSON-LD, ADRs sécurité, procédures RGPD Art. 15-22. Couche 1 inventory **avant** Couche 4 recommandations (anti-doublon Linear). Couche 5 self-critique signale explicitement ce qui demande un avocat humain professionnel — l'agent **ne remplace pas** un avis juridique pro. Lancer trimestriellement, avant releases majeures B2B écoles / publication AI Tutor / activation LTI / traitement mineurs, ou après changement règlementaire UE majeur. Coût ~$3-5 par run (Opus + 8-12 WebSearch). Créé suite décision @thierry 24/05/2026 — qualité premium + responsabilité juridique B2B écoles (THI-270).
+- **`legal-compliance-auditor`** — audit conformité juridique européenne et belge (Opus, méthode 5 couches, auto-update via WebSearch live). Scope : RGPD UE 2016/679, AI Act EU 2024/1689, DSA 2022/2065, recommandations CNIL Éducation, droit belge DPA, eIDAS, droits mineurs (consentement parental). Audite `/privacy`, mentions légales, cookie banner, JSON-LD, ADRs sécurité, procédures RGPD Art. 15-22. Couche 1 inventory **avant** Couche 4 recommandations (anti-doublon Linear). Couche 5 self-critique signale explicitement ce qui demande un avocat humain professionnel — l'agent **ne remplace pas** un avis juridique pro. Lancer trimestriellement, avant releases majeures B2B écoles / publication AI Tutor / activation LTI / traitement mineurs, ou après changement règlementaire UE majeur. Coût ~$3-5 par run (Opus + 8-12 WebSearch). Créé suite décision @thierry 24/05/2026 — qualité premium + responsabilité juridique B2B écoles (THI-270).
+- **`terminal-fidelity-auditor`** — compare le simulateur à un **vrai** shell (GNU bash de Git Bash, PowerShell 7) dans un bac à sable temporaire qui reproduit le système de fichiers des leçons. Classe chaque commande (conforme / moteur faux / théorie fausse / non simulée). La sortie du vrai shell est la seule source des valeurs attendues dans les tests. À lancer après toute modification de `terminalEngine.ts`, `commands/*.ts` ou des blocs de code des leçons, et avant chaque release. Complète les cliquets `lessonFidelity` / `lessonTheory`, qui comparent la leçon au moteur, jamais le moteur à la réalité (demande @thierry, 24/09/2026).
 
 ### Début de chaque session
 
@@ -164,9 +165,11 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 
 - Invoquer l'agent **`curriculum-validator`** → analyser le rapport, corriger les CRITICAL avant de continuer
 
-### Après chaque modification de `curriculum.ts` ou `terminalEngine.ts`
+### Après chaque modification de `curriculum.ts`, `terminalEngine.ts` ou `commands/*.ts`
 
 - Invoquer l'agent **`test-runner`** → si VERDICT = ❌ Fix required, corriger avant de proposer un commit
+- Si une sortie de terminal (moteur ou exemple de leçon) change : invoquer **`terminal-fidelity-auditor`** sur les commandes touchées. Un attendu de test vient du vrai shell, jamais de la sortie du moteur.
+- Les cliquets `KNOWN_THEORY_GAPS` / `BASH_SHOWN_ON_WINDOWS_MAX` (`src/test/lessonTheoryGaps.ts`) et `KNOWN_DESYNCS` (`lessonFidelity.test.ts`) ne peuvent que baisser. Après une correction, `npm run theory:gaps` régénère la liste. Le script refuse d'ajouter un écart ou de relever le compteur Windows : l'option `--allow-new` est réservée à un correctif déjà planifié.
 
 ### Incohérences Linear à corriger dès détection
 
@@ -304,15 +307,15 @@ Toute PR DOIT être validée visuellement avant merge, SAUF exception explicite 
 
 ### Migrations Supabase — auto-géré
 
-- Toute nouvelle migration doit être appliquée **sans attendre** via le MCP Supabase ou le CLI
-- MCP (prioritaire, Docker non requis) : `mcp__claude_ai_Supabase__apply_migration` avec `project_id: jdnukbpkjyyyjpuwgxhv`
-- CLI (fallback si MCP indisponible) : `supabase db push --project-ref jdnukbpkjyyyjpuwgxhv`
+- Toute nouvelle migration doit être appliquée **sans attendre**, par la **Supabase Management API** avec le jeton DevContext (`SUPABASE_ACCESS_TOKEN`, chargé par `work perso -NoCd`, en en-tête `Authorization: Bearer`, jamais dans l'URL) : `POST https://api.supabase.com/v1/projects/jdnukbpkjyyyjpuwgxhv/database/query` avec `{"query": "<contenu de la migration>"}`
+- **Interdits** (depuis le 18/08/2026) : le connecteur claude.ai `mcp__claude_ai_Supabase__*` (il pointe sur un compte professionnel tiers, désactivé dans `.claude/settings.local.json`) et `supabase db push` (historique distant désynchronisé : il rejouerait toutes les migrations)
+- Réponse 401 = jeton DevContext expiré → @thierry le régénère (`Set-Secret -Vault DevContext -Name "devctx/perso/supabase-token"`), aucun autre canal
 - Ne jamais laisser une migration en attente dans les "post-merge à faire"
 
 ### Secrets GitHub — auto-géré
 
 - Les secrets nécessaires au workflow CI/CD sont ajoutés via `gh secret set --repo thierryvm/TerminalLearning`
-- Clés Supabase récupérées via `supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv`
+- Clés Supabase récupérées via `supabase projects api-keys --project-ref jdnukbpkjyyyjpuwgxhv` **directement redirigé vers `gh secret set` (pipe ou variable), jamais affiché** : la sortie contient la clé `service_role`
 - Ne jamais laisser un secret en attente dans les "post-merge à faire"
 
 ### Scope

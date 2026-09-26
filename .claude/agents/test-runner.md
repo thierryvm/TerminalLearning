@@ -1,6 +1,6 @@
 ---
 name: test-runner
-description: Run vitest + type-check + lint, detect leaked .only/.skip isolation, flag code-vs-test delta imbalance, and surface missing coverage (commands & validators). Invoke after any modification to curriculum.ts, terminalEngine.ts, validators.ts, or test files. Filters verbose output — only surfaces failures and gaps.
+description: Run type-check + lint + vitest + build, detect leaked .only/.skip isolation, catch THI-353 ratchets that grew (KNOWN_THEORY_GAPS, KNOWN_DESYNCS, BASH_SHOWN_ON_WINDOWS_MAX), flag code-vs-test delta imbalance, and surface missing coverage (commands and validators). Invoke after any modification to curriculum.ts, terminalEngine.ts, commands/*.ts, lessonSetup.ts, validators.ts, lessonSolutions.ts, LessonPage.tsx, TerminalEmulator.tsx, or test files. Filters verbose output — only surfaces failures and gaps.
 tools: Bash, Read, Grep
 model: sonnet
 ---
@@ -22,14 +22,13 @@ trap cleanup EXIT
 for BR in <branches>; do
   WT="$TMPBASE/test-${BR//\//_}"
   git worktree add -f "$WT" "origin/$BR" >/dev/null 2>&1 || continue
-  (cd "$WT" && npm ci --silent && npm run type-check && npm run lint && npx vitest run 2>&1)
+  (cd "$WT" && npm ci --silent && npm run type-check && npm run lint && npx vitest run && npm run build 2>&1)
   git worktree remove --force "$WT"
 done
 ```
 
-- Worktrees dans `$TMPBASE` — jamais dans le repo
-- `trap cleanup EXIT` garantit le nettoyage en cas d'erreur
-- `npm ci` par worktree (node_modules isolé)
+- Worktrees dans `$TMPBASE` — jamais dans le repo ; `trap cleanup EXIT` garantit le nettoyage.
+- `npm ci` par worktree (node_modules isolé). Le build d'un worktree jetable n'a pas besoin du `git checkout` du sitemap (Étape 4).
 
 Si aucune branche n'est listée → test du working copy uniquement.
 
@@ -47,7 +46,7 @@ Tout fichier avec erreur TS = CRITICAL. Extraire : `file:line: error TSxxxx: mes
 cd "$(git rev-parse --show-toplevel)" && npm run lint 2>&1
 ```
 
-Toute erreur eslint (pas warning) = CRITICAL. Les warnings remontent en WARNING section.
+Toute erreur eslint (pas warning) = CRITICAL. Les warnings remontent en WARNING.
 
 ## Étape 3 — Tests unitaires (CRITICAL si fail)
 
@@ -59,56 +58,95 @@ Extrait uniquement :
 
 - Nombre total : pass / fail / skip
 - Pour chaque test en FAIL : nom du test + message d'erreur (1 ligne max)
-- Tests skippés si > 5
 - Si 0 failures : confirme "✅ All N tests pass"
 
-## Étape 4 — Leaked isolation (CRITICAL)
+Tests d'intégration `src/test/*.integration.test.ts` : ils se **skippent** sans identifiants dans `.env.test` (`it.skipIf(SKIP)`) — ces skips sont normaux, les compter à part. Avec identifiants, ils appellent Supabase et peuvent **dépasser le timeout sous charge** : avant de déclarer un échec, les relancer seuls (`npx vitest run src/test/<fichier>.integration.test.ts`). Échec confirmé seul = CRITICAL ; vert seul = WARNING « flaky sous charge ».
+
+## Étape 4 — Build (CRITICAL)
+
+Certaines erreurs n'apparaissent qu'au build (export ESM manquant, import dynamique cassé) : type-check et tests verts ne prouvent pas que l'app démarre.
+
+```bash
+cd "$(git rev-parse --show-toplevel)" && npm run build 2>&1 | tail -20
+git checkout -- public/sitemap.xml   # TOUJOURS, même si le build échoue
+git status --short public/
+```
+
+- Le `prebuild` (`scripts/generate-sitemap.mjs`) réécrit les `<lastmod>` de `public/sitemap.xml` à la date du jour. Sans le `git checkout`, ce fichier part dans le commit suivant sans raison.
+- Écrire dans le rapport : « sitemap.xml restauré après build » (ou pourquoi ce n'était pas possible).
+- Build en échec = CRITICAL (extraire la première erreur). Avertissements de taille de chunk = WARNING.
+
+## Étape 5 — Leaked isolation (CRITICAL)
 
 Détecter les `.only(` et `.skip(` **commités** dans les fichiers de tests — ils font passer la CI avec un sous-ensemble silencieusement.
 
 ```bash
-# Match only test runner calls (it/describe/test/suite), then filter out comment lines
 grep -rnE "\b(it|describe|test|suite)\.(only|skip)\(" src/test/ e2e/ 2>/dev/null \
   | grep -vE ":\s*(//|/\*|\*\s|\*$)"
 ```
 
-Filtres :
+- Le motif ne capture pas `it.skipIf(...)` (skip conditionnel légitime des tests d'intégration) ni `it.fails` (cliquet `KNOWN_DESYNCS` de `lessonFidelity.test.ts`).
+- Toute occurrence restante = CRITICAL : `file:line — .only/.skip leaked, test suite biased`.
 
-- Pattern précis `(it|describe|test|suite)\.(only|skip)\(` → évite les faux positifs sur des strings comme `"using .only("` ou des références hors test (`Object.skip`).
-- Post-filter `grep -v` exclut les lignes dont le contenu commence par un commentaire JS (`//`, `/*`, ` *`).
+## Étape 6 — Cliquets THI-353 : « ratchet grew » (CRITICAL)
 
-Toute occurrence restante = CRITICAL. Rapport : `file:line — .only/.skip leaked, test suite biased`.
-
-## Étape 5 — Couverture commandes (WARNING)
-
-Identifie les commandes présentes dans `src/app/data/curriculum.ts` qui n'ont aucun test correspondant dans `src/test/terminalEngine.test.ts`. Compare par nom de commande (ex: `ping`, `curl`, `ssh`).
-
-## Étape 6 — Couverture validators (WARNING)
-
-Identifie les fonctions `validate*` exportées dans `src/app/data/validators.ts` qui n'ont aucun test correspondant dans `src/test/validators.test.ts`.
+Les cliquets ne peuvent que **baisser**. Une PR qui les agrandit masque un défaut au lieu de le corriger.
 
 ```bash
-grep "^export const validate" src/app/data/validators.ts | sed 's/export const //' | sed 's/:.*//'
+git fetch origin --quiet
+# Nouvelles entrées dans KNOWN_THEORY_GAPS (lignes-chaînes ajoutées — attrape aussi un échange 1 retiré / 1 ajouté)
+git diff origin/main -- src/test/lessonTheoryGaps.ts | grep -E '^\+\s+"'
+# Taille avant / après
+git show origin/main:src/test/lessonTheoryGaps.ts | grep -cE '^\s+"'
+grep -cE '^\s+"' src/test/lessonTheoryGaps.ts
+# Plafond bash montré aux apprenants Windows : avant / après
+git show origin/main:src/test/lessonTheoryGaps.ts | grep -oE 'BASH_SHOWN_ON_WINDOWS_MAX = [0-9]+'
+grep -oE 'BASH_SHOWN_ON_WINDOWS_MAX = [0-9]+' src/test/lessonTheoryGaps.ts
+# KNOWN_DESYNCS doit rester vide
+grep -c 'const KNOWN_DESYNCS = new Set<string>(\[\]);' src/test/lessonFidelity.test.ts
+git diff origin/main -- src/test/lessonFidelity.test.ts | grep -nE '^\+.*KNOWN_DESYNCS|^\+\s+["'"'"']'
 ```
 
-Comparer avec les `describe('validateX'` dans `validators.test.ts`.
+- Une ligne `+ "…"` dans `lessonTheoryGaps.ts` = CRITICAL « ratchet grew » (citer l'entrée).
+- `BASH_SHOWN_ON_WINDOWS_MAX` en hausse = CRITICAL.
+- `KNOWN_DESYNCS` non vide (le `grep -c` rend 0) ou entrée ajoutée = CRITICAL.
+- Une baisse est une bonne nouvelle : la rapporter en INFO.
+- Le fichier peut avoir été régénéré par `scripts/generate-theory-gaps.ts` s'il existe : régénéré ou pas, la règle est la même.
 
-## Étape 7 — Delta code/tests (WARNING)
+## Étape 7 — Couverture commandes (WARNING)
 
-Comparer le volume de code applicatif modifié vs le volume de tests ajoutés sur la branche actuelle (depuis le tronc).
+Le moteur = `src/app/data/terminalEngine.ts` **+** `src/app/data/commands/*.ts`. Les tests de commandes vivent dans **tout** `src/test/` : `terminalEngine.test.ts`, `shellLayer.test.ts`, `terminalEngine.fuzz.test.ts`, `lessonFidelity.test.ts` (solution de chaque exercice), `lessonTheory.test.ts` (rejeu de la théorie), etc.
+
+Pour chaque commande enseignée dans `curriculum.ts`, chercher au moins un test qui l'exerce :
 
 ```bash
-# Use origin/main as base (refresh first) so branches not rebased on local main are still correctly compared.
-# Override with BASE_BRANCH env var if your trunk is different (e.g. BASE_BRANCH=origin/develop).
+grep -rlE "['\"\`]<cmd>( |['\"\`])" src/test/
+```
+
+WARNING si aucun fichier de `src/test/` ne l'exerce. Une commande couverte seulement par le rejeu de `lessonTheory` = INFO (couverte, mais sans test dédié de ses cas d'erreur).
+
+## Étape 8 — Couverture validators (WARNING)
+
+Fonctions `validate*` exportées dans `src/app/data/validators.ts` sans test dans `src/test/validators.test.ts` :
+
+```bash
+grep -oE "^export (const|function) validate\w+" src/app/data/validators.ts | awk '{print $3}'
+```
+
+Comparer avec les `describe('validateX'` de `validators.test.ts`. Rappel : `lessonFidelity.test.ts` appelle chaque validateur via `exerciseAccepts()` avec la solution de la leçon — c'est une couverture « happy path » seulement.
+
+## Étape 9 — Delta code/tests (WARNING)
+
+```bash
 git fetch origin --quiet
 BASE="${BASE_BRANCH:-origin/main}"
-git diff --stat "$BASE"...HEAD -- 'src/app/**/*.ts' 'src/app/**/*.tsx' ':!src/app/**/*.test.ts'
-git diff --stat "$BASE"...HEAD -- 'src/test/**/*.ts' 'e2e/**/*.ts'
+git diff --stat -M "$BASE"...HEAD -- 'src/app/**/*.ts' 'src/app/**/*.tsx' 'src/lib/**/*.ts' 'src/lib/**/*.tsx' 'api/**/*.ts' ':!**/*.test.ts' ':!**/*.test.tsx'
+git diff --stat -M "$BASE"...HEAD -- 'src/test/**' 'e2e/**/*.ts'
 ```
 
-- Si > 50 lignes de code applicatif ajoutées **et** 0 ligne de test ajoutée → WARNING "code added without tests".
-- Si ratio tests/code < 0.2 sur un diff > 100 lignes → WARNING "low test-to-code ratio".
-- Ignorer les diffs purement de renommage / déplacement (détecter via `git diff --stat -M`).
+- > 50 lignes de code applicatif ajoutées **et** 0 ligne de test → WARNING "code added without tests".
+- Ratio tests/code < 0.2 sur un diff > 100 lignes → WARNING "low test-to-code ratio".
+- Ignorer les purs renommages / déplacements (`-M`).
 
 ## Format de rapport obligatoire
 
@@ -117,26 +155,26 @@ TEST & QUALITY REPORT
 =====================
 Type-check : ✅ clean | ❌ N errors
 Lint       : ✅ clean | ❌ N errors | ⚠️  N warnings
-Vitest     : N pass / N fail / N skip
+Vitest     : N pass / N fail / N skip (dont N skips d'intégration sans .env.test)
+Build      : ✅ ok | ❌ fail — sitemap.xml restauré : oui/non
 Isolation  : ✅ no .only/.skip leaked | ❌ N leaks
+Cliquets   : KNOWN_THEORY_GAPS N (main N) | BASH_SHOWN_ON_WINDOWS_MAX N (main N) | KNOWN_DESYNCS vide : oui/non
 Delta      : +N code lines / +N test lines (ratio N.NN)
 
 CRITICAL (bloquants pour merge) :
-  ❌ type-check: src/foo.ts:42 error TS2345: Argument of type 'X' not assignable
-  ❌ lint: src/bar.ts:12 no-unused-vars
-  ❌ vitest: "should parse CSV" — expected 3, got 2
-  ❌ isolation: src/test/validators.test.ts:88 — .only leaked
+  ❌ type-check: src/foo.ts:42 error TS2345: ...
+  ❌ build: <première erreur>
+  ❌ ratchet grew: KNOWN_THEORY_GAPS + "<clé>"
 
 WARNINGS (à corriger prochain sprint) :
-  ⚠️  lint warning: src/baz.tsx:5 react-hooks/exhaustive-deps
-  ⚠️  Command "ssh" — présent dans curriculum, absent dans terminalEngine.test.ts
+  ⚠️  Command "ssh" — enseignée, aucun test dans src/test/
   ⚠️  Validator 'validateFoo' — exporté mais jamais testé
-  ⚠️  Delta: +180 lines code / +12 lines test (ratio 0.07) — low test-to-code ratio
+  ⚠️  Delta: +180 lines code / +12 lines test (ratio 0.07)
 
 VERDICT : ✅ Merge OK | ❌ Fix required before merge
 ```
 
-Retourne UNIQUEMENT ce rapport. Pas les logs complets de vitest / tsc / eslint.
+Retourne UNIQUEMENT ce rapport. Pas les logs complets de vitest / tsc / eslint / vite.
 
 ---
 
@@ -147,8 +185,10 @@ Retourne UNIQUEMENT ce rapport. Pas les logs complets de vitest / tsc / eslint.
 Avant de clore ton rapport, ajoute une courte section **« Angle mort de mon propre scope »** qui critique TA PROPRE définition (pas le code audité) :
 
 1. **Triggers manquants** — un type de PR / fichier / changement qui aurait dû m'invoquer mais que ma `description` (frontmatter) ne capture pas encore.
-2. **Frontières floues** — ce que je n'ai **PAS** couvert et qui relève d'un autre agent (le nommer explicitement), pour qu'aucune zone ne tombe entre deux chaises.
-3. **Classes de défaut hors couverture** — vecteurs ou cas réels que ma méthode actuelle ne teste pas.
-4. **Recommandation concrète** — les updates exacts à appliquer à CE fichier (`description`, triggers, étapes), que le main agent committe à part (`docs(agents)`).
+2. **Frontières floues** — ce que je n'ai **PAS** couvert et qui relève d'un autre agent (le nommer explicitement). Exemple : je vérifie que le moteur est cohérent avec les leçons, jamais qu'il est fidèle à un vrai shell → `terminal-fidelity-auditor`.
+3. **Classes de défaut hors couverture** — cas réels que ma méthode actuelle ne teste pas.
+4. **Recommandation concrète** — les updates exacts à appliquer à CE fichier, que le main agent committe à part (`docs(agents)`).
 
-Si rien à signaler : le dire explicitement (« scope couvrant, 0 angle mort détecté ce run ») — ne **jamais inventer** un faux manque pour remplir la section (cf. règle d'intégrité anti-hallucination). Rappel : un agent dormant ne peut pas s'auto-améliorer — la pré-condition est d'être invoqué dans les 48h (cf. `feedback_agent_dormant_full_audit.md`).
+Si rien à signaler : le dire explicitement (« scope couvrant, 0 angle mort détecté ce run ») — ne **jamais inventer** un faux manque. Rappel : un agent dormant ne peut pas s'auto-améliorer — la pré-condition est d'être invoqué dans les 48h (cf. `feedback_agent_dormant_full_audit.md`).
+
+Dernière révision : 24 septembre 2026 (rafraîchissement THI-353 / doctrine 01/08).

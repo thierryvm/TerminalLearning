@@ -31,7 +31,8 @@ L'audit progresse en 5 couches séquentielles. Couche 1 = inventory existant (Co
 
 **Lire systématiquement** :
 
-- `src/app/components/PrivacyPolicy.tsx` (politique de confidentialité publique, route `/privacy`)
+- `src/app/components/PrivacyPolicy.tsx` (route `/privacy`, réécrite par la PR #379 le 19/08/2026 : claim faux retiré, Supabase déclaré, notes mineurs + AI Act). Chaque phrase sur une durée, un effacement ou un stockage doit renvoyer à la ligne de code qui le réalise.
+- **Age-gate THI-340** (RGPD Art. 8, seuil belge 13 ans) : `src/app/components/auth/AgeGateStep.tsx`, `src/lib/auth/ageGate.ts`, `src/lib/auth/stampAgeConfirmation.ts`, `supabase/migrations/035_age_confirmation.sql` (un seul horodatage stocké, la date de naissance ne quitte pas le navigateur), tests `src/test/ageGate.test.ts`, `src/test/ageGateFlow.test.tsx`, `src/test/stampAgeConfirmation.test.ts`. Mergé SANS les gates sécurité (dette connue) : vérifier que `/privacy` décrit exactement ce que le code applique.
 - `index.html` (JSON-LD structured data, meta légales)
 - `vercel.json` (CSP, headers sécurité, frame-ancestors)
 - `supabase/migrations/*` (audit RLS pour data minimization + tables PII)
@@ -39,7 +40,7 @@ L'audit progresse en 5 couches séquentielles. Couche 1 = inventory existant (Co
 - `src/lib/sentry.ts` + `api/sentry-tunnel.ts` (scrubbing PII Sentry)
 - `CHANGELOG.md` + `STORY.md` (déclarations publiques engagement RGPD / open source)
 - `docs/adr/ADR-*.md` (décisions architecturales explicites)
-- Liste publique des providers tiers : `src/lib/ai/providers/*.ts` (Anthropic US, OpenAI US, OpenRouter US, Google Gemini US — transferts hors UE)
+- Liste des providers IA : `src/lib/ai/providers/*.ts` (anthropic, openai, openrouter, gemini, meta — transferts hors UE, en BYOK : la clé et le choix sont ceux de l'utilisateur)
 - Existence de fichiers `/mentions-legales`, `/legal`, `/terms`, `/cookies`, `/dpa` (souvent absents — signaler)
 - `docs/security-audit-log.md` (historique audits sécurité — peut révéler des claims publics à respecter)
 - `README.md` racine (claims publics open source / gratuit à vie / 0 collecte de données)
@@ -48,12 +49,17 @@ L'audit progresse en 5 couches séquentielles. Couche 1 = inventory existant (Co
 
 - `gh pr list --state open` et `gh pr list --state merged --limit 20` (changements récents PII, AI Tutor, RBAC)
 - `git log --oneline -p docs/adr/` (chronologie décisions juridiques)
+- **Publiable** (outil de @thierry, dépôt local `F:\PROJECTS\Apps\mentions`, en ligne sur <https://publiable.dev/>) : générateur de politiques de confidentialité FR dont chaque phrase cite la page ou le DPA du fournisseur avec sa date de lecture (catalogue actuel : Supabase, Vercel). À utiliser comme **source de recoupement** pour la section « services tiers » de `/privacy` (entité contractante, sous-traitants, SCC). Lire les fiches du dépôt ; vérifier la date de lecture (fenêtre ~6 mois). Ce n'est pas un avis juridique non plus.
 
-**Inventaire des PII traitées** : lister tables Supabase (profiles, progress, classes, class_enrollments, admin_audit_log, lti_launches), champs sensibles (email, OAuth metadata, IP via Vercel logs, identifiants apprenants institutionnels LTI), durées de rétention déclarées vs réelles.
+**Linear (anti-doublon Couche 4)** : MCP `linear-server` s'il est authentifié ; sinon API GraphQL `https://api.linear.app/graphql`, clé lue par script dans `~/.claude/settings.json` → `mcpServers.linear.env.LINEAR_API_KEY`, gardée en variable, **jamais affichée**, envoyée en en-tête `Authorization`. Équipe `28d449aa-41cf-46b2-9ea2-6ab0813e85cc`, projet `28af076f-f960-46ad-890b-55baede09b6f`. Lecture seule. Aucun canal → le dire, ne pas deviner les tickets existants.
 
-**Public cible déclaré** : audience ADR-005 mentionne enseignants + apprenants + institutions. Vérifier si mineurs sont explicitement scope (collégiens, lycéens) — déclencheur RGPD Art. 8 (consentement parental si <16 ans en BE/FR, <13 ans dans certains États membres) + traitement renforcé.
+**Supabase (si une vérification en base est nécessaire)** : jamais le connecteur claude.ai (`mcp__claude_ai_Supabase__*`, interdit dans ce projet). Seul canal : Management API `POST https://api.supabase.com/v1/projects/jdnukbpkjyyyjpuwgxhv/database/query` avec le jeton DevContext `SUPABASE_ACCESS_TOKEN` en en-tête `Authorization: Bearer`, lecture seule. 401 → arrêter et rapporter « jeton DevContext invalide ».
 
-**Output Couche 1** : tableau « Existant » 1 ligne par item juridique, statut ✅ documenté / ⚠️ partiel / ❌ absent. **Avant toute recommandation Couche 4, vérifier ici si elle correspond déjà à un ticket Linear backlog** (via Bash `gh api` ou via la liste Linear MCP si dispo). Éviter doublons de tickets.
+**Inventaire des PII traitées** : lister les tables Supabase à partir de `supabase/migrations/*` (profiles dont `age_confirmed_at`, progress, classes, class_enrollments, admin_audit_log, support_tickets + bucket de captures d'écran, tables LTI), champs sensibles (email, OAuth metadata, IP via Vercel logs, identifiants apprenants institutionnels LTI), durées de rétention déclarées vs réelles.
+
+**Public cible déclaré** : enseignants + apprenants + institutions, mineurs inclus. RGPD Art. 8 : la Belgique a fixé l'âge du consentement numérique à 13 ans. Décision produit (19/08/2026) : sous 13 ans, aucun compte (le cursus reste utilisable anonymement). Vérifier que le code, la migration 035 et `/privacy` disent la même chose, et que les deux boutons OAuth sont gatés (`signInWithOAuth` crée le compte).
+
+**Output Couche 1** : tableau « Existant » 1 ligne par item juridique, statut ✅ documenté / ⚠️ partiel / ❌ absent. **Avant toute recommandation Couche 4, vérifier ici si elle correspond déjà à un ticket Linear backlog** (canal Linear ci-dessus). Éviter doublons de tickets.
 
 ---
 
@@ -216,7 +222,7 @@ Hypothèses non vérifiées: [...]
 
 ## Coût d'invocation estimé
 
-Opus 4.7 + 8-12 WebSearch + read 10-15 fichiers + rapport 500 lignes ≈ **60-100k tokens output, 100-150k tokens input** = ~$3-5 par run. Quarterly = ~$15-20/an. Investissement raisonnable vs coût d'une amende RGPD ou d'un audit avocat humain externe (~€2000-5000).
+Opus + 8-12 WebSearch + read 10-15 fichiers + rapport 500 lignes ≈ **60-100k tokens output, 100-150k tokens input** = ~$3-5 par run. Quarterly = ~$15-20/an. Investissement raisonnable vs coût d'une amende RGPD ou d'un audit avocat humain externe (~€2000-5000).
 
 ---
 
@@ -242,12 +248,4 @@ Opus 4.7 + 8-12 WebSearch + read 10-15 fichiers + rapport 500 lignes ≈ **60-10
 
 ---
 
-## Cross-projet (futur)
-
-Cet agent est portable. Vault Athenaeum PARAZETTEL convention §12 (dossier projet kebab-case canonique) : adaptable Ankora, GetPostCraft, futurs projets pro publiés en UE intégrant le futur dashboard Super Admin.
-
-Conditions portabilité :
-
-- Pas de référence Terminal Learning hardcodée hors lecture ADRs / CLAUDE.md du projet courant
-- Fallback gracieux si certains documents juridiques absents
-- Output structuré identique pour faciliter agrégation cross-projet
+Dernière révision : 24 septembre 2026 (rafraîchissement THI-353 / doctrine 01/08).

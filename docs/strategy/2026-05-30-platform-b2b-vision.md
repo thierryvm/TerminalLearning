@@ -157,7 +157,7 @@ thierry_validation_date: 2026-05-30
 
 - **Besoin** : découvrir terminal pas-à-pas, retention progression
 - **Touchpoint** : Landing `/` → `/app` → Modules → AI Tutor
-- **Friction actuelle** : 0 majeure (UX OK, NPS implicite favorable cf. Jimmy Pez)
+- **Friction actuelle** : 0 majeure (UX OK, NPS implicite favorable cf. premier utilisateur organique, « utilisateur A »)
 
 ### P2 — Étudiant en formation (`student` enrollé école)
 

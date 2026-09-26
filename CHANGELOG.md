@@ -5,6 +5,21 @@
 
 ---
 
+## 🧭 26 septembre 2026 — Les agents de vérification remis à jour, et un nouvel agent qui compare le simulateur à un vrai shell
+
+*21 agents (13 Opus, 8 Sonnet) · nouvel agent `terminal-fidelity-auditor` · nouvelle commande `npm run theory:gaps`*
+
+Terminal Learning s'appuie sur une vingtaine d'agents spécialisés qui relisent chaque changement : sécurité, rôles et droits d'accès, conformité juridique, contenu des leçons, affichage mobile. Certains dataient du printemps et ne savaient rien des changements de l'été.
+
+- **Chaque agent relu et mis à jour.** Les descriptions reflètent le code actuel : les tests qui rejouent les leçons, le filtre d'âge à l'inscription, le formulaire d'assistance. Les agents de contenu connaissent les listes d'écarts qui ne peuvent que rétrécir.
+- **La sécurité passe entièrement sur le modèle le plus exigeant.** Cinq agents qui auditent des données réelles ou des accès (attaques sur les routes, pare-feu Vercel, rôles, classes, enquête utilisateur) tournaient sur un modèle intermédiaire. Ils passent sur Opus, comme le reste de la sécurité : un audit qui rate une faille coûte plus cher que le modèle. Un test vérifie désormais que chaque agent déclare son modèle et figure dans l'index.
+- **Deux risques de fuite de secrets retirés.** Un agent affichait les en-têtes de réponse d'une URL protégée, qui contiennent un jeton d'accès. Un autre lisait le dossier des secrets locaux. Les deux utilisent maintenant des méthodes qui n'affichent jamais la valeur.
+- **Un utilisateur réel anonymisé.** Un agent et trois documents publics citaient l'identifiant d'un vrai utilisateur. Il est remplacé par « utilisateur A ».
+- **Un nouvel agent : `terminal-fidelity-auditor`.** Les tests existants comparent les leçons au simulateur, jamais le simulateur à la réalité. Cet agent exécute les mêmes commandes dans le simulateur et dans un vrai bash ou un vrai PowerShell 7, dans un dossier jetable qui reproduit celui des leçons, puis classe chaque écart. Dès son premier passage, il a trouvé deux différences sous Windows : `Get-Location` n'affiche pas son en-tête `Path`, et `Get-Content` sur un fichier absent renvoie un message de style Unix. Elles seront corrigées dans une prochaine livraison.
+- **La liste des écarts se régénère sans risque.** `npm run theory:gaps` recalcule la liste des écarts entre théorie et terminal après une correction. La commande refuse d'y ajouter un écart ou de relever le compteur Windows : la liste ne peut toujours que rétrécir.
+
+---
+
 ## 📁 24 septembre 2026 — Déplacer un fichier ne détruit plus rien, et Windows comprend ses propres chemins (THI-353)
 
 *PR #392 · écarts théorie ↔ terminal : 174 → 162 · leçons montrant du bash sur Windows : 39 → 37*
