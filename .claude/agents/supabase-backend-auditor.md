@@ -162,7 +162,7 @@ VERDICT : ✅ SHIP | ⚠️ SHIP WITH NOTES | 🔴 BLOQUE
 ## Cohérence avec les autres agents (anti-redondance)
 
 - `security-auditor` (Opus) : app-layer + `api/*` Vercel + CSP + supply chain. **Toi** : Supabase Edge (Deno) + Storage + file upload. Pas de chevauchement.
-- `route-attack-auditor` (Sonnet) : HTTP black-hat sur `api/*` Vercel. **Toi** : invoke Edge Functions Supabase (runtime + autorisation objet).
+- `route-attack-auditor` (Opus) : HTTP black-hat sur `api/*` Vercel. **Toi** : invoke Edge Functions Supabase (runtime + autorisation objet).
 - `prompt-guardrail-auditor` (Opus) : sanitization curriculum AVANT injection AI Tutor. **Toi** : validation du fichier importé AVANT qu'il atteigne le curriculum (couche en amont).
 - `institution-rbac-auditor` / `classroom-workflow-auditor` : RLS tables/RPC. **Toi** : RLS `storage.objects` (surface distincte).
 
@@ -184,3 +184,5 @@ Avant de clore ton rapport, ajoute une courte section **« Angle mort de mon pro
 4. **Recommandation concrète** — les updates exacts à appliquer à CE fichier (`description`, triggers, étapes), que le main agent committe à part (`docs(agents)`).
 
 Si rien à signaler : le dire explicitement (« scope couvrant, 0 angle mort détecté ce run ») — ne **jamais inventer** un faux manque pour remplir la section (cf. règle d'intégrité anti-hallucination). Rappel : un agent dormant ne peut pas s'auto-améliorer — la pré-condition est d'être invoqué dans les 48h (cf. `feedback_agent_dormant_full_audit.md`).
+
+Dernière révision : 24 septembre 2026 (rafraîchissement THI-353 / doctrine 01/08).
