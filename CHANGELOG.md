@@ -5,6 +5,24 @@
 
 ---
 
+## 📖 26 septembre 2026 — Une page Référence qui explique, et dont chaque exemple fonctionne
+
+*Page `/app/reference` · 76 commandes · nouveau test permanent `commandReference` · exemples en erreur dans le terminal : 224 → 32*
+
+Thierry a demandé que la page Référence, qui contient aussi de la théorie, soit vérifiée comme les leçons et rendue plus pédagogique. Rejoués dans le terminal du site, **224 de ses 464 exemples affichaient une erreur**.
+
+- **Chaque exemple est expliqué.** « cd .. » n'était suivi d'aucun mot. Chaque exemple dit maintenant ce qu'il fait, et pourquoi on l'utiliserait : `-p` crée les dossiers intermédiaires, `grep` distingue les majuscules, l'ordre compte dans `> fichier 2>&1`.
+- **Les exemples utilisent les fichiers du terminal d'entraînement.** `cat notes.txt` ou `cp a.txt b.txt` visaient des fichiers qui n'existent pas. Les exemples s'appuient sur `documents/notes.txt`, `projets/script.sh` et les autres fichiers présents : on peut les essayer tels quels dans une leçon.
+- **Un élève Windows voit du PowerShell.** Les exemples bash (`2>/dev/null`, `ls -la`) ne s'affichent plus sous Windows : ils sont remplacés par leur forme PowerShell (`2>$null`, `Get-ChildItem -Force`).
+- **Les commandes non simulées le disent.** `tree`, `find`, `less`, `alias`, `tar` ou `zip` affichent : « pas encore simulée dans le terminal des leçons, essaie-la dans le terminal de ton ordinateur ».
+- **Des erreurs de fond corrigées.** `umask` était annoncée sous Windows, où elle n'existe pas. Un exemple `git cherry-pick` citait un identifiant de commit impossible. Une ligne de fichier crontab et des motifs `.gitignore` étaient présentés comme des commandes à taper. Enfin, l'avertissement sur `curl` ne vaut que pour Windows PowerShell 5.1.
+- **Les filtres ne prennent plus tout l'écran.** Signalé par Thierry : sur un téléphone ou dans une fenêtre étroite, les 14 filtres occupaient sept lignes. Ils tiennent maintenant sur une ligne qu'on fait défiler, et passent à la ligne dès que la place le permet.
+- **Une carte ouverte reste ouverte.** Sélectionner un exemple pour le copier, ou cliquer sur un lien de documentation, refermait la carte. Seule la ligne de titre ouvre et ferme désormais la carte, et c'est un vrai bouton pour les lecteurs d'écran.
+
+Ce qui reste, et c'est dit : **32 exemples** échouent encore, parce que le simulateur ne connaît pas certaines commandes ou options : `cat -n`, `grep -r` sur un dossier, `Get-Date`, `Get-Help`, `tasklist`, `Set-Content`. Il y a aussi un vrai bogue : `git commit -am "message"` perd son message. Le test les liste, et la liste ne peut que rétrécir. Leur correction est la prochaine livraison.
+
+---
+
 ## 🗺️ 26 septembre 2026 — La roadmap publique dit ce qui existe vraiment
 
 *Page d'accueil · `llms.txt` · `docs/ROADMAP.md`*

@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Une référence qu'on peut recopier (26 septembre 2026)
+
+La page Référence ressemblait à un aide-mémoire sérieux : syntaxe, exemples, erreurs courantes, liens officiels. Je l'ai traitée comme les leçons, en rejouant chaque exemple dans notre terminal. Près de la moitié échouait. Personne n'avait menti : `cat notes.txt` est un bon exemple dans l'absolu. Mais l'élève qui le recopie dans une leçon n'a pas de `notes.txt` à cet endroit, et il reçoit une erreur rouge sur la page même censée l'aider.
+
+Une référence pour débutants n'est pas une référence pour experts. L'expert lit `cp -r dossier backup/` et comprend. Le débutant a besoin qu'on lui dise ce que fait `-r`, sur des fichiers qu'il a sous la main, dans le shell qu'il utilise vraiment. Chaque exemple est donc devenu une phrase, et chaque phrase est rejouée par un test.
+
+Thierry a ajouté son propre regard pendant que je travaillais : « ce filtre prend énormément de place ». Il avait raison. Quatorze étiquettes empilées sur sept lignes repoussaient la première commande hors de l'écran. Elles tiennent maintenant sur une ligne qu'on fait défiler.
+
+---
+
 ## Qui vérifie les vérificateurs ? (26 septembre 2026)
 
 Thierry a posé une question qu'on ne se posait plus depuis des mois : « les agents qu'on a créés, ils sont encore bons ? » Une vingtaine d'agents relisent chaque changement du projet. Personne ne les relisait, eux.

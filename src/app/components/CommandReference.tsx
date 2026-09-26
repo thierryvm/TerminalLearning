@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Search, Terminal, ChevronDown, ChevronRight, ExternalLink, BookOpen } from 'lucide-react';
+import { Search, Terminal, ChevronDown, ChevronRight, ExternalLink, BookOpen, Info } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentContext';
 import { commandCatalogue } from '../data/commandCatalogue';
 import { TOTAL_COMMANDS } from '../data/landingContent';
-import type { EnrichedCommand, EnvironmentId } from '../types/curriculum';
+import type { CommandExample, EnrichedCommand, EnvironmentId } from '../types/curriculum';
 import { usePageSEO } from '../hooks/useLessonSEO';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -69,35 +69,9 @@ function commandForEnv(cmd: EnrichedCommand, env: SelectedEnv): { command: strin
   return { command: cmd.name.split(' / ')[0] };
 }
 
-function highlightExampleLine(line: string, i: number) {
-  if (line.startsWith('$')) {
-    return (
-      <div key={i}>
-        <span className="text-emerald-400">$</span>
-        <span className="text-[var(--github-text-primary)]">{line.slice(1)}</span>
-      </div>
-    );
-  }
-  if (line.startsWith('PS>')) {
-    return (
-      <div key={i}>
-        <span className="text-cyan-400">PS&gt;</span>
-        <span className="text-[var(--github-text-primary)]">{line.slice(3)}</span>
-      </div>
-    );
-  }
-  if (line.startsWith('#')) {
-    return (
-      <div key={i} className="text-[var(--github-text-secondary)]">
-        {line}
-      </div>
-    );
-  }
-  return (
-    <div key={i} className="text-[#a5d6ff]">
-      {line}
-    </div>
-  );
+/** Examples written for the learner's OS: PowerShell forms on Windows, bash / zsh ones elsewhere. */
+function examplesForEnv(cmd: EnrichedCommand, env: SelectedEnv): CommandExample[] {
+  return cmd.examples.filter((ex) => !ex.environments || ex.environments.includes(env));
 }
 
 export function CommandReference() {
@@ -145,7 +119,7 @@ export function CommandReference() {
 
   return (
     // md:pr-32 reserves the FAB clear zone (cf. Dashboard).
-    <div className="min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
+    <div className="@container min-h-full bg-[var(--github-bg)] text-[var(--github-text-primary)] p-6 lg:p-8 md:pr-32">
       {/* AI tutor panel — surfaced on the command reference too because it's
           a natural place to ask "how does X compare to Y?" follow-up questions. */}
       <AiTutorPanel lang="fr" role={role} />
@@ -179,14 +153,19 @@ export function CommandReference() {
         </div>
       </div>
 
-      {/* Category filters */}
-      <div className="flex gap-2 flex-wrap mb-6">
+      {/* Category filters — one scrollable row while the content area is narrow
+          (14 wrapped pills used to fill the first screen: a phone, or a desktop
+          window squeezed by the sidebar), wrapped rows once it is 48rem wide. A
+          container query, not a viewport breakpoint: the sidebar eats the width.
+          The thin scrollbar tells mouse users the row scrolls. */}
+      <div className="flex gap-2 mb-6 pb-1 overflow-x-auto snap-x scroll-px-6 [scrollbar-width:thin] -mx-6 px-6 @3xl:flex-wrap @3xl:overflow-visible @3xl:mx-0 @3xl:px-0 @3xl:pb-0">
         {categories.map((cat) => (
           <Button
             key={cat}
             type="button"
             variant={activeCategory === cat ? 'tl-filter-pill-active' : 'tl-filter-pill'}
             size="tl-filter-pill-size"
+            className="shrink-0 snap-start whitespace-nowrap"
             onClick={() => setActiveCategory(cat)}
             aria-pressed={activeCategory === cat}
           >
@@ -212,34 +191,39 @@ export function CommandReference() {
               const key = `${category}-${cmd.id}`;
               const isOpen = expanded === key;
               const envCmd = commandForEnv(cmd, selectedEnv);
+              const examples = examplesForEnv(cmd, selectedEnv);
+              const notSimulated = cmd.notSimulatedOn?.includes(selectedEnv) ?? false;
+              const prompt = selectedEnv === 'windows' ? 'PS>' : '$';
+              const panelId = `reference-${cmd.id}`;
 
               return (
                 <div
                   key={key}
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isOpen}
-                  className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 focus-visible:border-[#58a6ff] focus-visible:outline-none transition-colors cursor-pointer"
-                  onClick={() => setExpanded(isOpen ? null : key)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setExpanded(isOpen ? null : key);
-                    }
-                  }}
+                  className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl overflow-hidden hover:border-[#58a6ff]/30 has-[:focus-visible]:border-[#58a6ff] transition-colors"
                 >
-                  <div className="flex items-center gap-3 px-4 py-3">
+                  {/* Only the header toggles: selecting an example or following a
+                      documentation link inside the details must not close the card. */}
+                  <Button
+                    type="button"
+                    variant="tl-sidebar-row"
+                    size="tl-list-row"
+                    aria-expanded={isOpen}
+                    aria-controls={`${panelId}-details`}
+                    className="gap-3 font-normal"
+                    onClick={() => setExpanded(isOpen ? null : key)}
+                  >
+                    {/* Phrasing content only inside a <button>: spans, not divs or ps. */}
                     <code className="text-emerald-400 font-mono text-sm shrink-0 w-28 truncate">{envCmd.command}</code>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[var(--github-text-primary)] text-sm truncate">{cmd.summary}</p>
+                    <span className="block flex-1 min-w-0">
+                      <span className="block text-[var(--github-text-primary)] text-sm truncate">{cmd.summary}</span>
                       {!isOpen && (
-                        <p className="text-[var(--github-text-secondary)] text-xs font-mono truncate mt-0.5">
+                        <span className="block text-[var(--github-text-secondary)] text-xs font-mono truncate mt-0.5">
                           {cmd.syntax}
-                        </p>
+                        </span>
                       )}
-                    </div>
+                    </span>
                     {/* OS compatibility badges — at a glance, which OS supports this */}
-                    <div className="hidden sm:flex items-center gap-1 shrink-0">
+                    <span className="hidden sm:flex items-center gap-1 shrink-0">
                       {OS_ORDER.map((os) => {
                         const supported = cmd.compatibility.includes(os);
                         return (
@@ -252,16 +236,16 @@ export function CommandReference() {
                           </span>
                         );
                       })}
-                    </div>
+                    </span>
                     {isOpen ? (
-                      <ChevronDown size={16} className="text-[var(--github-text-secondary)] shrink-0" />
+                      <ChevronDown size={16} className="text-[var(--github-text-secondary)] shrink-0" aria-hidden="true" />
                     ) : (
-                      <ChevronRight size={16} className="text-[var(--github-text-secondary)] shrink-0" />
+                      <ChevronRight size={16} className="text-[var(--github-text-secondary)] shrink-0" aria-hidden="true" />
                     )}
-                  </div>
+                  </Button>
 
                   {isOpen && (
-                    <div className="border-t border-[var(--github-border-primary)] px-4 py-3 space-y-3">
+                    <div id={`${panelId}-details`} className="border-t border-[var(--github-border-primary)] px-4 py-3 space-y-3">
                       {/* The command as it's written on the user's current OS */}
                       <div>
                         <p className="text-xs text-[var(--github-text-secondary)] mb-1">
@@ -318,17 +302,34 @@ export function CommandReference() {
                         <code className="text-blue-300 font-mono text-sm">{cmd.syntax}</code>
                       </div>
 
-                      <div>
-                        <p className="text-xs text-[var(--github-text-secondary)] mb-1">Description</p>
-                        <p className="text-[var(--github-text-primary)] text-sm">{cmd.summary}</p>
-                      </div>
+                      {notSimulated && (
+                        <p className="flex items-start gap-2 text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                          <Info size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+                          <span>
+                            Cette commande n&apos;est pas encore simulée dans le terminal des leçons : essaie-la dans le
+                            terminal de ton ordinateur.
+                          </span>
+                        </p>
+                      )}
 
-                      {cmd.examples.length > 0 && (
+                      {examples.length > 0 && (
                         <div>
                           <p className="text-xs text-[var(--github-text-secondary)] mb-1">Exemples</p>
-                          <pre className="bg-[var(--github-bg)] rounded-lg p-3 overflow-x-auto text-sm max-w-full font-mono">
-                            {cmd.examples.map((ex, i) => highlightExampleLine(ex, i))}
-                          </pre>
+                          <ul className="space-y-2">
+                            {examples.map((ex, i) => (
+                              <li key={`${i}-${ex.command}`}className="bg-[var(--github-bg)] rounded-lg px-3 py-2">
+                                {/* Wrap rather than scroll: on a phone the end of a long command
+                                    (often the option the explanation is about) must stay visible. */}
+                                <pre className="whitespace-pre-wrap break-words text-sm font-mono">
+                                  <span className={selectedEnv === 'windows' ? 'text-cyan-400' : 'text-emerald-400'} aria-hidden="true">
+                                    {prompt}{' '}
+                                  </span>
+                                  <code className="text-[var(--github-text-primary)]">{ex.command}</code>
+                                </pre>
+                                <p className="text-[var(--github-text-secondary)] text-sm mt-1">{ex.explanation}</p>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
 

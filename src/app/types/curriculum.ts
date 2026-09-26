@@ -54,6 +54,17 @@ export interface OfficialDoc {
   url: string;
 }
 
+// --- Explained example (reference page) ---
+
+export interface CommandExample {
+  /** Exactly what the learner types. */
+  command: string;
+  /** What it does, written for a beginner. */
+  explanation: string;
+  /** Shown only on these environments; omitted = every environment the command supports. */
+  environments?: EnvironmentId[];
+}
+
 // --- Enriched command (for reference + lessons) ---
 
 export interface EnrichedCommand {
@@ -66,8 +77,10 @@ export interface EnrichedCommand {
   compatibility: EnvironmentId[];
   syntax: string;
   summary: string;
-  examples: string[];
+  examples: CommandExample[];
   commonErrors: string[];
+  /** Environments where the practice terminal does not simulate this command yet. */
+  notSimulatedOn?: EnvironmentId[];
   /** Authoritative documentation links shown on /app/reference. Optional. */
   officialDocs?: OfficialDoc[];
 }

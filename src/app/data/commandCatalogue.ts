@@ -1,4 +1,9 @@
 import type { CategoryMeta, EnrichedCommand, EnvironmentId, OfficialDoc } from '../types/curriculum';
+import { COMMAND_EXAMPLES, NOT_SIMULATED } from './commandExamples';
+
+/** A command as written below; examples, simulation status and docs are merged in afterwards. */
+type BaseCommand = Omit<EnrichedCommand, 'examples' | 'notSimulatedOn' | 'officialDocs'>;
+type BaseCategory = Omit<CategoryMeta, 'commands'> & { commands: BaseCommand[] };
 
 /**
  * Structured command catalogue for Terminal Learning.
@@ -9,7 +14,7 @@ import type { CategoryMeta, EnrichedCommand, EnvironmentId, OfficialDoc } from '
  *
  * Categories map 1:1 to curriculum modules via their `id`.
  */
-const baseCatalogue: CategoryMeta[] = [
+const baseCatalogue: BaseCategory[] = [
   // ─── LEVEL 1 — FUNDAMENTALS ───────────────────────────────
 
   {
@@ -38,7 +43,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'pwd',
         summary: 'Afficher le dossier courant',
-        examples: ['pwd'],
         commonErrors: [],
       },
       {
@@ -54,7 +58,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'ls [options] [chemin]',
         summary: "Lister le contenu d'un dossier",
-        examples: ['ls', 'ls -la'],
         commonErrors: ["Confondre ls et dir selon l'environnement"],
       },
       {
@@ -67,7 +70,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'cd chemin',
         summary: 'Changer de dossier',
-        examples: ['cd Documents', 'cd ..', 'cd ~'],
         commonErrors: ['Chemin relatif/absolu incorrect'],
       },
       {
@@ -84,7 +86,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'clear | cls',
         summary: 'Nettoyer le terminal',
-        examples: ['clear', 'cls'],
         commonErrors: [],
       },
       {
@@ -99,7 +100,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'tree [chemin]',
         summary: "Afficher l'arborescence des répertoires",
-        examples: ['tree', 'tree /F  (Windows : afficher aussi les fichiers)'],
         commonErrors: [
           'tree non préinstallé sur certaines distributions Linux (apt install tree) ni sur macOS (brew install tree)',
         ],
@@ -130,7 +130,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'mkdir dossier',
         summary: 'Créer un dossier',
-        examples: ['mkdir projet', 'mkdir -p projets/web/css'],
         commonErrors: [],
       },
       {
@@ -145,7 +144,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'touch fichier.txt',
         summary: 'Créer un fichier vide',
-        examples: ['touch notes.txt'],
         commonErrors: [],
       },
       {
@@ -163,7 +161,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'cp source destination',
         summary: 'Copier un fichier ou dossier',
-        examples: ['cp a.txt b.txt', 'cp -r dossier backup/'],
         commonErrors: ['Oublier -r pour un dossier sous Unix'],
       },
       {
@@ -182,7 +179,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'mv source destination',
         summary: 'Déplacer ou renommer',
-        examples: ['mv notes.txt archive/notes.txt'],
         commonErrors: [],
       },
       {
@@ -200,7 +196,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'rm fichier.txt',
         summary: 'Supprimer un fichier',
-        examples: ['rm notes.txt', 'rm -r dossier/'],
         commonErrors: [
           'Confondre suppression fichier et dossier',
           'Utiliser rm -rf sans comprendre',
@@ -236,7 +231,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'cat fichier.txt',
         summary: "Afficher le contenu d'un fichier",
-        examples: ['cat notes.txt'],
         commonErrors: [],
       },
       {
@@ -253,7 +247,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'less fichier.txt',
         summary: 'Lire un fichier page par page',
-        examples: ['less log.txt'],
         commonErrors: [],
       },
       {
@@ -269,7 +262,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'head -n 10 fichier.txt | tail -n 10 fichier.txt',
         summary: "Voir le début ou la fin d'un fichier",
-        examples: ['head -n 5 notes.txt', 'tail -f app.log'],
         commonErrors: [],
       },
     ],
@@ -302,7 +294,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'grep motif fichier.txt',
         summary: 'Chercher un motif dans un fichier',
-        examples: ['grep error app.log', 'grep -rn "TODO" src/'],
         commonErrors: ['Motif non cité', 'Mauvais chemin'],
       },
       {
@@ -314,12 +305,12 @@ const baseCatalogue: CategoryMeta[] = [
         variants: [
           { environment: 'linux', command: "find . -name '*.txt'" },
           { environment: 'macos', command: "find . -name '*.txt'" },
+          { environment: 'windows', command: 'Get-ChildItem -Recurse -Filter *.txt', shell: 'PowerShell' },
           { environment: 'windows', command: 'where nomcommande', shell: 'CMD' },
         ],
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'find . -name motif',
         summary: 'Trouver des fichiers ou commandes',
-        examples: ['find . -name notes.txt'],
         commonErrors: [],
       },
       {
@@ -338,7 +329,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'wc fichier.txt',
         summary: 'Compter lignes, mots et caractères',
-        examples: ['wc notes.txt', 'wc -l *.ts'],
         commonErrors: [],
       },
     ],
@@ -371,7 +361,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'echo [texte]',
         summary: "Afficher du texte dans le terminal (supporte l'interpolation $VAR)",
-        examples: ['echo "Bonjour"', 'echo $HOME', 'echo "User: $USER"'],
         commonErrors: [
           'Windows : echo fonctionne aussi, mais $HOME devient $env:USERPROFILE',
           'Write-Output écrit dans le pipeline ; Write-Host écrit directement à la console (sans pipeline)',
@@ -389,7 +378,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'date [+format]',
         summary: "Afficher la date et l'heure courantes",
-        examples: ['date', 'date +"%Y-%m-%d %H:%M"'],
         commonErrors: [
           'Windows : Get-Date -Format "yyyy-MM-dd HH:mm" pour le formatage',
         ],
@@ -407,7 +395,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos'],
         syntax: 'uname [-a]',
         summary: 'Afficher des informations sur le système (noyau, architecture)',
-        examples: ['uname', 'uname -a'],
         commonErrors: [
           'Windows : pas de uname natif — utiliser $PSVersionTable.OS ou (Get-ComputerInfo)',
         ],
@@ -424,7 +411,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['windows'],
         syntax: 'Get-ComputerInfo',
         summary: 'Afficher des informations détaillées sur le système Windows',
-        examples: ['Get-ComputerInfo', '(Get-ComputerInfo).WindowsProductName', '$PSVersionTable.PSVersion'],
         commonErrors: [],
       },
       {
@@ -439,7 +425,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'history [n]',
         summary: "Afficher l'historique des commandes",
-        examples: ['history', 'history | grep git'],
         commonErrors: [],
       },
       {
@@ -454,7 +439,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'man commande',
         summary: "Afficher le manuel détaillé d'une commande",
-        examples: ['man ls', 'man grep'],
         commonErrors: [
           'Windows : Get-Help <commande> (et Get-Help -Examples pour des exemples)',
         ],
@@ -471,7 +455,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: "alias nom='commande'",
         summary: 'Créer un raccourci pour une commande',
-        examples: ["alias ll='ls -la'", "alias gs='git status'", 'alias'],
         commonErrors: [
           'Temporaire : à mettre dans ~/.bashrc / ~/.zshrc pour la rendre permanente',
         ],
@@ -488,7 +471,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['macos'],
         syntax: 'open fichier|dossier|URL',
         summary: "Ouvrir un fichier, dossier ou URL avec l'application par défaut (macOS)",
-        examples: ['open notes.txt', 'open .', 'open https://example.com'],
         commonErrors: ['Linux : équivalent xdg-open · Windows : start'],
       },
       {
@@ -503,7 +485,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['macos'],
         syntax: 'commande | pbcopy  /  pbpaste',
         summary: 'Copier vers / coller depuis le presse-papiers système (macOS)',
-        examples: ['cat fichier.txt | pbcopy', 'pbpaste > nouveau.txt'],
         commonErrors: ['Linux : xclip ou xsel · Windows : Set-Clipboard / Get-Clipboard'],
       },
       {
@@ -518,7 +499,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['macos'],
         syntax: 'brew install|update|list [paquet]',
         summary: 'Homebrew — gestionnaire de paquets macOS',
-        examples: ['brew install htop', 'brew update', 'brew list'],
         commonErrors: [
           'Linux : brew fonctionne aussi (brew.sh), mais apt / dnf / pacman sont les gestionnaires natifs',
         ],
@@ -535,7 +515,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['windows'],
         syntax: 'winget install|list [paquet]',
         summary: 'Windows Package Manager — gestionnaire de paquets Windows',
-        examples: ['winget install Git.Git', 'winget install Microsoft.VisualStudioCode', 'winget list'],
         commonErrors: [],
       },
     ],
@@ -569,7 +548,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'chmod mode fichier',
         summary: "Modifier les permissions d'un fichier",
-        examples: ['chmod 755 script.sh', 'chmod +x script.sh'],
         commonErrors: ['Confondre octal et symbolique', 'Oublier -R pour un dossier'],
       },
       {
@@ -584,7 +562,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'chown utilisateur:groupe fichier',
         summary: "Changer le propriétaire d'un fichier",
-        examples: ['chown user:staff fichier.txt', 'chown -R www-data:www-data /var/www'],
         commonErrors: ['Oublier sudo', 'Mauvais format utilisateur:groupe'],
       },
       {
@@ -597,7 +574,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'whoami',
         summary: "Afficher l'utilisateur courant",
-        examples: ['whoami'],
         commonErrors: [],
       },
       {
@@ -612,7 +588,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'id [utilisateur]',
         summary: "Afficher l'identité et les groupes",
-        examples: ['id', 'id root'],
         commonErrors: [],
       },
       {
@@ -629,7 +604,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'sudo commande [args]',
         summary: 'Exécuter une commande avec les droits administrateur (root)',
-        examples: ['sudo apt update', 'sudo chmod 600 ~/.ssh/id_rsa', 'sudo -i'],
         commonErrors: [
           'Windows : pas de sudo natif — relancer le terminal en Administrateur (Start-Process -Verb RunAs)',
         ],
@@ -641,10 +615,9 @@ const baseCatalogue: CategoryMeta[] = [
         level: 2,
         recommendedFor: ['linux', 'macos'],
         variants: [],
-        compatibility: ['linux', 'macos', 'windows'],
+        compatibility: ['linux', 'macos'],
         syntax: 'umask [mode]',
         summary: 'Afficher ou définir le masque de permissions par défaut des nouveaux fichiers',
-        examples: ['umask', 'umask 027'],
         commonErrors: [
           "Pas d'équivalent direct sur Windows — les permissions des nouveaux fichiers sont héritées du dossier parent",
         ],
@@ -661,7 +634,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['windows'],
         syntax: 'Get-Acl fichier',
         summary: "Afficher les permissions (ACL) d'un fichier ou répertoire sous Windows",
-        examples: ['Get-Acl notes.txt', 'Get-Acl C:\\path | Format-List'],
         commonErrors: [],
       },
     ],
@@ -695,7 +667,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'ps [options]',
         summary: 'Lister les processus en cours',
-        examples: ['ps', 'ps aux'],
         commonErrors: [],
       },
       {
@@ -713,7 +684,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'kill [signal] PID',
         summary: 'Arrêter un processus',
-        examples: ['kill 1234', 'kill -9 1234'],
         commonErrors: ['Mauvais PID', 'Oublier sudo pour un processus système'],
       },
       {
@@ -728,7 +698,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'top | htop',
         summary: "Monitorer l'activité système en temps réel",
-        examples: ['top', 'htop'],
         commonErrors: [],
       },
       {
@@ -743,7 +712,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'jobs',
         summary: 'Afficher les tâches en arrière-plan du shell courant',
-        examples: ['sleep 100 &', 'jobs'],
         commonErrors: [],
       },
       {
@@ -758,7 +726,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'bg [%n]',
         summary: 'Reprendre une tâche suspendue en arrière-plan (après Ctrl+Z)',
-        examples: ['bg %1', 'jobs'],
         commonErrors: [],
       },
       {
@@ -773,7 +740,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'fg [%n]',
         summary: 'Ramener une tâche en avant-plan',
-        examples: ['fg %1', 'fg'],
         commonErrors: [],
       },
     ],
@@ -804,7 +770,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'commande > fichier | commande >> fichier',
         summary: 'Rediriger la sortie vers un fichier',
-        examples: ['echo "hello" > output.txt', 'ls >> listing.txt'],
         commonErrors: ['Confondre > (écrase) et >> (ajoute)'],
       },
       {
@@ -817,7 +782,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'commande1 | commande2',
         summary: 'Chaîner les commandes entre elles',
-        examples: ['ls | wc -l', 'cat log.txt | grep error', 'ps aux | grep node'],
         commonErrors: ['Confondre | et >'],
       },
       {
@@ -832,7 +796,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'commande | tee fichier',
         summary: 'Écrire dans un fichier ET afficher à l\'écran',
-        examples: ['ls | tee listing.txt'],
         commonErrors: [],
       },
       {
@@ -847,7 +810,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'commande 2> fichier',
         summary: "Rediriger la sortie d'erreur (stderr) vers un fichier",
-        examples: ['ls inexistant 2> erreurs.log', 'ls inexistant 2>/dev/null  # ignorer'],
         commonErrors: ['Windows : $null remplace /dev/null (commande 2>$null)'],
       },
       {
@@ -862,7 +824,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'commande > fichier 2>&1',
         summary: 'Fusionner stderr dans stdout — capturer tout dans un seul fichier',
-        examples: ['npm run build > build.log 2>&1', 'command 2>&1 | grep "Error"'],
         commonErrors: ['PowerShell : *>&1 redirige tous les streams vers stdout'],
       },
     ],
@@ -892,7 +853,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'tar [options] archive.tar.gz fichiers',
         summary: 'Créer ou extraire une archive tar',
-        examples: ['tar -czf backup.tar.gz dossier/', 'tar -xzf backup.tar.gz'],
         commonErrors: ['Confondre -c (créer) et -x (extraire)', 'Oublier -z pour gzip'],
       },
       {
@@ -908,7 +868,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'zip archive.zip fichiers | unzip archive.zip',
         summary: 'Créer ou extraire une archive zip',
-        examples: ['zip -r projet.zip dossier/', 'unzip projet.zip'],
         commonErrors: ['Oublier -r pour un dossier'],
       },
     ],
@@ -943,7 +902,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'export VAR=valeur',
         summary: "Définir une variable d'environnement (paire clé/valeur lue par les programmes)",
-        examples: ['export EDITOR=nano', 'export PATH=$PATH:/opt/myapp/bin', 'echo $PATH'],
         commonErrors: [
           'Temporaire : perdue à la fermeture du terminal — la rendre permanente dans ~/.bashrc / ~/.zshrc',
           'Pas d\'espaces autour du = en bash (VAR=valeur, pas VAR = valeur)',
@@ -963,7 +921,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'env',
         summary: "Lister toutes les variables d'environnement actives",
-        examples: ['env', 'env | grep PATH', 'echo $HOME'],
         commonErrors: [],
       },
       {
@@ -980,7 +937,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'source fichier-config',
         summary: 'Recharger un fichier de configuration shell sans relancer le terminal',
-        examples: ['source ~/.bashrc', '. ~/.zshrc'],
         commonErrors: [
           'Fichier de config selon le shell : ~/.bashrc (bash), ~/.zshrc (zsh), $PROFILE (PowerShell)',
         ],
@@ -999,7 +955,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'chmod +x script.sh && ./script.sh',
         summary: 'Rendre un script bash exécutable et le lancer (shebang #!/bin/bash en 1re ligne)',
-        examples: ['chmod +x deploy.sh', './deploy.sh', 'bash script.sh'],
         commonErrors: [
           'Oublier chmod +x : "Permission denied"',
           'Oublier le ./ : le shell ne cherche pas dans le répertoire courant par sécurité',
@@ -1019,7 +974,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'crontab -l | crontab -e',
         summary: 'Planifier des tâches récurrentes (équivalent Windows : Planificateur de tâches)',
-        examples: ['crontab -l', 'crontab -e', '0 9 * * 1-5 /home/user/backup.sh'],
         commonErrors: [
           'crontab -r supprime TOUTES les tâches (pas de confirmation)',
           'Vérifier la syntaxe sur crontab.guru avant la prod',
@@ -1035,7 +989,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos'],
         syntax: 'printenv [NOM]',
         summary: "Afficher la valeur d'une ou de toutes les variables d'environnement",
-        examples: ['printenv PATH', 'printenv USER', 'printenv'],
         commonErrors: [
           "Windows : utiliser $env:NOM ou [Environment]::GetEnvironmentVariable('NOM')",
         ],
@@ -1070,7 +1023,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'ping hote',
         summary: "Tester l'accessibilité d'un hôte et mesurer la latence (paquets ICMP)",
-        examples: ['ping google.com', 'ping -c 4 8.8.8.8'],
         commonErrors: [
           'Linux/macOS pinguent en continu (Ctrl+C pour arrêter) — utiliser -c N pour limiter',
           'Windows : -n N (pas -c). Windows envoie 4 paquets par défaut',
@@ -1090,9 +1042,8 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'curl [options] url',
         summary: 'Envoyer des requêtes HTTP/HTTPS (tester des APIs, déboguer des endpoints)',
-        examples: ['curl -I https://example.com', "curl -X POST url -H \"Content-Type: application/json\" -d '{\"k\":\"v\"}'", 'curl -s url | jq .'],
         commonErrors: [
-          'En PowerShell, curl est un alias de Invoke-WebRequest — utiliser curl.exe pour le vrai curl',
+          'Windows PowerShell 5.1 : curl y est un alias d\'Invoke-WebRequest (taper curl.exe pour le vrai curl) ; PowerShell 7 lance directement curl.exe',
           'Oublier -L pour suivre les redirections',
         ],
       },
@@ -1110,7 +1061,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'wget [options] url',
         summary: 'Télécharger des fichiers depuis le web (reprend les téléchargements interrompus)',
-        examples: ['wget -O nom.zip url', 'wget -c url', 'iwr url -OutFile fichier.zip'],
         commonErrors: [
           'wget non préinstallé sur macOS (brew install wget) ni Windows (utiliser Invoke-WebRequest / iwr)',
         ],
@@ -1129,7 +1079,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'nslookup domaine | dig domaine',
         summary: 'Résoudre un nom de domaine en adresse IP (diagnostic DNS)',
-        examples: ['nslookup google.com', 'dig +short google.com', 'dig @1.1.1.1 google.com'],
         commonErrors: [
           'nslookup partout ; dig sur Linux/macOS (Chocolatey sur Windows) ; Resolve-DnsName natif PowerShell',
         ],
@@ -1148,7 +1097,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'ssh user@hote',
         summary: 'Se connecter à un serveur distant de manière chiffrée (OpenSSH natif Win10+)',
-        examples: ['ssh -p 2222 user@serveur', 'ssh-keygen -t ed25519 -C "mon@email.com"', 'ssh-copy-id user@serveur'],
         commonErrors: [
           'Préférer ed25519 à rsa pour les nouvelles clés',
           'Ne jamais partager la clé privée (~/.ssh/id_ed25519) — seule la .pub se dépose sur les serveurs',
@@ -1168,7 +1116,6 @@ const baseCatalogue: CategoryMeta[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'scp source user@hote:destination',
         summary: 'Copier des fichiers entre machines via SSH (scp natif Win10+)',
-        examples: ['scp fichier.txt user@serveur:/home/user/', 'scp -r dossier/ user@serveur:/var/www/', 'scp -P 2222 fichier.txt user@serveur:/home/'],
         commonErrors: [
           '-P majuscule pour scp (port), -p minuscule pour ssh — asymétrie historique',
           'Pour gros volumes ou transferts récurrents, préférer rsync -avz',
@@ -1197,70 +1144,60 @@ const baseCatalogue: CategoryMeta[] = [
         id: 'git_init', name: 'git init', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git init [chemin]', summary: 'Initialiser un nouveau dépôt Git',
-        examples: ['git init', 'git init mon-projet'],
         commonErrors: ['Lancer git init dans le mauvais dossier (vérifier avec pwd)'],
       },
       {
         id: 'git_config', name: 'git config', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git config [--global] clé valeur', summary: 'Configurer Git (identité, préférences)',
-        examples: ['git config --global user.name "Alice"', 'git config --global user.email "alice@example.com"'],
         commonErrors: ['Oublier --global → config limitée au dépôt courant'],
       },
       {
         id: 'git_add', name: 'git add', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git add <fichiers>', summary: 'Indexer des modifications pour le prochain commit',
-        examples: ['git add fichier.txt', 'git add .'],
         commonErrors: ['git add . indexe TOUT — vérifier git status avant'],
       },
       {
         id: 'git_commit', name: 'git commit', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git commit -m "message"', summary: 'Enregistrer un instantané des fichiers indexés',
-        examples: ['git commit -m "feat: ajoute la page contact"', 'git commit -am "fix: corrige le bug"'],
         commonErrors: ['Commit sans git add préalable → rien n\'est enregistré', 'Message vide ou non descriptif'],
       },
       {
         id: 'git_status', name: 'git status', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git status', summary: 'Afficher l\'état du dépôt (fichiers modifiés, indexés)',
-        examples: ['git status', 'git status -s'],
         commonErrors: [],
       },
       {
         id: 'git_log', name: 'git log', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git log [options]', summary: 'Afficher l\'historique des commits',
-        examples: ['git log', 'git log --oneline', 'git log --graph --oneline --all'],
         commonErrors: ['Sortie longue : taper q pour quitter le pager'],
       },
       {
         id: 'git_diff', name: 'git diff', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git diff [options]', summary: 'Comparer les modifications (working dir, index, commits)',
-        examples: ['git diff', 'git diff --staged', 'git diff main feature'],
         commonErrors: ['git diff seul ne montre PAS les fichiers déjà indexés (utiliser --staged)'],
       },
       {
         id: 'gitignore', name: '.gitignore', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: '# un motif par ligne dans le fichier .gitignore', summary: 'Exclure des fichiers du suivi Git',
-        examples: ['node_modules/', '*.log', '.env'],
         commonErrors: ['.gitignore n\'affecte PAS les fichiers déjà suivis (git rm --cached d\'abord)'],
       },
       {
         id: 'git_branch', name: 'git branch', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git branch [nom]', summary: 'Lister, créer ou supprimer des branches',
-        examples: ['git branch', 'git branch feature/login', 'git switch -c feature/login'],
         commonErrors: ['git branch crée la branche mais ne bascule pas dessus (git switch / checkout)'],
       },
       {
         id: 'git_merge', name: 'git merge', category: 'git', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git merge <branche>', summary: 'Fusionner une branche dans la branche courante',
-        examples: ['git merge feature/login', 'git merge --no-ff feature/login'],
         commonErrors: ['Conflits de merge : résoudre, git add, puis git commit'],
       },
     ],
@@ -1283,49 +1220,42 @@ const baseCatalogue: CategoryMeta[] = [
         id: 'git_remote', name: 'git remote', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git remote [add <nom> <url>]', summary: 'Gérer les dépôts distants (remotes)',
-        examples: ['git remote -v', 'git remote add origin https://github.com/user/repo.git'],
         commonErrors: ['Confondre le nom du remote (origin) et le nom de la branche (main)'],
       },
       {
         id: 'git_push', name: 'git push', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git push [remote] [branche]', summary: 'Envoyer les commits locaux vers le dépôt distant',
-        examples: ['git push', 'git push -u origin main'],
         commonErrors: ['Premier push : utiliser -u pour lier la branche locale au remote'],
       },
       {
         id: 'git_pull', name: 'git pull', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git pull [remote] [branche]', summary: 'Récupérer ET fusionner les modifications distantes',
-        examples: ['git pull', 'git pull origin main'],
         commonErrors: ['git pull = git fetch + git merge — peut créer des conflits'],
       },
       {
         id: 'git_fetch', name: 'git fetch', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git fetch [remote]', summary: 'Récupérer les modifications distantes SANS les fusionner',
-        examples: ['git fetch', 'git fetch origin'],
         commonErrors: ['Contrairement à pull, fetch ne modifie pas votre branche de travail'],
       },
       {
         id: 'git_clone', name: 'git clone', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git clone <url> [dossier]', summary: 'Cloner un dépôt distant en local',
-        examples: ['git clone https://github.com/user/repo.git', 'git clone git@github.com:user/repo.git'],
         commonErrors: ['HTTPS vs SSH : le clone SSH nécessite une clé configurée'],
       },
       {
         id: 'git_rebase', name: 'git rebase', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git rebase <branche>', summary: 'Réappliquer des commits sur une autre base (historique linéaire)',
-        examples: ['git rebase main', 'git rebase -i HEAD~3'],
         commonErrors: ['Ne jamais rebaser une branche déjà partagée/poussée publiquement'],
       },
       {
         id: 'git_cherry_pick', name: 'git cherry-pick', category: 'github-collaboration', level: 4,
         recommendedFor: ['linux', 'macos', 'windows'], variants: [], compatibility: ['linux', 'macos', 'windows'],
         syntax: 'git cherry-pick <commit>', summary: 'Ré-appliquer un commit précis sur la branche courante',
-        examples: ['git cherry-pick a1b2c3d', 'git cherry-pick a1b2c3d..e4f5g6h'],
         commonErrors: ['Récupérer le hash via git log --oneline', 'Peut créer un conflit si le commit touche des lignes déjà modifiées'],
       },
     ],
@@ -1540,7 +1470,8 @@ const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
 };
 
 /**
- * Canonical catalogue: base data merged with verified official docs.
+ * Canonical catalogue: base data merged with explained examples, simulation
+ * status and verified official docs.
  * Single source of truth consumed by /app/reference, the landing counter,
  * and the curriculum consistency tests.
  */
@@ -1548,6 +1479,8 @@ export const commandCatalogue: CategoryMeta[] = baseCatalogue.map((category) => 
   ...category,
   commands: category.commands.map((cmd) => ({
     ...cmd,
+    examples: COMMAND_EXAMPLES[cmd.id] ?? [],
+    notSimulatedOn: NOT_SIMULATED[cmd.id] ?? [],
     officialDocs: OFFICIAL_DOCS[cmd.id] ?? [],
   })),
 }));
