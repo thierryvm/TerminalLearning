@@ -219,7 +219,7 @@ All role-based queries are enforced by **Supabase Row Level Security (RLS)** pol
 
 An optional, opt-in conversational tutor available on lesson pages, the dashboard, and the command reference. Designed to help when the learner is stuck without giving away the answer.
 
-- **BYOK only**: users supply their own API key for one of the supported providers — **OpenRouter**, **Anthropic**, **OpenAI**, or **Google Gemini**. No key is ever stored or proxied through any Terminal Learning server. There is no shared backend cost and no rate-limiting beyond what the upstream provider applies to the user's key.
+- **BYOK only**: users supply their own API key for one of the supported providers — **OpenRouter**, **Anthropic** or **Google Gemini**. OpenAI models are reached through OpenRouter, because OpenAI's API refuses direct browser calls (CORS). No key is ever stored or proxied through any Terminal Learning server. There is no shared backend cost and no rate-limiting beyond what the upstream provider applies to the user's key.
 - **Client-side storage**: keys are stored in **encrypted IndexedDB** (AES-GCM via the Web Crypto API, PBKDF2 key derivation) or, if the user prefers ephemerality, in session-scoped localStorage. The user can revoke and forget the key at any moment from the tutor settings page.
 - **Lesson-grounded context**: the model is told which lesson the learner is on, what command(s) the lesson covers, and what target environment (Linux/macOS/Windows) is active.
 - **Defense in depth against prompt injection**: input sanitizer (heuristic + length cap), system prompt v1.1.0 with XML-delimited untrusted blocks, post-filter on model output, audited by a dedicated `prompt-guardrail-auditor` agent before every release.
@@ -235,7 +235,7 @@ An optional, opt-in conversational tutor available on lesson pages, the dashboar
 - **Progress tracking**: localStorage (no account) + Supabase PostgreSQL (optional cloud sync)
 - **Auth**: Supabase Auth — GitHub OAuth + Google OAuth + email/password
 - **Access control**: Role-Based Access Control (RBAC) with 5 roles — student, teacher, pending_teacher, institution_admin, super_admin — enforced by Supabase Row Level Security (RLS) policies
-- **AI tutor (optional)**: BYOK (Bring Your Own Key) — client-side only, supports OpenRouter / Anthropic / OpenAI / Google Gemini. Keys are encrypted in IndexedDB (AES-GCM via WebCrypto) or stored session-scoped in localStorage. Streaming via Server-Sent Events. Input/output sanitizers + post-filter for prompt injection defense
+- **AI tutor (optional)**: BYOK (Bring Your Own Key) — client-side only, supports OpenRouter / Anthropic / Google Gemini (OpenAI models via OpenRouter). Keys are encrypted in IndexedDB (AES-GCM via WebCrypto) or stored session-scoped in localStorage. Streaming via Server-Sent Events. Input/output sanitizers + post-filter for prompt injection defense
 - **Hosting**: Vercel (EU region, GDPR compliant) — HSTS preload, Content Security Policy, automatic DDoS mitigation
 - **Tests**: Vitest unit + integration tests + Playwright E2E suites (accessibility, mobile, SEO)
 
@@ -259,7 +259,7 @@ Yes. The app is fully responsive and works on phones and tablets.
 Yes, optionally. Sign in with GitHub or Google to sync progress across devices. Fully GDPR compliant.
 
 **Is there an AI tutor?**
-Yes, optional and BYOK (Bring Your Own Key). Bring your own OpenRouter, Anthropic, OpenAI, or Google Gemini API key — it stays on your device (encrypted IndexedDB or session-scoped localStorage) and never transits any Terminal Learning server. The tutor is grounded in the current lesson context and refuses requests that try to bypass that scope.
+Yes, optional and BYOK (Bring Your Own Key). Bring your own OpenRouter, Anthropic or Google Gemini API key (OpenAI models are available through OpenRouter) — it stays on your device (encrypted IndexedDB or session-scoped localStorage) and never transits any Terminal Learning server. The tutor is grounded in the current lesson context and refuses requests that try to bypass that scope.
 
 **Can teachers create classrooms?**
 Yes. Approved teachers can create classes, share an invitation code, list enrolled students, and monitor per-student progress. Institutions can group multiple teachers and classes under an institution administrator. Cross-institution data is blocked at the database layer (Row Level Security).

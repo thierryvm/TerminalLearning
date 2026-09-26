@@ -167,6 +167,22 @@ describe('SEO -- JSON-LD structured data (Schema.org)', () => {
     expect(rgpdQ).toBeDefined();
   });
 
+  // The FAQ once placed the database in "EU-west-1 (Frankfurt)"; eu-west-1 is Ireland.
+  // The privacy policy is the reviewed source, so the FAQ must name the same region and country.
+  it('FAQPage RGPD answer names the same database region as the privacy policy', () => {
+    const policy = readFileSync(join(SRC_DIR, 'app', 'components', 'PrivacyPolicy.tsx'), 'utf-8');
+    const m = policy.match(/région <code[^>]*>(eu-[a-z]+-\d)<\/code>, ([A-ZÀ-Ý][a-zà-ÿ]+)\)/);
+    expect(m, 'region sentence not found in PrivacyPolicy.tsx').not.toBeNull();
+    const [, region, country] = m!;
+    const g = extractJsonLd()['@graph'] as Array<Record<string, unknown>>;
+    const faq = g.find((n) => n['@type'] === 'FAQPage');
+    const entities = faq?.['mainEntity'] as Array<Record<string, unknown>>;
+    const rgpdQ = entities.find((q) => /RGPD/.test(q['name'] as string));
+    const answer = (rgpdQ?.['acceptedAnswer'] as Record<string, unknown> | undefined)?.['text'] as string;
+    expect(answer).toContain(region);
+    expect(answer).toContain(country);
+  });
+
   it('Aucune référence orpheline "64 leçons" (anti-drift documentaire)', () => {
     const html = readHtml();
     expect(html).not.toContain('64 leçons');

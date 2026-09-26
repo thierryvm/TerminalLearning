@@ -124,7 +124,7 @@ Every lesson covers **Linux**, **macOS**, and **Windows** (PowerShell) with envi
 - No account required to start — progress saved in localStorage
 - Optional cloud sync via GitHub or Google OAuth (Supabase Auth)
 - Multi-role classroom (RBAC): students, teachers (class management + invitation codes), institution administrators, super admin — Row Level Security enforced at the database layer
-- Optional AI tutor (BYOK — Bring Your Own Key): contextual help on the current lesson via OpenRouter, Anthropic, OpenAI, or Google Gemini. Keys are stored client-side only (encrypted IndexedDB or session-scoped localStorage), never relayed through any Terminal Learning server
+- Optional AI tutor (BYOK — Bring Your Own Key): contextual help on the current lesson via OpenRouter, Anthropic or Google Gemini (OpenAI models through OpenRouter: OpenAI's API refuses direct browser calls). Keys are stored client-side only (encrypted IndexedDB or session-scoped localStorage), never relayed through any Terminal Learning server
 - GDPR/RGPD compliant, hosted on Vercel (EU region)
 - Fully open source — contributions welcome
 

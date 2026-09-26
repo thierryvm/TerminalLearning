@@ -5,6 +5,21 @@
 
 ---
 
+## 🗺️ 26 septembre 2026 — La roadmap publique dit ce qui existe vraiment
+
+*Page d'accueil · `llms.txt` · `docs/ROADMAP.md`*
+
+Thierry a demandé de vérifier la roadmap affichée sur la page d'accueil. Chaque ligne a été comparée au code, et plusieurs promettaient plus que ce qui existe.
+
+- **LTI 1.3 était annoncé comme disponible.** Le code n'est qu'une maquette technique, désactivée en production. L'intégration aux plateformes d'école (Moodle, Canvas…) passe dans « Plus tard ».
+- **OpenAI était annoncé comme fournisseur du tuteur IA.** L'API d'OpenAI refuse les appels venant d'un navigateur, et l'application le signale déjà à l'élève. La roadmap et les fichiers lus par les moteurs IA (`llms.txt`) citent maintenant OpenRouter, Anthropic et Gemini, et précisent qu'OpenRouter donne accès aux modèles d'OpenAI.
+- **« WCAG 2.2 AAA » surestimait l'accessibilité.** Seules les cibles tactiles visent ce niveau. La ligne cite désormais ce qui est réellement fait : cibles de 44 px, focus visible, zones sûres de l'iPhone.
+- **La colonne « En cours » montrait des chantiers gelés ou déjà livrés.** Elle montre maintenant le vrai travail : la fidélité du terminal à un vrai shell, la théorie vérifiée commande par commande, et la page Référence.
+- **La FAQ lue par Google et les moteurs IA** annonçait aussi LTI « en cours de finalisation » et un tableau de bord enseignant « prévu pour juin 2026 », alors qu'il existe déjà. Elle plaçait enfin la base de données à Francfort : elle est en Irlande (région eu-west-1), comme le dit la politique de confidentialité. Un test compare désormais les deux.
+- Les compteurs suivent : 2 700+ tests, 21 agents d'audit.
+
+---
+
 ## 🧭 26 septembre 2026 — Les agents de vérification remis à jour, et un nouvel agent qui compare le simulateur à un vrai shell
 
 *21 agents (13 Opus, 8 Sonnet) · nouvel agent `terminal-fidelity-auditor` · nouvelle commande `npm run theory:gaps`*
