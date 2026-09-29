@@ -19,16 +19,36 @@ export const printedError = (lines: OutputLine[]): boolean => lines.some((l) => 
 export const stepAccepts = (validate: ValidateFn, { command, env, lines }: ExerciseCheckContext): boolean =>
   exerciseAccepts(validate, command, env) && !printedError(lines);
 
-/** The shell stands in `~/<segments>` (the same path on every environment). */
-export const inHomeDir = (state: TerminalState, ...segments: string[]): boolean =>
-  state.cwd.join('/') === ['home', state.user, ...segments].join('/') ||
-  state.cwd.join('/') === ['home', 'user', ...segments].join('/');
+/** `path` is `~/<segments>` (the same path on every environment). */
+const isHomePath = (state: TerminalState, path: string[] | undefined, segments: string[]): boolean =>
+  path !== undefined &&
+  (path.join('/') === ['home', state.user, ...segments].join('/') || path.join('/') === ['home', 'user', ...segments].join('/'));
 
-/** A file of the working tree, by its path in the repository (or from the current directory without one). */
+/** The shell stands in `~/<segments>`. */
+export const inHomeDir = (state: TerminalState, ...segments: string[]): boolean => isHomePath(state, state.cwd, segments);
+
+/** `~/<segments>` is a directory. */
+export const homeDirExists = (state: TerminalState, ...segments: string[]): boolean =>
+  nodeAt(state.root, ['home', 'user', ...segments])?.type === 'directory';
+
+/** A Git repository was initialised in `~/<segments>` (no segment: in `~` itself). */
+export const repoInHomeDir = (state: TerminalState, ...segments: string[]): boolean =>
+  Boolean(state.git?.initialized) && isHomePath(state, state.git?.repoPath, segments);
+
+/** What a command printed, as one text. */
+export const printed = (lines: OutputLine[]): string => lines.map((l) => l.text).join('\n');
+
+/**
+ * A file of the working tree, by its path in the repository (or from the
+ * current directory without one), as git reads it: the simulator stores text
+ * without its final newline, git's `head` and `index` keep it. So the result
+ * compares directly with them.
+ */
 export function repoFile(state: TerminalState, path: string): string | null {
   const base = state.git?.repoPath ?? state.cwd;
   const node = nodeAt(state.root, [...base, ...path.split('/')]);
-  return node?.type === 'file' ? node.content : null;
+  if (node?.type !== 'file') return null;
+  return node.content ? `${node.content}\n` : '';
 }
 
 /** Git's conflict markers, each at the start of a line. */

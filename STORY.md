@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Git, geste par geste (30 septembre 2026)
+
+Une fois le moteur d'étapes en place, le module Git était le premier candidat. Ses exercices demandaient `git init`, `git add .` ou `git merge`, une commande à la fois, alors que Git ne se comprend qu'en enchaînant : on prépare, on enregistre, on compare, on change de branche.
+
+J'ai rejoué chaque parcours dans un vrai Git avant d'écrire les étapes. Deux détails m'auraient échappé en lisant la documentation. Quand on change de branche avec un fichier préparé mais pas encore commité, Git l'emporte avec lui et affiche une ligne `A` suivie du nom du fichier. Et `git branch -d` sur une branche pas encore fusionnée ne se contente pas de refuser : il propose `git branch -D`. Le simulateur faisait déjà les deux ; les tests le vérifient maintenant, avec la sortie exacte du vrai Git.
+
+Cinq validateurs, des expressions régulières qui ne lisaient que la commande tapée, ont disparu. Leurs cas utiles (`git switch -c`, `git add -A`, `git diff --cached`) sont devenus des tests des étapes : ce qui compte, c'est l'état du dépôt, pas l'orthographe de la commande.
+
+---
+
 ## Un exercice qui s'arrêtait au moment où le travail commence (29 septembre 2026)
 
 La leçon sur les conflits de merge en provoquait enfin un vrai. Mais l'exercice se validait sur `git merge`, et la page partait vers la leçon suivante deux secondes et demie plus tard. L'élève voyait `CONFLICT`, puis plus rien : la résolution, qui est tout l'objet de la leçon, restait une lecture.

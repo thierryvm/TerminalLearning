@@ -280,22 +280,9 @@ export const validateSsh: ValidateFn = (cmd) => {
 
 export const validateScp: ValidateFn = (cmd) => /^scp\s+.+\s+.+@.+:.+/.test(cmd.trim().toLowerCase());
 
-export const validateGitInit: ValidateFn = (cmd) => /^git\s+init(\s+.*)?$/.test(cmd.trim().toLowerCase());
-
 export const validateGitConfig: ValidateFn = (cmd) => /^git\s+config\s+(--list|--global\s+user\.)/.test(cmd.trim().toLowerCase());
 
-export const validateGitAddCommit: ValidateFn = (cmd) => /^git\s+add\s+(\.|--all|-a|-p)/.test(cmd.trim().toLowerCase());
-
 export const validateGitStatusLog: ValidateFn = (cmd) => /^git\s+status(\s+(-\w+|--\w[\w-]*))*$/.test(cmd.trim().toLowerCase());
-
-export const validateGitDiffGitignore: ValidateFn = (cmd) => /^git\s+diff(\s+.*)?$/.test(cmd.trim().toLowerCase());
-
-export const validateGitBranch: ValidateFn = (cmd) => {
-    const c = cmd.trim().toLowerCase();
-    return /^git\s+checkout\s+-b\s+\S+/.test(c) || /^git\s+switch\s+-c\s+\S+/.test(c);
-  };
-
-export const validateGitMerge: ValidateFn = (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase());
 
 export const validateGitRemote: ValidateFn = (cmd) => /^git\s+remote\s+add\s+\S+\s+https?:\/\/\S+/.test(cmd.trim().toLowerCase());
 

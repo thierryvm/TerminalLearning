@@ -40,13 +40,8 @@ import {
   validateDns,
   validateSsh,
   validateScp,
-  validateGitInit,
   validateGitConfig,
-  validateGitAddCommit,
   validateGitStatusLog,
-  validateGitDiffGitignore,
-  validateGitBranch,
-  validateGitMerge,
   validateGitRemote,
   validateGitPushPull,
   validateGitFetchClone,
@@ -403,23 +398,10 @@ describe('validateScp', () => {
 });
 
 // ── Git ───────────────────────────────────────────────────────────────────────
-describe('validateGitInit', () => {
-  it('accepts "git init"', () => expect(validateGitInit('git init')).toBe(true));
-  it('accepts "git init my-project"', () => expect(validateGitInit('git init my-project')).toBe(true));
-  it('rejects "git status"', () => expect(validateGitInit('git status')).toBe(false));
-});
-
 describe('validateGitConfig', () => {
   it('accepts "git config --list"', () => expect(validateGitConfig('git config --list')).toBe(true));
   it('accepts "git config --global user.name"', () => expect(validateGitConfig('git config --global user.name "Test"')).toBe(true));
   it('rejects "git config color.ui"', () => expect(validateGitConfig('git config color.ui')).toBe(false));
-});
-
-describe('validateGitAddCommit', () => {
-  it('accepts "git add ."', () => expect(validateGitAddCommit('git add .')).toBe(true));
-  it('accepts "git add --all"', () => expect(validateGitAddCommit('git add --all')).toBe(true));
-  it('accepts "git add -A"', () => expect(validateGitAddCommit('git add -A')).toBe(true));
-  it('rejects "git add file.txt" (specific file)', () => expect(validateGitAddCommit('git add file.txt')).toBe(false));
 });
 
 describe('validateGitStatusLog', () => {
@@ -429,25 +411,6 @@ describe('validateGitStatusLog', () => {
   it('accepts "git status -v"', () => expect(validateGitStatusLog('git status -v')).toBe(true));
   it('rejects "git log"', () => expect(validateGitStatusLog('git log')).toBe(false));
   it('rejects arbitrary args (git status foo bar)', () => expect(validateGitStatusLog('git status foo bar')).toBe(false));
-});
-
-describe('validateGitDiffGitignore', () => {
-  it('accepts "git diff"', () => expect(validateGitDiffGitignore('git diff')).toBe(true));
-  it('accepts "git diff HEAD"', () => expect(validateGitDiffGitignore('git diff HEAD')).toBe(true));
-  it('accepts "git diff --staged"', () => expect(validateGitDiffGitignore('git diff --staged')).toBe(true));
-  it('rejects "git status"', () => expect(validateGitDiffGitignore('git status')).toBe(false));
-});
-
-describe('validateGitBranch', () => {
-  it('accepts "git checkout -b feature/test"', () => expect(validateGitBranch('git checkout -b feature/test')).toBe(true));
-  it('accepts "git switch -c feature/test"', () => expect(validateGitBranch('git switch -c feature/test')).toBe(true));
-  it('rejects "git branch"', () => expect(validateGitBranch('git branch')).toBe(false));
-  it('rejects "git checkout main"', () => expect(validateGitBranch('git checkout main')).toBe(false));
-});
-
-describe('validateGitMerge', () => {
-  it('accepts "git merge feature/test"', () => expect(validateGitMerge('git merge feature/test')).toBe(true));
-  it('rejects bare "git merge"', () => expect(validateGitMerge('git merge')).toBe(false));
 });
 
 describe('validateGitRemote', () => {
@@ -577,11 +540,11 @@ describe('security — injection attempts on validators', () => {
   it('rejects SQL injection in ls', () => expect(validateLs("'; DROP TABLE users; --", linux)).toBe(false));
   it('rejects path traversal in cat', () => expect(validateCat('cat ../../etc/passwd', linux)).toBe(false));
   it('rejects command chaining in mkdir', () => expect(validateMkdir('mkdir test && rm -rf /', linux)).toBe(false));
-  it('rejects null byte in git init', () => expect(validateGitInit('git init\x00evil', linux)).toBe(false));
+  it('rejects null byte in git status', () => expect(validateGitStatusLog('git status\x00evil', linux)).toBe(false));
   it('rejects overly long input (DoS)', () => expect(validatePwd('p'.repeat(10000), linux)).toBe(false));
   it('rejects empty string everywhere', () => {
     expect(validatePwd('', linux)).toBe(false);
-    expect(validateGitInit('')).toBe(false);
+    expect(validateGitStatusLog('')).toBe(false);
     expect(validatePing('')).toBe(false);
   });
 });

@@ -94,13 +94,16 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   'reseau/ssh': { all: ['ssh-keygen -t ed25519'] },
   'reseau/scp': { all: ['scp fichier.txt user@serveur.example.com:/home/user/'] },
   // ── git ──
-  'git/git-init': { all: ['git init'] },
+  'git/git-init': { all: ['mkdir mon-projet', 'cd mon-projet', 'git init'] },
   'git/git-config': { all: ['git config --list'] },
-  'git/git-add-commit': { all: ['git add .'] },
+  'git/git-add-commit': { all: ['git status', 'git add .', 'git commit -m "feat: premier commit"'] },
   'git/git-status-log': { all: ['git status'] },
-  'git/git-diff-gitignore': { all: ['git diff'] },
-  'git/git-branch': { all: ['git checkout -b feature/ma-feature'] },
-  'git/git-merge': { all: ['git merge feature/ma-feature'] },
+  'git/git-diff-gitignore': { all: ['git diff', 'git add README.md', 'git diff --staged', 'git commit -m "docs: précise le README"'] },
+  'git/git-branch': {
+    all: ['git checkout -b feature/ma-feature', 'echo "Nouvelle fonctionnalité" > feature.txt', 'git add feature.txt', 'git commit -m "feat: ajoute feature.txt"', 'git switch main'],
+    windows: ['git checkout -b feature/ma-feature', 'Set-Content feature.txt "Nouvelle fonctionnalité"', 'git add feature.txt', 'git commit -m "feat: ajoute feature.txt"', 'git switch main'],
+  },
+  'git/git-merge': { all: ['git merge feature/ma-feature', 'git branch -d feature/ma-feature'] },
   // ── github-collaboration ──
   'github-collaboration/git-remote': { all: ['git remote add origin https://github.com/user/mon-projet.git'] },
   'github-collaboration/git-push-pull': { all: ['git push -u origin main'] },
