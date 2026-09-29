@@ -82,10 +82,12 @@ Détecter les `.only(` et `.skip(` **commités** dans les fichiers de tests — 
 
 ```bash
 grep -rnE "\b(it|describe|test|suite)\.(only|skip)\(" src/test/ e2e/ 2>/dev/null \
-  | grep -vE ":\s*(//|/\*|\*\s|\*$)"
+  | grep -vE ":\s*(//|/\*|\*\s|\*$)" \
+  | grep -vE "test\.skip\(true, "
 ```
 
 - Le motif ne capture pas `it.skipIf(...)` (skip conditionnel légitime des tests d'intégration) ni `it.fails` (cliquet `KNOWN_DESYNCS` de `lessonFidelity.test.ts`).
+- Il écarte aussi `test.skip(true, '<raison>')` : c'est un skip Playwright décidé **à l'exécution** avec sa raison (ex. `e2e/desktop/touch-targets-preserve.chromium.spec.ts`, `e2e/mobile/touch-targets.webkit.spec.ts`, bouton rendu seulement après consentement), pas un `.skip(` oublié.
 - Toute occurrence restante = CRITICAL : `file:line — .only/.skip leaked, test suite biased`.
 
 ## Étape 6 — Cliquets THI-353 : « ratchet grew » (CRITICAL)
