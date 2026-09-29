@@ -1,7 +1,7 @@
 /**
  * The simulated git against real git. Every expected value below was printed
  * by Git 2.56 (Git for Windows, `core.autocrlf false`) on a copy of the
- * lesson's ~/projets, on 30 September 2026, with the files ending in a
+ * lesson's ~/projets, on 29 September 2026, with the files ending in a
  * newline as the simulator assumes. Tabs are real tabs.
  */
 import { describe, it, expect } from 'vitest';

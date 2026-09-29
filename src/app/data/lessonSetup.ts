@@ -14,7 +14,7 @@
  * in the terminal welcome message so the learner knows what is already there.
  */
 import type { DirectoryNode, FSNode, GitCommit, GitState, TerminalEnv, TerminalState } from './commands/types';
-import { dotGit } from './commands/git';
+import { dotGit, syncGit } from './commands/git';
 import { fileMode, nodeAt, readTree, type Tree } from './commands/gitTree';
 
 export interface LessonSetup {
@@ -26,14 +26,18 @@ export interface LessonSetup {
   noteByEnv?: Partial<Record<'linux' | 'macos' | 'windows', string>>;
 }
 
-// Fixed hashes and dates keep the prepared history deterministic (tests, and
-// the same screen for every learner).
-const INITIAL_COMMIT: GitCommit = {
-  hash: 'a3f8c12',
-  message: 'feat: premier commit du projet',
-  author: 'user',
-  date: '2026-01-15',
-};
+/// Fixed hashes and dates keep the prepared history deterministic (tests, and
+// the same screen for every learner). The lessons quote these hashes
+// (`git show a3f8c12`, `Updating a3f8c12..b7e2d45`).
+const INITIAL_HASH = 'a3f8c129e4b7d60c1f25a8e3b9d47f0c6a1e582d';
+const BRANCH_HASH = 'b7e2d451c8f3a90e6d2b47c5f18a3e9d0b6c742e';
+const MAIN_HASH = 'c9f1e347a2d5b8e0f3c6a91d4e7b2c5f8a0d3e6b';
+const INITIAL_MESSAGE = 'feat: premier commit du projet';
+
+/** 15 January 2026, 10:00 in Brussels (UTC+1): the first commit of every prepared repository. */
+const T0 = 1768467600;
+const DAY = 86400;
+const BRUSSELS_WINTER = 60;
 
 const PROJECT_DIR = ['home', 'user', 'projets'];
 
@@ -59,24 +63,28 @@ function withGit(state: TerminalState, env: TerminalEnv, git: Partial<GitState>,
   // Modes read now: a lesson may delete script.sh before its first git command.
   const modes = Object.fromEntries(Object.keys(files)
     .map((path) => [path, fileMode(nodeAt(root, [...PROJECT_DIR, ...path.split('/')]), env)]));
-  const commits = committed ? [{ ...INITIAL_COMMIT, tree: head }] : [];
+  const first: GitCommit = {
+    hash: INITIAL_HASH, message: INITIAL_MESSAGE, author: 'user', date: '2026-01-15', tree: head, parents: [], time: T0, tz: BRUSSELS_WINTER,
+  };
   return {
     ...state,
     root,
     cwd: PROJECT_DIR,
-    git: {
+    git: syncGit({
       initialized: true,
       branch: 'main',
       branches: ['main'],
       stagedFiles: [],
-      commits,
+      commits: [],
       remotes: {},
       repoPath: PROJECT_DIR,
       head,
       index: { ...head },
       modes,
+      objects: committed ? { [INITIAL_HASH]: first } : {},
+      refs: committed ? { main: INITIAL_HASH } : {},
       ...git,
-    },
+    }),
   };
 }
 
@@ -92,6 +100,36 @@ function withNode(root: DirectoryNode, path: string[], node: FSNode): DirectoryN
 function file(content: string, permissions: string): FSNode {
   return { type: 'file', content, permissions, owner: 'user', group: 'user', size: content.length };
 }
+
+/**
+ * A commit on `branch` (created from the current branch if needed) that
+ * changes `files` (content as git sees it, final newline included). When the
+ * branch is checked out, its files are written to ~/projets too.
+ */
+function commitOn(state: TerminalState, branch: string, c: { hash: string; message: string; time: number; files: Tree }): TerminalState {
+  const g = state.git!;
+  const parent = g.refs![branch] ?? g.refs![g.branch];
+  const tree = { ...g.objects![parent].tree, ...c.files };
+  const commit: GitCommit = {
+    hash: c.hash, message: c.message, author: 'user', date: new Date(c.time * 1000).toISOString().slice(0, 10), tree, parents: [parent], time: c.time, tz: BRUSSELS_WINTER,
+  };
+  let root = state.root;
+  if (branch === g.branch) {
+    for (const [path, content] of Object.entries(c.files)) {
+      root = withNode(root, [...PROJECT_DIR, ...path.split('/')], file(content.replace(/\n$/, ''), '-rw-r--r--'));
+    }
+  }
+  const modes = { ...g.modes, ...Object.fromEntries(Object.keys(c.files).map((p) => [p, g.modes?.[p] ?? '100644'])) };
+  const index = branch === g.branch ? { ...tree } : g.index;
+  return {
+    ...state,
+    root,
+    git: syncGit({ ...g, objects: { ...g.objects, [c.hash]: commit }, refs: { ...g.refs, [branch]: c.hash }, modes, index }),
+  };
+}
+
+/** `feature/ma-feature` → `ma-feature`: the name a branch's work is about. */
+const topic = (branch: string) => branch.slice(branch.lastIndexOf('/') + 1);
 
 /** A fresh repository: nothing committed yet, files ready to be staged. */
 export const gitRepoEmpty: LessonSetup = {
@@ -117,17 +155,55 @@ export const gitRepoWithChange: LessonSetup = {
   note: 'Dépôt Git prêt dans ~/projets (1 commit, puis une ligne de README.md modifiée).',
 };
 
-/** A repository whose `main` has one commit and an extra branch to merge. */
+/**
+ * `main` checked out, and `branch` one commit ahead of it (a new page): the
+ * merge is a fast-forward, or a merge commit with `--no-ff`.
+ */
 export function gitRepoWithBranch(branch: string): LessonSetup {
+  const page = `${topic(branch)}.html`;
   return {
-    apply: (s, env = 'linux') => withGit(s, env, { branches: ['main', branch] }, true),
-    note: `Dépôt Git prêt dans ~/projets (vous êtes sur main, la branche ${branch} existe).`,
+    apply: (s, env = 'linux') => commitOn(withGit(s, env, {}, true), branch, {
+      hash: BRANCH_HASH,
+      message: `feat(${topic(branch)}): ajoute la page ${page}`,
+      time: T0 + DAY + 4.5 * 3600,
+      files: { [page]: `<h2>${topic(branch)}</h2>\n` },
+    }),
+    note: `Dépôt Git prêt dans ~/projets (vous êtes sur main ; la branche ${branch} a un commit d'avance).`,
   };
 }
 
-/** A repository with one commit and an `origin` remote. */
+/**
+ * `main` and `branch` both changed the `<title>` of index.html since they
+ * split: merging `branch` stops on a real conflict.
+ */
+export function gitRepoWithConflict(branch: string): LessonSetup {
+  const withTitle = (title: string) => `${INDEX_HTML.replace('<title>Mon App</title>', `<title>${title}</title>`)}\n`;
+  return {
+    apply: (s, env = 'linux') => {
+      const base = withGit(s, env, {}, true);
+      const onBranch = commitOn(base, branch, {
+        hash: BRANCH_HASH,
+        message: `feat(${topic(branch)}): nouveau titre de la page`,
+        time: T0 + DAY + 4.5 * 3600,
+        files: { 'index.html': withTitle(`${topic(branch)} — Mon App`) },
+      });
+      return commitOn(onBranch, 'main', {
+        hash: MAIN_HASH,
+        message: 'feat: passe le titre en v2',
+        time: T0 + 2 * DAY + 2 * 3600,
+        files: { 'index.html': withTitle('Mon App v2') },
+      });
+    },
+    note: `Dépôt Git prêt dans ~/projets (vous êtes sur main ; main et ${branch} ont chacune changé le titre de index.html).`,
+  };
+}
+
+/** A repository with one commit, pushed to an `origin` remote. */
 export const gitRepoWithRemote: LessonSetup = {
-  apply: (s, env = 'linux') => withGit(s, env, { remotes: { origin: 'https://github.com/user/mon-projet.git' } }, true),
+  apply: (s, env = 'linux') => withGit(s, env, {
+    remotes: { origin: 'https://github.com/user/mon-projet.git' },
+    remoteRefs: { 'origin/main': INITIAL_HASH },
+  }, true),
   note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin configuré).',
 };
 

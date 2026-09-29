@@ -31,14 +31,16 @@ describe('lesson setups', () => {
   it('prepare the branch a merge lesson asks for, with main checked out', () => {
     const s = gitRepoWithBranch('feature/ma-feature').apply(createInitialState());
     const out = processCommand(s, 'git branch', 'linux');
-    expect(out.lines.map((l) => l.text)).toEqual(['* main', '  feature/ma-feature']);
+    // Git lists branches in name order (Git 2.56).
+    expect(out.lines.map((l) => l.text)).toEqual(['  feature/ma-feature', '* main']);
   });
 
   it('give push lessons a commit and an origin remote', () => {
     const s = gitRepoWithRemote.apply(createInitialState());
     const out = processCommand(s, 'git remote -v', 'linux');
     expect(out.lines[0].text).toBe('origin\thttps://github.com/user/mon-projet.git (fetch)');
-    expect(processCommand(s, 'git log --oneline', 'linux').lines[0].text).toBe('a3f8c12 feat: premier commit du projet');
+    // In a terminal git decorates the commit with the branches that point to it, origin/main included.
+    expect(processCommand(s, 'git log --oneline', 'linux').lines[0].text).toBe('a3f8c12 (HEAD -> main, origin/main) feat: premier commit du projet');
   });
 
   it('create ~/.ssh with the permissions the lesson teaches (700 / 600 / 644)', () => {

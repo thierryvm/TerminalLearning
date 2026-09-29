@@ -14,7 +14,7 @@ import {
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
 } from './validators';
 import {
-  gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, powershellProfile, sshDirectory,
+  gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithConflict, gitRepoWithRemote, powershellProfile, sshDirectory,
   type LessonSetup,
 } from './lessonSetup';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
@@ -2373,7 +2373,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Voir les modifications non-stagées\n$ git diff\ndiff --git a/README.md b/README.md\nindex 7d825c5..6827029 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,6 +1,6 @@\n # Mes Projets\n \n-Bienvenue dans mon répertoire de projets.\n+Bienvenue dans mon répertoire de projets Git.\n \n ## Projets actuels\n - script.sh : Script de démonstration\n\n# Voir les modifications stagées (avant commit)\n$ git diff --staged\n\n# Comparer deux branches\n$ git diff main feature/login',
+            content: '# Voir les modifications non-stagées\n$ git diff\ndiff --git a/README.md b/README.md\nindex 7d825c5..6827029 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,6 +1,6 @@\n # Mes Projets\n \n-Bienvenue dans mon répertoire de projets.\n+Bienvenue dans mon répertoire de projets Git.\n \n ## Projets actuels\n - script.sh : Script de démonstration\n\n# Voir les modifications stagées (avant commit)\n$ git diff --staged\n\n# Comparer deux branches (une branche toute neuve : aucune différence, donc rien ne s\'affiche)\n$ git branch feature/login\n$ git diff main feature/login',
             label: 'git diff',
           },
           {
@@ -2420,7 +2420,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Renommer une branche\n$ git branch -m ancien-nom nouveau-nom\n\n# Supprimer une branche mergée\n$ git branch -d feature/login\n\n# Supprimer une branche non-mergée (force)\n$ git branch -D feature/experimental\n\n# Lister toutes les branches (locales + distantes)\n$ git branch -a\n* main\n  feature/login\n  remotes/origin/main\n  remotes/origin/develop',
+            content: '# Renommer une branche (ancien nom, puis nouveau nom)\n$ git branch feature/panier\n$ git branch -m feature/panier feature/cart\n\n# Supprimer une branche mergée\n$ git branch -d feature/login\n\n# Supprimer une branche non-mergée (force)\n$ git branch -D feature/experimental\n\n# Lister toutes les branches (locales + distantes)\n$ git branch -a\n* main\n  feature/login\n  remotes/origin/main\n  remotes/origin/develop',
             label: 'Gérer les branches',
           },
           {
@@ -2745,8 +2745,8 @@ export const curriculum: Module[] = [
           instruction: 'Fusionnez la branche `feature/nouvelle-feature` dans la branche courante avec `git merge feature/nouvelle-feature`.',
           hint: 'Tapez: git merge feature/nouvelle-feature',
           validate: validateConflicts,
-          setup: gitRepoWithBranch('feature/nouvelle-feature'),
-          successMessage: 'Fusion effectuée ! En cas de conflit réel, vous savez maintenant comment les identifier et les résoudre.',
+          setup: gitRepoWithConflict('feature/nouvelle-feature'),
+          successMessage: 'Vous venez de provoquer un vrai conflit : Git a écrit les deux versions du titre dans index.html, entre <<<<<<< et >>>>>>>. Pour le résoudre : cat index.html, gardez la bonne version (ou git checkout --theirs index.html), puis git add index.html et git commit. git merge --abort annule tout.',
         },
       },
       {

@@ -2153,57 +2153,62 @@ describe('git', () => {
   });
 
   // ── git branch ────────────────────────────────────────────────────────────────
+  // Branches name commits: these tests start from a repository with one commit.
+  // Exact messages are checked against Git 2.56 in gitBranches.test.ts.
+  const committed = () => {
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'README.md');
+    s = processCommand(s, 'git add README.md').newState;
+    return processCommand(s, 'git commit -m "base"').newState;
+  };
+
   it('git branch lists branches with asterisk on current', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/x'], stagedFiles: [], commits: [], remotes: {} } });
+    const s = processCommand(committed(), 'git branch feature/x').newState;
     const r = processCommand(s, 'git branch');
-    expect(r.lines.some((l) => l.text.startsWith('* main'))).toBe(true);
-    expect(r.lines.some((l) => l.text.includes('feature/x'))).toBe(true);
+    expect(r.lines.map((l) => l.text)).toEqual(['  feature/x', '* main']);
   });
 
-  it('git branch <name> creates a new branch', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git branch feature/login');
+  it('git branch <name> creates a new branch, silently', () => {
+    const r = processCommand(committed(), 'git branch feature/login');
+    expect(r.lines).toEqual([]);
     expect(r.newState.git?.branches).toContain('feature/login');
     expect(r.newState.git?.branch).toBe('main'); // does not switch
   });
 
-  it('git branch -d removes a branch', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/login'], stagedFiles: [], commits: [], remotes: {} } });
+  it('git branch -d removes a merged branch', () => {
+    const s = processCommand(committed(), 'git branch feature/login').newState;
     const r = processCommand(s, 'git branch -d feature/login');
     expect(r.newState.git?.branches).not.toContain('feature/login');
   });
 
   it('git branch -d current branch returns error', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git branch -d main');
+    const r = processCommand(committed(), 'git branch -d main');
     expect(r.lines[0].type).toBe('error');
+    expect(r.status).toBe(1);
   });
 
   // ── git checkout ──────────────────────────────────────────────────────────────
   it('git checkout -b creates and switches to new branch', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git checkout -b feature/cart');
+    const r = processCommand(committed(), 'git checkout -b feature/cart');
     expect(r.newState.git?.branch).toBe('feature/cart');
     expect(r.newState.git?.branches).toContain('feature/cart');
     expect(r.lines[0].type).toBe('success');
   });
 
   it('git checkout switches to existing branch', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'develop'], stagedFiles: [], commits: [], remotes: {} } });
+    const s = processCommand(committed(), 'git branch develop').newState;
     const r = processCommand(s, 'git checkout develop');
     expect(r.newState.git?.branch).toBe('develop');
   });
 
   it('git checkout non-existent branch returns error', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git checkout non-existent');
+    const r = processCommand(committed(), 'git checkout non-existent');
     expect(r.lines[0].type).toBe('error');
   });
 
   it('git checkout -b on existing branch returns error', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git checkout -b main');
+    const r = processCommand(committed(), 'git checkout -b main');
     expect(r.lines[0].type).toBe('error');
+    expect(r.status).toBe(128);
   });
 
   // ── git switch (modern) ───────────────────────────────────────────────────────
@@ -2215,32 +2220,43 @@ describe('git', () => {
   });
 
   // ── git merge ─────────────────────────────────────────────────────────────────
-  it('git merge creates a merge commit', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/login'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git merge feature/login');
-    expect(r.lines[0].type).toBe('success');
-    expect(r.newState.git?.commits).toHaveLength(1);
-    expect(r.newState.git?.commits[0].message).toContain('feature/login');
+  /** main and feature/login each gained a commit on a different file. */
+  const diverged = () => {
+    let s = processCommand(committed(), 'git switch -c feature/login').newState;
+    s = processCommand(withFiles(s, 'login.html'), 'git add login.html').newState;
+    s = processCommand(s, 'git commit -m "feat: login"').newState;
+    s = processCommand(s, 'git switch main').newState;
+    s = processCommand(withFiles(s, 'home.html'), 'git add home.html').newState;
+    return processCommand(s, 'git commit -m "feat: home"').newState;
+  };
+
+  it('git merge of a diverged branch creates a merge commit', () => {
+    const r = processCommand(diverged(), 'git merge feature/login');
+    expect(r.lines[0].text).toBe("Merge made by the 'ort' strategy.");
+    expect(r.newState.git?.commits[0].message).toBe("Merge branch 'feature/login'");
+    expect(r.newState.git?.commits[0].parents).toHaveLength(2);
+    expect(processCommand(r.newState, 'ls').lines[0].text).toContain('login.html');
   });
 
-  it('git merge same branch returns already up to date', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git merge main');
-    expect(r.lines[0].text).toContain('Already up to date');
+  it('git merge of the current branch is already up to date', () => {
+    const r = processCommand(committed(), 'git merge main');
+    expect(r.lines[0].text).toBe('Already up to date.');
   });
 
   it('git merge non-existent branch returns error', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git merge ghost-branch');
+    const r = processCommand(committed(), 'git merge ghost-branch');
     expect(r.lines[0].type).toBe('error');
+    expect(r.status).toBe(1);
   });
 
-  it('git merge --no-ff <branch> skips the flag and creates a merge commit', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main', 'feature/panier'], stagedFiles: [], commits: [], remotes: {} } });
+  it('git merge --no-ff <branch> creates a merge commit even when a fast-forward is possible', () => {
+    let s = processCommand(committed(), 'git switch -c feature/panier').newState;
+    s = processCommand(withFiles(s, 'panier.html'), 'git add panier.html').newState;
+    s = processCommand(s, 'git commit -m "feat: panier"').newState;
+    s = processCommand(s, 'git switch main').newState;
     const r = processCommand(s, 'git merge --no-ff feature/panier');
-    expect(r.lines[0].type).toBe('success');
-    expect(r.newState.git?.commits).toHaveLength(1);
-    expect(r.newState.git?.commits[0].message).toContain('feature/panier');
+    expect(r.lines[0].text).toBe("Merge made by the 'ort' strategy.");
+    expect(r.newState.git?.commits[0].message).toBe("Merge branch 'feature/panier'");
   });
 
   // ── git remote ────────────────────────────────────────────────────────────────
@@ -2348,7 +2364,7 @@ describe('git', () => {
     s = processCommand(s, 'echo change > a.txt').newState;
     s = processCommand(s, 'git add a.txt').newState;
     const stash = processCommand(s, 'git stash');
-    expect(stash.lines[0].text).toBe(`Saved working directory and index state WIP on main: ${s.git!.commits[0].hash} base`);
+    expect(stash.lines[0].text).toBe(`Saved working directory and index state WIP on main: ${s.git!.commits[0].hash.slice(0, 7)} base`);
     expect(stash.newState.git?.stagedFiles).toHaveLength(0);
     expect(processCommand(stash.newState, 'cat a.txt').lines[0].text).toBe('a.txt');
     const pop = processCommand(stash.newState, 'git stash pop');
@@ -2375,21 +2391,27 @@ describe('git', () => {
     expect(r.lines[0].text).toContain('not a git repository');
   });
 
-  it('git rebase <branch> rejoue les commits (historique linéaire)', () => {
-    let s = processCommand(makeState(), 'git init').newState;
-    s = processCommand(s, 'git branch feature').newState;
-    s = processCommand(s, 'git checkout feature').newState;
+  it('git rebase <branch> replays the commits on top of it (linear history)', () => {
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'a');
+    s = processCommand(processCommand(s, 'git add a').newState, 'git commit -m "a"').newState;
+    s = processCommand(s, 'git switch -c feature').newState;
+    s = processCommand(processCommand(withFiles(s, 'f'), 'git add f').newState, 'git commit -m "f"').newState;
+    s = processCommand(s, 'git switch main').newState;
+    s = processCommand(processCommand(withFiles(s, 'm'), 'git add m').newState, 'git commit -m "m"').newState;
+    s = processCommand(s, 'git switch feature').newState;
     const r = processCommand(s, 'git rebase main');
-    expect(r.lines.some((l) => l.text.includes('Successfully rebased'))).toBe(true);
+    expect(r.lines.map((l) => l.text)).toEqual(['Successfully rebased and updated refs/heads/feature.']);
+    expect(r.newState.git!.commits.map((c) => c.message)).toEqual(['f', 'm', 'a']);
   });
 
   it('git rebase on the same branch is up to date', () => {
-    const s = processCommand(makeState(), 'git init').newState;
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'a');
+    s = processCommand(processCommand(s, 'git add a').newState, 'git commit -m "a"').newState;
     const r = processCommand(s, 'git rebase main');
-    expect(r.lines[0].text).toContain('up to date');
+    expect(r.lines[0].text).toBe('Current branch main is up to date.');
   });
 
-  it('git rebase -i shows interactive rebase guidance + shared-branch warning', () => {
+  it('git rebase -i opens an editor in git: the terminal says it is not simulated, without an error', () => {
     // HEAD~3 needs three commits below HEAD: four commits in all.
     let s = processCommand(makeState(), 'git init').newState;
     for (const f of ['a', 'b', 'c', 'd']) {
@@ -2397,9 +2419,7 @@ describe('git', () => {
       s = processCommand(s, `git commit -m "${f}"`).newState;
     }
     const r = processCommand(s, 'git rebase -i HEAD~3');
-    expect(r.lines.some((l) => l.text.toLowerCase().includes('interactif'))).toBe(true);
-    // The warning is advice, not a failure: no red line.
-    expect(r.lines.some((l) => l.text.includes('partagée') && l.type !== 'error')).toBe(true);
+    expect(r.lines.some((l) => l.type === 'info' && l.text.toLowerCase().includes('rebase interactif'))).toBe(true);
     expect(r.lines.some((l) => l.type === 'error')).toBe(false);
   });
 
@@ -2423,13 +2443,16 @@ describe('git', () => {
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     s = processCommand(s, 'git commit -m "base"').newState;
     const r = processCommand(s, 'git cherry-pick');
-    expect(r.lines[0].text).toContain('Usage: git cherry-pick');
+    expect(r.lines[0].text).toBe('usage: git cherry-pick [--edit] [-n] [-m <parent-number>] [-s] [-x] [--ff]');
+    expect(r.status).toBe(129);
   });
 
-  it('git cherry-pick on a repo with no commits returns "no commits yet"', () => {
+  // Git 2.56: options are checked before the repository, so an empty one gets the usage too.
+  it('git cherry-pick without a ref on a repo with no commits returns usage', () => {
     const s = processCommand(makeState(), 'git init').newState;
     const r = processCommand(s, 'git cherry-pick');
-    expect(r.lines[0].text).toContain('does not have any commits yet');
+    expect(r.lines[0].text).toMatch(/^usage: git cherry-pick/);
+    expect(r.status).toBe(129);
   });
 
   it('git cherry-pick a bad revision returns fatal', () => {
@@ -2440,15 +2463,19 @@ describe('git', () => {
     expect(r.lines[0].text).toContain("bad revision");
   });
 
-  it('git cherry-pick <hash> re-applies the commit on the current branch', () => {
+  it('git cherry-pick <hash> re-applies a commit of another branch on the current one', () => {
     let s = withFiles(processCommand(makeState(), 'git init').newState, 'mon-fichier.txt');
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     s = processCommand(s, 'git commit -m "feat: base"').newState;
+    s = processCommand(s, 'git switch -c fix').newState;
+    s = processCommand(processCommand(withFiles(s, 'fix.txt'), 'git add fix.txt').newState, 'git commit -m "fix: x"').newState;
     const { hash } = s.git!.commits[0];
+    s = processCommand(s, 'git switch main').newState;
     const before = s.git!.commits.length;
     const r = processCommand(s, `git cherry-pick ${hash}`);
     expect(r.newState.git!.commits.length).toBe(before + 1);
-    expect(r.lines.some((l) => l.text.includes('cherry-pické'))).toBe(true);
+    expect(r.lines[0].text).toMatch(/^\[main [0-9a-f]{7}\] fix: x$/);
+    expect(processCommand(r.newState, 'ls').lines[0].text).toContain('fix.txt');
   });
 
   // ── unknown git subcommand ────────────────────────────────────────────────────
@@ -3026,12 +3053,15 @@ describe('reference replay gaps — engine matches the real shells', () => {
 
   it('git cherry-pick A..B picks the commits after A up to B, oldest first', () => {
     let s = run(['git init']).newState;
-    for (const m of ['one', 'two', 'three']) {
+    s = processCommand(processCommand(withFiles(s, 'one'), 'git add one').newState, 'git commit -m "one"').newState;
+    s = processCommand(s, 'git switch -c work').newState;
+    for (const m of ['two', 'three']) {
       s = processCommand(withFiles(s, m), `git add ${m}`).newState;
       s = processCommand(s, `git commit -m "${m}"`).newState;
     }
     const [three, two, one] = s.git!.commits.map((c) => c.hash);
     expect(two).toBeDefined();
+    s = processCommand(s, 'git switch main').newState;
     const r = processCommand(s, `git cherry-pick ${one}..${three}`);
     expect(r.lines.filter((l) => l.type === 'success').map((l) => l.text.replace(/^\[main [0-9a-f]{7}\] /, ''))).toEqual(['two', 'three']);
   });
