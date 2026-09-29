@@ -10,6 +10,7 @@
 *Page d'accueil · feuille de route · un test empêche la dérive*
 
 - **Des commandes qui marchent vraiment.** Sous « Choisissez votre environnement », la page listait par niveau des commandes que le terminal ne connaissait pas : `systemctl`, `launchctl`, `caffeinate`, `Get-Service`, `New-PSDrive` et dix-sept autres. Un visiteur qui en tapait une recevait « commande introuvable ». Chaque commande affichée est maintenant enseignée dans une leçon et fonctionne dans le terminal, et un test le vérifie à chaque changement.
+- **Un aperçu de terminal fidèle.** L'animation de la page d'accueil montrait sous Windows des réponses de bash, et sous Linux un `ls` qui ajoutait des `/` et ne triait pas. Elle reprend maintenant ce qu'affichent un vrai bash, zsh et PowerShell 7 (le tableau `Path` de `Get-Location`, `Test-Path` qui répond `True`), et l'invite suit le dossier courant après `cd projects`.
 - **Le bon résumé des modules.** « Du système de fichiers à la redirection de flux — deux niveaux » datait des débuts : le parcours va aujourd'hui jusqu'à Git et à l'IA, sur cinq niveaux.
 - **Une feuille de route à jour.** Les vraies branches Git, le guide d'installation de l'app et les exemples expliqués de la Référence passent dans « Disponible ». « En cours » annonce ce qui reste vraiment à faire : les exercices en plusieurs étapes, et les commandes enseignées que le terminal ne simule pas encore (`find`, `sort`, `diff`, `tar`…).
 

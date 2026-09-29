@@ -5,31 +5,42 @@ import type { SelectedEnvironment } from '../../context/EnvironmentContext';
 interface TerminalLine {
   type: 'prompt' | 'output';
   text: string;
+  /** Folder the command was typed in, below the home folder ('' = home): the prompt shows it. */
+  dir?: string;
+}
+
+/** A step of the demo; `into` is the folder a `cd` step enters, so the next prompts show it. */
+interface Step {
+  command: string;
+  output: string[];
+  into?: string;
 }
 
 // ─── Per-environment sequences ────────────────────────────────────────────────
+// What a real shell prints (GNU bash, macOS zsh, PowerShell 7): `ls` sorts its
+// names and adds no `/` to folders; PowerShell answers Get-Location with a table.
 
-const SEQUENCES: Record<SelectedEnvironment, Array<{ command: string; output: string[] }>> = {
+const SEQUENCES: Record<SelectedEnvironment, Step[]> = {
   linux: [
     { command: 'pwd', output: ['/home/user'] },
-    { command: 'ls', output: ['documents/  downloads/  projects/  notes.txt'] },
-    { command: 'cd projects', output: [] },
+    { command: 'ls', output: ['documents  downloads  notes.txt  projects'] },
+    { command: 'cd projects', output: [], into: 'projects' },
     { command: 'mkdir my-app', output: [] },
-    { command: 'ls', output: ['my-app/'] },
+    { command: 'ls', output: ['my-app'] },
   ],
   macos: [
     { command: 'pwd', output: ['/Users/user'] },
-    { command: 'ls', output: ['Desktop  Documents  Downloads  projects  notes.txt'] },
-    { command: 'cd projects', output: [] },
+    { command: 'ls', output: ['Desktop  Documents  Downloads  notes.txt  projects'] },
+    { command: 'cd projects', output: [], into: 'projects' },
     { command: 'mkdir my-app', output: [] },
-    { command: 'ls', output: ['my-app/'] },
+    { command: 'ls', output: ['my-app'] },
   ],
   windows: [
-    { command: 'Get-Location', output: ['Path', '----', 'C:\\Users\\user'] },
-    { command: 'Get-ChildItem', output: ['Documents  Downloads  projects  notes.txt'] },
-    { command: 'Set-Location projects', output: [] },
-    { command: 'New-Item -Type Directory my-app', output: ['    Directory: C:\\Users\\user\\projects', '', 'my-app'] },
-    { command: 'Get-ChildItem', output: ['my-app/'] },
+    { command: 'Get-Location', output: ['', 'Path', '----', 'C:\\Users\\user', ''] },
+    { command: 'Set-Location projects', output: [], into: 'projects' },
+    { command: 'New-Item -ItemType Directory my-app | Out-Null', output: [] },
+    { command: 'Test-Path my-app', output: ['True'] },
+    { command: 'Get-ChildItem -Name', output: ['my-app'] },
   ],
 };
 
@@ -62,22 +73,40 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/** The folder each step is typed in: home, then wherever the last `cd` went. */
+function stepDirs(env: SelectedEnvironment): string[] {
+  let dir = '';
+  return SEQUENCES[env].map((step) => {
+    const here = dir;
+    if (step.into !== undefined) dir = step.into;
+    return here;
+  });
+}
+
 function buildStaticLines(env: SelectedEnvironment): TerminalLine[] {
-  return SEQUENCES[env].flatMap((step) => [
-    { type: 'prompt' as const, text: step.command },
+  const dirs = stepDirs(env);
+  return SEQUENCES[env].flatMap((step, i) => [
+    { type: 'prompt' as const, text: step.command, dir: dirs[i] },
     ...step.output.map<TerminalLine>((text) => ({ type: 'output', text })),
   ]);
 }
 
+/** Where the demo ends: the folder of the prompt left waiting after the last step. */
+function finalDir(env: SelectedEnvironment): string {
+  const last = SEQUENCES[env].filter((step) => step.into !== undefined).pop();
+  return last?.into ?? '';
+}
+
 // ─── Env-aware prompt renderer ────────────────────────────────────────────────
 
-function PromptSpan({ env }: { env: SelectedEnvironment }) {
+// The prompts of the practice terminal (TerminalEmulator.tsx getEnvPrompt), which show the current folder.
+function PromptSpan({ env, dir = '' }: { env: SelectedEnvironment; dir?: string }) {
   if (env === 'linux') {
     return (
       <>
         <span className="text-emerald-400">user@terminal</span>
         <span className="text-[var(--github-text-secondary)]">:</span>
-        <span className="text-blue-400">~</span>
+        <span className="text-blue-400">{dir ? `~/${dir}` : '~'}</span>
         <span className="text-[var(--github-text-secondary)]">$ </span>
       </>
     );
@@ -86,8 +115,7 @@ function PromptSpan({ env }: { env: SelectedEnvironment }) {
     return (
       <>
         <span className="text-violet-400">➜</span>
-        <span className="text-[var(--github-text-secondary)]"> ~ </span>
-        <span className="text-violet-300">% </span>
+        <span className="text-[var(--github-text-secondary)]">{`  ${dir ? `~/${dir}` : '~'} `}</span>
       </>
     );
   }
@@ -95,7 +123,7 @@ function PromptSpan({ env }: { env: SelectedEnvironment }) {
   return (
     <>
       <span className="text-sky-400">PS </span>
-      <span className="text-[var(--github-text-primary)]">C:\Users\user</span>
+      <span className="text-[var(--github-text-primary)]">{dir ? `C:\\Users\\user\\${dir}` : 'C:\\Users\\user'}</span>
       <span className="text-sky-400">&gt; </span>
     </>
   );
@@ -107,6 +135,7 @@ export function TerminalPreview() {
 
   const [animatedLines, setAnimatedLines] = useState<TerminalLine[]>([]);
   const [typingText, setTypingText] = useState('');
+  const [typingDir, setTypingDir] = useState('');
   const [showCursor, setShowCursor] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,12 +174,15 @@ export function TerminalPreview() {
 
       async function runAnimation() {
         const sequence = SEQUENCES[selectedEnv];
+        const dirs = stepDirs(selectedEnv);
         while (!cancelledRef.current) {
           setAnimatedLines([]);
           setTypingText('');
+          setTypingDir('');
 
-          for (const step of sequence) {
+          for (const [index, step] of sequence.entries()) {
             if (cancelledRef.current) return;
+            const dir = dirs[index];
 
             for (let i = 0; i <= step.command.length; i++) {
               if (cancelledRef.current) return;
@@ -160,7 +192,8 @@ export function TerminalPreview() {
 
             if (cancelledRef.current) return;
             setTypingText('');
-            setAnimatedLines((prev) => [...prev, { type: 'prompt', text: step.command }]);
+            setAnimatedLines((prev) => [...prev, { type: 'prompt', text: step.command, dir }]);
+            if (step.into !== undefined) setTypingDir(step.into);
 
             await new Promise<void>((r) => { timeoutRef.current = setTimeout(r, 120); });
 
@@ -213,19 +246,21 @@ export function TerminalPreview() {
         {lines.map((line, i) => (
           <div key={i} className="leading-relaxed">
             {line.type === 'prompt' ? (
-              <div>
-                <PromptSpan env={selectedEnv} />
+              // A terminal wraps a long command at the screen's edge, not after a hyphen.
+              <div className="break-all">
+                <PromptSpan env={selectedEnv} dir={line.dir} />
                 <span className="text-[var(--github-text-primary)]">{line.text}</span>
               </div>
             ) : (
-              <div className="text-[var(--github-text-secondary)] pl-1">{line.text}</div>
+              // A blank line of output keeps its height (PowerShell frames its tables with them).
+              <div className="text-[var(--github-text-secondary)] pl-1 whitespace-pre-wrap">{line.text || '\u00a0'}</div>
             )}
           </div>
         ))}
 
         {/* Active typing line */}
-        <div className="leading-relaxed">
-          <PromptSpan env={selectedEnv} />
+        <div className="leading-relaxed break-all">
+          <PromptSpan env={selectedEnv} dir={reducedMotion ? finalDir(selectedEnv) : typingDir} />
           <span className="text-[var(--github-text-primary)]">{typingText}</span>
           <span
             className="inline-block w-[7px] h-[14px] bg-[#e6edf3] align-middle ml-px"

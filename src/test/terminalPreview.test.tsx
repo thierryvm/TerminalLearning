@@ -95,3 +95,28 @@ describe('TerminalPreview — env-aware title bar', () => {
     localStorage.removeItem('tl-environment');
   });
 });
+
+// ── What a real shell shows ──────────────────────────────────────────────────
+
+describe('TerminalPreview — prompts and blank lines as in a real shell', () => {
+  afterEach(() => localStorage.removeItem('tl-environment'));
+
+  it('the prompt follows cd: home first, then the projects folder', () => {
+    localStorage.removeItem('tl-environment');
+    const { container } = renderPreview(true);
+    const prompts = [...container.querySelectorAll('.text-blue-400')].map((el) => el.textContent);
+    expect(prompts[0]).toBe('~');
+    expect(prompts[prompts.length - 1]).toBe('~/projects');
+  });
+
+  it('PowerShell: the prompt shows the folder, and the blank lines around Get-Location stay visible', () => {
+    localStorage.setItem('tl-environment', 'windows');
+    const { container, getByText } = renderPreview(true);
+    const content = container.querySelector('.text-left')!;
+    expect(content.textContent).toContain('PS C:\\Users\\user\\projects> ');
+    // PowerShell frames the Path table with blank lines: they render as a non-breaking space, not as nothing.
+    const blanks = [...content.querySelectorAll('.whitespace-pre-wrap')].filter((el) => el.textContent === '\u00a0');
+    expect(blanks.length).toBe(2);
+    expect(getByText('Path')).toBeTruthy();
+  });
+});
