@@ -227,7 +227,11 @@ export const validateScripts: ValidateFn = (cmd, env) => {
     return c === './script.sh' || c === 'bash script.sh';
   };
 
-export const validateCron: ValidateFn = (cmd) => cmd.trim().toLowerCase() === 'crontab -l';
+// PowerShell has no crontab: Windows lists its scheduled tasks with Get-ScheduledTask.
+export const validateCron: ValidateFn = (cmd, env) => {
+  const c = cmd.trim().toLowerCase();
+  return env === 'windows' ? /^get-scheduledtask(\s.*)?$/.test(c) : c === 'crontab -l';
+};
 
 export const validatePing: ValidateFn = (cmd) => {
     // Accept `ping <host>` plus the options the lesson teaches across OSes:

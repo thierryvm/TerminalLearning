@@ -81,11 +81,6 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
   // reseau/curl
   "reseau/curl b1 [linux] curl -X POST https://api.example.com/data \\",
   "reseau/curl b1 [macos] curl -X POST https://api.example.com/data \\",
-  // reseau/ssh
-  "reseau/ssh b2 [linux] ssh-keygen -t ed25519 -C \"mon@email.com\"",
-  "reseau/ssh b2 [linux] ssh-copy-id user@serveur.example.com",
-  "reseau/ssh b2 [macos] ssh-keygen -t ed25519 -C \"mon@email.com\"",
-  "reseau/ssh b2 [macos] ssh-copy-id user@serveur.example.com",
   // git/git-config
   "git/git-config b1 [linux] git config --list",
   "git/git-config b1 [macos] git config --list",
@@ -208,4 +203,4 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
 ]);
 
 /** Lessons whose code blocks show bash to a Windows learner (no Windows variant). */
-export const BASH_SHOWN_ON_WINDOWS_MAX = 37;
+export const BASH_SHOWN_ON_WINDOWS_MAX = 34;

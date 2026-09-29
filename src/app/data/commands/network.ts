@@ -149,18 +149,24 @@ export function handleNetwork(cmd: string, args: string[], newState: TerminalSta
       };
     }
 
-    case 'ssh-keygen': {
-      const tIdx = args.indexOf('-t');
-      const keyType = tIdx >= 0 ? (args[tIdx + 1] ?? 'rsa') : 'rsa';
+    case 'ssh-copy-id': {
+      // A shell script shipped with OpenSSH on Linux and macOS, not with Windows' OpenSSH.
+      if (env === 'windows') {
+        return { lines: [{ text: "ssh-copy-id: The term 'ssh-copy-id' is not recognized as a name of a cmdlet, function, script file, or executable program.", type: 'error' }], newState };
+      }
+      const target = args.find((a) => !a.startsWith('-') && a.includes('@')) ?? args.find((a) => !a.startsWith('-'));
+      if (!target) return { lines: [{ text: 'Usage: /usr/bin/ssh-copy-id [-i [identity_file]] [-p port] [user@]hostname', type: 'error' }], newState };
       return {
         lines: [
-          { text: `Generating public/private ${keyType} key pair.`, type: 'output' },
-          { text: `Enter file in which to save the key (/home/user/.ssh/id_${keyType}): (simulé)`, type: 'output' },
-          { text: `Your identification has been saved in /home/user/.ssh/id_${keyType}`, type: 'success' },
-          { text: `Your public key has been saved in /home/user/.ssh/id_${keyType}.pub`, type: 'success' },
-          { text: `+--[${keyType.toUpperCase()}]--+`, type: 'output' },
-          { text: '|     .o+.        |', type: 'output' },
-          { text: '+----[SHA256]-----+', type: 'output' },
+          { text: '/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/user/.ssh/id_ed25519.pub"', type: 'output' },
+          { text: '/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed', type: 'output' },
+          { text: '/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys', type: 'output' },
+          { text: `${target}'s password: (simulé)`, type: 'output' },
+          { text: '', type: 'output' },
+          { text: 'Number of key(s) added: 1', type: 'success' },
+          { text: '', type: 'output' },
+          { text: `Now try logging into the machine, with: "ssh '${target}'"`, type: 'output' },
+          { text: 'and check to make sure that only the key(s) you wanted were added.', type: 'output' },
         ],
         newState,
       };
@@ -179,5 +185,5 @@ export function handleNetwork(cmd: string, args: string[], newState: TerminalSta
 
 export const NETWORK_COMMANDS = new Set([
   'ping', 'curl', 'wget', 'invoke-webrequest', 'iwr',
-  'nslookup', 'dig', 'resolve-dnsname', 'ssh', 'ssh-keygen', 'scp',
+  'nslookup', 'dig', 'resolve-dnsname', 'ssh', 'ssh-keygen', 'ssh-copy-id', 'scp',
 ]);

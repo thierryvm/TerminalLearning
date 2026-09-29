@@ -5,6 +5,21 @@
 
 ---
 
+## 🧪 29 septembre 2026 — Chaque exemple de la Référence fonctionne dans le terminal
+
+*Moteur du terminal · exemples de la page Référence en erreur : 32 → 0 · écarts de la théorie : 160 → 158 · blocs bash montrés sous Windows : 37 → 34*
+
+La livraison précédente laissait **32 exemples** de la page Référence en erreur, parce que le simulateur ne connaissait pas certaines commandes. Il les connaît maintenant, et chaque sortie a été comparée à celle d'un vrai bash, d'un vrai PowerShell 7, du vrai Git et du vrai OpenSSH.
+
+- **Les commandes et options qui manquaient.** Le simulateur connaît maintenant `cat -n`, `grep -r` sur un dossier et `date +FORMAT`. Côté PowerShell, il ajoute `Get-Content -TotalCount/-Tail`, `Set-Content`, `Add-Content`, `Get-Date -Format`, `Get-History`, `Get-Help`, `tasklist` et `Get-ScheduledTask`. `Select-String` ignore les majuscules, comme le vrai PowerShell.
+- **Les variables fonctionnent partout.** `cd $HOME`, `ls $HOME` ou `Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub` remplacent la variable par sa valeur, comme un vrai shell. Avant, seul `echo` le faisait. Entre guillemets simples, `'$HOME'` reste écrit tel quel, tout comme `\$HOME`. `~` désigne le dossier personnel, et `$HOME` fonctionne aussi dans PowerShell.
+- **`ssh-keygen` crée de vraies clés.** La commande écrit `~/.ssh/id_ed25519` (lisible par vous seul) et `id_ed25519.pub`. On peut ensuite lire la clé publique avec `cat` et l'envoyer avec `ssh-copy-id`. Par défaut, la clé est de type ed25519, comme dans OpenSSH depuis la version 9.5. L'empreinte est calculée comme dans OpenSSH (SHA-256 de la clé publique), et `ssh-keygen -l` la réaffiche. Le petit dessin (randomart) suit le même calcul. Sur des clés réelles, empreinte et dessin sont identiques au caractère près.
+- **Un bogue Git corrigé.** `git commit -am "message"` perdait son message. Un `git commit` sans rien à valider affiche maintenant le même message que Git, et il échoue comme lui.
+- **Les leçons Windows ne font plus taper de commandes Linux.** Dans « Anatomie d'une commande », l'élève Windows tape `Get-Help Get-ChildItem`. Dans « cron », il tape `Get-ScheduledTask`, car `crontab` n'existe pas dans PowerShell. La leçon SSH dit que `ssh-copy-id` n'est pas fourni sous Windows et donne la commande de remplacement.
+- **Des sorties corrigées d'après le vrai shell.** `Select-String` sans résultat ne signale plus d'échec, et `Get-Help` n'affiche plus la syntaxe bash. La leçon SSH montrait un faux dialogue (`Enter file (.ssh/id_ed25519): [Entrée]`) : elle montre maintenant les vraies questions d'OpenSSH.
+
+---
+
 ## 📖 26 septembre 2026 — Une page Référence qui explique, et dont chaque exemple fonctionne
 
 *Page `/app/reference` · 76 commandes · nouveau test permanent `commandReference` · exemples en erreur dans le terminal : 224 → 32*

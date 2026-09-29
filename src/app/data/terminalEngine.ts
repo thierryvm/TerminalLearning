@@ -5,12 +5,14 @@ export type { TerminalEnv, FileNode, DirectoryNode, FSNode, GitCommit, GitState,
 // ─── Command module handlers ──────────────────────────────────────────────────
 import { handleGit } from './commands/git';
 import { handleNetwork } from './commands/network';
+import { fingerprintLine, keygenOptions, keygenType, sshKeygen } from './commands/sshKeygen';
 import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
 import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
+import { strftime } from './commands/dateFormat';
 import type { WindowsCmdDeps } from './commands/windows';
 
 // ─── Initial Filesystem ───────────────────────────────────────────────────────
@@ -300,26 +302,65 @@ function deepCloneRoot(root: DirectoryNode): DirectoryNode {
 
 // ─── Argument Parser ──────────────────────────────────────────────────────────
 
-function parseArgs(input: string): string[] {
+/**
+ * Splits a command line into words, removing quotes. With `expand`, variables
+ * are replaced as the shell does it, outside single quotes only: `$env:NAME`
+ * (any case), `$HOME` and `$PWD` under PowerShell; `$NAME`, `${NAME}`, `$1`…`$9`,
+ * a leading `~` and `\$` (a literal dollar) under bash and zsh. An unset bash
+ * variable expands to nothing.
+ */
+function parseArgs(input: string, expand?: { vars: Record<string, string>; env: TerminalEnv }): string[] {
   const result: string[] = [];
   let current = '';
+  // `""` is an empty argument (`ssh-keygen -N ""`); an unquoted empty expansion is not.
+  let quoted = false;
   let inQuote = false;
   let quoteChar = '';
+  const windows = expand?.env === 'windows';
+  const variable = windows
+    // `$HOME` and `$PWD` are PowerShell automatic variables: USERPROFILE and the current folder.
+    ? /^\$(?:env:([A-Za-z_][A-Za-z0-9_]*)|(home|pwd)(?![A-Za-z0-9_:]))/i
+    // `$1`…`$9` are the (empty) positional parameters of an interactive shell.
+    : /^\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*)|([1-9]))/;
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
+    const literal = inQuote && quoteChar === "'";
+    if (expand && !windows && !literal && ch === '\\' && input[i + 1] === '$') {
+      current += '$';
+      i++;
+      continue;
+    }
+    // `~` at the start of an unquoted word is the home folder (`echo ~/documents`).
+    if (expand && !windows && !inQuote && ch === '~' && !current && !quoted && /^(?:$|[/\s])/.test(input.slice(i + 1, i + 2))) {
+      current += capValue(Object.prototype.hasOwnProperty.call(expand.vars, 'HOME') ? expand.vars.HOME : '/home/user');
+      continue;
+    }
+    if (expand && ch === '$' && !literal) {
+      const m = variable.exec(input.slice(i));
+      if (m) {
+        const name = windows
+          ? (m[2] ? (m[2].toLowerCase() === 'home' ? 'USERPROFILE' : 'PWD') : m[1])
+          : m[1] ?? m[2] ?? m[3];
+        const key = windows ? envKey(expand.vars, name) : name;
+        current += Object.prototype.hasOwnProperty.call(expand.vars, key) ? capValue(expand.vars[key]) : '';
+        i += m[0].length - 1;
+        continue;
+      }
+    }
     if (inQuote) {
       if (ch === quoteChar) inQuote = false;
       else current += ch;
     } else if (ch === '"' || ch === "'") {
       inQuote = true;
+      quoted = true;
       quoteChar = ch;
     } else if (ch === ' ' || ch === '\t') {
-      if (current) { result.push(current); current = ''; }
+      if (current || quoted) { result.push(current); current = ''; quoted = false; }
     } else {
       current += ch;
     }
   }
-  if (current) result.push(current);
+  if (current || quoted) result.push(current);
   return result;
 }
 
@@ -491,16 +532,30 @@ function cmdTouch(state: TerminalState, args: string[]): { lines: OutputLine[]; 
 }
 
 function cmdCat(state: TerminalState, args: string[]): OutputLine[] {
-  if (!args.length) return [{ text: 'cat: missing file operand', type: 'error' }];
+  // `-n` numbers the lines like GNU cat: width 6, a tab, and the count runs on across files.
+  const options = args.filter((a) => /^-[^-]/.test(a));
+  const files = args.filter((a) => !/^-[^-]/.test(a));
+  const unknown = options.join('').replace(/-/g, '').replace(/n/g, '');
+  if (unknown) {
+    return [
+      { text: `cat: invalid option -- '${unknown[0]}'`, type: 'error' },
+      { text: "Try 'cat --help' for more information.", type: 'error' },
+    ];
+  }
+  const numbered = options.length > 0;
+  if (!files.length) return [{ text: 'cat: missing file operand', type: 'error' }];
   const lines: OutputLine[] = [];
-  for (const p of args) {
+  let lineNo = 0;
+  for (const p of files) {
     const node = getNode(state.root, resolvePath(state, p));
     if (!node) {
       lines.push({ text: `cat: ${p}: No such file or directory`, type: 'error' });
     } else if (node.type === 'directory') {
       lines.push({ text: `cat: ${p}: Is a directory`, type: 'error' });
     } else {
-      node.content.split('\n').forEach((line) => lines.push({ text: line, type: 'output' }));
+      node.content.split('\n').forEach((line) =>
+        lines.push({ text: numbered ? `${String(++lineNo).padStart(6)}\t${line}` : line, type: 'output' }),
+      );
     }
   }
   return lines;
@@ -508,20 +563,33 @@ function cmdCat(state: TerminalState, args: string[]): OutputLine[] {
 
 const MAX_ENV_VAR_LENGTH = 1024;
 
-function cmdEcho(args: string[], envVars?: Record<string, string>): OutputLine[] {
-  const text = args.join(' ');
-  if (!envVars) return [{ text, type: 'output' }];
-  // Interpolate $env:VAR (PowerShell) and $VAR (bash) from envVars
-  // Values are capped at MAX_ENV_VAR_LENGTH to prevent terminal flooding [H3]
-  const safeVal = (name: string) => {
-    if (!Object.prototype.hasOwnProperty.call(envVars, name)) return '';
-    const v = envVars[name];
-    return v.length > MAX_ENV_VAR_LENGTH ? v.slice(0, MAX_ENV_VAR_LENGTH) + '…' : v;
-  };
-  const expanded = text
-    .replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => safeVal(name))
-    .replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => safeVal(name));
-  return [{ text: expanded, type: 'output' }];
+/** Variables a command line expands: the session's, and PWD for the current folder. */
+function expansionVars(state: TerminalState, env: TerminalEnv): { vars: Record<string, string>; env: TerminalEnv } {
+  const shown = varsForEnv(state.envVars, env);
+  const pwd = env === 'windows' ? displayPathForEnv(state.cwd, env) : '/' + state.cwd.join('/');
+  return { vars: { PWD: pwd, ...shown }, env };
+}
+
+/** A variable value, cut at MAX_ENV_VAR_LENGTH so a huge variable cannot flood the terminal [H3]. */
+function capValue(v: string): string {
+  return v.length > MAX_ENV_VAR_LENGTH ? v.slice(0, MAX_ENV_VAR_LENGTH) + '…' : v;
+}
+
+/** The stored name of a PowerShell `$env:` variable, matched without regard to case. */
+function envKey(vars: Record<string, string>, name: string): string {
+  return Object.keys(vars).find((k) => k.toLowerCase() === name.toLowerCase()) ?? name;
+}
+
+/**
+ * Variables are already expanded by parseArgs, which leaves `'$HOME'` literal
+ * like the shell does. Each word is capped at MAX_ENV_VAR_LENGTH so a huge
+ * variable cannot flood the terminal [H3].
+ */
+function cmdEcho(args: string[]): OutputLine[] {
+  const text = args
+    .map((a) => (a.length > MAX_ENV_VAR_LENGTH ? a.slice(0, MAX_ENV_VAR_LENGTH) + '…' : a))
+    .join(' ');
+  return [{ text, type: 'output' }];
 }
 
 function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
@@ -731,28 +799,45 @@ function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
   const rest = args.filter((a) => !a.startsWith('-'));
   if (rest.length < 2) return [{ text: 'grep: usage: grep [OPTIONS] PATTERN FILE', type: 'error' }];
 
-  const pattern = rest[0];
-  const filePath = rest[1];
+  const [pattern, ...paths] = rest;
   const showLineNumbers = flags.some((f) => f.includes('n'));
   const ignoreCase = flags.some((f) => f.includes('i'));
+  const recursive = flags.some((f) => /^-[^-]*[rR]/.test(f) || f === '--recursive');
 
-  const node = getNode(state.root, resolvePath(state, filePath));
-  if (!node) return [{ text: `grep: ${filePath}: No such file or directory`, type: 'error' }];
-  if (node.type === 'directory') return [{ text: `grep: ${filePath}: Is a directory`, type: 'error' }];
-
-  const lines = node.content.split('\n');
   const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
   if (!regexResult.ok) return [regexResult.error];
   const regex = regexResult.regex;
-  const matches = lines
-    .map((line, i) => ({ line, i }))
-    .filter(({ line }) => regex.test(line));
 
-  if (!matches.length) return [];
-  return matches.map(({ line, i }) => ({
-    text: showLineNumbers ? `${i + 1}:${line}` : line,
-    type: 'output' as const,
-  }));
+  // Files to search, as grep names them: a directory given with -r expands to its
+  // files, depth first in name order, each shown as `<dir>/<sub>/<file>`.
+  const targets: { name: string; content: string }[] = [];
+  const errors: OutputLine[] = [];
+  const walk = (dir: DirectoryNode, shown: string) => {
+    for (const [name, child] of Object.entries(dir.children).sort(([a], [b]) => a.localeCompare(b))) {
+      const childName = `${shown.replace(/\/$/, '')}/${name}`;
+      if (child.type === 'directory') walk(child, childName);
+      else targets.push({ name: childName, content: child.content });
+    }
+  };
+  for (const p of paths) {
+    const node = getNode(state.root, resolvePath(state, p));
+    if (!node) errors.push({ text: `grep: ${p}: No such file or directory`, type: 'error' });
+    else if (node.type === 'file') targets.push({ name: p, content: node.content });
+    else if (recursive) walk(node, p);
+    else errors.push({ text: `grep: ${p}: Is a directory`, type: 'error' });
+  }
+
+  // Like grep: the file name prefixes each match as soon as several files can match.
+  const withName = recursive || paths.length > 1;
+  const out: OutputLine[] = [];
+  for (const { name, content } of targets) {
+    content.split('\n').forEach((line, i) => {
+      if (!regex.test(line)) return;
+      const prefix = `${withName ? `${name}:` : ''}${showLineNumbers ? `${i + 1}:` : ''}`;
+      out.push({ text: `${prefix}${line}`, type: 'output' });
+    });
+  }
+  return [...out, ...errors];
 }
 
 function cmdHeadTail(state: TerminalState, args: string[], cmd: 'head' | 'tail'): OutputLine[] {
@@ -1109,20 +1194,22 @@ interface PipelineResult { lines: OutputLine[]; newState: TerminalState; ok: boo
 
 const outLines = (texts: string[]): OutputLine[] => texts.map((text) => ({ text, type: 'output' as const }));
 
-function openFailure(typed: string, reason: string, env: TerminalEnv): OutputLine {
+function openFailure(typed: string, reason: string, env: TerminalEnv, cmdlet = 'Out-File'): OutputLine {
   return env === 'windows'
-    ? { text: `Out-File: Could not find a part of the path '${typed}'.`, type: 'error' }
+    ? { text: `${cmdlet}: Could not find a part of the path '${typed}'.`, type: 'error' }
     : { text: `bash: ${typed}: ${reason}`, type: 'error' };
 }
 
 /** Checks a redirection target the way the shell opens it: before the command runs. */
-function checkWritable(state: TerminalState, typed: string, env: TerminalEnv): { path: string[] } | { error: OutputLine } {
+function checkWritable(state: TerminalState, typed: string, env: TerminalEnv, cmdlet?: string): { path: string[] } | { error: OutputLine } {
   const path = resolvePath(state, typed);
+  // PowerShell names the full path in its message; bash repeats what was typed.
+  const shown = env === 'windows' ? displayPathForEnv(path, env) : typed;
   const parent = getNode(state.root, path.slice(0, -1));
   if (!parent || parent.type !== 'directory' || path.length === 0) {
-    return { error: openFailure(typed, 'No such file or directory', env) };
+    return { error: openFailure(shown, 'No such file or directory', env, cmdlet) };
   }
-  if (getNode(state.root, path)?.type === 'directory') return { error: openFailure(typed, 'Is a directory', env) };
+  if (getNode(state.root, path)?.type === 'directory') return { error: openFailure(shown, 'Is a directory', env, cmdlet) };
   return { path };
 }
 
@@ -1138,12 +1225,72 @@ function writeFileAt(root: DirectoryNode, path: string[], content: string, appen
   return newRoot;
 }
 
+/**
+ * `ssh-keygen`: writes the key pair (private 600, public 644), creating
+ * `~/.ssh` (700) when it is missing, like OpenSSH does for the default path.
+ * `-l` prints the fingerprint of an existing key; other modes are not simulated.
+ */
+function cmdSshKeygen(state: TerminalState, args: string[], env: TerminalEnv): CommandOutput {
+  const parsed = keygenOptions(args);
+  if ('missing' in parsed) {
+    return { lines: [{ text: `ssh-keygen: option requires an argument -- ${parsed.missing}`, type: 'error' }], newState: state, status: 255 };
+  }
+  const { opts } = parsed;
+  const fileArg = typeof opts.f === 'string' ? opts.f : undefined;
+  const sshDir = ['home', 'user', '.ssh'];
+  const sshDirShown = env === 'windows' ? `${displayPathForEnv(['home', 'user'], env)}/.ssh` : '/' + sshDir.join('/');
+
+  if (opts.l) {
+    // A private key is read through its .pub, as OpenSSH finds the public half.
+    const typed = fileArg ?? `${sshDirShown}/id_ed25519`;
+    const path = fileArg !== undefined ? resolvePath(state, fileArg) : [...sshDir, 'id_ed25519'];
+    let node = getNode(state.root, path);
+    if (node?.type === 'file' && node.content.startsWith('-----BEGIN')) {
+      node = getNode(state.root, [...path.slice(0, -1), `${path[path.length - 1]}.pub`]);
+    }
+    if (!node) return { lines: [{ text: `ssh-keygen: ${typed}: No such file or directory`, type: 'error' }], newState: state, status: 255 };
+    const line = node.type === 'file' ? fingerprintLine(node.content) : null;
+    return line
+      ? { lines: [{ text: line, type: 'output' }], newState: state }
+      : { lines: [{ text: `${typed} is not a public key file.`, type: 'error' }], newState: state, status: 255 };
+  }
+  const otherMode = ['y', 'p', 'c', 'e', 'i', 'R', 'F', 'H', 'D', 'k', 'Q', 's', 'Y', 'A'].find((m) => opts[m] !== undefined);
+  if (otherMode) {
+    return { lines: [{ text: `ssh-keygen -${otherMode} n'est pas simulé dans ce terminal : essayez-le dans le terminal de votre ordinateur.`, type: 'info' }], newState: state };
+  }
+
+  const wanted = fileArg !== undefined ? resolvePath(state, fileArg) : [...sshDir, `id_${keygenType(opts)}`];
+  const wantedPub = [...wanted.slice(0, -1), `${wanted[wanted.length - 1] ?? ''}.pub`];
+  // The default folder is created on the way; a folder named with -f must exist.
+  const folder = fileArg !== undefined ? getNode(state.root, wanted.slice(0, -1)) : getNode(state.root, ['home', 'user']);
+  const result = sshKeygen({
+    opts,
+    sshDirShown,
+    defaultComment: `${state.user}@${state.hostname}`,
+    sshDirExists: getNode(state.root, sshDir)?.type === 'directory',
+    keyExists: getNode(state.root, wanted)?.type === 'file',
+    keyIsDirectory: wanted.length === 0 || [wanted, wantedPub].some((p) => getNode(state.root, p)?.type === 'directory'),
+    folderMissing: folder?.type !== 'directory',
+  });
+  if ('error' in result) return { lines: result.error, newState: state, status: result.status };
+
+  const root = deepCloneRoot(state.root);
+  if (fileArg === undefined && getNode(root, sshDir)?.type !== 'directory') {
+    (getNode(root, ['home', 'user']) as DirectoryNode).children['.ssh'] = makeDir({}, 'drwx------');
+  }
+  const parent = getNode(root, wanted.slice(0, -1)) as DirectoryNode;
+  const name = wanted[wanted.length - 1];
+  parent.children[name] = makeFile(result.privateKey, '-rw-------');
+  parent.children[`${name}.pub`] = makeFile(result.publicKey, '-rw-r--r--');
+  return { lines: result.lines, newState: { ...state, root } };
+}
+
 /** `tee`, `Tee-Object`, `Out-File`… : write the piped text to each file. */
-function writeFromPipe(state: TerminalState, files: string[], text: string, append: boolean, env: TerminalEnv): { root: DirectoryNode; errors: OutputLine[] } {
+function writeFromPipe(state: TerminalState, files: string[], text: string, append: boolean, env: TerminalEnv, cmdlet?: string): { root: DirectoryNode; errors: OutputLine[] } {
   let root = state.root;
   const errors: OutputLine[] = [];
   for (const f of files) {
-    const target = checkWritable({ ...state, root }, f, env);
+    const target = checkWritable({ ...state, root }, f, env, cmdlet);
     if ('error' in target) errors.push(target.error);
     else root = writeFileAt(root, target.path, text, append);
   }
@@ -1181,7 +1328,7 @@ function lineCount(args: string[], fallback: number): number {
  * Commands that do not read it run as usual; unknown readers pass the text through.
  */
 function runFilter(state: TerminalState, text: string, stdin: string, env: TerminalEnv): CommandOutput {
-  const parts = parseArgs(text);
+  const parts = parseArgs(text, expansionVars(state, env));
   const cmd = (parts[0] ?? '').toLowerCase();
   const args = parts.slice(1);
   const flags = args.filter((a) => a.startsWith('-'));
@@ -1984,6 +2131,14 @@ function splitSingleQuoted(line: string): string[] {
   return line.split("'");
 }
 
+/** PowerShell aliases whose cmdlet behaves differently from the Unix command of the same name. */
+const PS_ALIASES: Record<string, string> = {
+  cat: 'get-content',
+  type: 'get-content',
+  history: 'get-history',
+  h: 'get-history',
+};
+
 /** The command name as typed (not lower-cased): that is what a real shell repeats. */
 function commandNotFound(typed: string, state: TerminalState): CommandOutput {
   return { lines: [{ text: `${typed}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }], newState: state };
@@ -1993,27 +2148,33 @@ function commandNotFound(typed: string, state: TerminalState): CommandOutput {
 function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): CommandOutput {
   let newState = state;
 
-  // Handle PowerShell $env: variable assignment ($env:VAR = "value")
-  const psEnvSet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+  // PowerShell $env: assignment: `$env:VAR = "value"`, or `+=` to append (`$env:Path += ";C:\outils"`).
+  // Like PowerShell, an assignment prints nothing.
+  const psEnvSet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*(\+?=)\s*(.*)$/);
   if (psEnvSet) {
-    const [, varName, rawValue] = psEnvSet;
+    const [, varName, operator, rawValue] = psEnvSet;
     // Double quotes expand `$env:X` (`"$env:PATH;C:\outils"`); single quotes keep it literal.
     const shown = varsForEnv(newState.envVars, env);
     const unquoted = rawValue.replace(/^["']|["']$/g, '');
     const varValue = rawValue.startsWith("'")
       ? unquoted
-      : unquoted.replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, ref: string) => shown[ref] ?? '');
-    return {
-      lines: [{ text: `$env:${varName} défini à "${varValue}"`, type: 'success' }],
-      newState: { ...newState, envVars: { ...newState.envVars, [varName]: varValue } },
-    };
+      : unquoted.replace(/\$env:([A-Za-z_][A-Za-z0-9_]*)/g, (_, ref: string) => {
+          const k = envKey(shown, ref);
+          return Object.prototype.hasOwnProperty.call(shown, k) ? shown[k] : '';
+        });
+    // Environment variable names are case-insensitive on Windows: `$env:Path` is PATH.
+    const existing = envKey(shown, varName);
+    const before = Object.prototype.hasOwnProperty.call(shown, existing) ? shown[existing] : '';
+    const value = capValue(operator === '+=' ? before + varValue : varValue);
+    return { lines: [], newState: { ...newState, envVars: { ...newState.envVars, [existing]: value } } };
   }
 
   // Handle PowerShell standalone $env:VAR read
   const psEnvGet = trimmed.match(/^\$env:([A-Za-z_][A-Za-z0-9_]*)$/);
   if (psEnvGet) {
     const [, varName] = psEnvGet;
-    const value = varsForEnv(newState.envVars, env)[varName];
+    const shown = varsForEnv(newState.envVars, env);
+    const value = shown[envKey(shown, varName)];
     return {
       lines: value !== undefined
         ? [{ text: value, type: 'output' }]
@@ -2030,15 +2191,16 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     // `(Get-Content file).Count` — number of lines, the PowerShell `wc -l`.
     const psCount = trimmed.match(/^\(\s*(?:get-content|gc|cat)\s+(.+?)\s*\)\.count$/i);
     if (psCount) {
-      const target = parseArgs(psCount[1]).map((p) => (/^\$profile$/i.test(p) ? PS_PROFILE_PATH : p));
+      const target = parseArgs(psCount[1], expansionVars(newState, env))
+        .map((p) => (/^\$profile$/i.test(p) ? PS_PROFILE_PATH : p));
       const out = cmdCat(newState, target);
       const errors = out.filter((l) => l.type === 'error');
       return { lines: errors.length ? errors : [{ text: String(out.length), type: 'output' }], newState };
     }
   }
 
-  // Parse command
-  let parts = parseArgs(trimmed);
+  // Parse command; variables expand here, once, for every command (`cd $HOME`).
+  let parts = parseArgs(trimmed, expansionVars(newState, env));
   const cmd = parts[0]?.toLowerCase();
   if (env === 'windows') {
     // `$PROFILE` as an argument: a readable path for echo, the file itself otherwise.
@@ -2059,7 +2221,23 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   const winDeps: WindowsCmdDeps = {
     cmdPwd, cmdCd, cmdLs, cmdCat, cmdMkdir, cmdTouch,
     cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep, cmdEnv,
+    readFile: (s, p) => {
+      const node = getNode(s.root, resolvePath(s, p));
+      if (!node) return { error: 'missing' };
+      return node.type === 'directory' ? { error: 'directory' } : { content: node.content };
+    },
+    writeFile: (s, p, content, append, cmdlet) => writeFromPipe(s, [p], content, append, env, cmdlet),
+    winPath: (s, p) => displayPathForEnv(resolvePath(s, p), 'windows'),
   };
+
+  // Under PowerShell these names are aliases of cmdlets: same parameters, same messages.
+  if (env === 'windows') {
+    const cmdlet = PS_ALIASES[cmd];
+    if (cmdlet) {
+      const result = handleWindows(cmdlet, args, newState, env, winDeps);
+      if (result) return result;
+    }
+  }
 
   switch (cmd) {
     case 'pwd':
@@ -2090,7 +2268,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines: cmdCat(newState, args), newState };
 
     case 'echo':
-      return { lines: cmdEcho(args, varsForEnv(newState.envVars, env)), newState };
+      return { lines: cmdEcho(args), newState };
 
     // ── Environment & scripts → commands/env.ts ───────────────────────────────
     case 'export':
@@ -2203,8 +2381,11 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     case 'hostname':
       return { lines: [{ text: newState.hostname, type: 'output' }], newState };
 
-    case 'date':
-      return { lines: [{ text: new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' }), type: 'output' }], newState };
+    case 'date': {
+      // `date +"%Y-%m-%d"` formats; without a format, the C-locale default of GNU and BSD date.
+      const format = args.find((a) => a.startsWith('+'));
+      return { lines: [{ text: strftime(new Date(), format ? format.slice(1) : '%a %b %e %H:%M:%S %Z %Y'), type: 'output' }], newState };
+    }
 
     case 'uname':
       if (env === 'macos') {
@@ -2293,6 +2474,26 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines: [{ text: `man: pas de page de manuel pour '${args[0]}'`, type: 'error' }], newState };
     }
 
+    case 'get-help': {
+      if (env !== 'windows') return commandNotFound(parts[0], newState);
+      const name = args.find((a) => !a.startsWith('-'));
+      if (!name) return { lines: getHelpText(env).split('\n').map((t) => ({ text: t, type: 'output' as const })), newState };
+      const entry = CMD_HELP[CMD_HELP_ALIASES[name.toLowerCase()] ?? name.toLowerCase()];
+      if (!entry) {
+        return { lines: [{ text: `Get-Help: Get-Help could not find ${name} in a help file in this session.`, type: 'error' }], newState };
+      }
+      // PowerShell's layout: NAME, SYNOPSIS (one sentence), then EXAMPLES with -Examples.
+      // The name as typed: the simulator does not know every cmdlet's official casing.
+      // The help entries carry a bash syntax line (`ls [-la]`), so it is not shown here.
+      const lines = ['NAME', `    ${name}`, '', 'SYNOPSIS', `    ${entry.description}`, ''];
+      if (args.some((a) => a.toLowerCase() === '-examples')) {
+        lines.push('EXAMPLES', ...(entry.examples?.windows ?? entry.examples?.linux ?? []).map((e) => `    ${e}`));
+      } else {
+        lines.push('REMARKS', `    Aide abrégée du simulateur. Pour des exemples, tapez « Get-Help ${name} -Examples ».`);
+      }
+      return { lines: lines.map((text) => ({ text, type: 'output' as const })), newState };
+    }
+
     case 'exit':
     case 'logout':
       return { lines: [{ text: 'logout', type: 'output' }], newState };
@@ -2332,6 +2533,9 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
 
 
     // ── Network & SSH (Module 8) → commands/network.ts ──────────────────────
+    case 'ssh-keygen':
+      return cmdSshKeygen(newState, args, env);
+
     case 'ping':
     case 'curl':
     case 'wget':
@@ -2341,7 +2545,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     case 'dig':
     case 'resolve-dnsname':
     case 'ssh':
-    case 'ssh-keygen':
+    case 'ssh-copy-id':
     case 'scp':
       return handleNetwork(cmd, args, newState, env);
 

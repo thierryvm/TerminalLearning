@@ -18,7 +18,7 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   'navigation/pwd': { all: ['pwd'], windows: ['Get-Location'] },
   'navigation/ls': { all: ['ls'], windows: ['Get-ChildItem'] },
   'navigation/ls-la': { all: ['ls -la'], windows: ['Get-ChildItem -Force'] },
-  'navigation/command-anatomy': { all: ['man ls'] },
+  'navigation/command-anatomy': { all: ['man ls'], windows: ['Get-Help Get-ChildItem'] },
   'navigation/cd': { all: ['cd documents'], windows: ['Set-Location documents'] },
   // ── fichiers ──
   'fichiers/mkdir': { all: ['mkdir test'], windows: ['New-Item -ItemType Directory -Name test'] },
@@ -81,7 +81,7 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   'variables/shell-config': { linux: ['cat ~/.bashrc'], macos: ['cat ~/.zshrc'], windows: ['cat $PROFILE'] },
   'variables/dotenv': { all: ['cd projets', 'cat .env'], windows: ['cd projets', 'Get-Content .env'] },
   'variables/scripts': { all: ['cd projets', './script.sh'], windows: ['cd projets', '.\\script.sh'] },
-  'variables/cron': { all: ['crontab -l'] },
+  'variables/cron': { all: ['crontab -l'], windows: ['Get-ScheduledTask'] },
   // ── réseau ──
   'reseau/ping': { all: ['ping google.com'] },
   'reseau/curl': { all: ['curl https://api.github.com'] },

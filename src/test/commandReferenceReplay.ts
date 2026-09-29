@@ -13,15 +13,26 @@ import type { EnvironmentId } from '../app/types/curriculum';
 export const REFERENCE_ENVS = ['linux', 'macos', 'windows'] as const;
 export type ReferenceEnv = (typeof REFERENCE_ENVS)[number];
 
-/** Git examples run inside a repository with a commit, an `origin` remote and a feature/login branch. */
+/**
+ * Git examples run in the repository they describe: an `origin` remote, a
+ * feature/login branch, and a history deep enough for `git rebase -i HEAD~3`
+ * that holds the commits the cherry-pick examples name (a1b2c3d, e4f5a6b).
+ */
 const GIT_CATEGORIES = new Set(['git', 'github-collaboration']);
+
+const HISTORY = [
+  { hash: 'e4f5a6b', message: 'fix: corrige le formulaire de contact' },
+  { hash: 'c7d8e9f', message: 'docs: complète le README' },
+  { hash: 'a1b2c3d', message: 'feat: ajoute la page contact' },
+];
 
 function startState(categoryId: string): TerminalState {
   const base = createInitialState();
   if (!GIT_CATEGORIES.has(categoryId)) return base;
   const repo = gitRepoWithRemote.apply(base);
   if (!repo.git) throw new Error('gitRepoWithRemote must create a repository');
-  return { ...repo, git: { ...repo.git, branches: [...repo.git.branches, 'feature/login'] } };
+  const commits = [...HISTORY.map((c) => ({ ...c, author: 'user', date: '2026-01-20' })), ...repo.git.commits];
+  return { ...repo, git: { ...repo.git, commits, branches: [...repo.git.branches, 'feature/login'] } };
 }
 
 export interface ReplayedExample {

@@ -332,11 +332,11 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Affichez le manuel de `ls` pour explorer toutes ses options : tapez `man ls`.',
           instructionByEnv: {
-            windows: 'En PowerShell, l\'équivalent du manuel est `Get-Help`. Dans ce simulateur, tapez `man ls` pour voir le principe (le `Get-Help` natif arrive bientôt).',
+            windows: 'En PowerShell, l\'équivalent du manuel est `Get-Help`. Affichez l\'aide de la commande qui liste un dossier : tapez `Get-Help Get-ChildItem`.',
           },
           hint: 'Tapez "man ls" — `man` (manual) suivi du nom de la commande.',
           hintByEnv: {
-            windows: 'Tapez "man ls" ici ; en PowerShell réel ce serait "Get-Help ls".',
+            windows: 'Tapez "Get-Help Get-ChildItem" (ou "Get-Help ls" : ls est un raccourci de Get-ChildItem).',
           },
           validate: validateCommandAnatomy,
           successMessage: 'Parfait ! Vous savez maintenant lire et explorer n\'importe quelle commande : nom, options (courtes ou longues), arguments.',
@@ -1605,12 +1605,10 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '$ export GREETING=Hello\n$ echo $GREETING\nHello',
-            label: 'Créer et lire une variable (Linux/macOS)',
-          },
-          {
-            type: 'code',
-            content: 'PS> $env:GREETING = "Hello"\nPS> echo $env:GREETING\nHello',
-            label: 'PowerShell',
+            contentByEnv: {
+              windows: 'PS> $env:GREETING = "Hello"\nPS> echo $env:GREETING\nHello',
+            },
+            label: 'Créer et lire une variable',
           },
           {
             type: 'info',
@@ -1838,12 +1836,15 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '$ crontab -l       # Lister les tâches planifiées\n$ crontab -e       # Éditer (ouvre vi/nano)\n$ crontab -r       # Supprimer toutes les tâches',
+            contentByEnv: {
+              windows: 'PS> Get-ScheduledTask       # Lister les tâches planifiées',
+            },
             label: 'Commandes crontab',
           },
           {
             type: 'info',
             content:
-              'Sur Windows, l\'équivalent de cron est le "Planificateur de tâches" (Task Scheduler), accessible via `taskschd.msc` ou PowerShell avec `Register-ScheduledTask`.',
+              'Sur Windows, l\'équivalent de cron est le "Planificateur de tâches" (Task Scheduler), accessible via `taskschd.msc`, ou en PowerShell : `Get-ScheduledTask` liste les tâches, `Register-ScheduledTask` en crée une.',
           },
           {
             type: 'tip',
@@ -1854,11 +1855,11 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Listez les tâches planifiées avec `crontab -l`.',
           instructionByEnv: {
-            windows: 'Listez les tâches planifiées PowerShell avec `Get-ScheduledTask` (simulé — tapez `crontab -l` pour voir un exemple).',
+            windows: 'Listez les tâches planifiées de Windows avec `Get-ScheduledTask`.',
           },
           hint: 'Tapez: crontab -l',
           hintByEnv: {
-            windows: 'Tapez: crontab -l (pour voir un exemple de tâches planifiées)',
+            windows: 'Tapez: Get-ScheduledTask',
           },
           validate: validateCron,
           successMessage: 'Parfait ! Vous savez maintenant lister vos tâches planifiées.',
@@ -2103,11 +2104,17 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '# Connexion de base\n$ ssh user@serveur.example.com\n\n# Connexion sur un port non-standard\n$ ssh -p 2222 user@serveur.example.com\n\n# Connexion avec une clé spécifique\n$ ssh -i ~/.ssh/ma-cle user@serveur.example.com',
-            label: 'Connexion SSH (Linux/macOS/Windows)',
+            contentByEnv: {
+              windows: '# Connexion de base\nPS> ssh user@serveur.example.com\n\n# Connexion sur un port non-standard\nPS> ssh -p 2222 user@serveur.example.com\n\n# Connexion avec une clé spécifique\nPS> ssh -i $env:USERPROFILE\\.ssh\\ma-cle user@serveur.example.com',
+            },
+            label: 'Connexion SSH',
           },
           {
             type: 'code',
-            content: '# Générer une paire de clés ED25519 (recommandé)\n$ ssh-keygen -t ed25519 -C "mon@email.com"\n\nGenerating public/private ed25519 key pair.\nEnter file (.ssh/id_ed25519): [Entrée]\nEnter passphrase: [optionnel]\n\nYour public key has been saved in ~/.ssh/id_ed25519.pub\n\n# Copier la clé publique sur un serveur\n$ ssh-copy-id user@serveur.example.com',
+            content: '# Générer une paire de clés ED25519 (recommandé)\n# À chaque question, Entrée accepte la valeur proposée\n$ ssh-keygen -t ed25519 -C "mon@email.com"\nGenerating public/private ed25519 key pair.\nEnter file in which to save the key (/home/user/.ssh/id_ed25519):\nEnter passphrase for "/home/user/.ssh/id_ed25519" (empty for no passphrase):\nEnter same passphrase again:\nYour identification has been saved in /home/user/.ssh/id_ed25519\nYour public key has been saved in /home/user/.ssh/id_ed25519.pub\n…\n\n# Copier la clé publique sur un serveur\n$ ssh-copy-id user@serveur.example.com',
+            contentByEnv: {
+              windows: '# Générer une paire de clés ED25519 (recommandé)\n# À chaque question, Entrée accepte la valeur proposée\nPS> ssh-keygen -t ed25519 -C "mon@email.com"\nGenerating public/private ed25519 key pair.\n…\n\n# ssh-copy-id n\'existe pas sous Windows : envoyez la clé publique avec ssh\nPS> Get-Content $env:USERPROFILE\\.ssh\\id_ed25519.pub | ssh user@serveur.example.com "cat >> ~/.ssh/authorized_keys"',
+            },
             label: 'Générer des clés SSH',
           },
           {
@@ -2115,7 +2122,7 @@ export const curriculum: Module[] = [
             content:
               'SSH utilise une paire de clés : une **clé privée** (à ne jamais partager) et une **clé publique** (à déposer sur les serveurs). L\'authentification se fait sans mot de passe — bien plus sécurisé.',
             contentByEnv: {
-              windows: 'OpenSSH est intégré à Windows 10+ (version 1803). Les commandes `ssh`, `ssh-keygen`, `ssh-copy-id` fonctionnent dans PowerShell et CMD. Les clés sont stockées dans `%USERPROFILE%\\.ssh\\`.',
+              windows: 'OpenSSH est intégré à Windows 10+ (version 1803) : `ssh` et `ssh-keygen` fonctionnent dans PowerShell et CMD, et les clés sont stockées dans `%USERPROFILE%\\.ssh\\`. En revanche, `ssh-copy-id` n\'est pas fourni sous Windows. Pour déposer votre clé publique sur un serveur : `Get-Content $env:USERPROFILE\\.ssh\\id_ed25519.pub | ssh user@serveur "cat >> ~/.ssh/authorized_keys"`.',
             },
           },
           {

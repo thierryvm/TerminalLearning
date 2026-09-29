@@ -1,5 +1,5 @@
 import type { TerminalState, TerminalEnv, CommandOutput, OutputLine, DirectoryNode } from './types';
-import { varsForEnv } from './shellVars';
+import { dotnetDateFormat, psDefaultDate, strftime } from './dateFormat';
 
 export interface WindowsCmdDeps {
   cmdPwd: (state: TerminalState, env: TerminalEnv) => OutputLine[];
@@ -11,9 +11,91 @@ export interface WindowsCmdDeps {
   cmdCp: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdMv: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode; newCwd?: string[] };
   cmdRm: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
-  cmdEcho: (args: string[], envVars?: Record<string, string>) => OutputLine[];
+  cmdEcho: (args: string[]) => OutputLine[];
   cmdGrep: (state: TerminalState, args: string[]) => OutputLine[];
   cmdEnv: (state: TerminalState) => OutputLine[];
+  /** Content of a file, or why it cannot be read. */
+  readFile: (state: TerminalState, path: string) => { content: string } | { error: 'missing' | 'directory' };
+  /** Writes (or appends to) a file; `errors` explains a refusal. */
+  writeFile: (state: TerminalState, path: string, content: string, append: boolean, cmdlet?: string) => { root: DirectoryNode; errors: OutputLine[] };
+  /** Absolute Windows form of a path, as PowerShell messages show it (`C:\Users\user\documents\x.txt`). */
+  winPath: (state: TerminalState, path: string) => string;
+}
+
+/** Parameters Get-Content understands here, and whether each takes a value. */
+const GET_CONTENT_PARAMS: Record<string, boolean> = {
+  '-path': true, '-literalpath': true, '-totalcount': true, '-head': true, '-first': true,
+  '-tail': true, '-last': true, '-encoding': true, '-raw': false, '-wait': false,
+};
+
+/** Get-Content (and its aliases cat, type, gc) with the parameters and messages of PowerShell 7. */
+function getContent(state: TerminalState, args: string[], deps: WindowsCmdDeps): OutputLine[] {
+  const fail = (text: string): OutputLine[] => [{ text, type: 'error' }];
+  let file: string | undefined;
+  let head: number | undefined;
+  let tail: number | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const name = args[i].toLowerCase();
+    if (!name.startsWith('-')) {
+      file ??= args[i];
+      continue;
+    }
+    if (!(name in GET_CONTENT_PARAMS)) {
+      return fail(`Get-Content: A parameter cannot be found that matches parameter name '${args[i].slice(1)}'.`);
+    }
+    if (!GET_CONTENT_PARAMS[name]) continue;
+    const value = args[++i];
+    if (name === '-path' || name === '-literalpath') file = value;
+    else if (['-totalcount', '-head', '-first'].includes(name)) head = parseInt(value ?? '', 10);
+    else if (name === '-tail' || name === '-last') tail = parseInt(value ?? '', 10);
+  }
+  if (!file) return fail('Get-Content: Cannot process command because of one or more missing mandatory parameters: Path.');
+  const read = deps.readFile(state, file);
+  if ('error' in read) {
+    return fail(read.error === 'missing'
+      ? `Get-Content: Cannot find path '${deps.winPath(state, file)}' because it does not exist.`
+      : `Get-Content: Unable to get content because it is a directory: '${deps.winPath(state, file)}'. Please use 'Get-ChildItem' instead.`);
+  }
+  // PowerShell returns the lines without a final empty one for a trailing newline.
+  let lines = read.content.split('\n');
+  if (read.content.endsWith('\n')) lines.pop();
+  if (head !== undefined && !Number.isNaN(head)) lines = lines.slice(0, Math.max(0, head));
+  if (tail !== undefined && !Number.isNaN(tail)) lines = tail > 0 ? lines.slice(-tail) : [];
+  return lines.map((text) => ({ text, type: 'output' as const }));
+}
+
+/** Set-Content / Add-Content: `Set-Content file 'text'` or `-Path file -Value text`. */
+function setContent(state: TerminalState, cmdlet: string, args: string[], append: boolean, deps: WindowsCmdDeps): CommandOutput {
+  const named = (names: string[]) => {
+    const i = args.findIndex((a) => names.includes(a.toLowerCase()));
+    return i >= 0 ? args[i + 1] : undefined;
+  };
+  // Values of named parameters are not positional; switches (-Force, -NoNewline) take no value.
+  const takesValue = ['-path', '-literalpath', '-value', '-encoding'];
+  const positional = args.filter((a, i) => !a.startsWith('-') && !(i > 0 && takesValue.includes(args[i - 1].toLowerCase())));
+  const file = named(['-path', '-literalpath']) ?? positional.shift();
+  const value = named(['-value']) ?? positional.shift() ?? '';
+  if (!file) {
+    return { lines: [{ text: `${cmdlet}: Cannot process command because of one or more missing mandatory parameters: Path.`, type: 'error' }], newState: state };
+  }
+  // Files here hold their text without a final newline; appending adds the line break.
+  const { root, errors } = deps.writeFile(state, file, value, append, cmdlet);
+  return { lines: errors, newState: errors.length ? state : { ...state, root } };
+}
+
+/** Get-History: the same Id / Duration / CommandLine table as PowerShell 7. */
+function getHistory(state: TerminalState): OutputLine[] {
+  // The command being run is not in PowerShell's history yet; our history already holds it.
+  const past = state.commandHistory.slice(0, -1);
+  if (!past.length) return [];
+  const row = (id: string, duration: string, line: string) => `${id.padStart(4)} ${duration.padStart(12)} ${line}`;
+  return [
+    '',
+    row('Id', 'Duration', 'CommandLine'),
+    row('--', '--------', '-----------'),
+    ...past.map((c, i) => row(String(i + 1), '0.010', c)),
+    '',
+  ].map((text) => ({ text, type: 'output' as const }));
 }
 
 /** `-Recurse`, or any prefix PowerShell accepts for it (`-r`, `-rec`…). */
@@ -116,7 +198,66 @@ export function handleWindows(
     // ── cat equivalents ───────────────────────────────────────────────────────
     case 'get-content':
     case 'gc':
-      return { lines: deps.cmdCat(newState, args), newState };
+      return { lines: getContent(newState, args, deps), newState };
+
+    // (No `sc` alias: in PowerShell 7 `sc` runs sc.exe, the service tool.)
+    case 'set-content':
+    case 'add-content': {
+      if (env !== 'windows') return null;
+      const append = cmd === 'add-content';
+      return setContent(newState, append ? 'Add-Content' : 'Set-Content', args, append, deps);
+    }
+
+    // ── date, history, scheduled tasks ────────────────────────────────────────
+    case 'get-date': {
+      if (env !== 'windows') return null;
+      const now = new Date();
+      const format = psParam(args, '-format');
+      const uformat = psParam(args, '-uformat');
+      const text = format !== undefined ? dotnetDateFormat(now, format) : uformat !== undefined ? strftime(now, uformat) : psDefaultDate(now);
+      return { lines: [{ text, type: 'output' }], newState };
+    }
+
+    case 'get-history':
+    case 'ghy':
+      if (env !== 'windows') return null;
+      return { lines: getHistory(newState), newState };
+
+    case 'get-scheduledtask': {
+      if (env !== 'windows') return null;
+      const row = (path: string, name: string, state: string) => `${path.padEnd(47)}${name.padEnd(34)}${state}`;
+      return {
+        lines: [
+          '',
+          row('TaskPath', 'TaskName', 'State'),
+          row('--------', '--------', '-----'),
+          row('\\', 'Sauvegarde du soir', 'Ready'),
+          row('\\Microsoft\\Windows\\Defrag\\', 'ScheduledDefrag', 'Ready'),
+          row('\\Microsoft\\Windows\\WindowsUpdate\\', 'Scheduled Start', 'Ready'),
+          '',
+        ].map((text) => ({ text, type: 'output' as const })),
+        newState,
+      };
+    }
+
+    case 'tasklist': {
+      if (env !== 'windows') return null;
+      const row = (image: string, pid: string, session: string, num: string, mem: string) =>
+        `${image.padEnd(25)} ${pid.padStart(8)} ${session.padEnd(16)} ${num.padStart(11)} ${mem.padStart(12)}`;
+      return {
+        lines: [
+          '',
+          row('Image Name', 'PID', 'Session Name', 'Session#', 'Mem Usage'),
+          row('='.repeat(25), '='.repeat(8), '='.repeat(16), '='.repeat(11), '='.repeat(12)),
+          row('System Idle Process', '0', 'Services', '0', '8 K'),
+          row('System', '4', 'Services', '0', '7,484 K'),
+          row('WindowsTerminal.exe', '1234', 'Console', '1', '8,192 K'),
+          row('node.exe', '2048', 'Console', '1', '4,096 K'),
+          row('pwsh.exe', '5678', 'Console', '1', '2,048 K'),
+        ].map((text) => ({ text, type: 'output' as const })),
+        newState,
+      };
+    }
 
     // ── New-Item: file or directory ───────────────────────────────────────────
     case 'new-item':
@@ -179,7 +320,7 @@ export function handleWindows(
     // ── echo equivalents ──────────────────────────────────────────────────────
     case 'write-host':
     case 'write-output':
-      return { lines: deps.cmdEcho(args.filter((a) => !a.startsWith('-')), varsForEnv(newState.envVars, env)), newState };
+      return { lines: deps.cmdEcho(args.filter((a) => !a.startsWith('-'))), newState };
 
     // ── ps equivalents ────────────────────────────────────────────────────────
     case 'get-process':
@@ -214,12 +355,28 @@ export function handleWindows(
       if (patternIdx >= 0) {
         pattern = args[patternIdx + 1] ?? '';
         filePath = pathIdx >= 0 ? args[pathIdx + 1] : (args.find((a, i) => !a.startsWith('-') && i !== patternIdx + 1) ?? '');
+      } else if (pathIdx >= 0) {
+        // `Select-String -Path f.txt motif`: the pattern is the first word that is not the path.
+        filePath = args[pathIdx + 1] ?? '';
+        pattern = args.find((a, i) => !a.startsWith('-') && i !== pathIdx + 1) ?? '';
       } else {
         const nonFlags = args.filter((a) => !a.startsWith('-'));
         pattern = nonFlags[0] ?? '';
         filePath = nonFlags[1] ?? '';
       }
-      return { lines: deps.cmdGrep(newState, [pattern, filePath]), newState };
+      if (filePath && 'error' in deps.readFile(newState, filePath)) {
+        return { lines: [{ text: `Select-String: Cannot find path '${deps.winPath(newState, filePath)}' because it does not exist.`, type: 'error' }], newState };
+      }
+      // Case-insensitive unless -CaseSensitive; each match reads `<file>:<line>:<text>`, like PowerShell.
+      const caseSensitive = args.some((a) => a.toLowerCase() === '-casesensitive');
+      const found = deps.cmdGrep(newState, [caseSensitive ? '-n' : '-in', pattern, filePath]);
+      const shown = filePath.replace(/\//g, '\\');
+      return {
+        lines: found.map((l) => (l.type === 'output' ? { ...l, text: `${shown}:${l.text}` } : l)),
+        newState,
+        // No match is not a failure for a cmdlet ($? stays True); only grep returns 1.
+        status: found.some((l) => l.type === 'error') ? 1 : 0,
+      };
     }
 
     // ── clear equivalents ─────────────────────────────────────────────────────

@@ -878,10 +878,11 @@ describe('curriculum — spot-checks per lesson × env', () => {
   });
 
   describe('variables/cron', () => {
-    it('all 3 envs: crontab -l passes (env-agnostic by design — windows shows example)', () => {
+    it('linux/macos: crontab -l passes; windows: Get-ScheduledTask passes, crontab does not exist', () => {
       expect(ex('variables', 'cron').validate('crontab -l', 'linux')).toBe(true);
       expect(ex('variables', 'cron').validate('crontab -l', 'macos')).toBe(true);
-      expect(ex('variables', 'cron').validate('crontab -l', 'windows')).toBe(true);
+      expect(ex('variables', 'cron').validate('Get-ScheduledTask', 'windows')).toBe(true);
+      expect(ex('variables', 'cron').validate('crontab -l', 'windows')).toBe(false);
     });
     it('crontab -e and other variants do not pass (exercise is specific)', () => {
       expect(ex('variables', 'cron').validate('crontab -e', 'linux')).toBe(false);
