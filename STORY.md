@@ -21,6 +21,18 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Le simulateur contre la réalité (29 septembre 2026)
+
+La livraison précédente s'était arrêtée sur une liste honnête : 32 exemples de la page Référence échouaient encore, parce que notre terminal ne connaissait pas certaines commandes. Thierry m'a confié la suite sans condition : « s'il y a des lacunes à corriger sur le simulateur, tu les améliores ». La liste est vide.
+
+La règle ne change pas : ce qu'un test attend vient d'un vrai shell, jamais de notre moteur. Pour `ssh-keygen`, j'ai généré une vraie clé dans un dossier jetable et relevé chaque phrase qu'OpenSSH affiche. Le petit dessin qui accompagne la clé, le « randomart », n'est pas décoratif : OpenSSH le calcule à partir de l'empreinte de la clé. J'ai écrit le même calcul et je lui ai donné l'empreinte réelle. Il a produit exactement le même dessin. C'est ce dessin-là que le test attend.
+
+Le vrai shell a aussi corrigé mes propres certitudes. Notre ancien test affirmait que `ssh-keygen` crée une clé RSA par défaut. C'était vrai il y a quelques années ; depuis OpenSSH 9.5, c'est ed25519. Le test était faux, pas le shell. Autre surprise : une fois les variables remplacées partout comme dans un vrai bash, une leçon s'est mise à échouer. Elle montrait un bloc PowerShell aux élèves Linux, et bash l'aurait lu de travers. Désormais, chaque élève ne voit plus que la version de son propre shell.
+
+Un agent a ensuite comparé le simulateur au vrai shell, commande par commande. Il a trouvé ce que nos tests ne pouvaient pas voir : `Select-String` signalait un échec quand il ne trouvait rien, et `Get-Help` affichait une syntaxe bash à un élève PowerShell. Ces écarts sont corrigés. D'autres sont notés pour la suite : les branches Git du simulateur ne séparent pas encore les fichiers, et `Get-ChildItem` n'affiche pas encore son tableau habituel.
+
+---
+
 ## Une référence qu'on peut recopier (26 septembre 2026)
 
 La page Référence ressemblait à un aide-mémoire sérieux : syntaxe, exemples, erreurs courantes, liens officiels. Je l'ai traitée comme les leçons, en rejouant chaque exemple dans notre terminal. Près de la moitié échouait. Personne n'avait menti : `cat notes.txt` est un bon exemple dans l'absolu. Mais l'élève qui le recopie dans une leçon n'a pas de `notes.txt` à cet endroit, et il reçoit une erreur rouge sur la page même censée l'aider.

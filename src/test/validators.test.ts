@@ -342,8 +342,16 @@ describe('validateShellConfig', () => {
 });
 
 describe('validateCron', () => {
-  it('accepts "crontab -l"', () => expect(validateCron('crontab -l')).toBe(true));
-  it('rejects "crontab -e"', () => expect(validateCron('crontab -e')).toBe(false));
+  it('accepts "crontab -l" on linux and macos', () => {
+    expect(validateCron('crontab -l', linux)).toBe(true);
+    expect(validateCron('crontab -l', macos)).toBe(true);
+  });
+  it('rejects "crontab -e"', () => expect(validateCron('crontab -e', linux)).toBe(false));
+  it('accepts "Get-ScheduledTask" on windows, with or without parameters', () => {
+    expect(validateCron('Get-ScheduledTask', win)).toBe(true);
+    expect(validateCron('get-scheduledtask -TaskName Sauvegarde', win)).toBe(true);
+  });
+  it('rejects "crontab -l" on windows (PowerShell has no crontab)', () => expect(validateCron('crontab -l', win)).toBe(false));
 });
 
 // ── Réseau ────────────────────────────────────────────────────────────────────

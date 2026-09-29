@@ -27,6 +27,23 @@ function makeHash(): string {
   return Array.from({ length: 7 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
 }
 
+/**
+ * The message of `git commit`, in every form git accepts: `-m msg`, `-mmsg`,
+ * `-am msg` (short options bundled, m last), `--message=msg`, `--message msg`.
+ */
+function commitMessage(args: string[]): string {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--message') return args[i + 1] ?? '';
+    if (a.startsWith('--message=')) return a.slice('--message='.length);
+    if (/^-[a-zA-Z]*m/.test(a)) {
+      const attached = a.slice(a.indexOf('m') + 1);
+      return attached || (args[i + 1] ?? '');
+    }
+  }
+  return '';
+}
+
 export function handleGit(newState: TerminalState, args: string[], env: TerminalEnv): CommandOutput {
   const sub = args[0]?.toLowerCase() ?? '';
 
@@ -139,13 +156,16 @@ export function handleGit(newState: TerminalState, args: string[], env: Terminal
       const repoErr = requireRepo();
       if (repoErr) return { lines: [repoErr], newState };
       const g = newState.git!;
-      const mIdx = args.indexOf('-m');
-      const message = mIdx >= 0 ? (args[mIdx + 1] ?? '') : '';
+      const message = commitMessage(args);
       if (!message) {
         return { lines: [{ text: 'Abort: empty commit message.\nUsage: git commit -m "your message"', type: 'error' }], newState };
       }
       if (g.stagedFiles.length === 0) {
-        return { lines: [{ text: 'nothing to commit, working tree clean', type: 'info' }], newState };
+        // Git prints the short status and fails (exit 1) when nothing is staged.
+        const text = g.commits.length > 0
+          ? [`On branch ${g.branch}`, 'nothing to commit, working tree clean']
+          : [`On branch ${g.branch}`, '', 'Initial commit', '', 'nothing to commit (create/copy files and use "git add" to track)'];
+        return { lines: text.map((t) => ({ text: t, type: 'output' as const })), newState, status: 1 };
       }
       const hash = makeHash();
       const commit: GitCommit = { hash, message, author: newState.user, date: new Date().toISOString().slice(0, 10) };
@@ -548,20 +568,32 @@ export function handleGit(newState: TerminalState, args: string[], env: Terminal
       if (!ref) {
         return { lines: [{ text: "Usage: git cherry-pick <commit>\nHint: récupère le hash via 'git log --oneline'.", type: 'error' }], newState };
       }
-      const picked = g.commits.find((c) => c.hash.startsWith(ref));
-      if (!picked) {
-        return { lines: [{ text: `fatal: bad revision '${ref}'`, type: 'error' }], newState };
+      // `A..B` picks the commits after A up to B (A itself excluded), oldest first.
+      const find = (r: string) => g.commits.findIndex((c) => c.hash.startsWith(r));
+      const range = ref.match(/^([^.]+)\.\.([^.]+)$/);
+      let picked: GitCommit[];
+      if (range) {
+        const from = find(range[1]);
+        const to = find(range[2]);
+        if (from < 0 || to < 0) return { lines: [{ text: `fatal: bad revision '${ref}'`, type: 'error' }], newState };
+        // `commits` is newest first: B sits before A in the list.
+        picked = g.commits.slice(to, from).reverse();
+      } else {
+        const one = find(ref);
+        if (one < 0) return { lines: [{ text: `fatal: bad revision '${ref}'`, type: 'error' }], newState };
+        picked = [g.commits[one]];
       }
-      const hash = makeHash();
-      const commit: GitCommit = { hash, message: picked.message, author: newState.user, date: new Date().toISOString().slice(0, 10) };
-      newState = { ...newState, git: { ...g, commits: [commit, ...g.commits] } };
-      return {
-        lines: [
-          { text: `[${g.branch} ${hash}] ${picked.message}`, type: 'success' },
-          { text: ` (cherry-pické depuis ${picked.hash} — le commit est ré-appliqué sur ${g.branch})`, type: 'info' },
-        ],
-        newState,
-      };
+      if (!picked.length) return { lines: [{ text: 'fatal: empty commit set passed', type: 'error' }], newState };
+      const lines: OutputLine[] = [];
+      let commits = g.commits;
+      for (const source of picked) {
+        const hash = makeHash();
+        commits = [{ hash, message: source.message, author: newState.user, date: new Date().toISOString().slice(0, 10) }, ...commits];
+        lines.push({ text: `[${g.branch} ${hash}] ${source.message}`, type: 'success' });
+        lines.push({ text: ` (cherry-pické depuis ${source.hash} — le commit est ré-appliqué sur ${g.branch})`, type: 'info' });
+      }
+      newState = { ...newState, git: { ...g, commits } };
+      return { lines, newState };
     }
 
     // ── git rebase ────────────────────────────────────────────────────────────
@@ -571,11 +603,18 @@ export function handleGit(newState: TerminalState, args: string[], env: Terminal
       const g = newState.git!;
       const interactive = args.includes('-i') || args.includes('--interactive');
       if (interactive) {
+        // `HEAD~N` needs N commits below HEAD, as in git: otherwise "invalid upstream".
+        const upstream = args.find((a) => !a.startsWith('-') && a !== sub) ?? '';
+        const back = upstream.match(/^HEAD~(\d+)$/);
+        if (back && Number(back[1]) >= g.commits.length) {
+          return { lines: [{ text: `fatal: invalid upstream '${upstream}'`, type: 'error' }], newState };
+        }
         return {
           lines: [
             { text: 'Rebase interactif (simulé) — réécriture de l\'historique.', type: 'info' },
             { text: 'En réel : un éditeur s\'ouvre avec pick/reword/squash/drop pour chaque commit.', type: 'output' },
-            { text: '⚠️  Ne JAMAIS réécrire un historique déjà poussé sur une branche partagée.', type: 'error' },
+            // A warning, not an error: nothing failed.
+            { text: '⚠️  Ne JAMAIS réécrire un historique déjà poussé sur une branche partagée.', type: 'info' },
           ],
           newState,
         };

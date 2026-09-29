@@ -1,5 +1,8 @@
 import type { TerminalState, TerminalEnv, CommandOutput, OutputLine } from './types';
 
+/** Longest value a variable keeps (same bound as the terminal's anti-flooding cap). */
+const MAX_ENV_VAR_LENGTH = 1024;
+
 export function cmdExport(args: string[], state: TerminalState): { lines: OutputLine[]; envVars: Record<string, string> } {
   if (args.length === 0) {
     const lines = Object.entries(state.envVars).map(([k, v]) => ({
@@ -16,11 +19,10 @@ export function cmdExport(args: string[], state: TerminalState): { lines: Output
       lines.push({ text: '', type: 'output' });
     } else {
       const name = arg.slice(0, eqIdx);
-      // Bash expands the value when it is assigned: `export PATH=$PATH:/opt/bin`.
-      const value = arg
-        .slice(eqIdx + 1)
-        .replace(/^["']|["']$/g, '')
-        .replace(/\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/g, (_, ref: string) => newEnv[ref] ?? '');
+      // The value arrives expanded and unquoted (`export PATH=$PATH:/opt/bin`), like bash hands it over.
+      const raw = arg.slice(eqIdx + 1);
+      // Capped [H3]: `export A=$A$A` repeated must not grow without bound.
+      const value = raw.length > MAX_ENV_VAR_LENGTH ? raw.slice(0, MAX_ENV_VAR_LENGTH) : raw;
       if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
         lines.push({ text: `export: '${name}': not a valid identifier`, type: 'error' });
       } else {

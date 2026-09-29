@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { processCommand, getTabCompletions, createInitialState, displayPathForEnv } from '../app/data/terminalEngine';
 import type { TerminalState } from '../app/data/terminalEngine';
+import { fingerprintLine, randomart, sha256 } from '../app/data/commands/sshKeygen';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -827,7 +828,9 @@ describe('PowerShell $env: variable handling', () => {
     const state = makeState();
     const result = processCommand(state, '$env:GREETING = "Hello"', 'windows');
     expect(result.newState.envVars['GREETING']).toBe('Hello');
-    expect(result.lines[0].type).toBe('success');
+    // Real PowerShell 7 prints nothing for an assignment (0 bytes, checked 26/09/2026);
+    // the simulator used to print a success line the real shell never shows.
+    expect(result.lines).toEqual([]);
   });
 
   it('$env:PATH reads the PATH variable', () => {
@@ -1212,30 +1215,118 @@ describe('ssh', () => {
   });
 });
 
+// Expected values from OpenSSH 10.5 (ssh-keygen, run in a sandbox on 29 September 2026).
 describe('ssh-keygen', () => {
-  it('generates ed25519 key pair', () => {
-    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'linux');
-    const text = result.lines.map((l) => l.text).join('\n');
-    expect(text).toContain('ed25519');
-    expect(text).toContain('.pub');
+  const text = (r: { lines: { text: string }[] }) => r.lines.map((l) => l.text);
+
+  it('generates ed25519 by default and writes the key pair in a new ~/.ssh', () => {
+    const r = processCommand(createInitialState(), 'ssh-keygen', 'linux');
+    expect(text(r).slice(0, 7)).toEqual([
+      'Generating public/private ed25519 key pair.',
+      'Enter file in which to save the key (/home/user/.ssh/id_ed25519): ',
+      "Created directory '/home/user/.ssh'.",
+      'Enter passphrase for "/home/user/.ssh/id_ed25519" (empty for no passphrase): ',
+      'Enter same passphrase again: ',
+      'Your identification has been saved in /home/user/.ssh/id_ed25519',
+      'Your public key has been saved in /home/user/.ssh/id_ed25519.pub',
+    ]);
+    expect(text(r)[7]).toBe('The key fingerprint is:');
+    expect(text(r)[8]).toMatch(/^SHA256:[A-Za-z0-9+/]{43} user@terminal-lab$/);
+    expect(text(r)[10]).toBe('+--[ED25519 256]--+');
+    expect(text(r)[text(r).length - 1]).toBe('+----[SHA256]-----+');
+    const ls = text(processCommand(r.newState, 'ls -la ~/.ssh', 'linux')).join('\n');
+    expect(ls).toMatch(/-rw------- .* id_ed25519\n/);
+    expect(ls).toMatch(/-rw-r--r-- .* id_ed25519\.pub/);
   });
 
-  it('reports both private and public key paths', () => {
-    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'linux');
-    const successes = result.lines.filter((l) => l.type === 'success');
-    expect(successes.length).toBeGreaterThanOrEqual(2);
+  it('puts the -C comment at the end of the public key, with the real ed25519 header', () => {
+    const s = processCommand(createInitialState(), 'ssh-keygen -t ed25519 -C "moi@exemple.com"', 'linux').newState;
+    const pub = text(processCommand(s, 'cat ~/.ssh/id_ed25519.pub', 'linux'));
+    expect(pub).toHaveLength(1);
+    expect(pub[0]).toMatch(/^ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI[A-Za-z0-9+/]{43} moi@exemple\.com$/);
+    const key = text(processCommand(s, 'cat ~/.ssh/id_ed25519', 'linux'));
+    expect(key[0]).toBe('-----BEGIN OPENSSH PRIVATE KEY-----');
+    expect(key[key.length - 1]).toBe('-----END OPENSSH PRIVATE KEY-----');
   });
 
-  it('uses rsa as default key type when -t is omitted', () => {
-    const result = processCommand(makeState(), 'ssh-keygen', 'linux');
-    const text = result.lines.map((l) => l.text).join('\n');
-    expect(text).toContain('rsa');
+  it('does not recreate ~/.ssh and asks before overwriting an existing key', () => {
+    const s = processCommand(createInitialState(), 'ssh-keygen', 'linux').newState;
+    const again = text(processCommand(s, 'ssh-keygen', 'linux'));
+    expect(again.join('\n')).not.toContain('Created directory');
+    expect(again).toContain('/home/user/.ssh/id_ed25519 already exists.');
   });
 
-  it('works on windows env', () => {
-    const result = processCommand(makeState(), 'ssh-keygen -t ed25519', 'windows');
-    const text = result.lines.map((l) => l.text).join('\n');
-    expect(text).toContain('ed25519');
+  it('draws the randomart header for rsa and ecdsa', () => {
+    expect(text(processCommand(createInitialState(), 'ssh-keygen -t rsa', 'linux'))).toContain('+---[RSA 3072]----+');
+    expect(text(processCommand(createInitialState(), 'ssh-keygen -t ecdsa', 'linux'))).toContain('+---[ECDSA 256]---+');
+  });
+
+  it('skips the prompts that -f and -N answer, and fails when the folder is missing', () => {
+    const ok = text(processCommand(createInitialState(), 'ssh-keygen -f cle -N ""', 'linux'));
+    expect(ok.slice(0, 3)).toEqual([
+      'Generating public/private ed25519 key pair.',
+      'Your identification has been saved in cle',
+      'Your public key has been saved in cle.pub',
+    ]);
+    const r = processCommand(createInitialState(), 'ssh-keygen -f nulle/part/cle -N ""', 'linux');
+    expect(text(r)).toEqual(['Generating public/private ed25519 key pair.', 'Saving key "nulle/part/cle" failed: No such file or directory']);
+    expect(r.status).toBe(1);
+  });
+
+  // Robustness, not fidelity: the lessons always have a home folder.
+  it('fails cleanly when there is no home folder', () => {
+    const r = processCommand(makeState(), 'ssh-keygen -N ""', 'linux');
+    expect(r.lines[r.lines.length - 1].text).toBe('Saving key "/home/user/.ssh/id_ed25519" failed: No such file or directory');
+    expect(r.status).toBe(1);
+  });
+
+  it('rejects an unknown key type with status 255', () => {
+    const r = processCommand(createInitialState(), 'ssh-keygen -t foo', 'linux');
+    expect(text(r)).toEqual(['unknown key type foo']);
+    expect(r.status).toBe(255);
+  });
+
+  it('writes under C:\\Users\\user\\.ssh on Windows, readable with $env:USERPROFILE', () => {
+    const r = processCommand(createInitialState(), 'ssh-keygen', 'windows');
+    expect(text(r)[1]).toBe('Enter file in which to save the key (C:\\Users\\user/.ssh/id_ed25519): ');
+    const pub = text(processCommand(r.newState, 'Get-Content $env:USERPROFILE\\.ssh\\id_ed25519.pub', 'windows'));
+    expect(pub[0]).toMatch(/^ssh-ed25519 AAAA/);
+  });
+});
+
+describe('ssh-keygen fingerprints', () => {
+  it('computes the SHA-256 fingerprint OpenSSH printed for real keys', () => {
+    // Throwaway keys made by OpenSSH 10.5 in a sandbox; `ssh-keygen -lf` printed these lines.
+    expect(fingerprintLine('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOhycLPlOl7K1dDP8tI8UIrXGAgLUqt6VqYxhJHD8aP/ moi@exemple.com'))
+      .toBe('256 SHA256:g9Z14JyNSnPMymEmRjYmBkQEOKHyRJ35HCgji2CdeJU moi@exemple.com (ED25519)');
+    expect(fingerprintLine('ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAW2x7icM6dWkJDcPIR1SN1BVH5lfMKMyshwt2hy4ceHsQnZ2DFcubEU9lyu1vZPaxAeN6qMELpyb73hOa+GDF0= thier@Extractor'))
+      .toBe('256 SHA256:1JR7ARFLcDIftBLDgOB3IiJ3LYkm1YOD8mb659xfs6o thier@Extractor (ECDSA)');
+    expect(fingerprintLine('bonjour')).toBeNull();
+  });
+
+  it('sha256 matches the FIPS 180-4 test vector', () => {
+    const hex = (b: number[]) => b.map((x) => x.toString(16).padStart(2, '0')).join('');
+    expect(hex(sha256(Array.from('abc', (c) => c.charCodeAt(0))))).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  });
+});
+
+describe('ssh-keygen randomart', () => {
+  it('matches the art OpenSSH drew for a real fingerprint', () => {
+    // `ssh-keygen -t ed25519` printed this fingerprint and art (OpenSSH 10.5).
+    const fp = Array.from(atob('g9Z14JyNSnPMymEmRjYmBkQEOKHyRJ35HCgji2CdeJU='), (c) => c.charCodeAt(0));
+    expect(randomart(fp, 'ED25519 256')).toEqual([
+      '+--[ED25519 256]--+',
+      '|+*Oo==*   .      |',
+      '|*+o==E.. = =     |',
+      '|*+oo oo.* X o    |',
+      '|+o   .oO B .     |',
+      '|  .   o S        |',
+      '|     .   .       |',
+      '|                 |',
+      '|                 |',
+      '|                 |',
+      '+----[SHA256]-----+',
+    ]);
   });
 });
 
@@ -1994,10 +2085,22 @@ describe('git', () => {
     expect(r.lines[0].text).toContain('empty commit message');
   });
 
-  it('git commit with no staged files returns info', () => {
+  // Expected values from git in a sandbox (29 September 2026): both cases exit 1.
+  it('git commit with nothing staged in a new repository prints the initial-commit status', () => {
     const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
     const r = processCommand(s, 'git commit -m "empty"');
-    expect(r.lines[0].text).toContain('nothing to commit');
+    expect(r.lines.map((l) => l.text)).toEqual([
+      'On branch main', '', 'Initial commit', '', 'nothing to commit (create/copy files and use "git add" to track)',
+    ]);
+    expect(r.status).toBe(1);
+  });
+
+  it('git commit with nothing staged after a commit says the tree is clean', () => {
+    const commit = { hash: 'a1b2c3d', message: 'first', author: 'user', date: '2026-09-29' };
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [commit], remotes: {} } });
+    const r = processCommand(s, 'git commit -m "empty"');
+    expect(r.lines.map((l) => [l.text, l.type])).toEqual([['On branch main', 'output'], ['nothing to commit, working tree clean', 'output']]);
+    expect(r.status).toBe(1);
   });
 
   // ── git log ───────────────────────────────────────────────────────────────────
@@ -2260,10 +2363,25 @@ describe('git', () => {
   });
 
   it('git rebase -i shows interactive rebase guidance + shared-branch warning', () => {
-    const s = processCommand(makeState(), 'git init').newState;
+    // HEAD~3 needs three commits below HEAD: four commits in all.
+    let s = processCommand(makeState(), 'git init').newState;
+    for (const f of ['a', 'b', 'c', 'd']) {
+      s = processCommand(s, `git add ${f}`).newState;
+      s = processCommand(s, `git commit -m "${f}"`).newState;
+    }
     const r = processCommand(s, 'git rebase -i HEAD~3');
     expect(r.lines.some((l) => l.text.toLowerCase().includes('interactif'))).toBe(true);
-    expect(r.lines.some((l) => l.text.includes('partagée'))).toBe(true);
+    // The warning is advice, not a failure: no red line.
+    expect(r.lines.some((l) => l.text.includes('partagée') && l.type !== 'error')).toBe(true);
+    expect(r.lines.some((l) => l.type === 'error')).toBe(false);
+  });
+
+  it('git rebase -i HEAD~N beyond the history is refused, as git does', () => {
+    // Real git 2.x, with 0 or 1 commit: "fatal: invalid upstream 'HEAD~3'" (exit 128).
+    let s = processCommand(makeState(), 'git init').newState;
+    expect(processCommand(s, 'git rebase -i HEAD~3').lines).toEqual([{ text: "fatal: invalid upstream 'HEAD~3'", type: 'error' }]);
+    s = processCommand(processCommand(s, 'git add a').newState, 'git commit -m "a"').newState;
+    expect(processCommand(s, 'git rebase -i HEAD~3').lines[0].text).toBe("fatal: invalid upstream 'HEAD~3'");
   });
 
   it('git rebase invalid upstream returns error', () => {
@@ -2831,5 +2949,250 @@ describe('theory ↔ terminal: engine fidelity', () => {
     expect(w).toMatch(/^Pinging google\.com \[142\.250\.74\.46\] with 32 bytes of data:/);
     expect(w).toContain('Reply from 142.250.74.46: bytes=32');
     expect(out(createInitialState(), 'ping google.com')).toMatch(/^PING google\.com/);
+  });
+});
+
+// ── Simulator gaps found by the /app/reference replay (26 September 2026) ────
+// Expected values come from the real shells, run in a sandbox with the same
+// files: GNU bash 5.3 (Git Bash), PowerShell 7.6, git 2.x. Never from the engine.
+describe('reference replay gaps — engine matches the real shells', () => {
+  const run = (cmds: string[], env: 'linux' | 'windows' = 'linux') => {
+    let s = createInitialState();
+    let last = processCommand(s, cmds[0], env);
+    s = last.newState;
+    for (const c of cmds.slice(1)) {
+      last = processCommand(s, c, env);
+      s = last.newState;
+    }
+    return last;
+  };
+  const text = (r: { lines: { text: string }[] }) => r.lines.map((l) => l.text).join('\n');
+  const errors = (r: { lines: { type: string }[] }) => r.lines.filter((l) => l.type === 'error');
+
+  it('cat -n numbers lines like GNU cat (width 6, then a tab)', () => {
+    const r = run(['cat -n documents/notes.txt']);
+    expect(r.lines[0].text).toBe('     1\tMes notes importantes');
+    expect(r.lines[5].text).toBe('     6\tFin du fichier');
+    expect(errors(r)).toEqual([]);
+  });
+
+  it('cat rejects an unknown option with the GNU message', () => {
+    expect(text(run(['cat -z documents/notes.txt']))).toBe("cat: invalid option -- 'z'\nTry 'cat --help' for more information.");
+  });
+
+  it('grep -r searches a directory and prefixes each match with the file', () => {
+    expect(text(run(['grep -rn bash documents']))).toBe('documents/notes.txt:3:1. Apprendre les commandes bash');
+    expect(text(run(['grep -r notes documents']))).toBe('documents/notes.txt:Mes notes importantes');
+  });
+
+  it('grep without -r still refuses a directory', () => {
+    expect(text(run(['grep bash documents']))).toBe('grep: documents: Is a directory');
+  });
+
+  it('git commit reads the message of -am, -mMSG and --message=MSG', () => {
+    for (const commit of ['git commit -am "fix: x"', 'git commit -m"fix: x"', 'git commit --message="fix: x"', 'git commit --message "fix: x"']) {
+      const r = run(['git init', 'git add README.md', commit]);
+      expect(r.lines[0].text, commit).toMatch(/^\[main [0-9a-f]{7}\] fix: x$/);
+    }
+  });
+
+  it('git cherry-pick A..B picks the commits after A up to B, oldest first', () => {
+    let s = run(['git init']).newState;
+    for (const m of ['one', 'two', 'three']) {
+      s = processCommand(s, `git add ${m}`).newState;
+      s = processCommand(s, `git commit -m "${m}"`).newState;
+    }
+    const [three, two, one] = s.git!.commits.map((c) => c.hash);
+    expect(two).toBeDefined();
+    const r = processCommand(s, `git cherry-pick ${one}..${three}`);
+    expect(r.lines.filter((l) => l.type === 'success').map((l) => l.text.replace(/^\[main [0-9a-f]{7}\] /, ''))).toEqual(['two', 'three']);
+  });
+
+  // Values from GNU bash 5 and PowerShell 7: variables expand in every command, never inside single quotes.
+  it('expands variables in the arguments of any command, not only echo', () => {
+    expect(text(run(["echo '$HOME'"]))).toBe('$HOME');
+    expect(text(run(['echo "$HOME et ${USER}"']))).toBe('/home/user et user');
+    expect(text(run(['echo $NOPE fin']))).toBe('fin');
+    expect(run(['cd /tmp', 'cd $HOME']).newState.cwd).toEqual(['home', 'user']);
+    expect(text(run(["export X='$HOME'", 'echo $X']))).toBe('$HOME');
+    expect(text(run(['export PATH=$PATH:/opt/bin', 'echo $PATH']))).toBe('/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/bin');
+    expect(text(run(['echo $HOME | grep $USER']))).toBe('/home/user');
+    expect(text(run(["echo '$env:USERNAME'"], 'windows'))).toBe('$env:USERNAME');
+    expect(run(['cd documents', 'cd $env:USERPROFILE'], 'windows').newState.cwd).toEqual(['home', 'user']);
+    expect(text(run(['Get-Content $env:USERPROFILE\\documents\\notes.txt'], 'windows'))).toBe(text(run(['cat documents/notes.txt'])));
+  });
+
+  // Values from OpenSSH 10.5, PowerShell 7 and GNU bash (29 September 2026).
+  it('ssh-keygen refuses odd options the way OpenSSH does, without crashing', () => {
+    const lines = (cmd: string) => run([cmd]).lines.map((l) => l.text);
+    expect(lines('ssh-keygen -t constructor')).toEqual(['unknown key type constructor']);
+    expect(run(['ssh-keygen -t constructor']).status).toBe(255);
+    expect(lines('ssh-keygen -t rsa -b 20000')).toEqual(['Invalid RSA key length: maximum is 16384 bits']);
+    expect(lines('ssh-keygen -t rsa -b 1000')).toEqual(['Invalid RSA key length: minimum is 1024 bits']);
+    expect(lines('ssh-keygen -t')).toEqual(['ssh-keygen: option requires an argument -- t']);
+    // -N "" is an empty passphrase, not a missing one: the passphrase prompts are skipped.
+    expect(lines('ssh-keygen -N ""').join('\n')).not.toContain('Enter passphrase');
+  });
+
+  it('ssh-keygen -f on a folder asks to overwrite and leaves the folder alone', () => {
+    const r = run(['ssh-keygen -f documents -N ""']);
+    // "documents already exists." + "Overwrite (y/n)?" are OpenSSH's; the failure follows its `Saving key "%s" failed: %s`.
+    expect(r.lines.map((l) => l.text)).toEqual([
+      'Generating public/private ed25519 key pair.',
+      'documents already exists.',
+      'Overwrite (y/n)? y',
+      'Saving key "documents" failed: Is a directory',
+    ]);
+    expect(r.status).toBe(1);
+    expect(text(processCommand(r.newState, 'ls documents'))).toContain('notes.txt');
+  });
+
+  it('$env:Path = "$env:Path;..." keeps the old PATH, whatever the case of the name', () => {
+    expect(text(run(['$env:Path = "$env:Path;C:\\outils"', '$env:PATH'], 'windows')))
+      .toBe('C:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\outils');
+  });
+
+  it('a variable cannot grow without bound [H3]', () => {
+    const cmds = [`export A=${'x'.repeat(600)}`, 'export A=$A$A', 'export A=$A$A', 'export A=$A$A'];
+    const s = run(cmds).newState;
+    expect(s.envVars.A.length).toBeLessThanOrEqual(1024);
+    expect(text(processCommand(s, 'echo $A')).length).toBeLessThanOrEqual(1025);
+  });
+
+  it('keeps an empty quoted word, like bash ("" is an argument)', () => {
+    expect(text(run(['echo "" fin']))).toBe(' fin');
+  });
+
+  it('Select-String -Path file pattern, and Set-Content -Force file text', () => {
+    const r = run(['Set-Content -Force liste.txt bonjour', 'Get-Content liste.txt'], 'windows');
+    expect(text(r)).toBe('bonjour');
+    expect(text(run(['Select-String -Path documents\\notes.txt apprendre'], 'windows'))).toBe('documents\\notes.txt:3:1. Apprendre les commandes bash');
+  });
+
+  it('Set-Content into a missing folder names the cmdlet and the full path', () => {
+    expect(text(run(['Set-Content nulle\\x.txt a'], 'windows'))).toBe("Set-Content: Could not find a part of the path 'C:\\Users\\user\\nulle\\x.txt'.");
+  });
+
+  // Values from GNU bash 5.3 and PowerShell 7.6 (terminal-fidelity-auditor, 29 September 2026).
+  it('bash: \$ is a literal dollar, ~ starts a home path, $1 is empty, $PWD is the folder', () => {
+    expect(text(run(['echo \\$HOME "\\$HOME"']))).toBe('$HOME $HOME');
+    expect(text(run(['echo ~ ~/documents "~" a~']))).toBe('/home/user /home/user/documents ~ a~');
+    expect(text(run(['echo $1 fin']))).toBe('fin');
+    expect(text(run(['cd documents', 'echo $PWD']))).toBe('/home/user/documents');
+  });
+
+  it('PowerShell: $HOME and $PWD are automatic variables', () => {
+    expect(text(run(['echo $HOME'], 'windows'))).toBe('C:\\Users\\user');
+    expect(text(run(['cd documents', 'echo $PWD'], 'windows'))).toBe('C:\\Users\\user\\documents');
+    expect(run(['cd documents', 'cd $HOME'], 'windows').newState.cwd).toEqual(['home', 'user']);
+  });
+
+  it('ssh-keygen -l prints the fingerprint the key was generated with', () => {
+    const made = run(['ssh-keygen -N ""']);
+    const shown = made.lines.map((l) => l.text).find((t) => t.startsWith('SHA256:'));
+    expect(shown).toBeDefined();
+    const [fp, comment] = (shown ?? '').split(' ');
+    expect(text(processCommand(made.newState, 'ssh-keygen -lf ~/.ssh/id_ed25519.pub'))).toBe(`256 ${fp} ${comment} (ED25519)`);
+    // A private key is read through its .pub, as OpenSSH does.
+    expect(text(processCommand(made.newState, 'ssh-keygen -l -f ~/.ssh/id_ed25519'))).toBe(`256 ${fp} ${comment} (ED25519)`);
+    const missing = run(['ssh-keygen -lf nope.pub']);
+    expect(text(missing)).toBe('ssh-keygen: nope.pub: No such file or directory');
+    expect(missing.status).toBe(255);
+    expect(text(run(['ssh-keygen -lf documents/notes.txt']))).toBe('documents/notes.txt is not a public key file.');
+  });
+
+  it('ssh-keygen modes that are not simulated say so instead of making a key', () => {
+    const r = run(['ssh-keygen -y -f x']);
+    expect(r.lines.map((l) => l.type)).toEqual(['info']);
+    expect(r.newState.root).toEqual(createInitialState().root);
+  });
+
+  it('ssh-copy-id reports the key it added on Linux, and does not exist on Windows', () => {
+    const unix = run(['ssh-copy-id user@serveur.example.com']);
+    expect(errors(unix)).toEqual([]);
+    expect(text(unix)).toContain('Number of key(s) added: 1');
+    expect(text(unix)).toContain('/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys');
+    expect(errors(run(['ssh-copy-id user@serveur.example.com'], 'windows'))).toHaveLength(1);
+  });
+
+  it('date +FORMAT applies the format', () => {
+    expect(text(run(['date +"%Y-%m-%d"']))).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('Get-Content -TotalCount / -Head and -Tail keep the first or last lines', () => {
+    expect(text(run(['Get-Content documents\\notes.txt -TotalCount 3'], 'windows'))).toBe('Mes notes importantes\nTâches du jour:\n1. Apprendre les commandes bash');
+    expect(text(run(['Get-Content documents\\notes.txt -Head 2'], 'windows'))).toBe('Mes notes importantes\nTâches du jour:');
+    expect(text(run(['Get-Content documents\\notes.txt -Tail 2'], 'windows'))).toBe('3. Maîtriser les permissions\nFin du fichier');
+  });
+
+  it('Get-Content (and cat under PowerShell) report a missing file like PowerShell', () => {
+    const expected = "Get-Content: Cannot find path 'C:\\Users\\user\\documents\\absent.txt' because it does not exist.";
+    expect(text(run(['Get-Content documents\\absent.txt'], 'windows'))).toBe(expected);
+    expect(text(run(['cat documents\\absent.txt'], 'windows'))).toBe(expected);
+  });
+
+  it('Get-Content rejects an unknown parameter like PowerShell', () => {
+    expect(text(run(['Get-Content documents\\notes.txt -n'], 'windows'))).toBe("Get-Content: A parameter cannot be found that matches parameter name 'n'.");
+  });
+
+  it('Set-Content writes a script that .\\script.ps1 then runs', () => {
+    const r = run(['Set-Content bonjour.ps1 \'Write-Output "Bonjour"\'', '.\\bonjour.ps1'], 'windows');
+    expect(text(r)).toBe('Bonjour');
+    expect(text(run(['Set-Content bonjour.ps1 \'Write-Output "Bonjour"\'', 'Get-Content bonjour.ps1'], 'windows'))).toBe('Write-Output "Bonjour"');
+  });
+
+  it('Add-Content appends a line', () => {
+    const r = run(['Set-Content liste.txt un', 'Add-Content liste.txt deux', 'Get-Content liste.txt'], 'windows');
+    expect(text(r)).toBe('un\ndeux');
+  });
+
+  it('Select-String ignores case and prefixes <file>:<line>:, like PowerShell', () => {
+    expect(text(run(['Select-String -Pattern apprendre -Path documents\\notes.txt'], 'windows'))).toBe('documents\\notes.txt:3:1. Apprendre les commandes bash');
+    expect(text(run(['Select-String -Pattern apprendre -Path documents\\notes.txt -CaseSensitive'], 'windows'))).toBe('');
+  });
+
+  it('Select-String without a match succeeds ($? stays True in PowerShell 7), unlike grep', () => {
+    expect(run(['Select-String -Pattern zzz -Path documents\\notes.txt'], 'windows').status ?? 0).toBe(0);
+    expect(run(['grep zzz documents/notes.txt']).status).toBe(1);
+  });
+
+  it('$env:X += appends, names ignore case, and Windows session variables exist', () => {
+    const r = run(['$env:Path += ";C:\\outils"', '$env:PATH'], 'windows');
+    expect(text(r)).toBe('C:\\Windows\\System32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\outils');
+    expect(text(run(['$env:USERNAME'], 'windows'))).toBe('user');
+    expect(text(run(['echo $env:userprofile'], 'windows'))).toBe('C:\\Users\\user');
+  });
+
+  it('Get-History lists earlier commands in the PowerShell 7 table, without itself', () => {
+    const r = run(['ls', 'cd documents', 'Get-History'], 'windows');
+    expect(r.lines.map((l) => l.text)).toEqual([
+      '',
+      '  Id     Duration CommandLine',
+      '  --     -------- -----------',
+      '   1        0.010 ls',
+      '   2        0.010 cd documents',
+      '',
+    ]);
+  });
+
+  it('Get-Date formats with -Format (.NET) and -UFormat (strftime)', () => {
+    expect(text(run(['Get-Date -Format "yyyy-MM-dd HH:mm"'], 'windows'))).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+    expect(text(run(['Get-Date -UFormat "%Y"'], 'windows'))).toMatch(/^\d{4}$/);
+    expect(text(run(['Get-Date'], 'windows'))).toMatch(/^[A-Z][a-z]+day, [A-Z][a-z]+ \d{1,2}, \d{4} \d{1,2}:\d{2}:\d{2} [AP]M$/);
+  });
+
+  it('Get-Help shows NAME and SYNOPSIS, and EXAMPLES with -Examples', () => {
+    const r = run(['Get-Help Get-ChildItem'], 'windows');
+    expect(r.lines.slice(0, 4).map((l) => l.text)).toEqual(['NAME', '    Get-ChildItem', '', 'SYNOPSIS']);
+    // The synopsis is a sentence, never the bash syntax line of the help entry.
+    expect(text(r)).not.toContain('ls [-la]');
+    expect(text(run(['Get-Help Get-ChildItem -Examples'], 'windows'))).toContain('EXAMPLES');
+    expect(errors(run(['Get-Help Nimporte'], 'windows'))).toHaveLength(1);
+    expect(errors(run(['Get-Help ls']))).toHaveLength(1); // not a bash command
+  });
+
+  it('tasklist and Get-ScheduledTask print their Windows tables', () => {
+    expect(run(['tasklist'], 'windows').lines[1].text).toMatch(/^Image Name\s+PID Session Name\s+Session#\s+Mem Usage$/);
+    expect(run(['Get-ScheduledTask'], 'windows').lines[1].text).toMatch(/^TaskPath\s+TaskName\s+State$/);
   });
 });
