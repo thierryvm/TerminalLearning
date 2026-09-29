@@ -86,7 +86,7 @@ export function Landing() {
 
   const handleShare = async () => {
     const url = 'https://terminallearning.dev';
-    const text = 'Apprends le terminal gratuitement — 11 modules interactifs, Linux / macOS / Windows.';
+    const text = `Apprends le terminal gratuitement — ${MODULE_PREVIEWS.length} modules interactifs, Linux / macOS / Windows.`;
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Terminal Learning', text, url });
@@ -396,7 +396,7 @@ export function Landing() {
             {MODULE_PREVIEWS.length} modules progressifs
           </h2>
           <p className="text-[var(--github-text-secondary)] text-center mb-10">
-            Du système de fichiers à la redirection de flux — deux niveaux, sans prérequis pour commencer.
+            Du système de fichiers à Git et à l'IA — cinq niveaux, sans prérequis pour commencer.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -436,7 +436,7 @@ export function Landing() {
           </div>
 
           <p className="mt-8 text-center text-[var(--github-text-secondary)] text-sm">
-            11 modules inclus — aucun compte requis.
+            {MODULE_PREVIEWS.length} modules inclus — aucun compte requis.
           </p>
         </FadeIn>
       </section>

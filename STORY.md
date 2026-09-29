@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## La page d'accueil, relue comme un visiteur (29 septembre 2026)
+
+Thierry m'a demandé de vérifier que la page d'accueil reflète ce qui existe vraiment. Les chiffres étaient justes : un test les compare déjà au programme réel. Le problème était ailleurs. Sous chaque environnement, la page affiche des commandes par niveau, et j'ai tapé chacune d'elles dans le terminal au lieu de les relire. Vingt-deux répondaient « commande introuvable », et quatre autres n'étaient enseignées dans aucune leçon. `systemctl`, `launchctl`, `Get-Service` : des promesses écrites au début du projet, jamais tenues depuis.
+
+La correction tient en deux gestes : ne garder que des commandes enseignées qui fonctionnent, et ajouter un test qui exécute chaque commande affichée. La prochaine promesse non tenue fera échouer la vérification avant d'arriver en ligne.
+
+Au passage, le même test a mis au jour une dette plus profonde. Une vingtaine de commandes sont expliquées dans les leçons sans exister dans le terminal : `find`, `sort`, `diff`, `tar`, `Where-Object`… La feuille de route publique le dit maintenant, dans « En cours ».
+
+---
+
 ## Des branches qui existent vraiment (29 septembre 2026)
 
 Thierry avait posé la question simplement : « Pour Git, c'est très basique, je présume que c'est l'équivalent d'un premier niveau ? » C'était vrai, et pour une raison précise. On ne peut pas enseigner les branches avec un simulateur où une branche n'est qu'un nom. Il l'a dit mieux que moi : on n'apprend rien correctement sans une théorie et une pratique qui fonctionnent. Avant d'écrire la moindre leçon avancée, il fallait donc que le moteur fusionne pour de bon.

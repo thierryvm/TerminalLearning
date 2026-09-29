@@ -5,6 +5,16 @@
 
 ---
 
+## 🪧 29 septembre 2026 — La page d'accueil ne promet que ce qui existe
+
+*Page d'accueil · feuille de route · un test empêche la dérive*
+
+- **Des commandes qui marchent vraiment.** Sous « Choisissez votre environnement », la page listait par niveau des commandes que le terminal ne connaissait pas : `systemctl`, `launchctl`, `caffeinate`, `Get-Service`, `New-PSDrive` et dix-sept autres. Un visiteur qui en tapait une recevait « commande introuvable ». Chaque commande affichée est maintenant enseignée dans une leçon et fonctionne dans le terminal, et un test le vérifie à chaque changement.
+- **Le bon résumé des modules.** « Du système de fichiers à la redirection de flux — deux niveaux » datait des débuts : le parcours va aujourd'hui jusqu'à Git et à l'IA, sur cinq niveaux.
+- **Une feuille de route à jour.** Les vraies branches Git, le guide d'installation de l'app et les exemples expliqués de la Référence passent dans « Disponible ». « En cours » annonce ce qui reste vraiment à faire : les exercices en plusieurs étapes, et les commandes enseignées que le terminal ne simule pas encore (`find`, `sort`, `diff`, `tar`…).
+
+---
+
 ## 🌳 29 septembre 2026 — Les branches Git existent pour de vrai
 
 *Modules Git et GitHub · valeurs attendues relevées sur Git 2.56 · identifiants de commit identiques à ceux du vrai Git*
