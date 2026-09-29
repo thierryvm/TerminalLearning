@@ -6,7 +6,11 @@ import {
   TOTAL_COMMANDS,
   ACTIVE_ENVIRONMENTS_COUNT,
   MODULE_PREVIEWS,
+  ENV_LEVELS,
+  ROADMAP_AVAILABLE,
 } from '../app/data/landingContent';
+import { createInitialState, processCommand } from '../app/data/terminalEngine';
+import type { SelectedEnvironment } from '../app/context/EnvironmentContext';
 import { curriculum } from '../app/data/curriculum';
 import { commandCatalogue } from '../app/data/commandCatalogue';
 import { ENVIRONMENTS } from '../app/types/curriculum';
@@ -82,5 +86,43 @@ describe('landingContent — totals drift guard (THI-118)', () => {
       expect(m, 'FAQ lesson-count sentence not found in index.html').not.toBeNull();
       expect(Number(m![1])).toBe(TOTAL_LESSONS);
     });
+  });
+});
+
+// The hero lists commands per environment and level. Until 29 September 2026 it
+// promised 22 commands the terminal did not know (systemctl, launchctl,
+// Get-Service, New-PSDrive…) and 4 no lesson taught: a visitor who typed one got "commande
+// introuvable". Every command shown must run in that environment and be taught.
+describe('landingContent — the commands the hero promises exist', () => {
+  /** What a learner of `env` reads in code blocks and exercises: the commands a lesson teaches. */
+  const taughtIn = (env: SelectedEnvironment) => curriculum.flatMap((m) => m.lessons.flatMap((l) => [
+    ...l.blocks.filter((b) => b.type === 'code').map((b) => b.contentByEnv?.[env] ?? b.content),
+    ...(l.exercise ? [l.exercise.instructionByEnv?.[env] ?? l.exercise.instruction, l.exercise.hintByEnv?.[env] ?? l.exercise.hint] : []),
+  ])).join('\n');
+  /** The whole command as a word of its own: `top` does not count inside `stop`, nor `env` inside `environment`. */
+  const asWord = (command: string) => new RegExp(`(^|[^\\w-])${command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`, 'm');
+  for (const [env, levels] of Object.entries(ENV_LEVELS) as Array<[SelectedEnvironment, (typeof ENV_LEVELS)[SelectedEnvironment]]>) {
+    for (const level of levels) {
+      it(`${env} level ${level.level}: every command runs and is taught`, () => {
+        const taught = taughtIn(env);
+        for (const command of level.commands.filter((c) => !['|', '>', '>>'].includes(c))) {
+          const out = processCommand(createInitialState(), command, env).lines.map((l) => l.text).join('\n');
+          expect(out, `${env}: ${command}`).not.toMatch(/commande introuvable|n'est pas reconnu|n'est pas simulée?/);
+          expect(asWord(command).test(taught), `${env}: ${command} is in no lesson`).toBe(true);
+        }
+      });
+    }
+  }
+
+  it('the module section names as many levels as the modules use', () => {
+    const landing = readFileSync(resolve(process.cwd(), 'src/app/components/Landing.tsx'), 'utf-8');
+    const words = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept'];
+    const said = landing.match(/— (\p{L}+) niveaux/u);
+    expect(said, 'the "N niveaux" subtitle was not found in Landing.tsx').not.toBeNull();
+    expect(words.indexOf(said![1])).toBe(Math.max(...MODULE_PREVIEWS.map((m) => m.level ?? 1)));
+  });
+
+  it('the roadmap counts the modules there are', () => {
+    expect(ROADMAP_AVAILABLE.flatMap((g) => g.items).some((item) => item.startsWith(`${MODULE_PREVIEWS.length} modules`))).toBe(true);
   });
 });
