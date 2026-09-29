@@ -5,6 +5,19 @@
 
 ---
 
+## 📱 29 septembre 2026 — Un terminal lisible sur téléphone comme sur ordinateur
+
+*Terminal des leçons · mobile 390 px, tablette 1024 px, ordinateur 1280 px*
+
+Thierry a demandé de vérifier chaque correction à l'écran, sur téléphone et sur ordinateur, et a autorisé les améliorations d'interface qui en découlent. Trois défauts sont apparus, et ils touchaient tous les élèves, pas seulement ceux des nouvelles commandes.
+
+- **Les tableaux gardent leurs colonnes.** `Get-Process`, `ps`, `Get-ScheduledTask` ou `Get-History` impriment des colonnes alignées. Le terminal les coupait à la largeur de l'écran : sur un téléphone, chaque ligne se cassait en trois morceaux illisibles, et même sur ordinateur la dernière colonne passait à la ligne. Un vrai terminal ne remet jamais un tableau en forme : il le laisse déborder. Le tableau garde donc ses colonnes et défile sur le côté quand il est trop large. Un léger dégradé sur le bord droit signale qu'il y a une suite, car un iPhone n'affiche pas de barre de défilement au repos. Le texte ordinaire continue de passer à la ligne.
+- **Les lignes vides réapparaissent.** Une ligne vide ne prenait aucune hauteur à l'écran : `Get-Help` collait ses sections NAME, SYNOPSIS et REMARKS les unes aux autres, et les tableaux de PowerShell perdaient leur respiration. Les sorties ont retrouvé l'espacement du vrai shell.
+- **Le bouton du tuteur IA ne cache plus de touches.** Sur téléphone et tablette, le bouton rond du tuteur couvrait les dernières touches de la barre de raccourcis (`|`, `>`, `$`…). La barre s'arrête maintenant avant le bouton, qui se range à son extrémité comme une touche de plus.
+- **Plus de zoom surprise sur iPad.** Safari agrandit la page quand on touche un champ de texte écrit en moins de 16 px. Sur un écran tactile, la ligne de commande garde donc 16 px.
+
+---
+
 ## 🧪 29 septembre 2026 — Chaque exemple de la Référence fonctionne dans le terminal
 
 *Moteur du terminal · exemples de la page Référence en erreur : 32 → 0 · écarts de la théorie : 160 → 158 · blocs bash montrés sous Windows : 37 → 34*

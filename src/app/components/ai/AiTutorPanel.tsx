@@ -67,7 +67,8 @@ interface Props {
   liftAboveMobileBar?: boolean;
 }
 
-function readEnabled(): boolean {
+/** The tutor (and its floating button) is shown only when the deploy enables it. */
+export function isAiTutorEnabled(): boolean {
   return import.meta.env.VITE_AI_TUTOR_ENABLED === 'true';
 }
 
@@ -82,7 +83,7 @@ function readStoredProvider(): Provider {
 }
 
 export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobileBar = false }: Props) {
-  const [enabled] = useState<boolean>(() => readEnabled());
+  const [enabled] = useState<boolean>(() => isAiTutorEnabled());
   const [open, setOpen] = useState(false);
   const [provider, setProviderState] = useState<Provider>(() => readStoredProvider());
   const [hasStoredKey, setHasStoredKey] = useState(false);
