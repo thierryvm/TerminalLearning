@@ -22,8 +22,10 @@ describe('lesson setups', () => {
   it('start Git lessons inside ~/projets, where the project files are', () => {
     const s = gitRepoEmpty.apply(createInitialState());
     expect(s.cwd).toEqual(['home', 'user', 'projets']);
+    // Real git: `git add .` prints nothing; the .gitignore keeps .env out.
     const out = processCommand(s, 'git add .', 'linux');
-    expect(out.lines.map((l) => l.text)).toEqual(['staged: script.sh', 'staged: README.md']);
+    expect(out.lines).toEqual([]);
+    expect(out.newState.git?.stagedFiles).toEqual(['.gitignore', 'README.md', 'index.html', 'script.sh']);
   });
 
   it('prepare the branch a merge lesson asks for, with main checked out', () => {

@@ -65,7 +65,7 @@ describe('lesson fidelity — the lesson command validates and prints no error',
     run(id, () => {
       const solution = LESSON_SOLUTIONS[key][env] ?? LESSON_SOLUTIONS[key].all ?? [];
       let state: TerminalState = createInitialState();
-      if (exercise.setup) state = exercise.setup.apply(state);
+      if (exercise.setup) state = exercise.setup.apply(state, env);
       const errors: string[] = [];
       for (const cmd of solution) {
         const out = processCommand(state, cmd, env);
@@ -104,7 +104,7 @@ describe('lesson fidelity — Windows paths written with backslashes', () => {
     it(`${key} [${env}] — same result with \\ as separator`, () => {
       const solution = (LESSON_SOLUTIONS[key].windows ?? LESSON_SOLUTIONS[key].all ?? []).map(withBackslashes);
       let state: TerminalState = createInitialState();
-      if (exercise.setup) state = exercise.setup.apply(state);
+      if (exercise.setup) state = exercise.setup.apply(state, env);
       const errors: string[] = [];
       for (const cmd of solution) {
         const out = processCommand(state, cmd, env);

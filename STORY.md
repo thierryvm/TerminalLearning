@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Un Git qui ne ment plus (30 septembre 2026)
+
+Dans le simulateur, `git add fichier-qui-n-existe-pas.txt` répondait poliment `staged:`. Le vrai Git refuse : `fatal: pathspec … did not match any files`. Ce n'était pas un détail. Nos propres tests ajoutaient des fichiers imaginaires, et la leçon sur `git add .` avertissait que la commande embarque le fichier `.env`, alors que notre Git cachait justement les fichiers commençant par un point. La leçon et le moteur se contredisaient.
+
+J'ai reconstruit le modèle autour de ce que Git garde vraiment : le contenu du dernier commit, la zone de préparation et les fichiers du dossier. Pour chaque sortie, la valeur attendue vient d'un vrai Git lancé sur une copie du projet des leçons, jusqu'aux identifiants `index 7d825c5..6827029` d'un diff. Deux conventions ont demandé une décision. Le simulateur stocke les fichiers sans leur dernier saut de ligne, alors Git les relit avec. Le dépôt préparé contient maintenant un `.gitignore` qui protège `.env`, parce qu'un exercice ne doit jamais apprendre à commiter un secret.
+
+Le rejeu de la théorie a trouvé ce que personne n'avait vu. Une leçon clonait trois fois le même dépôt dans le même dossier, puis lançait `git remote` sans entrer dans le dossier cloné. Un vrai terminal aurait refusé les deux. Les exemples tapent maintenant `cd projet`, comme on le ferait vraiment.
+
+---
+
 ## Regarder l'écran, pas seulement les tests (29 septembre 2026)
 
 Tous les tests étaient verts quand Thierry m'a demandé de vérifier moi-même, dans un navigateur, sur téléphone et sur ordinateur, que chaque correction se voyait vraiment. J'ai tapé `Get-ScheduledTask` dans le terminal d'une leçon, en largeur de téléphone. Le tableau s'est effondré : trois colonnes coupées en morceaux, une ligne de tirets orpheline. Le moteur répondait exactement comme PowerShell ; c'est l'affichage qui trahissait la réponse. Aucun test ne pouvait le voir, puisque les tests lisent le texte, pas l'écran.

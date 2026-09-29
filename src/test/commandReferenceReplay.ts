@@ -6,7 +6,7 @@
  */
 import { commandCatalogue } from '../app/data/commandCatalogue';
 import { createInitialState, processCommand } from '../app/data/terminalEngine';
-import { gitRepoWithRemote } from '../app/data/lessonSetup';
+import { gitRepoWithChange } from '../app/data/lessonSetup';
 import type { TerminalState } from '../app/data/commands/types';
 import type { EnvironmentId } from '../app/types/curriculum';
 
@@ -29,10 +29,11 @@ const HISTORY = [
 function startState(categoryId: string): TerminalState {
   const base = createInitialState();
   if (!GIT_CATEGORIES.has(categoryId)) return base;
-  const repo = gitRepoWithRemote.apply(base);
-  if (!repo.git) throw new Error('gitRepoWithRemote must create a repository');
+  const repo = gitRepoWithChange.apply(base);
+  if (!repo.git) throw new Error('gitRepoWithChange must create a repository');
   const commits = [...HISTORY.map((c) => ({ ...c, author: 'user', date: '2026-01-20' })), ...repo.git.commits];
-  return { ...repo, git: { ...repo.git, commits, branches: [...repo.git.branches, 'feature/login'] } };
+  const remotes = { origin: 'https://github.com/user/mon-projet.git' };
+  return { ...repo, git: { ...repo.git, commits, remotes, branches: [...repo.git.branches, 'feature/login'] } };
 }
 
 export interface ReplayedExample {

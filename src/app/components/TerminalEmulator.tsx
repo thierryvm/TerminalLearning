@@ -93,7 +93,8 @@ function getEnvPrompt(state: TerminalState, env: SelectedEnvironment): string {
 
 interface TerminalLine {
   id: number;
-  type: 'prompt' | 'output' | 'error' | 'success' | 'info';
+  /** `removed`: standard output shown in red, as git shows deleted lines and unstaged changes. */
+  type: 'prompt' | 'output' | 'error' | 'success' | 'info' | 'removed';
   text: string;
   prompt?: string;
 }
@@ -125,6 +126,7 @@ const LINE_COLOR: Record<TerminalLine['type'], string> = {
   error: 'text-[var(--github-red)]',
   success: 'text-[#3fb950]',
   info: 'text-[#58a6ff]',
+  removed: 'text-[var(--github-red)]',
 };
 
 let lineCounter = 0;
@@ -227,7 +229,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         // A script can clear the screen and then print: keep what came after.
         setLines(result.lines.map((l: OutputLine) => ({
           id: nextId(),
-          type: l.type === 'error' ? 'error' as const : l.type === 'success' ? 'success' as const : 'output' as const,
+          type: l.type === 'error' || l.type === 'success' || l.type === 'removed' ? l.type : 'output' as const,
           text: l.text,
         })));
         setTermState(result.newState);
@@ -240,7 +242,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         { id: nextId(), type: 'prompt', text: trimmed, prompt },
         ...result.lines.map((l: OutputLine) => ({
           id: nextId(),
-          type: l.type === 'error' ? 'error' as const : l.type === 'success' ? 'success' as const : 'output' as const,
+          type: l.type === 'error' || l.type === 'success' || l.type === 'removed' ? l.type : 'output' as const,
           text: l.text,
         })),
       ];

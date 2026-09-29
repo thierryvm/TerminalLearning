@@ -2552,15 +2552,23 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     // ── Git (Modules 9 & 10) → commands/git.ts ───────────────────────────────
     case 'git': {
       // `git init <dir>` creates the directory and initialises the repository inside it.
-      const initDir = args[0]?.toLowerCase() === 'init' ? args.slice(1).find((a) => !a.startsWith('-')) : undefined;
+      // The value of `-b main` or `--template dir` is not the directory.
+      let initAt = -1;
+      if (args[0]?.toLowerCase() === 'init') {
+        for (let i = 1; i < args.length && initAt < 0; i++) {
+          if (['-b', '--initial-branch', '--template', '--separate-git-dir', '--object-format'].includes(args[i])) i++;
+          else if (!args[i].startsWith('-')) initAt = i;
+        }
+      }
+      const initDir = initAt > 0 ? args[initAt] : undefined;
       if (initDir) {
         const made = cmdMkdir(newState, ['-p', initDir]);
         if (!made.newRoot) return { lines: made.lines, newState };
         const inside = { ...newState, root: made.newRoot, cwd: resolvePath(newState, initDir) };
-        const r = handleGit(inside, ['init'], env);
+        const r = handleGit(inside, args.filter((_, i) => i !== initAt), env);
         return { ...r, newState: { ...r.newState, cwd: newState.cwd } };
       }
-      return handleGit(newState, args, env);
+      return handleGit(newState, args, env, (p) => resolvePath(newState, p));
     }
 
     // ── IA (Module 11) → commands/ai.ts ──────────────────────────────────────
