@@ -5,6 +5,22 @@
 
 ---
 
+## 🌿 30 septembre 2026 — Le module Git se pratique comme au travail
+
+*Module Git · cinq exercices en plusieurs étapes · sorties vérifiées sur Git 2.56*
+
+Les exercices du module Git demandaient une seule commande, sortie de son contexte. Ils suivent maintenant le geste complet d'un développeur, et chaque étape est vérifiée sur l'état du dépôt.
+
+- **Démarrer un projet** : `mkdir mon-projet`, `cd mon-projet`, puis `git init`. Un `git init` lancé par erreur dans le dossier personnel est signalé tout de suite.
+- **Le premier commit** : `git status` montre les fichiers que Git ne suit pas encore, `git add .` les prépare, `git commit` les enregistre. `.env` reste dehors, grâce au `.gitignore`.
+- **Lire un diff** : `git diff`, puis `git add`, après quoi `git diff` n'affiche plus rien et `git diff --staged` montre ce que le commit va enregistrer.
+- **Une branche qui isole vraiment** : créer `feature/ma-feature`, y committer `feature.txt`, revenir sur `main` et voir le fichier disparaître du dossier.
+- **Fusionner puis ranger** : `git merge` (en « Fast-forward »), puis `git branch -d`. Supprimer la branche avant la fusion est refusé, comme dans le vrai Git.
+- Les commandes équivalentes comptent aussi : `git switch -c`, `git add -A`, `git diff --cached`.
+- **Jamais coincé, même dans le désordre.** Un `git add` tapé avant `git status`, un `git commit -a` qui saute la préparation, un commit parti sur `main` par erreur : soit une commande suivante termine l'exercice, soit le terminal explique comment s'en sortir.
+
+---
+
 ## 🧩 29 septembre 2026 — Des exercices en plusieurs étapes, vérifiés sur le terminal
 
 *Leçons · exercices · page de leçon*

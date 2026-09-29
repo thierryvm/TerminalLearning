@@ -7,7 +7,7 @@ import {
   validateRedirectionSortie, validatePipes, validateStderr, validateTee,
   validateEnvVars, validatePathVariable, validateShellConfig, validateDotenv, validateScripts, validateCron,
   validatePing, validateCurl, validateWget, validateDns, validateSsh, validateScp,
-  validateGitInit, validateGitConfig, validateGitAddCommit, validateGitStatusLog, validateGitDiffGitignore, validateGitBranch, validateGitMerge,
+  validateGitConfig, validateGitStatusLog,
   validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateMergeStrategies, validateGithubActions,
   validateAiHelp, validateAiHelpCapabilities, validateAiHelpLimits, validateAiHelpPrompts,
   validateAiHelpContext, validateAiHelpValidate, validateAiHelpDebug, validateAiHelpSecurity,
@@ -18,7 +18,9 @@ import {
   type LessonSetup,
 } from './lessonSetup';
 import type { OutputLine, TerminalState } from './commands/types';
-import { hasConflictMarkers, inHomeDir, printedError, repoFile, stepAccepts } from './exerciseSteps';
+import {
+  hasConflictMarkers, homeDirExists, inHomeDir, printed, printedError, repoFile, repoInHomeDir, stepAccepts,
+} from './exerciseSteps';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
 
 export interface ContentBlock {
@@ -2305,10 +2307,32 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Initialisez un nouveau dépôt Git avec `git init`.',
-          hint: 'Tapez: git init',
-          validate: validateGitInit,
-          successMessage: 'Parfait ! Votre premier dépôt Git est initialisé. Le dossier .git/ a été créé.',
+          instruction: 'Démarrez un projet comme un développeur : créez son dossier, entrez-y, puis initialisez-y un dépôt Git.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
+          steps: [
+            {
+              instruction: 'Créez le dossier du projet avec `mkdir mon-projet`.',
+              hint: 'Tapez : mkdir mon-projet',
+              check: ({ state }) => homeDirExists(state, 'mon-projet'),
+              warn: ({ state }) => repoInHomeDir(state)
+                ? 'git init vient de créer un dépôt dans votre dossier personnel lui-même : Git suivrait tout ce qu\'il contient. Cliquez sur « Réinitialiser », puis créez d\'abord le dossier du projet.'
+                : undefined,
+            },
+            {
+              instruction: 'Entrez dans le dossier avec `cd mon-projet`.',
+              hint: 'Tapez : cd mon-projet',
+              check: ({ state }) => inHomeDir(state, 'mon-projet'),
+              warn: ({ state }) => repoInHomeDir(state)
+                ? 'git init vient de créer un dépôt dans votre dossier personnel lui-même : Git suivrait tout ce qu\'il contient. Cliquez sur « Réinitialiser » et entrez d\'abord dans mon-projet.'
+                : undefined,
+            },
+            {
+              instruction: 'Initialisez le dépôt avec `git init`. Git crée le dossier caché `.git`, où il rangera tout l\'historique.',
+              hint: 'Tapez : git init',
+              check: ({ state }) => repoInHomeDir(state, 'mon-projet'),
+            },
+          ],
+          successMessage: 'Votre premier dépôt Git est prêt, dans son propre dossier. Git y a créé le dossier caché `.git` : c\'est lui, le dépôt. Le supprimer effacerait tout l\'historique, jamais vos fichiers.',
         },
       },
       {
@@ -2386,11 +2410,29 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Ajoutez tous les fichiers du répertoire courant à la zone de staging avec `git add .`.',
-          hint: 'Tapez: git add .',
-          validate: validateGitAddCommit,
+          instruction: 'Faites le premier commit du projet : regardez ce que Git voit, préparez les fichiers, puis enregistrez-les.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoEmpty,
-          successMessage: 'Fichiers stagés ! Maintenant vous pouvez les committer avec git commit -m "message".',
+          steps: [
+            {
+              instruction: 'Regardez ce que Git voit avec `git status` : des fichiers qu\'il ne suit pas encore (« Untracked files »).',
+              hint: 'Tapez : git status',
+              // Any git status counts: typed after `git add .`, it shows « Changes to be committed » instead.
+              check: ({ lines }) => /^On branch /m.test(printed(lines)),
+            },
+            {
+              instruction: 'Ajoutez tous les fichiers à la zone de staging avec `git add .`.',
+              hint: 'Tapez : git add .',
+              check: ({ state }) => ['README.md', 'index.html', 'script.sh', '.gitignore']
+                .every((f) => state.git?.stagedFiles.includes(f) || state.git?.head?.[f] !== undefined),
+            },
+            {
+              instruction: 'Enregistrez-les dans un commit avec `git commit -m "feat: premier commit"`.',
+              hint: 'Tapez : git commit -m "feat: premier commit"',
+              check: ({ state }) => (state.git?.commits.length ?? 0) > 0 && state.git?.stagedFiles.length === 0,
+            },
+          ],
+          successMessage: 'Premier commit enregistré ! Remarquez que `.env` n\'en fait pas partie : le `.gitignore` l\'a écarté dès le `git add .`. `git log --oneline` montre maintenant votre commit.',
         },
       },
       {
@@ -2466,11 +2508,39 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Visualisez les différences actuelles dans votre dépôt avec `git diff`.',
-          hint: 'Tapez: git diff',
-          validate: validateGitDiffGitignore,
+          instruction: 'Suivez une modification de `README.md` jusqu\'au commit, en regardant le diff à chaque étape.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoWithChange,
-          successMessage: 'Vous savez lire un diff Git. Les lignes en vert (+) sont les ajouts, en rouge (-) les suppressions.',
+          steps: [
+            {
+              instruction: 'Voyez ce qui a changé avec `git diff` : en rouge (-) la ligne retirée, en vert (+) la ligne ajoutée.',
+              hint: 'Tapez : git diff',
+              check: ({ lines }) => printed(lines).includes('diff --git a/README.md b/README.md'),
+              warn: ({ state }) => {
+                if ((state.git?.commits.length ?? 0) >= 2) return 'La modification est déjà commitée : git diff n\'a plus rien à montrer. git show affiche le diff du dernier commit.';
+                if (state.git?.stagedFiles.includes('README.md')) return 'README.md est déjà préparé : git diff n\'affiche plus rien. git diff --staged montre le changement.';
+                if (repoFile(state, 'README.md') === state.git?.head?.['README.md']) return 'La modification de README.md a été annulée : il n\'y a plus rien à comparer. Cliquez sur « Réinitialiser » pour la retrouver.';
+                return undefined;
+              },
+            },
+            {
+              instruction: 'Préparez la modification avec `git add README.md`. Tapez `git diff` ensuite si vous voulez : il n\'affiche plus rien.',
+              hint: 'Tapez : git add README.md',
+              check: ({ state }) => Boolean(state.git?.stagedFiles.includes('README.md')) || (state.git?.commits.length ?? 0) >= 2,
+            },
+            {
+              instruction: 'Voyez ce que le prochain commit enregistrera avec `git diff --staged`.',
+              hint: 'Tapez : git diff --staged',
+              // Already committed (git commit -a): git show printed the same diff.
+              check: ({ lines, state }) => printed(lines).includes('diff --git a/README.md b/README.md') || (state.git?.commits.length ?? 0) >= 2,
+            },
+            {
+              instruction: 'Enregistrez la modification avec `git commit -m "docs: précise le README"`.',
+              hint: 'Tapez : git commit -m "docs: précise le README"',
+              check: ({ state }) => (state.git?.commits.length ?? 0) >= 2 && state.git?.stagedFiles.length === 0,
+            },
+          ],
+          successMessage: 'Vous savez lire un diff, et où il regarde : `git diff` compare vos fichiers à la zone de staging, `git diff --staged` compare la zone de staging au dernier commit. Après le commit, les deux sont vides.',
         },
       },
       {
@@ -2507,11 +2577,51 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Créez une nouvelle branche `feature/ma-feature` et basculez dessus avec `git checkout -b feature/ma-feature`.',
-          hint: 'Tapez: git checkout -b feature/ma-feature',
-          validate: validateGitBranch,
+          instruction: 'Voyez une branche isoler votre travail : créez-la, commitez-y un fichier, puis revenez sur `main`.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoWithCommit,
-          successMessage: 'Branche créée et activée ! Vous développez maintenant en isolation totale de main.',
+          steps: [
+            {
+              instruction: 'Créez la branche `feature/ma-feature` et basculez dessus avec `git checkout -b feature/ma-feature`.',
+              hint: 'Tapez : git checkout -b feature/ma-feature',
+              check: ({ state }) => state.git?.branch === 'feature/ma-feature',
+              warn: ({ state }) => state.git?.branch === 'main' && state.git.head?.['feature.txt'] !== undefined
+                ? 'feature.txt vient d\'être commité sur main, avant la création de la branche. Cliquez sur « Réinitialiser » pour recommencer.'
+                : undefined,
+            },
+            {
+              instruction: 'Créez un fichier sur cette branche avec `echo "Nouvelle fonctionnalité" > feature.txt`.',
+              instructionByEnv: {
+                windows: 'Créez un fichier sur cette branche avec `Set-Content feature.txt "Nouvelle fonctionnalité"`.',
+              },
+              hint: 'Tapez : echo "Nouvelle fonctionnalité" > feature.txt',
+              hintByEnv: { windows: 'Tapez : Set-Content feature.txt "Nouvelle fonctionnalité"' },
+              check: ({ state }) => repoFile(state, 'feature.txt') !== null,
+            },
+            {
+              instruction: 'Préparez-le avec `git add feature.txt`.',
+              hint: 'Tapez : git add feature.txt',
+              check: ({ state }) => Boolean(state.git?.stagedFiles.includes('feature.txt')),
+            },
+            {
+              instruction: 'Enregistrez-le sur la branche avec `git commit -m "feat: ajoute feature.txt"`.',
+              hint: 'Tapez : git commit -m "feat: ajoute feature.txt"',
+              check: ({ state }) => state.git?.branch === 'feature/ma-feature' && state.git.head?.['feature.txt'] !== undefined,
+              warn: ({ state }) => {
+                const git = state.git;
+                if (git?.branch !== 'main') return undefined;
+                if (git.head?.['feature.txt'] !== undefined) return 'Ce commit est parti sur main, pas sur la branche : main contient maintenant feature.txt. Cliquez sur « Réinitialiser » pour recommencer.';
+                if (git.stagedFiles.includes('feature.txt')) return 'feature.txt est préparé mais pas encore commité, et vous êtes sur main. Revenez avec git switch feature/ma-feature (Git emporte le fichier préparé avec vous), puis commitez-le.';
+                return undefined;
+              },
+            },
+            {
+              instruction: 'Revenez sur la branche principale avec `git switch main`, puis regardez les fichiers : `feature.txt` n\'y est pas.',
+              hint: 'Tapez : git switch main',
+              check: ({ state }) => state.git?.branch === 'main' && repoFile(state, 'feature.txt') === null && Boolean(state.git.refs?.['feature/ma-feature']),
+            },
+          ],
+          successMessage: 'feature.txt a disparu de votre dossier : il n\'existe que sur la branche `feature/ma-feature`. `git switch feature/ma-feature` le fait revenir. C\'est tout l\'intérêt d\'une branche : travailler sans toucher à `main`.',
         },
       },
       {
@@ -2545,11 +2655,25 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Fusionnez la branche `feature/ma-feature` dans la branche courante avec `git merge feature/ma-feature`.',
-          hint: 'Tapez: git merge feature/ma-feature',
-          validate: validateGitMerge,
+          instruction: 'Intégrez le travail de la branche `feature/ma-feature` dans `main`, puis rangez la branche devenue inutile.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoWithBranch('feature/ma-feature'),
-          successMessage: 'Fusion réussie ! Le travail de la branche est maintenant intégré. C\'est le coeur du workflow Git en entreprise.',
+          steps: [
+            {
+              instruction: 'Fusionnez la branche dans `main` avec `git merge feature/ma-feature`. Comme `main` n\'a pas bougé entre-temps, Git avance simplement (« Fast-forward »).',
+              hint: 'Tapez : git merge feature/ma-feature',
+              check: ({ state }) => state.git?.branch === 'main' && state.git.head?.['ma-feature.html'] !== undefined,
+              warn: ({ state }) => !state.git?.refs?.['feature/ma-feature'] && state.git?.head?.['ma-feature.html'] === undefined
+                ? 'La branche feature/ma-feature n\'existe plus (supprimée avec -D, ou renommée) et son travail n\'a pas été fusionné. C\'est pour éviter cela que git branch -d refuse. Cliquez sur « Réinitialiser » pour recommencer.'
+                : undefined,
+            },
+            {
+              instruction: 'Supprimez la branche fusionnée avec `git branch -d feature/ma-feature`. Son travail est déjà dans `main`, rien n\'est perdu.',
+              hint: 'Tapez : git branch -d feature/ma-feature',
+              check: ({ state }) => !state.git?.refs?.['feature/ma-feature'] && state.git?.head?.['ma-feature.html'] !== undefined,
+            },
+          ],
+          successMessage: 'Fusion réussie et branche rangée ! `git branch -d` refuse de supprimer une branche dont le travail n\'est pas encore fusionné : c\'est un garde-fou. C\'est le coeur du workflow Git en entreprise.',
         },
       },
     ],
