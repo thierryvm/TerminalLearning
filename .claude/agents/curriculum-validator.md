@@ -1,6 +1,6 @@
 ---
 name: curriculum-validator
-description: Validate curriculum.ts structure before any modification — env coverage via the *ByEnv fields, duplicate lesson or module IDs, prerequisites chain integrity, validator import/export sync, orphan validators, lesson setups resolved in lessonSetup.ts, LESSON_SOLUTIONS coverage of every exercise, and module completeness. Counts come from executed code, never by hand. Auto-invoked before adding or modifying lessons or modules.
+description: Validate curriculum.ts structure before any modification — env coverage via the *ByEnv fields, duplicate lesson or module IDs, prerequisites chain integrity, validator import/export sync, orphan validators, lesson setups resolved in lessonSetup.ts, LESSON_SOLUTIONS coverage of every exercise, and module completeness. Counts come from executed code, never by hand. Auto-invoked before adding or modifying lessons or modules, and before changing the Exercise type, exerciseSteps.ts, lessonSetup.ts, lessonSolutions.ts or LessonPage.tsx.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -30,7 +30,8 @@ Si la commande échoue, écrire « compte non vérifié » — pas de nombre app
    node -e "
    const fs=require('fs');const c=fs.readFileSync('src/app/data/curriculum.ts','utf8'),v=fs.readFileSync('src/app/data/validators.ts','utf8');
    const imp=new Set((c.match(/import\s*\{([^}]*)\}\s*from\s*'\.\/validators'/)?.[1]??'').split(',').map(s=>s.trim()).filter(s=>/^validate\w+$/.test(s)));
-   const ref=new Set([...c.matchAll(/validate:\s*(validate\w+)/g)].map(m=>m[1]));
+   // A multi-step exercise uses its validators inside steps: stepAccepts(validateX, ctx).
+   const ref=new Set([...c.matchAll(/validate:\s*(validate\w+)/g),...c.matchAll(/stepAccepts\(\s*(validate\w+)/g)].map(m=>m[1]));
    const exp=new Set([...v.matchAll(/^export\s+(?:const|function)\s+(validate\w+)/gm)].map(m=>m[1]));
    const d=(a,b)=>[...a].filter(x=>!b.has(x));
    console.log({exported:exp.size,imported:imp.size,referenced:ref.size,refNotImported:d(ref,imp),impNotExported:d(imp,exp),orphans:d(exp,ref)});"
@@ -60,6 +61,12 @@ Si la commande échoue, écrire « compte non vérifié » — pas de nombre app
 8. **Tests des validateurs** : chaque validateur a un `describe` dans `validators.test.ts`.
 9. **Leçons sans bloc `code`** : uniquement `text` / `info` / `tip` / `warning` = WARNING (apprentissage dégradé).
 10. **Completeness** : module sans leçons, leçon sans exercice, exercice sans `successMessage` = WARNING.
+11. **Exercices en étapes** (depuis #403, `src/app/data/exerciseSteps.ts`) : un exercice a **soit** `validate`, **soit** `steps` (jamais les deux, le type l'impose). Pour chaque étape : `instruction`, `hint` et `check` présents ; `instructionByEnv` et `hintByEnv` symétriques (une variante Windows de l'une sans l'autre = WARNING). Dans `LESSON_SOLUTIONS`, un exercice en étapes liste **une commande par étape**, dans l'ordre (`lessonFidelity.test.ts` le vérifie). Les `check` lisent l'état du terminal : un `check` qui serait déjà vrai dans l'état du `setup` ferait sauter l'étape (WARNING à signaler, la preuve relève des tests).
+12. **`unlocks`** : un ID absent du curriculum (module futur) = INFO seulement, sauf si du code UI le suppose existant.
+
+### Scripts
+
+Les one-liners `node -e` / `npx tsx -e` avec guillemets imbriqués cassent sous Git Bash. Au-delà d'une ligne simple, écrire un fichier `.mts` temporaire (hors de `src/`), l'exécuter avec `npx tsx`, puis le supprimer. Le champ des blocs d'une leçon s'appelle `blocks` (pas `content`).
 
 ## Format de rapport obligatoire
 

@@ -168,7 +168,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 ### Après chaque modification de `curriculum.ts`, `terminalEngine.ts` ou `commands/*.ts`
 
 - Invoquer l'agent **`test-runner`** → si VERDICT = ❌ Fix required, corriger avant de proposer un commit
-- Si une sortie de terminal (moteur ou exemple de leçon) change : invoquer **`terminal-fidelity-auditor`** sur les commandes touchées. Un attendu de test vient du vrai shell, jamais de la sortie du moteur.
+- Si une sortie de terminal (moteur ou exemple de leçon) change : invoquer **`terminal-fidelity-auditor`** sur les commandes touchées. Un attendu de test vient du vrai shell, jamais de la sortie du moteur. Idem quand un exercice en étapes (`steps`, `warn`, `restart`, `successMessage`) fait taper une commande ou décrit un comportement du shell (depuis #403).
+- Exercice en étapes : aucune impasse. Une étape d'observation passe dès que l'élève observe, une étape d'action passe aussi quand son effet est déjà là, et toute impasse restante a un `warn` qui dit quoi faire (leçon de #404). `feature-dev:code-reviewer` doit chercher les séquences dans le désordre.
 - Les cliquets `KNOWN_THEORY_GAPS` / `BASH_SHOWN_ON_WINDOWS_MAX` (`src/test/lessonTheoryGaps.ts`) et `KNOWN_DESYNCS` (`lessonFidelity.test.ts`) ne peuvent que baisser. Après une correction, `npm run theory:gaps` régénère la liste. Le script refuse d'ajouter un écart ou de relever le compteur Windows : l'option `--allow-new` est réservée à un correctif déjà planifié.
 
 ### Incohérences Linear à corriger dès détection
