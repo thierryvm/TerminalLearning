@@ -28,6 +28,11 @@ interface TerminalKeyBarProps {
   onHistoryPrev: () => void;
   /** Recall the next command (history ↓). */
   onHistoryNext: () => void;
+  /**
+   * Keep the right end free for the floating AI tutor button, which sits over
+   * the bar's last keys (bottom-right, same height). The keys scroll short of it.
+   */
+  reserveEnd?: boolean;
 }
 
 interface InsertKey {
@@ -89,7 +94,7 @@ function KeyButton({
   );
 }
 
-export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }: TerminalKeyBarProps) {
+export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext, reserveEnd = false }: TerminalKeyBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   // Starts false: on a phone the key set always overflows, so the right fade
@@ -118,7 +123,7 @@ export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }
   }, [updateEdges]);
 
   return (
-    <div className="relative shrink-0 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)]">
+    <div className={`relative shrink-0 border-t border-[var(--github-border-primary)] bg-[var(--github-border-secondary)] ${reserveEnd ? 'pe-16' : ''}`}>
       <div
         ref={scrollRef}
         role="toolbar"
@@ -150,7 +155,7 @@ export function TerminalKeyBar({ onInsert, onTab, onHistoryPrev, onHistoryNext }
       {!atEnd && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[var(--github-border-secondary)] to-transparent"
+          className={`pointer-events-none absolute inset-y-0 ${reserveEnd ? 'right-16' : 'right-0'} w-6 bg-gradient-to-l from-[var(--github-border-secondary)] to-transparent`}
         />
       )}
     </div>

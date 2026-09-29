@@ -18,7 +18,7 @@ import { TerminalState, createInitialState } from '../data/terminalEngine';
 import { exerciseAccepts } from '../data/validators';
 import { TerminalEmulator } from './TerminalEmulator';
 import { Button } from './ui/button';
-import { AiTutorPanel } from './ai/AiTutorPanel';
+import { AiTutorPanel, isAiTutorEnabled } from './ai/AiTutorPanel';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 
 function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: EnvId }) {
@@ -392,6 +392,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             username={terminalUsername}
             environment={selectedEnv}
             initialState={buildInitialState}
+            reserveKeyBarEnd={isAiTutorEnabled()}
           />
         </div>
       </div>
@@ -478,7 +479,8 @@ export function LessonPage() {
       <AiTutorPanel
         lang="fr"
         role={role}
-        // Raise the FAB above the terminal mobile key bar on touch (THI-307).
+        // Raise the FAB above the lesson nav footer; on touch it then sits at the
+        // end of the terminal key bar, which keeps that end free (reserveKeyBarEnd).
         liftAboveMobileBar
         lessonContext={{
           moduleSlug: moduleId,

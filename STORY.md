@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Regarder l'écran, pas seulement les tests (29 septembre 2026)
+
+Tous les tests étaient verts quand Thierry m'a demandé de vérifier moi-même, dans un navigateur, sur téléphone et sur ordinateur, que chaque correction se voyait vraiment. J'ai tapé `Get-ScheduledTask` dans le terminal d'une leçon, en largeur de téléphone. Le tableau s'est effondré : trois colonnes coupées en morceaux, une ligne de tirets orpheline. Le moteur répondait exactement comme PowerShell ; c'est l'affichage qui trahissait la réponse. Aucun test ne pouvait le voir, puisque les tests lisent le texte, pas l'écran.
+
+Le même regard a trouvé deux autres défauts plus anciens. Les lignes vides disparaissaient, parce qu'un bloc vide ne prend aucune hauteur dans une page web. Et sur téléphone, le bouton rond du tuteur IA recouvrait les touches de raccourci que nous avions ajoutées pour ceux qui n'ont pas de clavier physique. J'ai d'abord remonté le bouton au-dessus de la barre ; il cachait alors la fin de la ligne de commande. La bonne réponse était ailleurs : laisser le bouton en place et arrêter la barre avant lui.
+
+Un point reste ouvert, et je le dis. Quand le clavier de l'iPhone est ouvert, Safari déplace l'écran d'une manière qu'aucune simulation ne reproduit fidèlement. Il faudra une capture sur un vrai iPhone pour confirmer que le bouton et la barre restent alignés.
+
+---
+
 ## Le simulateur contre la réalité (29 septembre 2026)
 
 La livraison précédente s'était arrêtée sur une liste honnête : 32 exemples de la page Référence échouaient encore, parce que notre terminal ne connaissait pas certaines commandes. Thierry m'a confié la suite sans condition : « s'il y a des lacunes à corriger sur le simulateur, tu les améliores ». La liste est vide.

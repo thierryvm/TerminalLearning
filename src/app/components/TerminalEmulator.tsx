@@ -3,6 +3,8 @@ import { TerminalState, OutputLine, processCommand, displayPathForEnv, getTabCom
 import type { SelectedEnvironment } from '../context/EnvironmentContext';
 import { spliceAtSelection } from './terminalKeyInsert';
 import { TerminalKeyBar } from './TerminalKeyBar';
+import { segmentOutput, tableLabel } from './terminalLayout';
+import { TerminalColumns } from './TerminalColumns';
 
 // ─── Security helpers ─────────────────────────────────────────────────────────
 
@@ -106,6 +108,8 @@ interface TerminalEmulatorProps {
   environment?: SelectedEnvironment;
   /** Builds the state the terminal starts from (lesson setup). Read once, on mount. */
   initialState?: () => TerminalState;
+  /** Leave room at the end of the mobile key bar for the AI tutor button. */
+  reserveKeyBarEnd?: boolean;
 }
 
 /**
@@ -114,6 +118,14 @@ interface TerminalEmulatorProps {
  * default. Long unbroken tokens (URLs, paths) still wrap instead of overflowing.
  */
 const OUTPUT_TEXT = 'whitespace-pre-wrap break-words [word-break:break-word]';
+
+const LINE_COLOR: Record<TerminalLine['type'], string> = {
+  prompt: 'text-[var(--github-text-primary)]',
+  output: 'text-[var(--github-text-primary)]',
+  error: 'text-[var(--github-red)]',
+  success: 'text-[#3fb950]',
+  info: 'text-[#58a6ff]',
+};
 
 let lineCounter = 0;
 const nextId = () => ++lineCounter;
@@ -146,7 +158,7 @@ function useCoarsePointer(): boolean {
   return coarse;
 }
 
-export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux', initialState }: TerminalEmulatorProps) {
+export function TerminalEmulator({ onCommand, welcomeMessage, className = '', username, environment = 'linux', initialState, reserveKeyBarEnd = false }: TerminalEmulatorProps) {
   const [termState, setTermState] = useState<TerminalState>(initialState ?? createInitialState);
   const [lines, setLines] = useState<TerminalLine[]>(() => {
     const welcome = welcomeMessage ?? ENV_MOTD[environment];
@@ -329,6 +341,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
   const prompt = getEnvPrompt(activeState, environment);
   const promptColor = ENV_PROMPT_COLOR[environment];
+  const segments = useMemo(() => segmentOutput(lines), [lines]);
 
   return (
     <div
@@ -352,35 +365,37 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
 
       {/* Output area */}
       <div ref={outputRef} className="flex-1 overflow-y-auto p-4 space-y-0.5 font-mono text-sm min-h-0">
-        {lines.map((line) => (
-          <div key={line.id} className="leading-5">
-            {line.type === 'prompt' ? (
+        {segments.map((segment) =>
+          segment.kind === 'columns' ? (
+            // Columns stay aligned: no wrapping, the block scrolls sideways when narrow.
+            <TerminalColumns key={`columns-${segment.id}`} label={tableLabel(segment.lines[0].text)}>
+              {segment.lines.map((line) => (
+                <div key={line.id} className={`leading-5 min-h-5 whitespace-pre ${LINE_COLOR[line.type]}`}>{line.text}</div>
+              ))}
+            </TerminalColumns>
+          ) : segment.line.type === 'prompt' ? (
+            <div key={segment.line.id} className="leading-5">
               <div className="flex items-start gap-1 flex-wrap">
-                <span className={`${promptColor} shrink-0`}>{line.prompt}</span>
-                <span className="text-[var(--github-text-primary)] break-all">{line.text}</span>
+                <span className={`${promptColor} shrink-0`}>{segment.line.prompt}</span>
+                <span className="text-[var(--github-text-primary)] break-all">{segment.line.text}</span>
               </div>
-            ) : line.type === 'error' ? (
-              <div className={`${OUTPUT_TEXT} text-[var(--github-red)]`}>{line.text}</div>
-            ) : line.type === 'success' ? (
-              <div className={`${OUTPUT_TEXT} text-[#3fb950]`}>{line.text}</div>
-            ) : line.type === 'info' ? (
-              <div className={`${OUTPUT_TEXT} text-[#58a6ff]`}>{line.text}</div>
-            ) : (
-              <div className={`${OUTPUT_TEXT} text-[var(--github-text-primary)]`}>{line.text}</div>
-            )}
-          </div>
-        ))}
+            </div>
+          ) : (
+            // min-h keeps a blank line visible: an empty div would collapse to nothing.
+            <div key={segment.line.id} className={`leading-5 min-h-5 ${OUTPUT_TEXT} ${LINE_COLOR[segment.line.type]}`}>{segment.line.text}</div>
+          ),
+        )}
 
         {/* Input line */}
         <form onSubmit={handleSubmit} className="flex items-center gap-1 mt-1">
-          <span className={`${promptColor} shrink-0 font-mono text-base md:text-sm`}>{prompt}</span>
+          <span className={`${promptColor} shrink-0 font-mono text-base md:pointer-fine:text-sm`}>{prompt}</span>
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(sanitiseInput(e.target.value))}
             maxLength={MAX_INPUT_LENGTH}
             onKeyDown={handleKeyDown}
-            className={`flex-1 bg-transparent text-[var(--github-text-primary)] font-mono text-base md:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
+            className={`flex-1 bg-transparent text-[var(--github-text-primary)] font-mono text-base md:pointer-fine:text-sm outline-none min-w-0 ${environment === 'windows' ? 'caret-[#56b6c2]' : environment === 'macos' ? 'caret-[#58a6ff]' : 'caret-[#3fb950]'}`}
             aria-label="Commande terminal"
             autoComplete="off"
             autoCorrect="off"
@@ -398,6 +413,7 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           onTab={triggerTabCompletion}
           onHistoryPrev={historyPrev}
           onHistoryNext={historyNext}
+          reserveEnd={reserveKeyBarEnd}
         />
       )}
     </div>
