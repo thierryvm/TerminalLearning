@@ -308,8 +308,6 @@ export const validatePullRequests: ValidateFn = (cmd) => {
     return /^git\s+checkout\s+-b\s+feature\/\S+/.test(c) || /^git\s+switch\s+-c\s+feature\/\S+/.test(c);
   };
 
-export const validateConflicts: ValidateFn = (cmd) => /^git\s+merge\s+\S+/.test(cmd.trim().toLowerCase());
-
 export const validateMergeStrategies: ValidateFn = (cmd) => {
   const c = cmd.trim().toLowerCase();
   if (!/^git\s+merge\b/.test(c)) return false;

@@ -99,8 +99,15 @@ interface TerminalLine {
   prompt?: string;
 }
 
+/** What a command printed, and the state it ran in: an exercise step reads both. */
+export interface CommandDetail {
+  lines: OutputLine[];
+  prevState: TerminalState;
+}
+
 interface TerminalEmulatorProps {
-  onCommand?: (command: string, state: TerminalState) => void;
+  /** Called after each command. The lines it returns (exercise feedback) print after the command's output. */
+  onCommand?: (command: string, state: TerminalState, detail: CommandDetail) => OutputLine[] | void;
   welcomeMessage?: string[];
   className?: string;
   /** Unix username to show in prompt. Defaults to 'user' when not authenticated. */
@@ -238,6 +245,8 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
         return;
       }
 
+      // Exercise feedback keeps its own colours: blue guidance, green success.
+      const feedback = onCommand?.(trimmed, result.newState, { lines: result.lines, prevState: activeState }) ?? [];
       const newLines: TerminalLine[] = [
         { id: nextId(), type: 'prompt', text: trimmed, prompt },
         ...result.lines.map((l: OutputLine) => ({
@@ -245,13 +254,13 @@ export function TerminalEmulator({ onCommand, welcomeMessage, className = '', us
           type: l.type === 'error' || l.type === 'success' || l.type === 'removed' ? l.type : 'output' as const,
           text: l.text,
         })),
+        ...feedback.map((l: OutputLine) => ({ id: nextId(), type: l.type, text: l.text })),
       ];
 
       startTransition(() => {
         setLines((prev) => appendLines(prev, ...newLines));
       });
       setTermState(result.newState);
-      onCommand?.(trimmed, result.newState);
       setInput('');
       setHistoryIndex(-1);
     },

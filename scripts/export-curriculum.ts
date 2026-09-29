@@ -32,7 +32,7 @@ for (const module of curriculum) {
       lesson_title: lesson.title,
       lesson_description: lesson.description.substring(0, 100), // truncate for CSV readability
       has_exercise: lesson.exercise ? 'yes' : 'no',
-      test_type: lesson.exercise?.validate ? 'custom' : undefined,
+      test_type: lesson.exercise ? (lesson.exercise.steps ? 'steps' : 'custom') : undefined,
     });
   }
 }

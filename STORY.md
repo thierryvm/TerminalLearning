@@ -21,6 +21,18 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Un exercice qui s'arrêtait au moment où le travail commence (29 septembre 2026)
+
+La leçon sur les conflits de merge en provoquait enfin un vrai. Mais l'exercice se validait sur `git merge`, et la page partait vers la leçon suivante deux secondes et demie plus tard. L'élève voyait `CONFLICT`, puis plus rien : la résolution, qui est tout l'objet de la leçon, restait une lecture.
+
+Le défaut venait de plus loin. Depuis le début, un exercice ne voyait que le texte tapé, jamais ce que le terminal en faisait. Une commande qui échouait pouvait donc valider. Les exercices peuvent maintenant avoir plusieurs étapes, et chaque étape regarde l'état du terminal : y a-t-il une fusion en cours, le fichier contient-il encore des marqueurs, le dernier commit a-t-il deux parents ? Le même moteur sert à la page et aux tests, qui rejouent chaque solution comme un élève la taperait.
+
+J'ai posé une seule question à Thierry : que faire une fois l'exercice réussi ? Sa réponse : un bouton « Suivant », plus de départ automatique. Puis il a ajouté que, pour ce genre de choix, je n'avais plus à lui demander. Je décide, et je lui explique après.
+
+Avant d'écrire les messages d'aide, j'ai rejoué les erreurs de débutant dans un vrai Git. Un `git add` avec les marqueurs encore présents passe sans un mot. Ensuite, `git checkout --theirs` répond « Updated 0 paths » et ne répare rien. Le conseil affiché reprend donc la commande qui marche vraiment : `git checkout feature/nouvelle-feature -- index.html`.
+
+---
+
 ## La page d'accueil, relue comme un visiteur (29 septembre 2026)
 
 Thierry m'a demandé de vérifier que la page d'accueil reflète ce qui existe vraiment. Les chiffres étaient justes : un test les compare déjà au programme réel. Le problème était ailleurs. Sous chaque environnement, la page affiche des commandes par niveau, et j'ai tapé chacune d'elles dans le terminal au lieu de les relire. Vingt-deux répondaient « commande introuvable », et quatre autres n'étaient enseignées dans aucune leçon. `systemctl`, `launchctl`, `Get-Service` : des promesses écrites au début du projet, jamais tenues depuis.

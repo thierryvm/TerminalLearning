@@ -12,6 +12,7 @@ import {
 import { createInitialState, processCommand } from '../app/data/terminalEngine';
 import type { SelectedEnvironment } from '../app/context/EnvironmentContext';
 import { curriculum } from '../app/data/curriculum';
+import { exerciseTexts } from '../app/data/exerciseSteps';
 import { commandCatalogue } from '../app/data/commandCatalogue';
 import { ENVIRONMENTS } from '../app/types/curriculum';
 
@@ -97,7 +98,7 @@ describe('landingContent — the commands the hero promises exist', () => {
   /** What a learner of `env` reads in code blocks and exercises: the commands a lesson teaches. */
   const taughtIn = (env: SelectedEnvironment) => curriculum.flatMap((m) => m.lessons.flatMap((l) => [
     ...l.blocks.filter((b) => b.type === 'code').map((b) => b.contentByEnv?.[env] ?? b.content),
-    ...(l.exercise ? [l.exercise.instructionByEnv?.[env] ?? l.exercise.instruction, l.exercise.hintByEnv?.[env] ?? l.exercise.hint] : []),
+    ...(l.exercise ? exerciseTexts(l.exercise, env) : []),
   ])).join('\n');
   /** The whole command as a word of its own: `top` does not count inside `stop`, nor `env` inside `environment`. */
   const asWord = (command: string) => new RegExp(`(^|[^\\w-])${command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`, 'm');

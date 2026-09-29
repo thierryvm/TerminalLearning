@@ -136,7 +136,7 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
   {
     group: 'Curriculum',
     items: [
-      'Exercices en plusieurs étapes, validés sur l\'état du terminal',
+      'Exercices en plusieurs étapes, vérifiés sur l\'état du terminal (le premier : résoudre un vrai conflit Git)',
       'Une variante PowerShell pour chaque leçon',
     ],
   },
