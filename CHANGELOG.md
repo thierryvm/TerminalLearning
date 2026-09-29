@@ -5,6 +5,21 @@
 
 ---
 
+## 🌿 30 septembre 2026 — Git se comporte comme le vrai Git
+
+*Modules Git et GitHub · valeurs attendues relevées sur Git 2.56 · écarts de la théorie : 158 → 148*
+
+Le Git du simulateur tenait une simple liste de noms de fichiers. `git add` acceptait un fichier qui n'existait pas et répondait `staged:`, ce que le vrai Git n'écrit jamais. `git status` ignorait les fichiers modifiés, et `git diff` affichait toujours le même exemple inventé. Git lit maintenant le contenu réel des fichiers, et chaque sortie a été comparée à celle de Git 2.56 sur une copie du projet des leçons.
+
+- **`git status` dit la vérité.** Fichiers non suivis, modifiés, supprimés ou prêts à être commités, avec les mêmes phrases et le même ordre que Git. Depuis un sous-dossier, les chemins s'écrivent `../README.md`, comme dans Git. `git status -s` donne la version courte (`M`, `A`, `??`).
+- **`git add` est silencieux quand tout va bien**, et refuse un fichier inexistant avec l'erreur de Git. Il respecte aussi le `.gitignore` : `git add .env` est refusé, sauf avec `--force`.
+- **Le premier commit ressemble au vrai** : `[main (root-commit) …]`, le nombre de lignes ajoutées et supprimées, et une ligne `create mode` par nouveau fichier. `git commit -a`, `git restore`, `git rm`, `git reset` et `git stash` agissent sur les vrais fichiers.
+- **`git diff` montre la vraie différence**, ligne par ligne, avec les identifiants de fichiers que calcule Git. Les lignes retirées s'affichent en rouge et les lignes ajoutées en vert.
+- **Des leçons plus justes.** Dans les leçons, `~/projets` est un vrai dépôt, avec son dossier `.git/` et un `.gitignore` qui protège déjà le fichier `.env`. La leçon « git diff » part d'une modification à comparer. Les exemples de théorie qui ajoutaient des fichiers inexistants, ou qui enchaînaient `git remote` sans entrer dans le dossier cloné, sont corrigés, dans les leçons comme dans la page Référence.
+- **Changer d'environnement redémarre le terminal de la leçon**, pour qu'une session Linux ne devienne pas une session PowerShell en cours de route.
+
+---
+
 ## 📱 29 septembre 2026 — Un terminal lisible sur téléphone comme sur ordinateur
 
 *Terminal des leçons · mobile 390 px, tablette 1024 px, ordinateur 1280 px*

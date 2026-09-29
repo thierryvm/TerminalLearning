@@ -221,10 +221,10 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
       ? [`📚 ${lesson.title}`, ``, ...setupNote, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
       : [`📚 ${lesson.title}`, ``, ...setupNote, `Exercice : ${stripInlineMarkdown(effectiveInstruction)}`, ``]
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
-  // Read once per terminal mount (lesson change or « Réinitialiser » remount).
+  // Read once per terminal mount (lesson or environment change, « Réinitialiser »).
   const buildInitialState = useCallback(
-    () => (setup ? setup.apply(createInitialState()) : createInitialState()),
-    [setup],
+    () => (setup ? setup.apply(createInitialState(), selectedEnv) : createInitialState()),
+    [setup, selectedEnv],
   );
 
   return (
@@ -385,7 +385,9 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
             </Button>
           </div>
           <TerminalEmulator
-            key={terminalKey}
+            // A new environment is a new session: its prepared state (a Git repository
+            // with Linux or Windows file modes) is only read when the terminal mounts.
+            key={`${terminalKey}-${selectedEnv}`}
             onCommand={handleCommand}
             welcomeMessage={welcomeMessage}
             className="flex-1 min-h-0"

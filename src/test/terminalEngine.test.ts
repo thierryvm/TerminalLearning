@@ -28,6 +28,11 @@ function makeState(overrides: Partial<TerminalState> = {}): TerminalState {
   };
 }
 
+/** Creates each file (content = its name) in the current directory, as `echo name > name`. */
+function withFiles(state: TerminalState, ...names: string[]): TerminalState {
+  return names.reduce((s, name) => processCommand(s, `echo ${name} > ${name}`).newState, state);
+}
+
 // Pre-populated filesystem for filesystem-command tests
 function makeStateWithFS(): TerminalState {
   return makeState({
@@ -2026,6 +2031,7 @@ describe('git', () => {
 
   it('git status shows staged files', () => {
     let s = processCommand(makeState(), 'git init').newState;
+    s = withFiles(s, 'fichier.txt');
     s = processCommand(s, 'git add fichier.txt').newState;
     const r = processCommand(s, 'git status');
     expect(r.lines.some((l) => l.text.includes('fichier.txt'))).toBe(true);
@@ -2051,7 +2057,7 @@ describe('git', () => {
   });
 
   it('git add <file> stages a specific file', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } });
+    const s = withFiles(makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: {} } }), 'README.md');
     const r = processCommand(s, 'git add README.md');
     expect(r.newState.git?.stagedFiles).toContain('README.md');
   });
@@ -2070,6 +2076,7 @@ describe('git', () => {
 
   it('git commit -m creates a commit and clears staging', () => {
     let s = processCommand(makeState(), 'git init').newState;
+    s = withFiles(s, 'mon-fichier.txt');
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     const r = processCommand(s, 'git commit -m "feat: initial commit"');
     expect(r.lines[0].type).toBe('success');
@@ -2078,11 +2085,21 @@ describe('git', () => {
     expect(r.newState.git?.stagedFiles).toHaveLength(0);
   });
 
-  it('git commit without -m returns error', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } });
+  it('git commit without -m explains that the editor is not simulated, and records nothing', () => {
+    const s = withFiles(makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } }), 'a.txt');
     const r = processCommand(s, 'git commit');
-    expect(r.lines[0].type).toBe('error');
-    expect(r.lines[0].text).toContain('empty commit message');
+    expect(r.lines[0].type).toBe('info');
+    expect(r.lines[0].text).toContain('git commit -m');
+    expect(r.status).toBe(1);
+    expect(r.newState.git?.commits).toHaveLength(0);
+  });
+
+  // Git 2.56: with something staged, an empty -m aborts (exit 1).
+  it('git commit -m "" aborts on the empty message', () => {
+    const s = withFiles(makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } }), 'a.txt');
+    const r = processCommand(s, 'git commit -m ""');
+    expect(r.lines).toEqual([{ text: 'Aborting commit due to empty commit message.', type: 'error' }]);
+    expect(r.status).toBe(1);
   });
 
   // Expected values from git in a sandbox (29 September 2026): both cases exit 1.
@@ -2315,18 +2332,28 @@ describe('git', () => {
   });
 
   // ── git diff ──────────────────────────────────────────────────────────────────
-  it('git diff shows simulated diff output', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['fichier.txt'], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git diff');
-    expect(r.lines.some((l) => l.text.includes('diff --git'))).toBe(true);
+  it('git diff shows the unstaged change of a tracked file, and nothing once it is staged', () => {
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'fichier.txt');
+    s = processCommand(processCommand(s, 'git add fichier.txt').newState, 'git commit -m "base"').newState;
+    s = processCommand(s, 'echo autre > fichier.txt').newState;
+    expect(processCommand(s, 'git diff').lines.map((l) => l.text)).toContain('+autre');
+    s = processCommand(s, 'git add fichier.txt').newState;
+    expect(processCommand(s, 'git diff').lines).toEqual([]);
   });
 
   // ── git stash ─────────────────────────────────────────────────────────────────
-  it('git stash clears staged files', () => {
-    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: ['a.txt'], commits: [], remotes: {} } });
-    const r = processCommand(s, 'git stash');
-    expect(r.newState.git?.stagedFiles).toHaveLength(0);
-    expect(r.lines[0].type).toBe('success');
+  it('git stash puts changes aside and git stash pop brings them back', () => {
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'a.txt');
+    s = processCommand(processCommand(s, 'git add a.txt').newState, 'git commit -m "base"').newState;
+    s = processCommand(s, 'echo change > a.txt').newState;
+    s = processCommand(s, 'git add a.txt').newState;
+    const stash = processCommand(s, 'git stash');
+    expect(stash.lines[0].text).toBe(`Saved working directory and index state WIP on main: ${s.git!.commits[0].hash} base`);
+    expect(stash.newState.git?.stagedFiles).toHaveLength(0);
+    expect(processCommand(stash.newState, 'cat a.txt').lines[0].text).toBe('a.txt');
+    const pop = processCommand(stash.newState, 'git stash pop');
+    expect(processCommand(pop.newState, 'cat a.txt').lines[0].text).toBe('change');
+    expect(pop.lines[pop.lines.length - 1].text).toMatch(/^Dropped refs\/stash@\{0\} \([0-9a-f]{40}\)$/);
   });
 
   // ── git config ───────────────────────────────────────────────────────────────
@@ -2366,7 +2393,7 @@ describe('git', () => {
     // HEAD~3 needs three commits below HEAD: four commits in all.
     let s = processCommand(makeState(), 'git init').newState;
     for (const f of ['a', 'b', 'c', 'd']) {
-      s = processCommand(s, `git add ${f}`).newState;
+      s = processCommand(withFiles(s, f), `git add ${f}`).newState;
       s = processCommand(s, `git commit -m "${f}"`).newState;
     }
     const r = processCommand(s, 'git rebase -i HEAD~3');
@@ -2380,7 +2407,7 @@ describe('git', () => {
     // Real git 2.x, with 0 or 1 commit: "fatal: invalid upstream 'HEAD~3'" (exit 128).
     let s = processCommand(makeState(), 'git init').newState;
     expect(processCommand(s, 'git rebase -i HEAD~3').lines).toEqual([{ text: "fatal: invalid upstream 'HEAD~3'", type: 'error' }]);
-    s = processCommand(processCommand(s, 'git add a').newState, 'git commit -m "a"').newState;
+    s = processCommand(processCommand(withFiles(s, 'a'), 'git add a').newState, 'git commit -m "a"').newState;
     expect(processCommand(s, 'git rebase -i HEAD~3').lines[0].text).toBe("fatal: invalid upstream 'HEAD~3'");
   });
 
@@ -2392,7 +2419,7 @@ describe('git', () => {
 
   // ── git cherry-pick (THI-305) ─────────────────────────────────────────────────
   it('git cherry-pick without a ref returns usage (repo has commits)', () => {
-    let s = processCommand(makeState(), 'git init').newState;
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'mon-fichier.txt');
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     s = processCommand(s, 'git commit -m "base"').newState;
     const r = processCommand(s, 'git cherry-pick');
@@ -2406,7 +2433,7 @@ describe('git', () => {
   });
 
   it('git cherry-pick a bad revision returns fatal', () => {
-    let s = processCommand(makeState(), 'git init').newState;
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'mon-fichier.txt');
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     s = processCommand(s, 'git commit -m "first"').newState;
     const r = processCommand(s, 'git cherry-pick deadbee');
@@ -2414,7 +2441,7 @@ describe('git', () => {
   });
 
   it('git cherry-pick <hash> re-applies the commit on the current branch', () => {
-    let s = processCommand(makeState(), 'git init').newState;
+    let s = withFiles(processCommand(makeState(), 'git init').newState, 'mon-fichier.txt');
     s = processCommand(s, 'git add mon-fichier.txt').newState;
     s = processCommand(s, 'git commit -m "feat: base"').newState;
     const { hash } = s.git!.commits[0];
@@ -2434,10 +2461,10 @@ describe('git', () => {
   // ── full workflow integration ─────────────────────────────────────────────────
   it('full git workflow: init → add → commit → branch → push', () => {
     let s = processCommand(makeState(), 'git init').newState;
-    s = processCommand(s, 'git add README.md').newState;
+    s = processCommand(withFiles(s, 'README.md'), 'git add README.md').newState;
     s = processCommand(s, 'git commit -m "chore: initial commit"').newState;
     s = processCommand(s, 'git checkout -b feature/auth').newState;
-    s = processCommand(s, 'git add auth.ts').newState;
+    s = processCommand(withFiles(s, 'auth.ts'), 'git add auth.ts').newState;
     s = processCommand(s, 'git commit -m "feat: add auth"').newState;
     s = processCommand(s, 'git remote add origin https://github.com/user/repo.git').newState;
     const push = processCommand(s, 'git push -u origin feature/auth');
@@ -2991,15 +3018,16 @@ describe('reference replay gaps — engine matches the real shells', () => {
 
   it('git commit reads the message of -am, -mMSG and --message=MSG', () => {
     for (const commit of ['git commit -am "fix: x"', 'git commit -m"fix: x"', 'git commit --message="fix: x"', 'git commit --message "fix: x"']) {
-      const r = run(['git init', 'git add README.md', commit]);
-      expect(r.lines[0].text, commit).toMatch(/^\[main [0-9a-f]{7}\] fix: x$/);
+      const r = run(['cd projets', 'git init', 'git add README.md', commit]);
+      // The first commit of a repository: git 2.56 prints `(root-commit)`.
+      expect(r.lines[0].text, commit).toMatch(/^\[main \(root-commit\) [0-9a-f]{7}\] fix: x$/);
     }
   });
 
   it('git cherry-pick A..B picks the commits after A up to B, oldest first', () => {
     let s = run(['git init']).newState;
     for (const m of ['one', 'two', 'three']) {
-      s = processCommand(s, `git add ${m}`).newState;
+      s = processCommand(withFiles(s, m), `git add ${m}`).newState;
       s = processCommand(s, `git commit -m "${m}"`).newState;
     }
     const [three, two, one] = s.git!.commits.map((c) => c.hash);

@@ -13,11 +13,13 @@
  * A setup is a pure function of the initial state, plus a one-line note shown
  * in the terminal welcome message so the learner knows what is already there.
  */
-import type { DirectoryNode, FSNode, GitCommit, GitState, TerminalState } from './commands/types';
+import type { DirectoryNode, FSNode, GitCommit, GitState, TerminalEnv, TerminalState } from './commands/types';
+import { dotGit } from './commands/git';
+import { fileMode, nodeAt, readTree, type Tree } from './commands/gitTree';
 
 export interface LessonSetup {
   /** Pure: returns a new state, never mutates the one it receives. */
-  apply: (state: TerminalState) => TerminalState;
+  apply: (state: TerminalState, env?: TerminalEnv) => TerminalState;
   /** Shown in the welcome message, e.g. "Dépôt Git prêt dans ~/projets". Empty = no line. */
   note: string;
   /** Per-environment override of `note`, like `instructionByEnv` on an exercise. */
@@ -35,17 +37,44 @@ const INITIAL_COMMIT: GitCommit = {
 
 const PROJECT_DIR = ['home', 'user', 'projets'];
 
-function withGit(state: TerminalState, git: Partial<GitState>): TerminalState {
+/** Keeps `.env` (the fake secrets of ~/projets) out of every prepared repository. */
+const GITIGNORE = '# Secrets : jamais dans Git\n.env';
+
+/** The page the merge and conflict lessons talk about (`<title>Mon App</title>`). */
+const INDEX_HTML = '<!DOCTYPE html>\n<html lang="fr">\n<head>\n  <title>Mon App</title>\n</head>\n<body>\n  <h1>Mon App</h1>\n</body>\n</html>';
+
+/**
+ * ~/projets as a repository: `.git/` and a `.gitignore`, and, when `committed`,
+ * a first commit that holds every file (so `git status` starts clean).
+ */
+function withGit(state: TerminalState, env: TerminalEnv, git: Partial<GitState>, committed: boolean): TerminalState {
+  let root = withNode(state.root, [...PROJECT_DIR, '.gitignore'], file(GITIGNORE, '-rw-r--r--'));
+  root = withNode(root, [...PROJECT_DIR, 'index.html'], file(INDEX_HTML, '-rw-r--r--'));
+  root = withNode(root, [...PROJECT_DIR, '.git'], dotGit(env));
+  const files = readTree(root, PROJECT_DIR);
+  const head: Tree = {};
+  if (committed) {
+    for (const [path, content] of Object.entries(files)) if (path !== '.env') head[path] = content;
+  }
+  // Modes read now: a lesson may delete script.sh before its first git command.
+  const modes = Object.fromEntries(Object.keys(files)
+    .map((path) => [path, fileMode(nodeAt(root, [...PROJECT_DIR, ...path.split('/')]), env)]));
+  const commits = committed ? [{ ...INITIAL_COMMIT, tree: head }] : [];
   return {
     ...state,
+    root,
     cwd: PROJECT_DIR,
     git: {
       initialized: true,
       branch: 'main',
       branches: ['main'],
       stagedFiles: [],
-      commits: [],
+      commits,
       remotes: {},
+      repoPath: PROJECT_DIR,
+      head,
+      index: { ...head },
+      modes,
       ...git,
     },
   };
@@ -66,31 +95,39 @@ function file(content: string, permissions: string): FSNode {
 
 /** A fresh repository: nothing committed yet, files ready to be staged. */
 export const gitRepoEmpty: LessonSetup = {
-  apply: (s) => withGit(s, {}),
-  note: 'Dépôt Git prêt dans ~/projets (initialisé, aucun commit).',
+  apply: (s, env = 'linux') => withGit(s, env, {}, false),
+  note: 'Dépôt Git prêt dans ~/projets (initialisé, aucun commit ; un .gitignore protège déjà .env).',
 };
 
 /** A repository with one commit on `main`. */
 export const gitRepoWithCommit: LessonSetup = {
-  apply: (s) => withGit(s, { commits: [INITIAL_COMMIT] }),
+  apply: (s, env = 'linux') => withGit(s, env, {}, true),
   note: 'Dépôt Git prêt dans ~/projets (branche main, 1 commit).',
+};
+
+/** One commit, then a line of README.md changed and not staged: `git diff` has something to show. */
+export const gitRepoWithChange: LessonSetup = {
+  apply: (s, env = 'linux') => {
+    const state = withGit(s, env, {}, true);
+    const node = nodeAt(state.root, [...PROJECT_DIR, 'README.md']);
+    const readme = node?.type === 'file' ? node.content : '';
+    const edited = readme.replace('Bienvenue dans mon répertoire de projets.', 'Bienvenue dans mon répertoire de projets Git.');
+    return { ...state, root: withNode(state.root, [...PROJECT_DIR, 'README.md'], file(edited, '-rw-r--r--')) };
+  },
+  note: 'Dépôt Git prêt dans ~/projets (1 commit, puis une ligne de README.md modifiée).',
 };
 
 /** A repository whose `main` has one commit and an extra branch to merge. */
 export function gitRepoWithBranch(branch: string): LessonSetup {
   return {
-    apply: (s) => withGit(s, { commits: [INITIAL_COMMIT], branches: ['main', branch] }),
+    apply: (s, env = 'linux') => withGit(s, env, { branches: ['main', branch] }, true),
     note: `Dépôt Git prêt dans ~/projets (vous êtes sur main, la branche ${branch} existe).`,
   };
 }
 
 /** A repository with one commit and an `origin` remote. */
 export const gitRepoWithRemote: LessonSetup = {
-  apply: (s) =>
-    withGit(s, {
-      commits: [INITIAL_COMMIT],
-      remotes: { origin: 'https://github.com/user/mon-projet.git' },
-    }),
+  apply: (s, env = 'linux') => withGit(s, env, { remotes: { origin: 'https://github.com/user/mon-projet.git' } }, true),
   note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin configuré).',
 };
 

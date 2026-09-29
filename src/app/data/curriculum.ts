@@ -14,7 +14,7 @@ import {
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
 } from './validators';
 import {
-  gitRepoEmpty, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, powershellProfile, sshDirectory,
+  gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithRemote, powershellProfile, sshDirectory,
   type LessonSetup,
 } from './lessonSetup';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
@@ -2293,12 +2293,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Voir l\'état actuel\n$ git status\nOn branch main\nUntracked files:\n  (use "git add <file>" to include)\n\tfichier.txt\n\n# Ajouter un fichier spécifique\n$ git add fichier.txt\n\n# Ajouter tous les fichiers du répertoire courant\n$ git add .\n\n# Ajouter interactivement (sélection fine)\n$ git add -p',
+            content: '# Voir l\'état actuel\n$ git status\nOn branch main\n\nNo commits yet\n\nUntracked files:\n  (use "git add <file>..." to include in what will be committed)\n\t.gitignore\n\tREADME.md\n\tindex.html\n\tscript.sh\n\nnothing added to commit but untracked files present (use "git add" to track)\n\n# Ajouter un fichier spécifique (git add n\'affiche rien quand tout va bien)\n$ git add README.md\n\n# Ajouter tous les fichiers du répertoire courant\n$ git add .\n\n# Ajouter interactivement (sélection fine)\n$ git add -p',
             label: 'Staging (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# Créer un commit avec message en ligne\n$ git commit -m "feat: ajouter la page d\'accueil"\n[main a3f8c12] feat: ajouter la page d\'accueil\n 1 file changed, 25 insertions(+)\n\n# Commit avec titre + description\n$ git commit -m "feat: authentification utilisateur" -m "Ajoute login/logout avec JWT et refresh token automatique"',
+            content: '# Préparer tous les fichiers, puis créer le premier commit\n$ git add .\n$ git commit -m "feat: ajouter la page d\'accueil"\n[main (root-commit) a3f8c12] feat: ajouter la page d\'accueil\n 4 files changed, 20 insertions(+)\n create mode 100644 .gitignore\n create mode 100644 README.md\n create mode 100644 index.html\n create mode 100755 script.sh\n\n# Commit avec titre + description\n$ git commit -m "feat: authentification utilisateur" -m "Ajoute login/logout avec JWT et refresh token automatique"',
             label: 'Créer un commit',
           },
           {
@@ -2335,7 +2335,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# État du répertoire de travail\n$ git status\nOn branch main\nChanges to be committed:\n  (use "git restore --staged" to unstage)\n\tnew file:   index.html\n\nChanges not staged for commit:\n  modified:   style.css\n\nUntracked files:\n  script.js',
+            content: '# Modifier un fichier suivi, puis en créer un nouveau\n$ echo "<p>Bienvenue</p>" >> index.html\n$ touch style.css\n\n# État du répertoire de travail\n$ git status\nOn branch main\nChanges not staged for commit:\n  (use "git add <file>..." to update what will be committed)\n  (use "git restore <file>..." to discard changes in working directory)\n\tmodified:   index.html\n\nUntracked files:\n  (use "git add <file>..." to include in what will be committed)\n\tstyle.css\n\nno changes added to commit (use "git add" and/or "git commit -a")\n\n# Version courte : une ligne par fichier (M modifié, ?? pas suivi)\n$ git status -s\n M index.html\n?? style.css',
             label: 'git status',
           },
           {
@@ -2373,7 +2373,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Voir les modifications non-stagées\n$ git diff\ndiff --git a/style.css b/style.css\n--- a/style.css\n+++ b/style.css\n@@ -1,3 +1,4 @@\n body {\n+  font-family: sans-serif;\n   margin: 0;\n }\n\n# Voir les modifications stagées (avant commit)\n$ git diff --staged\n\n# Comparer deux branches\n$ git diff main feature/login',
+            content: '# Voir les modifications non-stagées\n$ git diff\ndiff --git a/README.md b/README.md\nindex 7d825c5..6827029 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,6 +1,6 @@\n # Mes Projets\n \n-Bienvenue dans mon répertoire de projets.\n+Bienvenue dans mon répertoire de projets Git.\n \n ## Projets actuels\n - script.sh : Script de démonstration\n\n# Voir les modifications stagées (avant commit)\n$ git diff --staged\n\n# Comparer deux branches\n$ git diff main feature/login',
             label: 'git diff',
           },
           {
@@ -2383,7 +2383,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Vérifier si un fichier est ignoré\n$ git check-ignore -v .env\n.gitignore:4:.env\t.env\n\n# Forcer l\'ajout d\'un fichier ignoré (rarement conseillé)\n$ git add --force fichier.log\n\n# Utiliser github.com/github/gitignore pour des templates\n# Ex. gitignore pour Node, Python, Rust, etc.',
+            content: '# Vérifier si un fichier est ignoré, et par quelle ligne du .gitignore\n$ git check-ignore -v .env\n.gitignore:2:.env\t.env\n\n# Git refuse d\'ajouter un fichier ignoré\n$ git add .env\nThe following paths are ignored by one of your .gitignore files:\n.env\nhint: Use -f if you really want to add them.\nhint: Disable this message with "git config set advice.addIgnoredFile false"\n\n# git add --force passerait outre : à éviter pour un fichier de secrets\n\n# Utiliser github.com/github/gitignore pour des templates\n# Ex. gitignore pour Node, Python, Rust, etc.',
             label: 'Vérification et debug',
           },
           {
@@ -2399,7 +2399,7 @@ export const curriculum: Module[] = [
           instruction: 'Visualisez les différences actuelles dans votre dépôt avec `git diff`.',
           hint: 'Tapez: git diff',
           validate: validateGitDiffGitignore,
-          setup: gitRepoWithCommit,
+          setup: gitRepoWithChange,
           successMessage: 'Vous savez lire un diff Git. Les lignes en vert (+) sont les ajouts, en rouge (-) les suppressions.',
         },
       },
@@ -2594,7 +2594,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\nremote: Enumerating objects: 1247, done.\nReceiving objects: 100% (1247/1247), done.\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique\n$ git clone -b develop https://github.com/org/projet.git\n\n# Cloner en SSH (recommandé)\n$ git clone git@github.com:org/projet.git',
+            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\nremote: Enumerating objects: 3, done.\nremote: Counting objects: 100% (3/3), done.\nremote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0\nReceiving objects: 100% (3/3), done.\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique (ici dans projet-develop)\n$ git clone -b develop https://github.com/org/projet.git projet-develop\n\n# Cloner en SSH (recommandé), dans un dossier qui n\'existe pas encore\n$ git clone git@github.com:org/projet.git projet-ssh',
             label: 'git clone (Linux/macOS/Windows)',
           },
           {
@@ -2604,7 +2604,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Workflow de contribution typique en open source\n# 1. Forker sur GitHub (via l\'interface web)\n\n# 2. Cloner votre fork\n$ git clone git@github.com:VOTRE-USER/projet.git\n\n# 3. Ajouter l\'upstream (projet original)\n$ git remote add upstream git@github.com:org/projet.git\n\n# 4. Synchroniser régulièrement\n$ git fetch upstream\n$ git merge upstream/main',
+            content: '# Workflow de contribution typique en open source\n# 1. Forker sur GitHub (via l\'interface web)\n\n# 2. Cloner votre fork\n$ git clone git@github.com:VOTRE-USER/projet.git\n$ cd projet\n\n# 3. Ajouter l\'upstream (projet original)\n$ git remote add upstream git@github.com:org/projet.git\n\n# 4. Synchroniser régulièrement\n$ git fetch upstream\n$ git merge upstream/main',
             label: 'Workflow fork & contribution',
           },
           {

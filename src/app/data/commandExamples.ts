@@ -431,7 +431,7 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
   ],
   git_clone: [
     { command: 'git clone https://github.com/alice/mon-projet.git', explanation: 'Copie le dépôt complet, avec tout son historique, dans un nouveau dossier mon-projet.' },
-    { command: 'git clone git@github.com:alice/mon-projet.git', explanation: 'Même chose par SSH : il faut une clé SSH ajoutée à ton compte GitHub.' },
+    { command: 'git clone git@github.com:alice/site.git', explanation: 'Même chose par SSH, ici pour le dépôt site : il faut une clé SSH ajoutée à ton compte GitHub.' },
   ],
   git_rebase: [
     { command: 'git rebase main', explanation: 'Rejoue tes commits par-dessus la dernière version de main, pour un historique en ligne droite.' },

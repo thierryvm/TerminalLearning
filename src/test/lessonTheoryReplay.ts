@@ -13,7 +13,7 @@ export const ENVS: EnvId[] = ['linux', 'macos', 'windows'];
 /** `user@host:~$ cmd`, `$ cmd`, `% cmd`, `PS> cmd`, `PS C:\…> cmd`. */
 export const PROMPT = /^(?:[\w.-]+@[\w.-]+:[^$]*\$|\$|%|PS(?:\s[^>]*)?>)\s+(.+)$/;
 /** The lesson shows an error on purpose (and so should the terminal). */
-const SHOWS_ERROR = /error|erreur|introuvable|not found|No such|cannot|denied|refus|fatal/i;
+const SHOWS_ERROR = /error|erreur|introuvable|not found|No such|cannot|denied|refus|fatal|are ignored by/i;
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
 
 export interface TheoryRow {
@@ -35,7 +35,7 @@ export function replayTheory(): TheoryRow[] {
           const lines = text.split('\n');
           if (!lines.some((x) => PROMPT.test(x))) continue; // a file, not a terminal session
           const bashShownOnWindows = env === 'windows' && !b.contentByEnv?.windows && /^\$\s/m.test(b.content);
-          let state: TerminalState = l.exercise?.setup ? l.exercise.setup.apply(createInitialState()) : createInitialState();
+          let state: TerminalState = l.exercise?.setup ? l.exercise.setup.apply(createInitialState(), env) : createInitialState();
           for (let i = 0; i < lines.length; i++) {
             const match = lines[i].match(PROMPT);
             if (!match) continue;

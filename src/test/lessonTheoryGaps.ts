@@ -85,22 +85,13 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
   "git/git-config b1 [linux] git config --list",
   "git/git-config b1 [macos] git config --list",
   // git/git-add-commit
-  "git/git-add-commit b1 [linux] git status",
-  "git/git-add-commit b1 [macos] git status",
   "git/git-add-commit b2 [linux] git commit -m \"feat: ajouter la page d'accueil\"",
   "git/git-add-commit b2 [macos] git commit -m \"feat: ajouter la page d'accueil\"",
   // git/git-status-log
-  "git/git-status-log b1 [linux] git status",
-  "git/git-status-log b1 [macos] git status",
   "git/git-status-log b2 [linux] git log",
   "git/git-status-log b2 [linux] git log --oneline",
   "git/git-status-log b2 [macos] git log",
   "git/git-status-log b2 [macos] git log --oneline",
-  // git/git-diff-gitignore
-  "git/git-diff-gitignore b1 [linux] git diff",
-  "git/git-diff-gitignore b1 [macos] git diff",
-  "git/git-diff-gitignore b3 [linux] git check-ignore -v .env",
-  "git/git-diff-gitignore b3 [macos] git check-ignore -v .env",
   // git/git-branch
   "git/git-branch b1 [linux] git branch",
   "git/git-branch b1 [linux] git checkout -b feature/panier",
@@ -130,8 +121,6 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
   "github-collaboration/git-push-pull b2 [linux] git pull",
   "github-collaboration/git-push-pull b2 [macos] git pull",
   // github-collaboration/git-fetch-clone
-  "github-collaboration/git-fetch-clone b1 [linux] git clone https://github.com/org/projet.git",
-  "github-collaboration/git-fetch-clone b1 [macos] git clone https://github.com/org/projet.git",
   "github-collaboration/git-fetch-clone b2 [linux] git fetch origin",
   "github-collaboration/git-fetch-clone b2 [linux] git fetch && git log HEAD..origin/main --oneline",
   "github-collaboration/git-fetch-clone b2 [linux] git fetch --all",

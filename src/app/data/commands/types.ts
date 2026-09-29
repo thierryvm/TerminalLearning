@@ -27,6 +27,17 @@ export interface GitCommit {
   message: string;
   author: string;
   date: string;
+  /** Files recorded by the commit (path relative to the repository → content). */
+  tree?: Record<string, string>;
+}
+
+/** A `git stash` entry: tracked files as they were (null = deleted) and the files that were newly staged. */
+export interface GitStashEntry {
+  message: string;
+  work: Record<string, string | null>;
+  newFiles: Record<string, string>;
+  /** Files of HEAD when the entry was made: `pop` applies only what differs from them. */
+  base?: Record<string, string>;
 }
 
 /**
@@ -38,9 +49,19 @@ export interface GitState {
   initialized: boolean;
   branch: string;
   branches: string[];
+  /** Paths a commit would record: where the index differs from HEAD. Kept in sync with `index`. */
   stagedFiles: string[];
   commits: GitCommit[];
   remotes: Record<string, string>;
+  /** Absolute path of the working tree, where `git init` ran. */
+  repoPath?: string[];
+  /** Files of the last commit (path relative to the repository → content). */
+  head?: Record<string, string>;
+  /** The index (staging area): what the next commit will record. */
+  index?: Record<string, string>;
+  /** Git file mode of each path ever staged (`100755` for an executable), kept for its deletion. */
+  modes?: Record<string, string>;
+  stash?: GitStashEntry[];
 }
 
 export interface TerminalState {
@@ -73,5 +94,6 @@ export interface CommandOutput {
 
 export interface OutputLine {
   text: string;
-  type: 'output' | 'error' | 'success' | 'info';
+  /** `removed` is standard output that git shows in red (a deleted line in a diff, a change not staged yet). */
+  type: 'output' | 'error' | 'success' | 'info' | 'removed';
 }
