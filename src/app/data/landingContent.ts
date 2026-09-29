@@ -144,6 +144,14 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
 
 export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
   {
+    group: 'Personnaliser son terminal',
+    items: [
+      'Profil, alias et fonctions ($PROFILE, .bashrc, .zshrc)',
+      'Une invite qui montre le dossier, la branche Git, la version de Node',
+      'Couleurs, Starship et Oh My Posh, et ta config à emporter',
+    ],
+  },
+  {
     group: 'Internationalisation',
     items: [
       'FR / NL / EN / DE — Belgique tri-lingue',
