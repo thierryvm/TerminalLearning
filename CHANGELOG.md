@@ -15,6 +15,7 @@ Thierry a demandé de vérifier chaque correction à l'écran, sur téléphone e
 - **Les lignes vides réapparaissent.** Une ligne vide ne prenait aucune hauteur à l'écran : `Get-Help` collait ses sections NAME, SYNOPSIS et REMARKS les unes aux autres, et les tableaux de PowerShell perdaient leur respiration. Les sorties ont retrouvé l'espacement du vrai shell.
 - **Le bouton du tuteur IA ne cache plus de touches.** Sur téléphone et tablette, le bouton rond du tuteur couvrait les dernières touches de la barre de raccourcis (`|`, `>`, `$`…). La barre s'arrête maintenant avant le bouton, qui se range à son extrémité comme une touche de plus.
 - **Plus de zoom surprise sur iPad.** Safari agrandit la page quand on touche un champ de texte écrit en moins de 16 px. Sur un écran tactile, la ligne de commande garde donc 16 px.
+- **Le haut de l'app n'est plus flouté sur iPhone.** Signalé par Thierry sur son iPhone 14 : installée sur l'écran d'accueil, l'app voyait son bandeau du haut (menu, GitHub, connexion) glisser dans un flou sous l'heure. Depuis iOS 26, le système dessine ce flou lui-même en haut des apps installées. Il s'efface quand une bande opaque couvre le haut de l'écran : l'app en pose une, de la couleur du fond, sous la barre d'état.
 
 ---
 
