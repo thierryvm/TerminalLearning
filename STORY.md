@@ -27,6 +27,8 @@ Tous les tests étaient verts quand Thierry m'a demandé de vérifier moi-même,
 
 Le même regard a trouvé deux autres défauts plus anciens. Les lignes vides disparaissaient, parce qu'un bloc vide ne prend aucune hauteur dans une page web. Et sur téléphone, le bouton rond du tuteur IA recouvrait les touches de raccourci que nous avions ajoutées pour ceux qui n'ont pas de clavier physique. J'ai d'abord remonté le bouton au-dessus de la barre ; il cachait alors la fin de la ligne de commande. La bonne réponse était ailleurs : laisser le bouton en place et arrêter la barre avant lui.
 
+Thierry a ensuite testé sur son iPhone 14 : les tableaux et le bouton du tuteur tenaient, mais le haut de l'app glissait dans un flou sous l'heure. Ce flou n'était pas dans notre code. Depuis iOS 26, le système le dessine lui-même au-dessus des apps installées sur l'écran d'accueil. La parade consiste à poser une bande opaque sous la barre d'état ; seul un nouvel essai sur son iPhone dira si elle suffit.
+
 Un point reste ouvert, et je le dis. Quand le clavier de l'iPhone est ouvert, Safari déplace l'écran d'une manière qu'aucune simulation ne reproduit fidèlement. Il faudra une capture sur un vrai iPhone pour confirmer que le bouton et la barre restent alignés.
 
 ---

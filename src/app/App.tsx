@@ -11,6 +11,7 @@ import { ProgressProvider } from './context/ProgressContext';
 import { EnvironmentProvider } from './context/EnvironmentContext';
 import { PageLoader } from './components/PageLoader';
 import { Button } from './components/ui/button';
+import { StatusBarBackdrop } from './components/StatusBarBackdrop';
 
 function FallbackUI() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
       <AuthProvider>
         <EnvironmentProvider>
           <ProgressProvider>
+            <StatusBarBackdrop />
             <Suspense fallback={<PageLoader />}>
               <RouterProvider router={router} />
             </Suspense>
