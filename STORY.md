@@ -27,6 +27,8 @@ Thierry m'a demandé de vérifier que la page d'accueil reflète ce qui existe v
 
 La correction tient en deux gestes : ne garder que des commandes enseignées qui fonctionnent, et ajouter un test qui exécute chaque commande affichée. La prochaine promesse non tenue fera échouer la vérification avant d'arriver en ligne.
 
+Le même soir, Thierry a proposé une idée : apprendre à personnaliser son terminal, comme il l'a fait avec son propre PowerShell (couleurs, dossier, projet, branche Git, version de Node). C'est souvent là qu'un débutant commence à se sentir chez lui. Le module est annoncé dans la feuille de route publique ; il viendra après les exercices en plusieurs étapes, dont il a besoin pour vérifier l'invite que l'élève construit.
+
 Au passage, le même test a mis au jour une dette plus profonde. Une vingtaine de commandes sont expliquées dans les leçons sans exister dans le terminal : `find`, `sort`, `diff`, `tar`, `Where-Object`… La feuille de route publique le dit maintenant, dans « En cours ».
 
 ---
