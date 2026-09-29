@@ -21,7 +21,19 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
-## Un Git qui ne ment plus (30 septembre 2026)
+## Des branches qui existent vraiment (29 septembre 2026)
+
+Thierry avait posé la question simplement : « Pour Git, c'est très basique, je présume que c'est l'équivalent d'un premier niveau ? » C'était vrai, et pour une raison précise. On ne peut pas enseigner les branches avec un simulateur où une branche n'est qu'un nom. Il l'a dit mieux que moi : on n'apprend rien correctement sans une théorie et une pratique qui fonctionnent. Avant d'écrire la moindre leçon avancée, il fallait donc que le moteur fusionne pour de bon.
+
+Chaque commit connaît maintenant ses parents, et chaque branche pointe sur l'un d'eux. J'ai pris une décision de plus : calculer l'identifiant d'un commit exactement comme Git le calcule, à partir des fichiers, de l'auteur, de la date et du message. Pour le vérifier, j'ai créé les mêmes commits dans un vrai Git, à des dates fixées, et comparé : le simulateur donne les mêmes identifiants, fusion et tag compris.
+
+Le vrai Git m'a encore appris quelque chose. Pour relever ses messages, je redirigeais sa sortie vers un fichier, et j'y lisais une fusion refusée avant la ligne `Updating…`. Dans un vrai terminal, c'est l'inverse : Git écrit ses messages normaux et ses erreurs par deux canaux différents, et une redirection change leur ordre d'arrivée. J'ai donc relancé Git dans un pseudo-terminal, qui se comporte comme un vrai écran. C'est l'ordre de l'écran que l'élève voit, et c'est lui que les tests vérifient maintenant.
+
+Tout n'est pas encore là, et le terminal ne fait pas semblant. Le rebase interactif ouvre un éditeur, le dessin des branches par `git log --graph` demande un algorithme à part entière, et un conflit pendant un cherry-pick crée un état intermédiaire que nous ne simulons pas encore. Dans ces cas-là, le terminal le dit. Prochaine étape : des leçons en plusieurs étapes, vérifiées sur l'état réel du terminal, où l'élève provoque et résout lui-même ses conflits.
+
+---
+
+## Un Git qui ne ment plus (29 septembre 2026)
 
 Dans le simulateur, `git add fichier-qui-n-existe-pas.txt` répondait poliment `staged:`. Le vrai Git refuse : `fatal: pathspec … did not match any files`. Ce n'était pas un détail. Nos propres tests ajoutaient des fichiers imaginaires, et la leçon sur `git add .` avertissait que la commande embarque le fichier `.env`, alors que notre Git cachait justement les fichiers commençant par un point. La leçon et le moteur se contredisaient.
 

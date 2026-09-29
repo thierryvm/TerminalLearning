@@ -5,7 +5,24 @@
 
 ---
 
-## 🌿 30 septembre 2026 — Git se comporte comme le vrai Git
+## 🌳 29 septembre 2026 — Les branches Git existent pour de vrai
+
+*Modules Git et GitHub · valeurs attendues relevées sur Git 2.56 · identifiants de commit identiques à ceux du vrai Git*
+
+Jusqu'ici, une branche du simulateur n'était qu'un nom. Changer de branche ne changeait aucun fichier, `git merge` inventait un commit de fusion sans rien fusionner, et la leçon sur les conflits n'en montrait jamais un. Chaque branche a maintenant ses commits et ses fichiers, et les fusions se calculent comme dans Git.
+
+- **Changer de branche change les fichiers.** `git switch` et `git checkout` remettent le dossier dans l'état de la branche. Une modification en cours suit l'élève, et Git la signale (`M` devant `README.md`). Si elle risque d'être écrasée, le changement est refusé avec le message exact de Git.
+- **Des fusions calculées, pas mimées.** `git merge` fait simplement avancer la branche quand c'est possible (`Fast-forward`). Si les deux branches ont avancé chacune de leur côté, il crée un commit de fusion. Deux modifications qui ne se touchent pas sont gardées toutes les deux.
+- **De vrais conflits.** Quand deux branches changent la même ligne, Git s'arrête et écrit les deux versions dans le fichier, entre `<<<<<<<`, `=======` et `>>>>>>>`. `git status` montre le fichier en conflit, `git add` puis `git commit` concluent la fusion, et `git merge --abort` l'annule. La leçon « Conflits de merge » en provoque un vrai : `main` et la branche ont chacune changé le titre de `index.html`.
+- **Un historique lisible comme dans Git.** `git log` retrouve son vrai format : identifiant, auteur, date, et à côté du commit les noms de branche et de tag (`HEAD -> main, tag: v1.0`). Il accepte aussi `--oneline`, `-n`, `--all`, `--author`, `--grep`, `--stat`, `-p`, les plages comme `main..feature` et `--graph` quand l'historique est linéaire. `git show` affiche un commit avec ses changements, ou un fichier tel qu'il était dans un commit (`git show HEAD~1:README.md`).
+- **Comparer des branches.** `git diff main feature` montre ce qui sépare deux branches, `git diff main...feature` ce que la branche a ajouté depuis qu'elle est partie de `main`, et `--stat` en donne le résumé. `git tag -n` affiche le message de chaque tag, et `--contains` ou `--merged` filtrent la liste.
+- **Les erreurs aussi sont celles de Git.** Un nom de branche ou de tag invalide, une option inconnue, deux noms là où Git n'en attend qu'un : le message est celui de Git, mot pour mot. Les textes d'aide (`usage: git branch …`) sont copiés automatiquement depuis Git 2.56, pas retapés à la main.
+- **Les mêmes identifiants que Git.** Mêmes fichiers, même auteur, même date et même message : le commit reçoit le même identifiant que dans un vrai dépôt. Un test le vérifie sur des commits, une fusion et un tag.
+- **`git tag`, `git reset`, `git cherry-pick` et `git rebase` travaillent sur ce vrai historique.** Certaines situations ne sont pas encore simulées : le rebase interactif, un conflit pendant un cherry-pick, la « tête détachée », le dessin de `--graph` quand les branches se séparent. Le terminal le dit clairement au lieu d'inventer une réponse.
+
+---
+
+## 🌿 29 septembre 2026 — Git se comporte comme le vrai Git
 
 *Modules Git et GitHub · valeurs attendues relevées sur Git 2.56 · écarts de la théorie : 158 → 148*
 

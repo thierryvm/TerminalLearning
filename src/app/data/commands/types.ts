@@ -23,12 +23,31 @@ export interface DirectoryNode {
 export type FSNode = FileNode | DirectoryNode;
 
 export interface GitCommit {
+  /** 40 hex digits (7 in states written by hand); git shows the first 7. */
   hash: string;
   message: string;
   author: string;
   date: string;
   /** Files recorded by the commit (path relative to the repository → content). */
   tree?: Record<string, string>;
+  /** Parent commits: none for the first commit, two for a merge. */
+  parents?: string[];
+  /** Author date: seconds since the epoch, and the UTC offset in minutes. */
+  time?: number;
+  tz?: number;
+  /** Committer date, when it differs from the author date (a cherry-pick keeps the author's). */
+  committed?: number;
+}
+
+/** A merge that stopped on conflicts, until `git commit` or `git merge --abort`. */
+export interface GitMergeState {
+  /** The commit being merged (MERGE_HEAD) and the name the learner typed. */
+  head: string;
+  name: string;
+  /** The message `git commit` proposes: `Merge branch 'x'`. */
+  message: string;
+  /** Unresolved paths, with the version of each side (null = absent). */
+  conflicts: Record<string, { base: string | null; ours: string | null; theirs: string | null }>;
 }
 
 /** A `git stash` entry: tracked files as they were (null = deleted) and the files that were newly staged. */
@@ -47,11 +66,27 @@ export interface GitStashEntry {
  */
 export interface GitState {
   initialized: boolean;
+  /** The branch HEAD points to. */
   branch: string;
+  /** Branch names, sorted as `git branch` lists them. Kept in sync with `refs`. */
   branches: string[];
   /** Paths a commit would record: where the index differs from HEAD. Kept in sync with `index`. */
   stagedFiles: string[];
+  /** History of HEAD in `git log` order. Kept in sync with `objects` and `refs`. */
   commits: GitCommit[];
+  /** Every commit, by hash. */
+  objects?: Record<string, GitCommit>;
+  /** Each branch and the commit it points to. A branch without commits has no entry. */
+  refs?: Record<string, string>;
+  /** Tags and the commit each one names. */
+  tags?: Record<string, string>;
+  /** Remote-tracking branches (`origin/main`) and their commit, as the last push or fetch left them. */
+  remoteRefs?: Record<string, string>;
+  /** Annotated tags: their message, date and object id (`git tag -a`). */
+  tagNotes?: Record<string, { message: string; time: number; tz: number; id: string }>;
+  /** The branch before the last switch, for `git switch -`. */
+  previousBranch?: string;
+  merge?: GitMergeState;
   remotes: Record<string, string>;
   /** Absolute path of the working tree, where `git init` ran. */
   repoPath?: string[];
