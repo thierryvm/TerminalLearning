@@ -8,7 +8,7 @@ import {
   validateEnvVars, validatePathVariable, validateShellConfig, validateDotenv, validateScripts, validateCron,
   validatePing, validateCurl, validateWget, validateDns, validateSsh, validateScp,
   validateGitInit, validateGitConfig, validateGitAddCommit, validateGitStatusLog, validateGitDiffGitignore, validateGitBranch, validateGitMerge,
-  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateMergeStrategies, validateConflicts, validateGithubActions,
+  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateMergeStrategies, validateGithubActions,
   validateAiHelp, validateAiHelpCapabilities, validateAiHelpLimits, validateAiHelpPrompts,
   validateAiHelpContext, validateAiHelpValidate, validateAiHelpDebug, validateAiHelpSecurity,
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
@@ -17,6 +17,8 @@ import {
   gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithConflict, gitRepoWithRemote, powershellProfile, sshDirectory,
   type LessonSetup,
 } from './lessonSetup';
+import type { OutputLine, TerminalState } from './commands/types';
+import { hasConflictMarkers, inHomeDir, printedError, repoFile, stepAccepts } from './exerciseSteps';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
 
 export interface ContentBlock {
@@ -31,15 +33,34 @@ export interface ContentBlock {
 
 export type EnvId = 'linux' | 'macos' | 'windows';
 
-export interface Exercise {
+/** What a step sees after each command: the command, what it printed, and the terminal before and after. */
+export interface ExerciseCheckContext {
+  command: string;
+  env: EnvId;
+  state: TerminalState;
+  prevState: TerminalState;
+  lines: OutputLine[];
+}
+
+/** One step of a multi-step exercise. See exerciseSteps.ts. */
+export interface ExerciseStep {
+  instruction: string;
+  instructionByEnv?: Partial<Record<EnvId, string>>;
+  hint: string;
+  hintByEnv?: Partial<Record<EnvId, string>>;
+  /** Done when the terminal shows the step's result: read the state, not only the command typed. */
+  check: (ctx: ExerciseCheckContext) => boolean;
+  /** A known mistake at this step, and the advice the terminal prints for it. */
+  warn?: (ctx: ExerciseCheckContext) => string | undefined;
+}
+
+interface ExerciseBase {
   instruction: string;
   /** Per-environment instruction override — falls back to `instruction` if absent. */
   instructionByEnv?: Partial<Record<EnvId, string>>;
   hint: string;
   /** Per-environment hint override. */
   hintByEnv?: Partial<Record<EnvId, string>>;
-  /** env is passed by LessonPage from EnvironmentContext. */
-  validate: (command: string, env?: EnvId) => boolean;
   successMessage: string;
   /**
    * Terminal state the exercise starts from (e.g. an initialised Git repository).
@@ -47,6 +68,25 @@ export interface Exercise {
    */
   setup?: LessonSetup;
 }
+
+/**
+ * Either one command, accepted by `validate`, or several `steps`, each checked
+ * on the terminal state (a merge in progress, a file without conflict markers).
+ */
+export type Exercise = ExerciseBase & (
+  | {
+      /** env is passed by LessonPage from EnvironmentContext. */
+      validate: (command: string, env?: EnvId) => boolean;
+      steps?: never;
+      restart?: never;
+    }
+  | {
+      steps: ExerciseStep[];
+      validate?: never;
+      /** The learner undid the work (`git merge --abort`): why the exercise starts over. */
+      restart?: (ctx: ExerciseCheckContext) => string | undefined;
+    }
+);
 
 export interface Lesson {
   id: string;
@@ -1770,7 +1810,22 @@ export const curriculum: Module[] = [
           hintByEnv: {
             windows: 'Faites "cd projets" puis "Get-Content .env"',
           },
-          validate: validateDotenv,
+          steps: [
+            {
+              instruction: 'Entrez dans le dossier du projet avec `cd projets`.',
+              hint: 'Tapez : cd projets',
+              check: ({ state }) => inHomeDir(state, 'projets'),
+            },
+            {
+              instruction: 'Affichez le fichier caché `.env` avec `cat .env`.',
+              instructionByEnv: {
+                windows: 'Affichez le fichier caché `.env` avec `Get-Content .env` (ou `cat .env`).',
+              },
+              hint: 'Tapez : cat .env',
+              hintByEnv: { windows: 'Tapez : Get-Content .env' },
+              check: (ctx) => stepAccepts(validateDotenv, ctx),
+            },
+          ],
           successMessage: 'Parfait ! Vous voyez les variables d\'environnement du projet. Ne commitez jamais ce fichier !',
         },
       },
@@ -1808,13 +1863,28 @@ export const curriculum: Module[] = [
         exercise: {
           instruction: 'Dans le répertoire `projets`, exécutez le script existant avec `./script.sh`.',
           instructionByEnv: {
-            windows: 'Dans le répertoire `projets`, exécutez le script avec `.\\script.sh` ou `bash script.sh`.',
+            windows: 'Dans le répertoire `projets`, exécutez le script avec `bash script.sh` : un script bash a besoin de bash (celui de WSL ou de Git Bash), PowerShell ne l\'exécute pas lui-même.',
           },
           hint: 'Faites d\'abord "cd projets" si ce n\'est pas déjà fait, puis "./script.sh"',
           hintByEnv: {
-            windows: 'Faites d\'abord "cd projets", puis ".\\script.sh" ou "bash script.sh"',
+            windows: 'Faites d\'abord "cd projets", puis "bash script.sh"',
           },
-          validate: validateScripts,
+          steps: [
+            {
+              instruction: 'Entrez dans le dossier du projet avec `cd projets`.',
+              hint: 'Tapez : cd projets',
+              check: ({ state }) => inHomeDir(state, 'projets'),
+            },
+            {
+              instruction: 'Exécutez le script avec `./script.sh`.',
+              instructionByEnv: {
+                windows: 'Exécutez le script avec `bash script.sh`.',
+              },
+              hint: 'Tapez : ./script.sh',
+              hintByEnv: { windows: 'Tapez : bash script.sh' },
+              check: (ctx) => stepAccepts(validateScripts, ctx),
+            },
+          ],
           successMessage: 'Bravo ! Vous venez d\'exécuter votre premier script bash.',
         },
       },
@@ -2742,11 +2812,64 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Fusionnez la branche `feature/nouvelle-feature` dans la branche courante avec `git merge feature/nouvelle-feature`.',
-          hint: 'Tapez: git merge feature/nouvelle-feature',
-          validate: validateConflicts,
+          instruction: 'Résolvez un vrai conflit, du début à la fin : fusionnez `feature/nouvelle-feature`, regardez le fichier en conflit, gardez la version de la branche, puis terminez la fusion.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande. `git status` vous dit à tout moment où en est la fusion.',
           setup: gitRepoWithConflict('feature/nouvelle-feature'),
-          successMessage: 'Vous venez de provoquer un vrai conflit : Git a écrit les deux versions du titre dans index.html, entre <<<<<<< et >>>>>>>. Pour le résoudre : cat index.html, gardez la bonne version (ou git checkout --theirs index.html), puis git add index.html et git commit. git merge --abort annule tout.',
+          steps: [
+            {
+              instruction: 'Lancez la fusion avec `git merge feature/nouvelle-feature`. Git va s\'arrêter sur un conflit.',
+              hint: 'Tapez : git merge feature/nouvelle-feature',
+              check: ({ state }) => Boolean(state.git?.merge?.conflicts['index.html']),
+            },
+            {
+              instruction: 'Regardez ce que Git a écrit dans le fichier avec `cat index.html` : les deux titres sont là, entre `<<<<<<<` et `>>>>>>>`.',
+              instructionByEnv: {
+                windows: 'Regardez ce que Git a écrit dans le fichier avec `Get-Content index.html` : les deux titres sont là, entre `<<<<<<<` et `>>>>>>>`.',
+              },
+              hint: 'Tapez : cat index.html',
+              hintByEnv: { windows: 'Tapez : Get-Content index.html' },
+              check: ({ lines }) => !printedError(lines) && lines.some((l) => l.text.includes('<title>')),
+            },
+            {
+              instruction: 'Gardez la version de la branche avec `git checkout --theirs index.html` (`--ours` garderait celle de main). Il ne doit plus rester aucun marqueur dans le fichier.',
+              hint: 'Tapez : git checkout --theirs index.html',
+              check: ({ state }) => {
+                const text = repoFile(state, 'index.html');
+                return text !== null && !hasConflictMarkers(text);
+              },
+              warn: ({ state }) => {
+                const git = state.git;
+                if (!git?.merge || git.merge.conflicts['index.html'] || !hasConflictMarkers(git.index?.['index.html'] ?? '')) return undefined;
+                return 'index.html contient encore les marqueurs <<<<<<< : Git a accepté le git add sans rien dire, et le prochain commit enregistrerait le conflit tel quel. Reprenez la version de la branche avec git checkout feature/nouvelle-feature -- index.html';
+              },
+            },
+            {
+              instruction: 'Marquez le conflit comme résolu avec `git add index.html`.',
+              hint: 'Tapez : git add index.html',
+              check: ({ state }) => {
+                const git = state.git;
+                return Boolean(git) && !git?.merge?.conflicts['index.html'] && !hasConflictMarkers(git?.index?.['index.html'] ?? '');
+              },
+            },
+            {
+              instruction: 'Terminez la fusion avec `git commit --no-edit`, qui garde le message proposé par Git : « Merge branch \'feature/nouvelle-feature\' ».',
+              hint: 'Tapez : git commit --no-edit',
+              check: ({ state }) => {
+                const git = state.git;
+                return Boolean(git) && !git?.merge && (git?.commits[0]?.parents?.length ?? 0) === 2 && !hasConflictMarkers(git?.head?.['index.html'] ?? '');
+              },
+            },
+          ],
+          restart: ({ state, prevState }) => {
+            if (!prevState.git?.merge || state.git?.merge) return undefined;
+            const head = state.git?.commits[0];
+            if ((head?.parents?.length ?? 0) < 2) return 'La fusion a été annulée (git merge --abort) : tout est revenu comme avant. On reprend à l\'étape 1.';
+            if (hasConflictMarkers(state.git?.head?.['index.html'] ?? '')) {
+              return 'Ce commit de fusion a enregistré index.html avec ses marqueurs de conflit. En vrai, on corrigerait le fichier dans un nouveau commit ; ici, cliquez sur « Réinitialiser » pour recommencer proprement.';
+            }
+            return undefined;
+          },
+          successMessage: 'Conflit résolu ! Vous avez fait exactement ce que fait un développeur : lire les marqueurs, choisir une version, `git add` pour dire à Git que c\'est réglé, puis `git commit` pour conclure la fusion. `git log --oneline` montre maintenant le commit de fusion.',
         },
       },
       {

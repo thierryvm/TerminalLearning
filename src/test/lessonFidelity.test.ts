@@ -8,16 +8,19 @@
  * (TerminalEmulator → onCommand(command, state)).
  *
  * The terminal state each case starts from is the one LessonPage builds:
- * createInitialState(), then the exercise's optional `setup`.
+ * createInitialState(), then the exercise's optional `setup`. The solution is
+ * replayed through progressExercise, as LessonPage does: a multi-step exercise
+ * must reach its last step with the last command, each step checked on the
+ * terminal state.
  *
  * KNOWN_DESYNCS is a ratchet, not an allowlist: each entry runs as `it.fails`,
  * so fixing one turns this suite red until the entry is removed. It may only
  * shrink.
  */
 import { describe, it, expect } from 'vitest';
-import { curriculum, type EnvId } from '../app/data/curriculum';
+import { curriculum, type EnvId, type Exercise } from '../app/data/curriculum';
 import { createInitialState, processCommand, type TerminalState } from '../app/data/terminalEngine';
-import { exerciseAccepts } from '../app/data/validators';
+import { exerciseSteps, exerciseTexts, progressExercise } from '../app/data/exerciseSteps';
 import { LESSON_SOLUTIONS } from './lessonSolutions';
 
 const ENVS: EnvId[] = ['linux', 'macos', 'windows'];
@@ -30,6 +33,24 @@ const ENVS: EnvId[] = ['linux', 'macos', 'windows'];
 const KNOWN_DESYNCS = new Set<string>([]);
 
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
+
+/** Types the solution in a fresh lesson terminal: the errors it printed and when the exercise was done. */
+function replay(exercise: Exercise, env: EnvId, solution: string[]) {
+  let state: TerminalState = createInitialState();
+  if (exercise.setup) state = exercise.setup.apply(state, env);
+  const errors: string[] = [];
+  let step = 0;
+  let doneAt = -1;
+  solution.forEach((cmd, i) => {
+    const out = processCommand(state, cmd, env);
+    for (const line of out.lines) if (line.type === 'error') errors.push(`${cmd} → ${line.text}`);
+    const progress = progressExercise(exercise, step, { command: cmd, env, state: out.newState, prevState: state, lines: out.lines });
+    if (progress.completed) doneAt = i;
+    step = progress.index;
+    state = out.newState;
+  });
+  return { errors, step, doneAt };
+}
 
 const cases = curriculum.flatMap((m) =>
   m.lessons
@@ -46,10 +67,13 @@ describe('lesson solutions table', () => {
   it.each(cases)('$key [$env] — every solution command is written in the lesson', ({ key, env, exercise }) => {
     const solution = LESSON_SOLUTIONS[key][env] ?? LESSON_SOLUTIONS[key].all;
     expect(solution, `no solution for ${key} [${env}]`).toBeDefined();
-    const shown = norm(
-      `${exercise.instructionByEnv?.[env] ?? exercise.instruction} ${exercise.hintByEnv?.[env] ?? exercise.hint}`,
-    );
+    const shown = norm(exerciseTexts(exercise, env).join(' '));
     for (const cmd of solution!) expect(shown).toContain(norm(cmd));
+  });
+
+  it.each(cases.filter((c) => c.exercise.steps))('$key [$env] — one solution command per step', ({ key, env, exercise }) => {
+    const solution = LESSON_SOLUTIONS[key][env] ?? LESSON_SOLUTIONS[key].all ?? [];
+    expect(solution).toHaveLength(exerciseSteps(exercise).length);
   });
 
   it('only lists known desyncs that exist', () => {
@@ -64,16 +88,10 @@ describe('lesson fidelity — the lesson command validates and prints no error',
     const run = KNOWN_DESYNCS.has(id) ? it.fails : it;
     run(id, () => {
       const solution = LESSON_SOLUTIONS[key][env] ?? LESSON_SOLUTIONS[key].all ?? [];
-      let state: TerminalState = createInitialState();
-      if (exercise.setup) state = exercise.setup.apply(state, env);
-      const errors: string[] = [];
-      for (const cmd of solution) {
-        const out = processCommand(state, cmd, env);
-        state = out.newState;
-        for (const line of out.lines) if (line.type === 'error') errors.push(`${cmd} → ${line.text}`);
-      }
+      const { errors, step, doneAt } = replay(exercise, env, solution);
       expect(errors).toEqual([]);
-      expect(exercise.validate(solution[solution.length - 1], env)).toBe(true);
+      expect(step).toBe(exerciseSteps(exercise).length);
+      expect(doneAt).toBe(solution.length - 1);
     });
   }
 });
@@ -103,16 +121,9 @@ describe('lesson fidelity — Windows paths written with backslashes', () => {
   for (const { key, env, exercise } of windowsCases) {
     it(`${key} [${env}] — same result with \\ as separator`, () => {
       const solution = (LESSON_SOLUTIONS[key].windows ?? LESSON_SOLUTIONS[key].all ?? []).map(withBackslashes);
-      let state: TerminalState = createInitialState();
-      if (exercise.setup) state = exercise.setup.apply(state, env);
-      const errors: string[] = [];
-      for (const cmd of solution) {
-        const out = processCommand(state, cmd, env);
-        state = out.newState;
-        for (const line of out.lines) if (line.type === 'error') errors.push(`${cmd} → ${line.text}`);
-      }
+      const { errors, doneAt } = replay(exercise, env, solution);
       expect(errors).toEqual([]);
-      expect(exerciseAccepts(exercise.validate, solution[solution.length - 1], env)).toBe(true);
+      expect(doneAt).toBe(solution.length - 1);
     });
   }
 });

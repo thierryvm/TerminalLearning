@@ -52,7 +52,6 @@ import {
   validateGitFetchClone,
   validatePullRequests,
   validateMergeStrategies,
-  validateConflicts,
   validateGithubActions,
   validateAiHelp,
   validateAiHelpCapabilities,
@@ -499,11 +498,6 @@ describe('validateMergeStrategies', () => {
     expect(validateMergeStrategies('git merge --no-ff')).toBe(false));
   it('rejects "git mergeit --no-ff feature/x" (typo on subcommand)', () =>
     expect(validateMergeStrategies('git mergeit --no-ff feature/x')).toBe(false));
-});
-
-describe('validateConflicts', () => {
-  it('accepts "git merge feature/conflict"', () => expect(validateConflicts('git merge feature/conflict')).toBe(true));
-  it('rejects "git status"', () => expect(validateConflicts('git status')).toBe(false));
 });
 
 describe('validateGithubActions', () => {

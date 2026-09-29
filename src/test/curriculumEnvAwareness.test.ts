@@ -23,7 +23,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { curriculum } from '../app/data/curriculum';
-import type { EnvId } from '../app/data/curriculum';
+import type { EnvId, Exercise } from '../app/data/curriculum';
+import { createInitialState, processCommand, type TerminalState } from '../app/data/terminalEngine';
+import { exerciseSteps, progressExercise } from '../app/data/exerciseSteps';
 
 // ─── Shared fixtures ─────────────────────────────────────────────────────────
 
@@ -41,12 +43,32 @@ const ALL_EXERCISES = ALL_LESSONS.filter((l) => l.exercise != null).map((l) => (
   exercise: l.exercise!,
 }));
 
-/** Lookup helper — returns exercise or throws a clear error. */
-function ex(moduleId: string, lessonId: string) {
+/** Lookup helper — returns the exercise, or throws a clear error. */
+function exercise(moduleId: string, lessonId: string): Exercise {
   const e = curriculum.find((m) => m.id === moduleId)?.lessons.find((l) => l.id === lessonId)
     ?.exercise;
   if (!e) throw new Error(`Exercise not found: ${moduleId}/${lessonId}`);
   return e;
+}
+
+/** A one-command exercise, with its validate(). */
+function ex(moduleId: string, lessonId: string) {
+  const e = exercise(moduleId, lessonId);
+  if (!e.validate) throw new Error(`${moduleId}/${lessonId} has steps: replay them with play()`);
+  return { ...e, validate: e.validate };
+}
+
+/** Types `commands` in the lesson's terminal, as LessonPage does: how many steps they complete. */
+function play(e: Exercise, env: EnvId, commands: string[]): number {
+  let state: TerminalState = createInitialState();
+  if (e.setup) state = e.setup.apply(state, env);
+  let step = 0;
+  for (const command of commands) {
+    const out = processCommand(state, command, env);
+    step = progressExercise(e, step, { command, env, state: out.newState, prevState: state, lines: out.lines }).index;
+    state = out.newState;
+  }
+  return step;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,14 +232,14 @@ describe('curriculum — validate() safety contracts', () => {
     // intentionally accepts ls with any arguments. That is correct behaviour.
   ];
 
-  it('garbage inputs never validate on any env for any exercise', () => {
+  it('garbage inputs never advance any exercise on any env', () => {
     for (const { moduleId, lessonId, exercise } of ALL_EXERCISES) {
       for (const env of VALID_ENV_IDS) {
         for (const input of GARBAGE_INPUTS) {
           expect(
-            exercise.validate(input, env),
+            play(exercise, env, [input]),
             `${moduleId}/${lessonId} — garbage "${input.substring(0, 40)}" validated on env=${env}`
-          ).toBe(false);
+          ).toBe(0);
         }
       }
     }
@@ -241,7 +263,7 @@ describe('curriculum — validate() safety contracts', () => {
       for (const env of VALID_ENV_IDS) {
         for (const input of EDGE_CASES) {
           expect(
-            () => exercise.validate(input, env),
+            () => play(exercise, env, [input]),
             `${moduleId}/${lessonId} — validate() threw on env=${env}, input="${String(input).substring(0, 30)}"`
           ).not.toThrow();
         }
@@ -254,12 +276,16 @@ describe('curriculum — validate() safety contracts', () => {
     const TEST_COMMANDS = ['pwd', 'ls', 'cd', 'Get-Location', '', 'xyz'];
     for (const { moduleId, lessonId, exercise } of ALL_EXERCISES) {
       for (const env of VALID_ENV_IDS) {
+        const initial = exercise.setup ? exercise.setup.apply(createInitialState(), env) : createInitialState();
         for (const cmd of TEST_COMMANDS) {
-          const result = exercise.validate(cmd, env);
-          expect(
-            typeof result,
-            `${moduleId}/${lessonId} — validate() returned ${typeof result}, expected boolean`
-          ).toBe('boolean');
+          const out = processCommand(initial, cmd, env);
+          for (const step of exerciseSteps(exercise)) {
+            const result = step.check({ command: cmd, env, state: out.newState, prevState: initial, lines: out.lines });
+            expect(
+              typeof result,
+              `${moduleId}/${lessonId} — a step check returned ${typeof result}, expected boolean`
+            ).toBe('boolean');
+          }
         }
       }
     }
@@ -856,24 +882,29 @@ describe('curriculum — spot-checks per lesson × env', () => {
   });
 
   describe('variables/dotenv', () => {
-    it('linux: cat .env passes', () => {
-      expect(ex('variables', 'dotenv').validate('cat .env', 'linux')).toBe(true);
+    const dotenv = exercise('variables', 'dotenv');
+    it('linux: cd projets, then cat .env passes', () => {
+      expect(play(dotenv, 'linux', ['cd projets', 'cat .env'])).toBe(2);
     });
     it('windows: Get-Content .env passes; cat .env also accepted', () => {
-      expect(ex('variables', 'dotenv').validate('Get-Content .env', 'windows')).toBe(true);
-      expect(ex('variables', 'dotenv').validate('cat .env', 'windows')).toBe(true);
+      expect(play(dotenv, 'windows', ['cd projets', 'Get-Content .env'])).toBe(2);
+      expect(play(dotenv, 'windows', ['cd projets', 'cat .env'])).toBe(2);
+    });
+    it('cat .env outside the project fails, so it does not count', () => {
+      expect(play(dotenv, 'linux', ['cat .env'])).toBe(0);
+      expect(play(dotenv, 'linux', ['cd projets', 'cd ..', 'cat .env'])).toBe(1);
     });
   });
 
   describe('variables/scripts', () => {
+    const scripts = exercise('variables', 'scripts');
     it('linux + macos: ./script.sh and bash script.sh pass', () => {
-      expect(ex('variables', 'scripts').validate('./script.sh', 'linux')).toBe(true);
-      expect(ex('variables', 'scripts').validate('bash script.sh', 'linux')).toBe(true);
-      expect(ex('variables', 'scripts').validate('./script.sh', 'macos')).toBe(true);
+      expect(play(scripts, 'linux', ['cd projets', './script.sh'])).toBe(2);
+      expect(play(scripts, 'linux', ['cd projets', 'bash script.sh'])).toBe(2);
+      expect(play(scripts, 'macos', ['cd projets', './script.sh'])).toBe(2);
     });
-    it('windows: .\\script.sh and bash script.sh pass', () => {
-      expect(ex('variables', 'scripts').validate('.\\script.sh', 'windows')).toBe(true);
-      expect(ex('variables', 'scripts').validate('bash script.sh', 'windows')).toBe(true);
+    it('windows: bash script.sh passes', () => {
+      expect(play(scripts, 'windows', ['cd projets', 'bash script.sh'])).toBe(2);
     });
   });
 

@@ -24,7 +24,26 @@ describe('TerminalEmulator initialState', () => {
     expect(screen.queryByText(/not a git repository/)).toBeNull();
     // The prompt reflects the prepared working directory.
     expect(screen.getAllByText('user@terminal-lab:~/projets$').length).toBeGreaterThan(0);
-    expect(onCommand).toHaveBeenCalledWith('git status', expect.objectContaining({ git: expect.objectContaining({ initialized: true }) }));
+    expect(onCommand).toHaveBeenCalledWith(
+      'git status',
+      expect.objectContaining({ git: expect.objectContaining({ initialized: true }) }),
+      // What the command printed, and the state it ran in: exercise steps read both.
+      expect.objectContaining({
+        lines: expect.arrayContaining([expect.objectContaining({ text: 'On branch main' })]),
+        prevState: expect.objectContaining({ git: expect.objectContaining({ initialized: true }) }),
+      }),
+    );
+  });
+
+  it('prints the lines onCommand returns after the command output, in their own colour', () => {
+    const onCommand = vi.fn(() => [{ type: 'success' as const, text: '✓ Étape 1/2 réussie.' }]);
+    render(<TerminalEmulator onCommand={onCommand} />);
+    type('pwd');
+    const feedback = screen.getByText('✓ Étape 1/2 réussie.');
+    expect(feedback.className).toContain('text-[#3fb950]');
+    // After the command's own output, never before it.
+    const output = screen.getByText('/home/user');
+    expect(output.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('keeps the default state when no setup is given', () => {

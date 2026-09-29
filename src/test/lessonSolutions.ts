@@ -4,7 +4,8 @@
  *
  * Used by lessonFidelity.test.ts. Each command must appear verbatim in the
  * lesson's instruction or hint for that environment (the test enforces it), so
- * this table cannot drift away from what the learner actually reads.
+ * this table cannot drift away from what the learner actually reads. A
+ * multi-step exercise lists one command per step, in order.
  *
  * Derived from the browser census of 23 September 2026 (198 lesson × env).
  */
@@ -80,7 +81,7 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   'variables/path-variable': { all: ['echo $PATH'], windows: ['echo $env:PATH'] },
   'variables/shell-config': { linux: ['cat ~/.bashrc'], macos: ['cat ~/.zshrc'], windows: ['cat $PROFILE'] },
   'variables/dotenv': { all: ['cd projets', 'cat .env'], windows: ['cd projets', 'Get-Content .env'] },
-  'variables/scripts': { all: ['cd projets', './script.sh'], windows: ['cd projets', '.\\script.sh'] },
+  'variables/scripts': { all: ['cd projets', './script.sh'], windows: ['cd projets', 'bash script.sh'] },
   'variables/cron': { all: ['crontab -l'], windows: ['Get-ScheduledTask'] },
   // ── réseau ──
   'reseau/ping': { all: ['ping google.com'] },
@@ -106,7 +107,10 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   'github-collaboration/git-fetch-clone': { all: ['git clone https://github.com/user/projet.git'] },
   'github-collaboration/pull-requests': { all: ['git checkout -b feature/nouvelle-feature'] },
   'github-collaboration/merge-strategies': { all: ['git merge --no-ff feature/ma-feature'] },
-  'github-collaboration/conflicts': { all: ['git merge feature/nouvelle-feature'] },
+  'github-collaboration/conflicts': {
+    all: ['git merge feature/nouvelle-feature', 'cat index.html', 'git checkout --theirs index.html', 'git add index.html', 'git commit --no-edit'],
+    windows: ['git merge feature/nouvelle-feature', 'Get-Content index.html', 'git checkout --theirs index.html', 'git add index.html', 'git commit --no-edit'],
+  },
   'github-collaboration/github-actions': { all: ['git status'] },
   // ── ia-dev ──
   'ia-dev/ia-dev-intro': { all: ['ai-help'] },

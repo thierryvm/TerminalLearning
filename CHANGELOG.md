@@ -5,6 +5,18 @@
 
 ---
 
+## 🧩 29 septembre 2026 — Des exercices en plusieurs étapes, vérifiés sur le terminal
+
+*Leçons · exercices · page de leçon*
+
+- **Résoudre un vrai conflit, du début à la fin.** L'exercice de la leçon « Conflits de merge » s'arrêtait après `git merge`, au moment où le travail commence. Il compte maintenant cinq étapes : lancer la fusion, lire les marqueurs dans `index.html`, garder la version de la branche, `git add`, puis `git commit`. Chaque étape s'affiche dans la leçon et dans le terminal, avec son indice.
+- **Le terminal juge le résultat, pas la phrase tapée.** Une étape est réussie quand le terminal montre son résultat : une fusion en cours, un fichier sans marqueur, un commit de fusion. Toute façon d'y arriver compte, et une commande qui échoue ne compte jamais. Avant, `cat .env` tapé hors du dossier du projet affichait une erreur et validait quand même l'exercice.
+- **Les erreurs classiques expliquées sur le moment.** Un `git add` avec les marqueurs encore dans le fichier est accepté par Git sans un mot : le terminal prévient et donne la commande qui répare. Après `git merge --abort`, l'exercice reprend proprement à la première étape.
+- **Plus de saut automatique.** Une leçon réussie ne part plus toute seule vers la suivante au bout de 2,5 secondes, avant qu'on ait eu le temps de lire. Le message de réussite s'affiche dans la leçon et dans le terminal (le seul visible sur mobile), puis le bouton « Suivant » attend l'élève. Un exercice déjà réussi peut être refait.
+- **Script sous Windows.** L'exercice propose `bash script.sh` : un script bash a besoin de bash (WSL ou Git Bash), PowerShell ne l'exécute pas lui-même.
+
+---
+
 ## 🪧 29 septembre 2026 — La page d'accueil ne promet que ce qui existe
 
 *Page d'accueil · feuille de route · un test empêche la dérive*

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Terminal,
@@ -14,9 +14,9 @@ import { useEnvironment } from '../context/EnvironmentContext';
 import { useLessonSEO } from '../hooks/useLessonSEO';
 import { toUnixUsername } from '../../lib/username';
 import { renderInlineMarkdown, stripInlineMarkdown } from '../../lib/renderInlineMarkdown';
-import { TerminalState, createInitialState } from '../data/terminalEngine';
-import { exerciseAccepts } from '../data/validators';
-import { TerminalEmulator } from './TerminalEmulator';
+import { TerminalState, OutputLine, createInitialState } from '../data/terminalEngine';
+import { exerciseSteps, progressExercise, stepHint, stepInstruction } from '../data/exerciseSteps';
+import { TerminalEmulator, type CommandDetail } from './TerminalEmulator';
 import { Button } from './ui/button';
 import { AiTutorPanel, isAiTutorEnabled } from './ai/AiTutorPanel';
 import { useUserRole } from '@/lib/hooks/useUserRole';
@@ -98,17 +98,26 @@ function BlockRenderer({ block, env = 'linux' }: { block: ContentBlock; env?: En
 // so navigation is reachable from BOTH mobile panes (Contenu + Terminal). One
 // definition keeps the two in sync.
 type LessonTarget = { moduleId: string; lessonId: string } | null;
+
+// « Suivant » filled in once the exercise is done. Laid over `emerald-soft`, so
+// the border (same width) and the focus ring stay.
+const NEXT_EMPHASIS = 'bg-emerald-500 hover:bg-emerald-400 text-[#0d1117] hover:text-[#0d1117] border-emerald-500';
+
 function LessonNav({
   prevLesson,
   nextLesson,
   onNavigate,
   onDashboard,
+  emphasizeNext = false,
 }: {
   prevLesson: LessonTarget;
   nextLesson: LessonTarget;
   onNavigate: (target: LessonTarget) => void;
   onDashboard: () => void;
+  /** The exercise was just done: « Suivant » becomes the obvious next move. */
+  emphasizeNext?: boolean;
 }) {
+  const nextEmphasis = emphasizeNext ? NEXT_EMPHASIS : undefined;
   return (
     <>
       <Button
@@ -128,6 +137,7 @@ function LessonNav({
           type="button"
           variant="emerald-soft"
           size="tl-nav-cta"
+          className={nextEmphasis}
           onClick={() => onNavigate(nextLesson)}
           aria-label="Passer à la leçon suivante"
         >
@@ -139,6 +149,7 @@ function LessonNav({
           type="button"
           variant="emerald-soft"
           size="tl-nav-cta"
+          className={nextEmphasis}
           onClick={onDashboard}
           aria-label="Retour au tableau de bord"
         >
@@ -167,42 +178,44 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
   const terminalUsername = toUnixUsername(user);
   // Derived from context on every render — no local state needed
   const exerciseCompleted = isLessonCompleted(moduleId, lessonId);
-  const [exerciseMessage, setExerciseMessage] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [showTerminal, setShowTerminal] = useState(true);
-  const [terminalKey, setTerminalKey] = useState(`${moduleId}-${lessonId}`);
-  // True only when exercise was completed in this session (not on a previous visit)
-  const [justCompleted, setJustCompleted] = useState(false);
+  // One number per terminal mount: « Réinitialiser » and every environment
+  // change open a new session. Never reused, so going Linux → Windows → Linux
+  // cannot bring back the steps done in the first, discarded terminal.
+  const [terminal, setTerminal] = useState({ env: selectedEnv, session: 0 });
+  if (terminal.env !== selectedEnv) setTerminal({ env: selectedEnv, session: terminal.session + 1 });
+  const session = terminal.session;
+  // The exercise starts over with each session: progress belongs to the one it was made in.
+  const [progress, setProgress] = useState({ session, step: 0 });
+  const step = progress.session === session ? progress.step : 0;
 
   const nextLesson = getNextLesson(moduleId, lessonId);
   const prevLesson = getPrevLesson(moduleId, lessonId);
 
-  const handleCommand = useCallback(
-    (command: string, _state: TerminalState) => {
-      if (!lesson.exercise || exerciseCompleted) return;
-      if (exerciseAccepts(lesson.exercise.validate, command, selectedEnv)) {
-        completeLesson(moduleId, lessonId);
-        setExerciseMessage(lesson.exercise.successMessage);
-        setJustCompleted(true);
-      }
-    },
-    [lesson, exerciseCompleted, completeLesson, moduleId, lessonId, selectedEnv]
-  );
+  const exercise = lesson.exercise;
+  const steps = exercise ? exerciseSteps(exercise) : [];
+  // Done in this terminal session. No auto-advance: the learner reads the
+  // result, then moves on with « Suivant » when ready.
+  const finished = steps.length > 0 && step >= steps.length;
 
-  // Auto-navigate to next lesson after completion.
-  // wasAlreadyCompleted guards against navigating when arriving on an already-done lesson.
-  const wasAlreadyCompleted = useRef(exerciseCompleted);
-  useEffect(() => {
-    if (!exerciseCompleted || wasAlreadyCompleted.current) return;
-    const timer = setTimeout(() => {
-      if (nextLesson) {
-        navigate(`/app/learn/${nextLesson.moduleId}/${nextLesson.lessonId}`);
-      } else {
-        navigate('/app');
-      }
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [exerciseCompleted, nextLesson, navigate]);
+  const handleCommand = useCallback(
+    (command: string, state: TerminalState, { lines, prevState }: CommandDetail): OutputLine[] => {
+      if (!exercise) return [];
+      const result = progressExercise(exercise, step, { command, env: selectedEnv, state, prevState, lines });
+      if (result.index !== step) setProgress({ session, step: result.index });
+      if (!result.completed) return result.messages.map((l) => ({ ...l, text: stripInlineMarkdown(l.text) }));
+      if (!exerciseCompleted) completeLesson(moduleId, lessonId);
+      return [
+        ...result.messages.map((l) => ({ ...l, text: stripInlineMarkdown(l.text) })),
+        {
+          type: 'info',
+          text: nextLesson ? '→ « Suivant » pour passer à la leçon suivante.' : '→ Module terminé : « Tableau de bord » pour choisir la suite.',
+        },
+      ];
+    },
+    [exercise, step, session, selectedEnv, exerciseCompleted, completeLesson, moduleId, lessonId, nextLesson]
+  );
 
   const lessonIndex = mod.lessons.findIndex((l) => l.id === lessonId);
 
@@ -211,15 +224,28 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
     navigate(`/app/learn/${target.moduleId}/${target.lessonId}`);
   };
 
-  const effectiveInstruction =
-    lesson.exercise?.instructionByEnv?.[selectedEnv] ?? lesson.exercise?.instruction ?? '';
-  const setup = lesson.exercise?.setup;
+  const effectiveInstruction = exercise?.instructionByEnv?.[selectedEnv] ?? exercise?.instruction ?? '';
+  const multiStep = steps.length > 1;
+  const currentStep = finished ? undefined : steps[step];
+  const setup = exercise?.setup;
   const setupNoteText = setup?.noteByEnv?.[selectedEnv] ?? setup?.note;
   const setupNote = setupNoteText ? [stripInlineMarkdown(setupNoteText)] : [];
-  const welcomeMessage = lesson.exercise
-    ? exerciseCompleted
-      ? [`📚 ${lesson.title}`, ``, ...setupNote, `✓ Exercice déjà complété — « Suivant » pour continuer, ou pratique librement ci-dessous.`, ``]
-      : [`📚 ${lesson.title}`, ``, ...setupNote, `Exercice : ${stripInlineMarkdown(effectiveInstruction)}`, ``]
+  // Read when the terminal mounts, so it always starts at step 1.
+  const exerciseIntro = multiStep
+    ? [
+        `Exercice en ${steps.length} étapes : ${stripInlineMarkdown(effectiveInstruction)}`,
+        `Étape 1/${steps.length} : ${stripInlineMarkdown(stepInstruction(steps[0], selectedEnv))}`,
+      ]
+    : [`Exercice : ${stripInlineMarkdown(effectiveInstruction)}`];
+  const welcomeMessage = exercise
+    ? [
+        `📚 ${lesson.title}`,
+        ``,
+        ...setupNote,
+        ...(exerciseCompleted ? [`✓ Exercice déjà réussi : « Suivant » pour continuer, ou refaites-le.`] : []),
+        ...exerciseIntro,
+        ``,
+      ]
     : [`📚 ${lesson.title}`, ``, `Terminal libre — pratiquez les commandes ci-dessous.`, ``];
   // Read once per terminal mount (lesson or environment change, « Réinitialiser »).
   const buildInitialState = useCallback(
@@ -305,21 +331,58 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                   </span>
                 </div>
 
-                {exerciseMessage ? (
-                  <p className="text-emerald-400 text-sm">{renderInlineMarkdown(exerciseMessage)}</p>
-                ) : (
-                  <p className="text-[var(--github-text-primary)] text-sm">
-                    {renderInlineMarkdown(effectiveInstruction)}
-                  </p>
+                <p className="text-[var(--github-text-primary)] text-sm">
+                  {renderInlineMarkdown(effectiveInstruction)}
+                </p>
+
+                {multiStep && (
+                  <ol className="mt-3 space-y-2" role="list" aria-label="Étapes de l'exercice">
+                    {steps.map((s, i) => {
+                      const done = i < step;
+                      const current = i === step;
+                      return (
+                        <li key={i} className="flex gap-2 text-sm" aria-current={current ? 'step' : undefined}>
+                          {done ? (
+                            <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-400" aria-hidden="true" />
+                          ) : (
+                            <span
+                              aria-hidden="true"
+                              className={`size-4 shrink-0 mt-0.5 rounded-full border text-[10px] leading-none flex items-center justify-center font-mono ${current ? 'border-emerald-400 text-emerald-400' : 'border-[var(--github-border-primary)] text-[var(--github-text-secondary)]'}`}
+                            >
+                              {i + 1}
+                            </span>
+                          )}
+                          <span className={current ? 'text-[var(--github-text-primary)]' : 'text-[var(--github-text-secondary)]'}>
+                            <span className="sr-only">
+                              {done ? `Étape ${i + 1}, réussie : ` : current ? `Étape ${i + 1}, en cours : ` : `Étape ${i + 1} : `}
+                            </span>
+                            {renderInlineMarkdown(stepInstruction(s, selectedEnv))}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 )}
 
-                {justCompleted && (
-                  <p className="mt-2 text-xs text-emerald-400/70 font-mono animate-pulse">
-                    {nextLesson ? '→ Passage à la leçon suivante...' : '→ Retour au tableau de bord...'}
-                  </p>
-                )}
+                <div role="status" aria-live="polite">
+                  {finished && exercise && (
+                    <div className="mt-3 space-y-3">
+                      <p className="text-emerald-400 text-sm">{renderInlineMarkdown(exercise.successMessage)}</p>
+                      <Button
+                        type="button"
+                        variant="emerald-soft"
+                        size="tl-nav-cta"
+                        className={NEXT_EMPHASIS}
+                        onClick={() => (nextLesson ? handleNavigate(nextLesson) : navigate('/app'))}
+                      >
+                        <span>{nextLesson ? 'Suivant' : 'Tableau de bord'}</span>
+                        <ChevronRight className="size-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
-                {!exerciseCompleted && (
+                {currentStep && (
                   <div className="mt-3">
                     <Button
                       type="button"
@@ -340,7 +403,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
                         aria-label="Indice"
                         className="mt-2 text-amber-400 text-xs font-mono bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
                       >
-                        💡 {renderInlineMarkdown(lesson.exercise.hintByEnv?.[selectedEnv] ?? lesson.exercise.hint)}
+                        💡 {renderInlineMarkdown(stepHint(currentStep, selectedEnv))}
                       </p>
                     )}
                   </div>
@@ -358,6 +421,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               nextLesson={nextLesson}
               onNavigate={handleNavigate}
               onDashboard={() => navigate('/app')}
+              emphasizeNext={finished}
             />
           </div>
         </div>
@@ -373,10 +437,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
               type="button"
               variant="nav-link"
               size="tl-nav-inline-xs"
-              onClick={() => {
-                setTerminalKey(`${moduleId}-${lessonId}-${Date.now()}`);
-                setExerciseMessage('');
-              }}
+              onClick={() => setTerminal((t) => ({ ...t, session: t.session + 1 }))}
               aria-label="Réinitialiser le terminal"
               className="gap-1.5 -mr-2"
             >
@@ -387,7 +448,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           <TerminalEmulator
             // A new environment is a new session: its prepared state (a Git repository
             // with Linux or Windows file modes) is only read when the terminal mounts.
-            key={`${terminalKey}-${selectedEnv}`}
+            key={`${session}-${selectedEnv}`}
             onCommand={handleCommand}
             welcomeMessage={welcomeMessage}
             className="flex-1 min-h-0"
@@ -409,6 +470,7 @@ function LessonContent({ mod, lesson, moduleId, lessonId }: {
           nextLesson={nextLesson}
           onNavigate={handleNavigate}
           onDashboard={() => navigate('/app')}
+          emphasizeNext={finished}
         />
       </div>
     </div>
