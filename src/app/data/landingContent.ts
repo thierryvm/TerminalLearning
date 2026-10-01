@@ -177,6 +177,7 @@ export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
     group: 'Après le parcours principal',
     items: [
       'Mode histoire : suivre un personnage, chaque leçon devient une scène',
+      'Un premier module en pilote, avant d\'illustrer tout le parcours',
     ],
   },
 ];
