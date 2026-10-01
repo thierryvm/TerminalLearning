@@ -275,7 +275,10 @@ describe('git init and clone', () => {
   it('git clone creates the directory; git works inside it, not outside', () => {
     const s = run(createInitialState(), ['git clone https://github.com/user/projet.git']).newState;
     expect(run(s, ['git status']).status).toBe(128);
-    expect(texts(run(s, ['cd projet', 'git status']))).toEqual(['On branch main', 'nothing to commit, working tree clean']);
+    // A clone tracks its remote branch (git 2.56, 1 October 2026).
+    expect(texts(run(s, ['cd projet', 'git status']))).toEqual([
+      'On branch main', "Your branch is up to date with 'origin/main'.", '', 'nothing to commit, working tree clean',
+    ]);
   });
 
   it('git clone -b takes a branch, not a directory, and refuses an existing destination', () => {

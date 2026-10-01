@@ -5,6 +5,20 @@
 
 ---
 
+## 🔗 1er octobre 2026 — Push, pull et clone répondent comme le vrai Git
+
+*Terminal · commandes Git distantes · sorties vérifiées sur Git 2.56*
+
+Les commandes qui parlent à un dépôt distant affichaient des messages inventés : un `git push` réussissait toujours, un `git pull` sans branche suivie ne disait rien d'utile. Elles reproduisent maintenant ce que le vrai Git affiche, message par message.
+
+- **Le suivi de branche existe vraiment.** `git push -u origin main` relie `main` à `origin/main`, puis `git status` dit si la branche est à jour, en avance, en retard ou divergente, avec le conseil que Git donne dans chaque cas. `git switch`, `git status -sb` et `git branch -vv` le rappellent aussi, `git branch -u` et `git branch --unset-upstream` le modifient. Une branche créée depuis `origin/main` le suit, et `git push` refuse de l'envoyer sous un autre nom, comme Git.
+- **Les erreurs utiles sont là.** `git push` sans destination, une branche qui ne suit rien, un remote mal orthographié, un push refusé parce que le dépôt distant a avancé : chaque cas affiche le vrai message et ses conseils.
+- **`git remote` complet.** `add`, `remove`, `rename`, `get-url`, `set-url` et `-v`, silencieux quand tout va bien, comme Git.
+- **Nouvelle branche sur GitHub.** Le premier push d'une branche affiche le lien que GitHub renvoie pour ouvrir une pull request.
+- **Leçons corrigées.** « Push et pull » et « Fetch et clone » montrent les vraies sorties. Les lignes de progression (`Enumerating objects…`) que Git affiche dans un vrai terminal sont mentionnées en commentaire : le terminal d'entraînement ne les reproduit pas.
+
+---
+
 ## 🌿 30 septembre 2026 — Le module Git se pratique comme au travail
 
 *Module Git · cinq exercices en plusieurs étapes · sorties vérifiées sur Git 2.56*

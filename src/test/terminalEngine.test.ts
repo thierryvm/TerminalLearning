@@ -2294,7 +2294,8 @@ describe('git', () => {
     expect(r.lines[0].text).toContain('fatal');
   });
 
-  it('git push with remote succeeds', () => {
+  // Expected outputs from git 2.56 pushing to a local bare repository (1 October 2026).
+  it('git push -u to a remote that already has the commit: up to date, and tracking set', () => {
     const s = makeState({
       git: {
         initialized: true, branch: 'main', branches: ['main'],
@@ -2304,7 +2305,8 @@ describe('git', () => {
       },
     });
     const r = processCommand(s, 'git push -u origin main');
-    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+    expect(r.lines.map((l) => l.text)).toEqual(['Everything up-to-date', "branch 'main' set up to track 'origin/main'."]);
+    expect(r.newState.git?.upstream).toEqual({ main: 'origin/main' });
   });
 
   // ── git pull ──────────────────────────────────────────────────────────────────
@@ -2314,10 +2316,29 @@ describe('git', () => {
     expect(r.lines[0].type).toBe('error');
   });
 
-  it('git pull with remote returns success', () => {
+  it('git pull on a branch that tracks nothing explains how to set it (git names the remote)', () => {
     const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
     const r = processCommand(s, 'git pull');
-    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+    expect(r.status).toBe(1);
+    expect(r.lines.map((l) => l.text)).toEqual([
+      'There is no tracking information for the current branch.',
+      'Please specify which branch you want to merge with.',
+      'See git-pull(1) for details.',
+      '',
+      '    git pull <remote> <branch>',
+      '',
+      'If you wish to set tracking information for this branch you can do so with:',
+      '',
+      '    git branch --set-upstream-to=origin/<branch> main',
+      '',
+    ]);
+  });
+
+  it('git pull --rebase asks which branch to rebase against when nothing is tracked', () => {
+    const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
+    const r = processCommand(s, 'git pull --rebase');
+    expect(r.status).toBe(1);
+    expect(r.lines[1].text).toBe('Please specify which branch you want to rebase against.');
   });
 
   // ── git fetch ─────────────────────────────────────────────────────────────────
@@ -2327,10 +2348,10 @@ describe('git', () => {
     expect(r.lines[0].type).toBe('error');
   });
 
-  it('git fetch with configured remote returns success', () => {
+  it('git fetch with nothing new on the remote prints nothing', () => {
     const s = makeState({ git: { initialized: true, branch: 'main', branches: ['main'], stagedFiles: [], commits: [], remotes: { origin: 'https://github.com/u/r.git' } } });
     const r = processCommand(s, 'git fetch origin');
-    expect(r.lines.some((l) => l.type === 'success')).toBe(true);
+    expect(r.lines).toEqual([]);
   });
 
   // ── git clone ─────────────────────────────────────────────────────────────────
@@ -2495,7 +2516,16 @@ describe('git', () => {
     s = processCommand(s, 'git commit -m "feat: add auth"').newState;
     s = processCommand(s, 'git remote add origin https://github.com/user/repo.git').newState;
     const push = processCommand(s, 'git push -u origin feature/auth');
-    expect(push.lines.some((l) => l.type === 'success')).toBe(true);
+    // GitHub answers a new branch with the link to open a pull request; then git's own report.
+    expect(push.lines.map((l) => l.text)).toEqual([
+      'remote: ',
+      "remote: Create a pull request for 'feature/auth' on GitHub by visiting:",
+      'remote:      https://github.com/user/repo/pull/new/feature/auth',
+      'remote: ',
+      'To https://github.com/user/repo.git',
+      ' * [new branch]      feature/auth -> feature/auth',
+      "branch 'feature/auth' set up to track 'origin/feature/auth'.",
+    ]);
     expect(s.git?.commits).toHaveLength(2);
     expect(s.git?.branch).toBe('feature/auth');
   });

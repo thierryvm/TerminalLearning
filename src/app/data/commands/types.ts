@@ -82,6 +82,10 @@ export interface GitState {
   tags?: Record<string, string>;
   /** Remote-tracking branches (`origin/main`) and their commit, as the last push or fetch left them. */
   remoteRefs?: Record<string, string>;
+  /** The branch each local branch tracks (`main` → `origin/main`), set by `push -u`, `clone`, `branch -u`. */
+  upstream?: Record<string, string>;
+  /** Each remote's default branch, as `clone` records it (`origin/HEAD -> origin/main`). */
+  remoteHead?: Record<string, string>;
   /** Annotated tags: their message, date and object id (`git tag -a`). */
   tagNotes?: Record<string, { message: string; time: number; tz: number; id: string }>;
   /** The branch before the last switch, for `git switch -`. */

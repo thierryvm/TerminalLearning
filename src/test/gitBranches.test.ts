@@ -1048,7 +1048,10 @@ describe('after the code review', () => {
     infoOnly(t.run('git checkout -f side'));
     infoOnly(t.run('git switch --discard-changes side'));
     expect(t.state.git!.branch).toBe('main');
-    infoOnly(t.run('git branch -u origin/main'));
+    // Simulated since the remotes work (1 October 2026): with no origin/main, git refuses as real git does.
+    const noUpstream = t.run('git branch -u origin/main');
+    expect(texts(noUpstream)[0]).toBe("fatal: the requested upstream branch 'origin/main' does not exist");
+    expect(noUpstream.status).toBe(128);
     infoOnly(t.run('git merge -s ours side'));
     infoOnly(t.run('git tag -v v1'));
     const bogus = t.run('git branch --bogus');
