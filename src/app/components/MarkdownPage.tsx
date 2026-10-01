@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { isValidElement, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
@@ -18,15 +18,35 @@ export const MARKDOWN_ROUTE_MAP: Record<string, string> = {
   'CHANGELOG.md': '/changelog',
 };
 
+/**
+ * The id GitHub gives a heading (lower case, punctuation dropped, each space a
+ * hyphen), so a table of contents like STORY.md's works on /story and on GitHub.
+ * Exported for src/test/markdownLinks.test.ts.
+ */
+export function headingId(text: string): string {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}_\s-]/gu, '').replace(/\s/g, '-');
+}
+
+/** The plain text of a heading's children (inline code and emphasis included). */
+function textOf(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
+  if (isValidElement<{ children?: ReactNode }>(node)) return textOf(node.props.children);
+  return '';
+}
+
 const mdComponents: Components = {
   h1: ({ children }) => (
     <h1 className="text-3xl font-bold text-[var(--github-text-primary)] mb-4 mt-8 first:mt-0">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl font-bold text-[var(--github-text-primary)] mb-3 mt-10 pb-2 border-b border-[var(--github-border-primary)]/50">{children}</h2>
+    <h2 id={headingId(textOf(children)) || undefined} className="scroll-mt-6 text-xl font-bold text-[var(--github-text-primary)] mb-3 mt-10 pb-2 border-b border-[var(--github-border-primary)]/50">{children}</h2>
   ),
   h3: ({ children }) => (
     <h3 className="text-base font-semibold text-[var(--github-text-primary)] mb-2 mt-6">{children}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="text-sm font-semibold text-[var(--github-text-primary)] mb-2 mt-5">{children}</h4>
   ),
   p: ({ children }) => (
     <p className="text-[var(--github-text-primary)] leading-relaxed mb-4">{children}</p>
@@ -136,7 +156,17 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // A link to a section (/story#partie-viii-…) lands on it; any other visit starts at the top.
+    const hash = window.location.hash.slice(1);
+    let id = hash;
+    try {
+      id = decodeURIComponent(hash);
+    } catch {
+      // A malformed escape (`#%E0%A4%A`) names no heading: keep it as typed.
+    }
+    const target = id ? document.getElementById(id) : null;
+    if (target) target.scrollIntoView();
+    else window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {

@@ -5,6 +5,16 @@
 
 ---
 
+## 📖 1er octobre 2026 — « Notre histoire » se lit dans l'ordre
+
+*Page /story · sommaire · aucun chapitre réécrit*
+
+- **Du prologue à aujourd'hui.** La page mélangeait trois ordres : les chapitres récents à l'envers, le récit d'origine dans l'ordre, des journées de mai en vrac. Elle se lit maintenant du début à la fin, en huit parties datées (des fondations jusqu'au simulateur comparé à un vrai terminal).
+- **Un sommaire cliquable**, et un lien pour reprendre au dernier chapitre. Les liens fonctionnent aussi sur GitHub, et un test vérifie que chaque lien du sommaire mène à un titre existant.
+- Le changelog garde l'ordre inverse : on le consulte pour savoir ce qui vient de changer.
+
+---
+
 ## 👥 1er octobre 2026 — Un dépôt distant où quelqu'un d'autre pousse
 
 *Terminal · `git fetch` et `git pull` ramènent de vrais commits · sorties vérifiées sur Git 2.56*

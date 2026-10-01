@@ -14,7 +14,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
-import { MARKDOWN_ROUTE_MAP } from '../app/components/MarkdownPage';
+import { MARKDOWN_ROUTE_MAP, headingId } from '../app/components/MarkdownPage';
 
 const ROOT = resolve(__dirname, '../../');
 
@@ -84,5 +84,27 @@ describe('Narrative markdown internal links', () => {
       }
       expect(broken).toEqual([]);
     });
+
+    it(`${file.split(/[\\/]/).pop()}: every #anchor names a level-2 heading of the page`, () => {
+      // Only h2 carries an id on /story and /changelog (MarkdownPage), with GitHub's rule.
+      const ids = new Set(
+        readFileSync(file, 'utf-8').split(/\r?\n/).filter((l) => l.startsWith('## ')).map((l) => headingId(l.slice(3))),
+      );
+      const dangling = extractLinks(file).filter((l) => l.href.startsWith('#') && !ids.has(decodeURIComponent(l.href.slice(1))));
+      expect(dangling.map((l) => `line ${l.line}: ${l.href}`)).toEqual([]);
+    });
+
+    it(`${file.split(/[\\/]/).pop()}: no two level-2 headings share an id`, () => {
+      const ids = readFileSync(file, 'utf-8').split(/\r?\n/).filter((l) => l.startsWith('## ')).map((l) => headingId(l.slice(3)));
+      expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
+    });
   }
+});
+
+describe('headingId', () => {
+  it('gives the id GitHub gives: lower case, punctuation dropped, spaces as hyphens', () => {
+    expect(headingId('Prologue — Une histoire vraie')).toBe('prologue--une-histoire-vraie');
+    expect(headingId("Partie II — L'expansion")).toBe('partie-ii--lexpansion');
+    expect(headingId('Partie VII — Août 2026 : le grand check-up')).toBe('partie-vii--août-2026--le-grand-check-up');
+  });
 });
