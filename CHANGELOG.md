@@ -5,6 +5,21 @@
 
 ---
 
+## 🪟 1er octobre 2026 — Sous Windows, `ls` répond comme PowerShell
+
+*Environnement Windows · `Get-ChildItem` · sorties vérifiées sur PowerShell 7.6*
+
+- **`ls`, `dir`, `gci` et `Get-ChildItem` affichent le vrai tableau de PowerShell** : la ligne `Directory: C:\…`, puis les colonnes Mode, LastWriteTime, Length et Name, les dossiers d'abord. Avant, l'élève Windows voyait une liste de noms à la façon de Linux.
+- Les fichiers qui commencent par un point (`.bashrc`, `.env`) sont visibles : sous Windows, c'est un attribut qui cache un fichier, pas son nom. Seul `.git` est caché, et `Get-ChildItem -Force` le montre.
+- `-Name`, `-Force`, `-Hidden`, `-Recurse`, `-Depth`, `-Directory`, `-File` et `-Filter` fonctionnent. Les noms de paramètres abrégés sont compris comme dans PowerShell, et `ls -la` ou `ls -a` sont refusés avec le vrai message.
+- **Les erreurs de `New-Item`, `mkdir`, `Move-Item`, `Copy-Item`, `Remove-Item` et `cd` sont celles de PowerShell 7.6**, avec le chemin Windows complet. `New-Item` refuse un fichier qui existe déjà (avec `-Force`, il le remplace par un fichier vide), et `Move-Item` n'écrase pas un fichier sans `-Force`.
+- **Sous Windows, `rm`, `cp` et `mv` sont `Remove-Item`, `Copy-Item` et `Move-Item`**, avec leurs paramètres : `rm -r` fonctionne, `rm -rf` est refusé comme dans un vrai PowerShell, et plusieurs fichiers s'écrivent avec des virgules (`rm a.txt, b.txt`). Un dossier vide se supprime sans `-Recurse`, et `Copy-Item` sans `-Recurse` copie le dossier, vide.
+- `Get-ChildItem > liste.txt`, `| Tee-Object` et `| Out-File` écrivent le tableau, comme à l'écran. `Measure-Object` affiche toutes ses lignes.
+- La page Référence suit : les colonnes du tableau, `Get-ChildItem -Name`, et les pièges `ls -la` et `rm -rf` dans PowerShell.
+- Les leçons `ls` et `ls -la` ont leur version PowerShell. Leçons qui montraient du bash à un élève Windows : **34 → 32**.
+
+---
+
 ## 📱 1er octobre 2026 — Le haut de l'app installée sur iPhone, deuxième essai
 
 *App installée sur l'écran d'accueil · iOS 26 · retour sur un iPhone 14*

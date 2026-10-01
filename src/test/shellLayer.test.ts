@@ -313,16 +313,29 @@ describe('PowerShell — redirections and pipeline cmdlets', () => {
     expect(cat(state, 'bonjour.txt', 'windows')).toBe('Bonjour le monde!');
   });
 
-  it('Tee-Object -FilePath shows and writes', () => {
-    const listing = entries('windows').join('\n');
-    const { state, last } = run('windows', 'Get-ChildItem | Tee-Object -FilePath ma-liste.txt');
-    expect(text(last)).toBe(listing);
-    expect(cat(state, 'ma-liste.txt', 'windows')).toBe(listing);
+  // Tee-Object and Out-File format the objects they receive, as the screen does (PowerShell 7.6, 1 October 2026).
+  it('Tee-Object -FilePath shows the table and writes it', () => {
+    const table = [
+      '',
+      '    Directory: C:\\Users\\user\\documents',
+      '',
+      'Mode                 LastWriteTime         Length Name',
+      '----                 -------------         ------ ----',
+      '-a---           3/30/2026 10:00 AM            142 notes.txt',
+      '-a---           3/30/2026 10:00 AM            179 rapport.md',
+    ].join('\n');
+    const { state, last } = run('windows', 'Get-ChildItem documents | Tee-Object -FilePath ma-liste.txt');
+    expect(text(last)).toContain(table);
+    expect(cat(state, 'ma-liste.txt', 'windows')).toContain(table);
+    const redirected = run('windows', 'Get-ChildItem documents > liste.txt');
+    expect(cat(redirected.state, 'liste.txt', 'windows')).toContain(table);
+    const outFile = run('windows', 'Get-ChildItem documents | Out-File liste.txt');
+    expect(cat(outFile.state, 'liste.txt', 'windows')).toContain(table);
   });
 
   it('Measure-Object counts the items', () => {
     const n = entries('windows').length;
-    expect(text(run('windows', 'Get-ChildItem | Measure-Object').last)).toContain(`Count    : ${n}`);
+    expect(text(run('windows', 'Get-ChildItem | Measure-Object').last)).toContain(`Count             : ${n}`);
   });
 
   it('Select-Object -First keeps the first lines', () => {

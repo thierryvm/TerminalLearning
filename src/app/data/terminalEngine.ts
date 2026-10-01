@@ -9,6 +9,7 @@ import { fingerprintLine, keygenOptions, keygenType, sshKeygen } from './command
 import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
+import { GET_CHILD_ITEM, parsePsArgs, psNotSimulated } from './commands/psParams';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
 import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
@@ -436,56 +437,6 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
   return lines;
 }
 
-type PsParam = { name: string; aliases?: string[]; value?: boolean };
-
-/**
- * Get-ChildItem's parameters in three tiers, as PowerShell 7.6 resolves a
- * shortened name (checked on 1 October 2026): its own parameters first (`-d`
- * is -Depth, `-f` is ambiguous between -Filter and -Force), then the common
- * ones (`-ea`), then those the file system adds (`-a` is ambiguous between six
- * of them, `-h` is -Hidden).
- */
-const CHILD_ITEM_PARAMS: PsParam[] = [
-  { name: 'Path', value: true }, { name: 'LiteralPath', aliases: ['PSPath', 'LP'], value: true },
-  { name: 'Filter', value: true }, { name: 'Include', value: true }, { name: 'Exclude', value: true },
-  { name: 'Recurse', aliases: ['s'] }, { name: 'Depth', value: true }, { name: 'Force' }, { name: 'Name' },
-];
-const PS_COMMON_PARAMS: PsParam[] = [
-  { name: 'Verbose', aliases: ['vb'] }, { name: 'Debug', aliases: ['db'] },
-  ...['ErrorAction:ea', 'WarningAction:wa', 'InformationAction:infa', 'ProgressAction:proga', 'ErrorVariable:ev',
-    'WarningVariable:wv', 'InformationVariable:iv', 'OutVariable:ov', 'OutBuffer:ob', 'PipelineVariable:pv']
-    .map((s) => ({ name: s.split(':')[0], aliases: [s.split(':')[1]], value: true })),
-];
-const CHILD_ITEM_FS_PARAMS: PsParam[] = [
-  { name: 'Attributes', value: true }, { name: 'FollowSymlink' }, { name: 'Directory', aliases: ['ad'] },
-  { name: 'File', aliases: ['af'] }, { name: 'Hidden', aliases: ['ah'] }, { name: 'ReadOnly', aliases: ['ar'] },
-  { name: 'System', aliases: ['as'] },
-];
-
-/** The parameter a typed `-name` binds to, or the error PowerShell gives. */
-function resolvePsParam(typed: string): PsParam | string {
-  const t = typed.toLowerCase();
-  const all = [...CHILD_ITEM_PARAMS, ...PS_COMMON_PARAMS, ...CHILD_ITEM_FS_PARAMS];
-  const exact = all.find((p) => [p.name, ...(p.aliases ?? [])].some((n) => n.toLowerCase() === t));
-  if (exact) return exact;
-  // Name matches are listed before alias matches (`-p`: Path, ProgressAction, PipelineVariable, LiteralPath).
-  const matching = (tier: PsParam[]) => [
-    ...tier.filter((p) => p.name.toLowerCase().startsWith(t)),
-    ...tier.filter((p) => !p.name.toLowerCase().startsWith(t) && (p.aliases ?? []).some((a) => a.toLowerCase().startsWith(t))),
-  ];
-  const ambiguous = (list: PsParam[]) => `Parameter cannot be processed because the parameter name '${typed}' is ambiguous. Possible matches include: ${list.map((p) => `-${p.name}`).join(' ')}.`;
-  const own = matching(CHILD_ITEM_PARAMS);
-  if (own.length === 1) return own[0];
-  if (own.length > 1) return ambiguous(matching([...CHILD_ITEM_PARAMS, ...PS_COMMON_PARAMS]));
-  const common = matching(PS_COMMON_PARAMS);
-  if (common.length === 1) return common[0];
-  if (common.length > 1) return ambiguous(common);
-  const fs = matching(CHILD_ITEM_FS_PARAMS);
-  if (fs.length === 1) return fs[0];
-  if (fs.length > 1) return ambiguous(fs);
-  return `A parameter cannot be found that matches parameter name '${typed}'.`;
-}
-
 /** `*.md`, `?ote*` against a name, case-insensitive, as PowerShell wildcards. */
 const psWildcard = (pattern: string) =>
   new RegExp(`^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`, 'i');
@@ -502,39 +453,23 @@ function childItemRow(name: string, node: FSNode, hidden: boolean): string {
  * PowerShell 7.6 prints it (checked on 1 October 2026, en-US): a table per
  * directory under `Directory: C:\…`, folders first, then files, each sorted
  * by name. Only `.git` is hidden (git marks it so on Windows); a name that
- * starts with a dot is an ordinary file. Into a pipe, one name per line, so
- * `Get-ChildItem | Measure-Object` counts the items as PowerShell does.
+ * starts with a dot is an ordinary file. Into a cmdlet that does not format
+ * (see stdoutIsFormatted), one name per line, so `Get-ChildItem |
+ * Measure-Object` counts the items as PowerShell does.
  */
 function cmdChildItem(state: TerminalState, args: string[]): OutputLine[] {
   const fail = (text: string): OutputLine[] => [{ text: `Get-ChildItem: ${text}`, type: 'error' }];
-  const set = new Set<string>();
-  const values: Record<string, string> = {};
-  const positional: string[] = [];
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (!arg.startsWith('-') || arg === '-') { positional.push(arg); continue; }
-    const param = resolvePsParam(arg.slice(1).replace(/:$/, ''));
-    if (typeof param === 'string') return fail(param);
-    if (param.value) {
-      const value = args[i + 1];
-      if (value === undefined) return fail(`Missing an argument for parameter '${param.name}'. Specify a parameter of type 'System.String' and try again.`);
-      values[param.name] = value;
-      i++;
-    } else {
-      set.add(param.name);
-    }
-  }
+  const parsed = parsePsArgs(GET_CHILD_ITEM, args);
+  if (!('switches' in parsed)) return [parsed];
+  const { switches: set, values } = parsed;
   if (values.Depth !== undefined && !/^\d+$/.test(values.Depth)) {
     return fail(`Cannot bind parameter 'Depth'. Cannot convert value "${values.Depth}" to type "System.UInt32". Error: "The input string '${values.Depth}' was not in a correct format."`);
   }
-  for (const name of ['Include', 'Exclude', 'Attributes', 'ReadOnly', 'System', 'FollowSymlink']) {
-    if (set.has(name) || values[name] !== undefined) {
-      return [{ text: `Le paramètre -${name} de Get-ChildItem n'est pas simulé dans ce terminal d'entraînement.`, type: 'info' }];
-    }
-  }
+  const skipped = psNotSimulated(GET_CHILD_ITEM, parsed, ['Include', 'Exclude', 'Attributes', 'ReadOnly', 'System', 'FollowSymlink']);
+  if (skipped) return skipped;
 
-  let typedPath: string | undefined = values.Path ?? values.LiteralPath ?? positional[0];
-  let filter = values.Filter ?? (values.Path || values.LiteralPath ? positional[0] : positional[1]);
+  let typedPath: string | undefined = values.Path ?? values.LiteralPath;
+  let filter = values.Filter;
   // A wildcard in the last segment filters that folder: `Get-ChildItem *.md`.
   if (typedPath !== undefined && values.LiteralPath === undefined && /[*?]/.test(typedPath)) {
     const cut = Math.max(typedPath.lastIndexOf('/'), typedPath.lastIndexOf('\\'));
@@ -580,7 +515,7 @@ function cmdChildItem(state: TerminalState, args: string[]): OutputLine[] {
   }
 
   const relative = (path: string[], name: string) => [...path.slice(basePath.length), name].join('\\');
-  if (set.has('Name') || !stdoutIsTerminal) {
+  if (set.has('Name') || !stdoutIsFormatted) {
     return groups.flatMap((g) => g.items.map(({ name }) => ({
       text: set.has('Name') && base.type === 'directory' ? relative(g.path, name) : name,
       type: 'output' as const,
@@ -1357,6 +1292,17 @@ function runScript(state: TerminalState, call: ScriptCall, env: TerminalEnv): Co
  */
 let stdoutIsTerminal = true;
 
+/**
+ * Whether PowerShell would format what the command running now outputs: on
+ * the screen, into a file (`> liste.txt`), or into a cmdlet that formats
+ * (`| Tee-Object`, `| Out-File`). Into any other cmdlet it passes objects,
+ * which this simulator stands in for with one name per line.
+ */
+let stdoutIsFormatted = true;
+
+/** Cmdlets that receive objects and write them as PowerShell shows them. */
+const FORMATTING_CMDLETS = new Set(['tee-object', 'tee', 'out-file', 'out-string', 'out-host', 'oh', 'format-table', 'ft']);
+
 /** Where a stream goes: the screen, the next command, a file, or nowhere. */
 type Sink = { kind: 'screen' } | { kind: 'pipe' } | { kind: 'null' } | { kind: 'file'; key: string };
 
@@ -1607,7 +1553,8 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
         if (lower.includes('-character')) out.push(`Characters : ${stdin.length}`);
         return same(outLines(out));
       }
-      return same(outLines([`Count    : ${items.length}`, 'Average  :', 'Sum      :', 'Maximum  :', 'Minimum  :', 'Property :']));
+      // PowerShell 7.6's list (1 October 2026): a blank line, then every property, empty ones included.
+      return same(outLines(['', `Count             : ${items.length}`, ...['Average', 'Sum', 'Maximum', 'Minimum', 'StandardDeviation', 'Property'].map((p) => `${p.padEnd(17)} : `), '']));
     }
 
     case 'tee':
@@ -1728,12 +1675,16 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
     }
 
     const outerTerminal = stdoutIsTerminal;
+    const outerFormatted = stdoutIsFormatted;
+    const nextCmd = isLast ? '' : (stages[i + 1].text.trim().split(/\s+/)[0] ?? '').toLowerCase();
     stdoutIsTerminal = outerTerminal && fds[1].kind === 'screen';
+    stdoutIsFormatted = outerFormatted && (fds[1].kind !== 'pipe' || FORMATTING_CMDLETS.has(nextCmd));
     let result: CommandOutput;
     try {
       result = stdin !== undefined ? runFilter(base, stage.text, stdin, env) : runSimple(base, stage.text, env);
     } finally {
       stdoutIsTerminal = outerTerminal;
+      stdoutIsFormatted = outerFormatted;
     }
     if (result.clear) { screen = []; clear = true; }
     ok = result.status !== undefined ? result.status === 0 : !result.lines.some((l) => l.type === 'error');
@@ -2306,6 +2257,9 @@ function splitSingleQuoted(line: string): string[] {
 /** PowerShell aliases whose cmdlet behaves differently from the Unix command of the same name. */
 const PS_ALIASES: Record<string, string> = {
   ls: 'get-childitem',
+  cp: 'copy-item',
+  mv: 'move-item',
+  rm: 'remove-item',
   cd: 'set-location',
   chdir: 'set-location',
   mkdir: 'md',
@@ -2397,6 +2351,10 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   const winDeps: WindowsCmdDeps = {
     cmdPwd, cmdCd, cmdLs, childItems: cmdChildItem, cmdCat, cmdMkdir, cmdTouch,
     cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep, cmdEnv,
+    childCount: (s, p) => {
+      const node = getNode(s.root, resolvePath(s, p));
+      return node?.type === 'directory' ? Object.keys(node.children).length : undefined;
+    },
     readFile: (s, p) => {
       const node = getNode(s.root, resolvePath(s, p));
       if (!node) return { error: 'missing' };

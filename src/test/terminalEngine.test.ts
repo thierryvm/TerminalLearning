@@ -356,7 +356,85 @@ describe('Get-ChildItem — the table PowerShell prints', () => {
   });
 
   it('into a pipe, one item per line: Measure-Object counts the items', () => {
-    expect(run('Get-ChildItem | Measure-Object')[0]).toBe('Count    : 6');
+    expect(run('Get-ChildItem | Measure-Object')).toEqual([
+      '',
+      'Count             : 6',
+      'Average           : ',
+      'Sum               : ',
+      'Maximum           : ',
+      'Minimum           : ',
+      'StandardDeviation : ',
+      'Property          : ',
+      '',
+    ]);
+  });
+
+  it('a parameter without its value names the type PowerShell expects', () => {
+    const missing = (name: string, type: string) => [`Get-ChildItem: Missing an argument for parameter '${name}'. Specify a parameter of type '${type}' and try again.`];
+    expect(run('ls -Depth')).toEqual(missing('Depth', 'System.UInt32'));
+    expect(run('ls -Path')).toEqual(missing('Path', 'System.String[]'));
+    expect(run('ls -Filter')).toEqual(missing('Filter', 'System.String'));
+    expect(run('ls -ErrorAction')).toEqual(missing('ErrorAction', 'System.Management.Automation.ActionPreference'));
+    expect(run('ls -OutBuffer')).toEqual(missing('OutBuffer', 'System.Int32'));
+  });
+
+  it('-Path:value binds like -Path value', () => {
+    expect(run('Get-ChildItem -Path:documents -Name')).toEqual(['notes.txt', 'rapport.md']);
+  });
+
+  it('rm, cp and mv are Remove-Item, Copy-Item and Move-Item, with their parameters and messages', () => {
+    expect(run('rm -rf documents')).toEqual(["Remove-Item: A parameter cannot be found that matches parameter name 'rf'."]);
+    expect(run('rm -f documents/notes.txt')).toEqual(["Remove-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Filter -Force."]);
+    expect(run('cp -f a.txt c.txt')).toEqual(["Copy-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Force -Filter."]);
+    expect(run('mv -f a.txt d.txt')).toEqual(["Move-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Force -Filter."]);
+    expect(run('cp -p a.txt e.txt')).toEqual(["Copy-Item: Parameter cannot be processed because the parameter name 'p' is ambiguous. Possible matches include: -Path -PassThru -ProgressAction -PipelineVariable -LiteralPath."]);
+    expect(run('cp -a documents docs3')).toEqual(["Copy-Item: A parameter cannot be found that matches parameter name 'a'."]);
+    expect(run('mv -n a.txt z.txt')).toEqual(["Move-Item: A parameter cannot be found that matches parameter name 'n'."]);
+    expect(run('mv nope.txt documents')).toEqual(["Move-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    expect(run('cp nope.txt x.txt')).toEqual(["Copy-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    expect(run('rm nope.txt')).toEqual(["Remove-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    // One bare word per position: Path (and Destination); a list is written with commas.
+    const two = ['Set-Content a.txt a', 'Set-Content b.txt b'];
+    expect(run(...two, 'mv a.txt b.txt documents')).toEqual(["Move-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'cp a.txt b.txt documents')).toEqual(["Copy-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'rm a.txt b.txt')).toEqual(["Remove-Item: A positional parameter cannot be found that accepts argument 'b.txt'."]);
+    expect(run(...two, 'mv -Path a.txt b.txt documents')).toEqual(["Move-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'rm a.txt, b.txt', 'Get-ChildItem -Name -File')).toEqual(['.bashrc', '.profile', '.zshrc']);
+    expect(run(...two, 'rm -- a.txt', 'Get-ChildItem -Name -File')).toEqual(['.bashrc', '.profile', '.zshrc', 'b.txt']);
+    expect(run('ls documents *.md extra')).toEqual(["Get-ChildItem: A positional parameter cannot be found that accepts argument 'extra'."]);
+    // -r is -Recurse for all three.
+    expect(run('cp -r documents docs2', 'Get-ChildItem -Name docs2')).toEqual(['notes.txt', 'rapport.md']);
+    expect(run('rm -r documents', 'Get-ChildItem -Name -Directory')).toEqual(['downloads', 'projets']);
+  });
+
+  it('Remove-Item deletes an empty folder without -Recurse, and does not pretend to ask for a full one', () => {
+    expect(run('mkdir vide', 'rm vide', 'Get-ChildItem -Name -Directory')).toEqual(['documents', 'downloads', 'projets']);
+    const full = processCommand(createInitialState(), 'Remove-Item documents', 'windows');
+    expect(full.lines.map((l) => l.type)).toEqual(['info']);
+    expect(processCommand(full.newState, 'Get-ChildItem -Name documents', 'windows').lines.map((l) => l.text)).toEqual(['notes.txt', 'rapport.md']);
+  });
+
+  it('Copy-Item copies a folder without -Recurse, empty', () => {
+    expect(run('Copy-Item documents vide', 'Get-ChildItem -Name vide')).toEqual([]);
+    expect(run('Copy-Item documents vide', 'Get-ChildItem -Name -Directory')).toEqual(['documents', 'downloads', 'projets', 'vide']);
+  });
+
+  // New-Item also prints the item it made; that table is not simulated yet, so only the absence of an error is checked.
+  it('-Force: New-Item replaces a file with an empty one, and accepts a folder that exists', () => {
+    const errorsOf = (...cmds: string[]) => {
+      let state = createInitialState();
+      let errors: string[] = [];
+      for (const c of cmds) {
+        const r = processCommand(state, c, 'windows');
+        state = r.newState;
+        errors = r.lines.filter((l) => l.type === 'error').map((l) => l.text);
+      }
+      return errors;
+    };
+    expect(errorsOf('Set-Content a.txt hello', 'New-Item -Force a.txt')).toEqual([]);
+    expect(run('Set-Content a.txt hello', 'New-Item -Force a.txt', 'Get-ChildItem a.txt').slice(-2)).toEqual(['-a---           3/30/2026 10:00 AM              0 a.txt', '']);
+    expect(errorsOf('New-Item -ItemType Directory -Force projets')).toEqual([]);
+    expect(errorsOf('mkdir -Force projets')).toEqual([]);
   });
 
   it('file cmdlets fail with PowerShell 7.6 messages, not GNU ones (en-US, 1 October 2026)', () => {
