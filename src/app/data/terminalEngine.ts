@@ -436,6 +436,172 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
   return lines;
 }
 
+type PsParam = { name: string; aliases?: string[]; value?: boolean };
+
+/**
+ * Get-ChildItem's parameters in three tiers, as PowerShell 7.6 resolves a
+ * shortened name (checked on 1 October 2026): its own parameters first (`-d`
+ * is -Depth, `-f` is ambiguous between -Filter and -Force), then the common
+ * ones (`-ea`), then those the file system adds (`-a` is ambiguous between six
+ * of them, `-h` is -Hidden).
+ */
+const CHILD_ITEM_PARAMS: PsParam[] = [
+  { name: 'Path', value: true }, { name: 'LiteralPath', aliases: ['PSPath', 'LP'], value: true },
+  { name: 'Filter', value: true }, { name: 'Include', value: true }, { name: 'Exclude', value: true },
+  { name: 'Recurse', aliases: ['s'] }, { name: 'Depth', value: true }, { name: 'Force' }, { name: 'Name' },
+];
+const PS_COMMON_PARAMS: PsParam[] = [
+  { name: 'Verbose', aliases: ['vb'] }, { name: 'Debug', aliases: ['db'] },
+  ...['ErrorAction:ea', 'WarningAction:wa', 'InformationAction:infa', 'ProgressAction:proga', 'ErrorVariable:ev',
+    'WarningVariable:wv', 'InformationVariable:iv', 'OutVariable:ov', 'OutBuffer:ob', 'PipelineVariable:pv']
+    .map((s) => ({ name: s.split(':')[0], aliases: [s.split(':')[1]], value: true })),
+];
+const CHILD_ITEM_FS_PARAMS: PsParam[] = [
+  { name: 'Attributes', value: true }, { name: 'FollowSymlink' }, { name: 'Directory', aliases: ['ad'] },
+  { name: 'File', aliases: ['af'] }, { name: 'Hidden', aliases: ['ah'] }, { name: 'ReadOnly', aliases: ['ar'] },
+  { name: 'System', aliases: ['as'] },
+];
+
+/** The parameter a typed `-name` binds to, or the error PowerShell gives. */
+function resolvePsParam(typed: string): PsParam | string {
+  const t = typed.toLowerCase();
+  const all = [...CHILD_ITEM_PARAMS, ...PS_COMMON_PARAMS, ...CHILD_ITEM_FS_PARAMS];
+  const exact = all.find((p) => [p.name, ...(p.aliases ?? [])].some((n) => n.toLowerCase() === t));
+  if (exact) return exact;
+  // Name matches are listed before alias matches (`-p`: Path, ProgressAction, PipelineVariable, LiteralPath).
+  const matching = (tier: PsParam[]) => [
+    ...tier.filter((p) => p.name.toLowerCase().startsWith(t)),
+    ...tier.filter((p) => !p.name.toLowerCase().startsWith(t) && (p.aliases ?? []).some((a) => a.toLowerCase().startsWith(t))),
+  ];
+  const ambiguous = (list: PsParam[]) => `Parameter cannot be processed because the parameter name '${typed}' is ambiguous. Possible matches include: ${list.map((p) => `-${p.name}`).join(' ')}.`;
+  const own = matching(CHILD_ITEM_PARAMS);
+  if (own.length === 1) return own[0];
+  if (own.length > 1) return ambiguous(matching([...CHILD_ITEM_PARAMS, ...PS_COMMON_PARAMS]));
+  const common = matching(PS_COMMON_PARAMS);
+  if (common.length === 1) return common[0];
+  if (common.length > 1) return ambiguous(common);
+  const fs = matching(CHILD_ITEM_FS_PARAMS);
+  if (fs.length === 1) return fs[0];
+  if (fs.length > 1) return ambiguous(fs);
+  return `A parameter cannot be found that matches parameter name '${typed}'.`;
+}
+
+/** `*.md`, `?ote*` against a name, case-insensitive, as PowerShell wildcards. */
+const psWildcard = (pattern: string) =>
+  new RegExp(`^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`, 'i');
+
+/** One row of Get-ChildItem's table; every date is the one `ls -l` shows (30 March, 10:00). */
+function childItemRow(name: string, node: FSNode, hidden: boolean): string {
+  const mode = node.type === 'directory' ? `d--${hidden ? 'h' : '-'}-` : `-a-${hidden ? 'h' : '-'}-`;
+  const length = node.type === 'file' ? String(new TextEncoder().encode(node.content).length) : '';
+  return `${mode.padEnd(16)}${'3/30/2026 10:00 AM'.padStart(18)}${length.padStart(15)} ${name}`;
+}
+
+/**
+ * Get-ChildItem (and its aliases `ls`, `dir`, `gci` under PowerShell), as
+ * PowerShell 7.6 prints it (checked on 1 October 2026, en-US): a table per
+ * directory under `Directory: C:\…`, folders first, then files, each sorted
+ * by name. Only `.git` is hidden (git marks it so on Windows); a name that
+ * starts with a dot is an ordinary file. Into a pipe, one name per line, so
+ * `Get-ChildItem | Measure-Object` counts the items as PowerShell does.
+ */
+function cmdChildItem(state: TerminalState, args: string[]): OutputLine[] {
+  const fail = (text: string): OutputLine[] => [{ text: `Get-ChildItem: ${text}`, type: 'error' }];
+  const set = new Set<string>();
+  const values: Record<string, string> = {};
+  const positional: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (!arg.startsWith('-') || arg === '-') { positional.push(arg); continue; }
+    const param = resolvePsParam(arg.slice(1).replace(/:$/, ''));
+    if (typeof param === 'string') return fail(param);
+    if (param.value) {
+      const value = args[i + 1];
+      if (value === undefined) return fail(`Missing an argument for parameter '${param.name}'. Specify a parameter of type 'System.String' and try again.`);
+      values[param.name] = value;
+      i++;
+    } else {
+      set.add(param.name);
+    }
+  }
+  if (values.Depth !== undefined && !/^\d+$/.test(values.Depth)) {
+    return fail(`Cannot bind parameter 'Depth'. Cannot convert value "${values.Depth}" to type "System.UInt32". Error: "The input string '${values.Depth}' was not in a correct format."`);
+  }
+  for (const name of ['Include', 'Exclude', 'Attributes', 'ReadOnly', 'System', 'FollowSymlink']) {
+    if (set.has(name) || values[name] !== undefined) {
+      return [{ text: `Le paramètre -${name} de Get-ChildItem n'est pas simulé dans ce terminal d'entraînement.`, type: 'info' }];
+    }
+  }
+
+  let typedPath: string | undefined = values.Path ?? values.LiteralPath ?? positional[0];
+  let filter = values.Filter ?? (values.Path || values.LiteralPath ? positional[0] : positional[1]);
+  // A wildcard in the last segment filters that folder: `Get-ChildItem *.md`.
+  if (typedPath !== undefined && values.LiteralPath === undefined && /[*?]/.test(typedPath)) {
+    const cut = Math.max(typedPath.lastIndexOf('/'), typedPath.lastIndexOf('\\'));
+    filter = typedPath.slice(cut + 1);
+    typedPath = cut >= 0 ? typedPath.slice(0, cut) || '/' : undefined;
+  }
+  const basePath = typedPath !== undefined ? resolvePath(state, typedPath) : state.cwd;
+  const base = getNode(state.root, basePath);
+  if (!base) return fail(`Cannot find path '${displayPathForEnv(basePath, 'windows')}' because it does not exist.`);
+
+  const recurse = set.has('Recurse') || values.Depth !== undefined;
+  const depth = values.Depth !== undefined ? Number(values.Depth) : Infinity;
+  const matchesFilter = filter ? psWildcard(filter) : null;
+  const shown = (name: string, node: FSNode, hidden: boolean) =>
+    (set.has('Hidden') ? hidden : set.has('Force') || !hidden)
+    && !(set.has('Directory') && node.type !== 'directory')
+    && !(set.has('File') && node.type !== 'file')
+    && (!matchesFilter || matchesFilter.test(name));
+
+  // Each folder listed: its items, then each sub-folder in turn.
+  type Item = { key: string; name: string; node: FSNode; hidden: boolean };
+  const byName = (a: string, b: string) => {
+    const x = a.toLowerCase();
+    const y = b.toLowerCase();
+    return x < y ? -1 : x > y ? 1 : 0;
+  };
+  const groups: { path: string[]; items: Item[] }[] = [];
+  const walk = (path: string[], dir: DirectoryNode, level: number) => {
+    const children = Object.entries(dir.children)
+      .map(([key, node]): Item => ({ key, name: windowsName(path, key, true), node, hidden: key === '.git' }))
+      .sort((a, b) => (a.node.type === b.node.type ? byName(a.name, b.name) : a.node.type === 'directory' ? -1 : 1));
+    groups.push({ path, items: children.filter((c) => shown(c.name, c.node, c.hidden)) });
+    if (!recurse || level >= depth) return;
+    for (const c of children) {
+      if (c.node.type === 'directory' && (!c.hidden || set.has('Force') || set.has('Hidden'))) walk([...path, c.key], c.node, level + 1);
+    }
+  };
+  if (base.type === 'file') {
+    const key = basePath[basePath.length - 1];
+    groups.push({ path: basePath.slice(0, -1), items: [{ key, name: key, node: base, hidden: false }] });
+  } else {
+    walk(basePath, base, 0);
+  }
+
+  const relative = (path: string[], name: string) => [...path.slice(basePath.length), name].join('\\');
+  if (set.has('Name') || !stdoutIsTerminal) {
+    return groups.flatMap((g) => g.items.map(({ name }) => ({
+      text: set.has('Name') && base.type === 'directory' ? relative(g.path, name) : name,
+      type: 'output' as const,
+    })));
+  }
+  const lines: OutputLine[] = [];
+  for (const g of groups) {
+    if (!g.items.length) continue;
+    lines.push(
+      { text: '', type: 'output' },
+      { text: `    Directory: ${displayPathForEnv(g.path, 'windows')}`, type: 'output' },
+      { text: '', type: 'output' },
+      { text: 'Mode                 LastWriteTime         Length Name', type: 'output' },
+      { text: '----                 -------------         ------ ----', type: 'output' },
+      ...g.items.map(({ name, node, hidden }) => ({ text: childItemRow(name, node, hidden), type: 'output' as const })),
+    );
+  }
+  if (lines.length) lines.push({ text: '', type: 'output' });
+  return lines;
+}
+
 function cmdCd(state: TerminalState, args: string[], env: TerminalEnv = 'linux'): { lines: OutputLine[]; newCwd?: string[] } {
   const target = args[0];
   if (target === '-') {
@@ -2139,6 +2305,10 @@ function splitSingleQuoted(line: string): string[] {
 
 /** PowerShell aliases whose cmdlet behaves differently from the Unix command of the same name. */
 const PS_ALIASES: Record<string, string> = {
+  ls: 'get-childitem',
+  cd: 'set-location',
+  chdir: 'set-location',
+  mkdir: 'md',
   cat: 'get-content',
   type: 'get-content',
   history: 'get-history',
@@ -2225,7 +2395,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
 
   // Dependencies for Windows/macOS alias handler
   const winDeps: WindowsCmdDeps = {
-    cmdPwd, cmdCd, cmdLs, cmdCat, cmdMkdir, cmdTouch,
+    cmdPwd, cmdCd, cmdLs, childItems: cmdChildItem, cmdCat, cmdMkdir, cmdTouch,
     cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep, cmdEnv,
     readFile: (s, p) => {
       const node = getNode(s.root, resolvePath(s, p));

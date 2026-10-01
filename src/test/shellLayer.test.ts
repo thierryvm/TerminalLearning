@@ -21,8 +21,13 @@ function cat(state: TerminalState, file: string, env: TerminalEnv = 'linux'): st
 
 const text = (lines: OutputLine[]) => lines.map((l) => l.text).join('\n');
 const errors = (lines: OutputLine[]) => lines.filter((l) => l.type === 'error');
-/** What a real `ls` writes into a pipe or a file: one plain name per line. */
-const entries = (env: TerminalEnv) => text(run(env, env === 'windows' ? 'Get-ChildItem' : 'ls').last)
+/**
+ * The items of the folder, one per name: what a real `ls` writes into a pipe or
+ * a file, and what `Get-ChildItem -Name` prints. Into a pipe, the simulator's
+ * Get-ChildItem passes names (PowerShell passes objects, and Tee-Object or
+ * Out-File would write the table).
+ */
+const entries = (env: TerminalEnv) => text(run(env, env === 'windows' ? 'Get-ChildItem -Name' : 'ls').last)
   .split(/\s+/).filter(Boolean).map((n) => n.replace(/\/$/, ''));
 
 describe('shell syntax — parseCommandLine', () => {

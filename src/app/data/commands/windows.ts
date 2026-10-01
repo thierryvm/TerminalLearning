@@ -5,6 +5,8 @@ export interface WindowsCmdDeps {
   cmdPwd: (state: TerminalState, env: TerminalEnv) => OutputLine[];
   cmdCd: (state: TerminalState, args: string[], env?: TerminalEnv) => { lines: OutputLine[]; newCwd?: string[] };
   cmdLs: (state: TerminalState, args: string[]) => OutputLine[];
+  /** Get-ChildItem as PowerShell prints it (a table per folder). */
+  childItems: (state: TerminalState, args: string[]) => OutputLine[];
   cmdCat: (state: TerminalState, args: string[]) => OutputLine[];
   cmdMkdir: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdTouch: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
@@ -129,6 +131,29 @@ function psSourceAndDestination(args: string[]): string[] {
 }
 
 /**
+ * The shared file commands answer like GNU tools; under PowerShell the same
+ * failure reads differently. These are PowerShell 7.6's messages (en-US,
+ * checked on 1 October 2026), with the full Windows path it shows.
+ */
+function psErrors(cmdlet: string, lines: OutputLine[], state: TerminalState, env: TerminalEnv, deps: WindowsCmdDeps): OutputLine[] {
+  if (env !== 'windows') return lines;
+  const win = (p: string) => deps.winPath(state, p);
+  const err = (text: string): OutputLine => ({ text, type: 'error' });
+  return lines.map((l) => {
+    if (l.type !== 'error') return l;
+    let m: RegExpMatchArray | null;
+    if ((m = l.text.match(/cannot create directory '(.+)': File exists$/))) return err(`New-Item: An item with the specified name ${win(m[1])} already exists.`);
+    if ((m = l.text.match(/^(?:mv|cp): cannot stat '(.+)': No such file or directory$/) ?? l.text.match(/^rm: cannot remove '(.+)': No such file or directory$/))) {
+      return err(`${cmdlet}: Cannot find path '${win(m[1])}' because it does not exist.`);
+    }
+    if ((m = l.text.match(/^touch: cannot touch '(.+)': No such file or directory$/))) return err(`New-Item: Could not find a part of the path '${win(m[1])}'.`);
+    if (/^mv: cannot move '.+' to '.+': No such file or directory$/.test(l.text)) return err('Move-Item: Could not find a part of the path.');
+    if ((m = l.text.match(/^cd: (.+): No such file or directory$/))) return err(`Set-Location: Cannot find path '${win(m[1])}' because it does not exist.`);
+    return l;
+  });
+}
+
+/**
  * Handles PowerShell aliases and Windows/macOS-specific commands.
  * Returns null if the command is not handled by this module (caller falls through to default).
  */
@@ -150,7 +175,7 @@ export function handleWindows(
     case 'sl': {
       const { lines, newCwd } = deps.cmdCd(newState, args, env);
       if (newCwd) newState = { ...newState, cwd: newCwd, previousCwd: newState.cwd };
-      return { lines, newState };
+      return { lines: psErrors('Set-Location', lines, newState, env, deps), newState };
     }
 
     // ── ls equivalents ────────────────────────────────────────────────────────
@@ -160,7 +185,7 @@ export function handleWindows(
       if (args[0]?.toLowerCase() === 'env:') {
         return { lines: deps.cmdEnv(newState), newState };
       }
-      return { lines: deps.cmdLs(newState, args), newState };
+      return { lines: env === 'windows' ? deps.childItems(newState, args) : deps.cmdLs(newState, args), newState };
 
     // ── Get-Item: the item itself (not its content), or a "cannot find path" error ──
     case 'get-item':
@@ -278,12 +303,15 @@ export function handleWindows(
       if (isDir) {
         const { lines, newRoot } = deps.cmdMkdir(newState, [name]);
         if (newRoot) newState = { ...newState, root: newRoot };
-        return { lines, newState };
-      } else {
-        const { lines, newRoot } = deps.cmdTouch(newState, [name]);
-        if (newRoot) newState = { ...newState, root: newRoot };
-        return { lines, newState };
+        return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
       }
+      // Unlike touch, New-Item refuses a file that is already there.
+      if (env === 'windows' && 'content' in deps.readFile(newState, name)) {
+        return { lines: [{ text: `New-Item: The file '${deps.winPath(newState, name)}' already exists.`, type: 'error' }], newState };
+      }
+      const { lines, newRoot } = deps.cmdTouch(newState, [name]);
+      if (newRoot) newState = { ...newState, root: newRoot };
+      return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
     }
 
     // ── cp equivalents ────────────────────────────────────────────────────────
@@ -295,7 +323,7 @@ export function handleWindows(
       const recurse = args.some((a) => RECURSE_PARAM.test(a));
       const { lines, newRoot } = deps.cmdCp(newState, [...(recurse ? ['-r'] : []), '--', ...cpArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('Copy-Item', lines, newState, env, deps), newState };
     }
 
     // ── mv equivalents ────────────────────────────────────────────────────────
@@ -303,10 +331,24 @@ export function handleWindows(
     case 'mi':
     case 'move': {
       const mvArgs = psSourceAndDestination(args);
+      const [source, destination] = mvArgs;
+      if (env === 'windows' && source !== undefined && destination !== undefined) {
+        const read = (p: string) => deps.readFile(newState, p);
+        const isFile = (p: string) => 'content' in read(p);
+        const is = (p: string, error: 'missing' | 'directory') => { const r = read(p); return 'error' in r && r.error === error; };
+        // Move-Item does not overwrite a file without -Force.
+        if (isFile(source) && isFile(destination) && !args.some((a) => /^-force$/i.test(a))) {
+          return { lines: [{ text: 'Move-Item: Cannot create a file when that file already exists.', type: 'error' }], newState };
+        }
+        // A missing `dir/` in an existing folder is no folder to move into: PowerShell renames the file to `dir`.
+        const bare = destination.replace(/[\\/]+$/, '');
+        const cut = Math.max(bare.lastIndexOf('/'), bare.lastIndexOf('\\'));
+        if (bare !== destination && is(bare, 'missing') && is(cut >= 0 ? bare.slice(0, cut) || '/' : '.', 'directory')) mvArgs[1] = bare;
+      }
       const { lines, newRoot, newCwd } = deps.cmdMv(newState, ['--', ...mvArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
       if (newCwd) newState = { ...newState, cwd: newCwd };
-      return { lines, newState };
+      return { lines: psErrors('Move-Item', lines, newState, env, deps), newState };
     }
 
     // ── rm equivalents ────────────────────────────────────────────────────────
@@ -319,7 +361,7 @@ export function handleWindows(
       const recurse = args.some((a) => RECURSE_PARAM.test(a));
       const { lines, newRoot } = deps.cmdRm(newState, recurse ? ['-r', ...rmArgs] : rmArgs);
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('Remove-Item', lines, newState, env, deps), newState };
     }
 
     // ── echo equivalents ──────────────────────────────────────────────────────
@@ -393,7 +435,7 @@ export function handleWindows(
     case 'md': {
       const { lines, newRoot } = deps.cmdMkdir(newState, args);
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
     }
 
     // ── script execution policy (PowerShell only) ─────────────────────────────
