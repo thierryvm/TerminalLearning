@@ -16,7 +16,8 @@ export const REFERENCE_ENVS = ['linux', 'macos', 'windows'] as const;
 export type ReferenceEnv = (typeof REFERENCE_ENVS)[number];
 
 /**
- * Git examples run in the repository they describe: an `origin` remote, a
+ * Git examples run in the repository they describe: an `origin` remote that
+ * main already tracks (pushed with `git push -u`), a
  * main branch with history enough for `git rebase -i HEAD~3`, and a
  * feature/login branch that holds the commits the cherry-pick examples name
  * (a1b2c3d, e4f5a6b). The examples about local changes (add, commit, diff,
@@ -64,6 +65,7 @@ function startState(categoryId: string, commandId: string): TerminalState {
       refs: { main, 'feature/login': HISTORY[5][0] },
       remotes: { origin: 'https://github.com/user/mon-projet.git' },
       remoteRefs: { 'origin/main': main },
+      upstream: { main: 'origin/main' },
       index: { ...g.index, ...added },
       modes,
     }),

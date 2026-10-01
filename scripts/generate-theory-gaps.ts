@@ -47,10 +47,10 @@ writeFileSync(OUT, `/**
  * rewritten on each run: edit this header in the script, not here.
  *
  * Remaining causes, by family (each has its own planned fix):
- * - Git history: theory shows commits, branches, merges and conflicts the lesson's
- *   starting state does not contain (richer Git setups).
+ * - Git history: theory shows commits, branches, merges, conflicts, remotes or a
+ *   colleague's push the lesson's starting state does not contain (richer Git setups).
  * - gh (GitHub CLI), background jobs (\`&\`, \`jobs\`, \`fg\`, \`Start-Job\`), \`code\`,
- *   \`ssh-copy-id\`, \`git check-ignore\`, \`git mergetool\`, \`git remote rename\`: not simulated yet.
+ *   \`ssh-copy-id\`, \`git check-ignore\`, \`git mergetool\`: not simulated yet.
  * - PowerShell objects: property selection (\`Select-Object Owner\`), Get-Process columns.
  * - Illustrative output in the lesson (placeholders like "[liste des fichiers]",
  *   abbreviated help, an interactive prompt, a clock time): not meant to match.

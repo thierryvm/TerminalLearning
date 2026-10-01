@@ -198,13 +198,16 @@ export function gitRepoWithConflict(branch: string): LessonSetup {
   };
 }
 
-/** A repository with one commit, pushed to an `origin` remote. */
+/**
+ * A repository with one commit and an `origin` remote that has received
+ * nothing yet: the first `git push -u origin main` creates the branch there.
+ */
 export const gitRepoWithRemote: LessonSetup = {
   apply: (s, env = 'linux') => withGit(s, env, {
     remotes: { origin: 'https://github.com/user/mon-projet.git' },
-    remoteRefs: { 'origin/main': INITIAL_HASH },
+    remoteRefs: {},
   }, true),
-  note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin configuré).',
+  note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin ajouté, rien encore envoyé).',
 };
 
 /**

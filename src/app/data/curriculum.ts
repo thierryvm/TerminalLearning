@@ -2743,12 +2743,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Premier push — définir la branche de tracking\n$ git push -u origin main\nEnumerating objects: 3, done.\nCounting objects: 100% (3/3), done.\nTo https://github.com/user/repo.git\n * [new branch]      main -> main\nBranch \'main\' set up to track \'origin/main\'.\n\n# Push suivants (tracking déjà configuré)\n$ git push\n\n# Push d\'une nouvelle branche feature\n$ git push -u origin feature/panier',
+            content: '# Premier push : envoie main et la relie à origin/main (le suivi)\n$ git push -u origin main\nTo https://github.com/user/mon-projet.git\n * [new branch]      main -> main\nbranch \'main\' set up to track \'origin/main\'.\n# (Dans un vrai terminal, Git affiche aussi sa progression : Enumerating objects…, Writing objects…)\n\n# Push suivants : le suivi est configuré, git push suffit\n$ git push\nEverything up-to-date\n\n# Une nouvelle branche : GitHub répond avec le lien pour ouvrir une pull request\n$ git switch -c feature/panier\nSwitched to a new branch \'feature/panier\'\n$ git push -u origin feature/panier\nremote: \nremote: Create a pull request for \'feature/panier\' on GitHub by visiting:\nremote:      https://github.com/user/mon-projet/pull/new/feature/panier\nremote: \nTo https://github.com/user/mon-projet.git\n * [new branch]      feature/panier -> feature/panier\nbranch \'feature/panier\' set up to track \'origin/feature/panier\'.',
             label: 'git push (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# Récupérer ET intégrer les commits distants\n$ git pull\nremote: Enumerating objects: 5, done.\nUpdating a3f8c12..c9f1e34\nFast-forward\n README.md | 3 +++\n 1 file changed, 3 insertions(+)\n\n# Pull avec rebase (historique linéaire)\n$ git pull --rebase\n\n# Voir ce qui arrive avant d\'intégrer\n$ git fetch && git log HEAD..origin/main --oneline',
+            content: '# Une fois main envoyée avec -u, git pull sait d\'où récupérer\n$ git push -u origin main\nTo https://github.com/user/mon-projet.git\n * [new branch]      main -> main\nbranch \'main\' set up to track \'origin/main\'.\n\n# Un collègue a poussé un commit : le récupérer ET l\'intégrer\n$ git pull\nFrom https://github.com/user/mon-projet\n   a3f8c12..c9f1e34  main       -> origin/main\nUpdating a3f8c12..c9f1e34\nFast-forward\n README.md | 3 +++\n 1 file changed, 3 insertions(+)\n\n# Pull avec rebase (historique linéaire) : rien de neuf cette fois\n$ git pull --rebase\nAlready up to date.\n\n# Vérifier qu\'il ne reste rien à intégrer : télécharger, puis lister ce qui manque (rien ici)\n$ git fetch && git log HEAD..origin/main --oneline',
             label: 'git pull',
           },
           {
@@ -2788,12 +2788,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\nremote: Enumerating objects: 3, done.\nremote: Counting objects: 100% (3/3), done.\nremote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0\nReceiving objects: 100% (3/3), done.\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique (ici dans projet-develop)\n$ git clone -b develop https://github.com/org/projet.git projet-develop\n\n# Cloner en SSH (recommandé), dans un dossier qui n\'existe pas encore\n$ git clone git@github.com:org/projet.git projet-ssh',
+            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\n# (Dans un vrai terminal, Git affiche aussi sa progression : remote: Enumerating objects…, Receiving objects…)\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique (ici dans projet-develop)\n$ git clone -b develop https://github.com/org/projet.git projet-develop\n\n# Cloner en SSH (recommandé), dans un dossier qui n\'existe pas encore\n$ git clone git@github.com:org/projet.git projet-ssh',
             label: 'git clone (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# Fetch : télécharger sans intégrer\n$ git fetch origin\nFrom https://github.com/org/projet\n * branch            main       -> FETCH_HEAD\n\n# Voir ce qui a changé sur le remote\n$ git fetch && git log HEAD..origin/main --oneline\n\n# Voir toutes les branches distantes\n$ git fetch --all\n\n# Comparer local vs remote après fetch\n$ git diff main origin/main',
+            content: '# Fetch : télécharger sans intégrer (ici, un collègue a poussé un commit)\n$ git fetch origin\nFrom https://github.com/org/projet\n   a3f8c12..c9f1e34  main       -> origin/main\n\n# Voir ce qui a changé sur le remote\n$ git fetch && git log HEAD..origin/main --oneline\n\n# Voir toutes les branches distantes\n$ git fetch --all\n\n# Comparer local vs remote après fetch\n$ git diff main origin/main',
             label: 'git fetch',
           },
           {

@@ -15,7 +15,7 @@ import {
   tagId,
   treeId,
 } from './gitHistory';
-import { BRANCH_USAGE, CHECKOUT_USAGE, MERGE_USAGE, SWITCH_USAGE, TAG_USAGE } from './gitUsage';
+import { BRANCH_USAGE, CHECKOUT_USAGE, MERGE_USAGE, REMOTE_ADD_USAGE, REMOTE_USAGE, SWITCH_USAGE, TAG_USAGE } from './gitUsage';
 import {
   blobId,
   countChanges,
@@ -289,6 +289,8 @@ function statusLines(state: TerminalState, repo: Repo, forCommit = false, untrac
   const out: OutputLine[] = [];
   const say = (text: string, type: OutputLine['type'] = 'output') => out.push({ text, type });
   say(`On branch ${g.branch}`);
+  // `git commit` with nothing to record prints the same lines.
+  trackingLines(g).forEach((t) => say(t));
   if (g.commits.length === 0) { say(''); say(forCommit ? 'Initial commit' : 'No commits yet'); say(''); }
 
   const conflicts = g.merge?.conflicts ?? {};
@@ -789,6 +791,205 @@ const NO_TRACKING = (branch: string) => [
   '',
 ];
 
+// ── Remotes ──────────────────────────────────────────────────────────────────
+// Every text below is git 2.56's, read from a real repository pushing to a
+// local bare one. Without a terminal git prints no progress ("Enumerating
+// objects…"), whose counts and byte rates cannot be reproduced honestly: the
+// simulator prints what non-interactive git prints.
+
+/** `git pull` on a branch that tracks nothing. With no remote at all, git names none. */
+const PULL_NO_TRACKING = (branch: string, remote: string | null, rebase = false) => [
+  'There is no tracking information for the current branch.',
+  `Please specify which branch you want to ${rebase ? 'rebase against' : 'merge with'}.`,
+  'See git-pull(1) for details.',
+  '',
+  '    git pull <remote> <branch>',
+  '',
+  'If you wish to set tracking information for this branch you can do so with:',
+  '',
+  `    git branch --set-upstream-to=${remote ?? '<remote>'}/<branch> ${branch}`,
+  '',
+];
+
+const PUSH_NO_DESTINATION = [
+  'fatal: No configured push destination.',
+  'Either specify the URL from the command-line or configure a remote repository using',
+  '',
+  '    git remote add <name> <url>',
+  '',
+  'and then push using the remote name',
+  '',
+  '    git push <name>',
+  '',
+  'To push to multiple remotes at once, configure a remote group using',
+  '',
+  '    git config remotes.<groupname> "<remote1> <remote2>"',
+  '',
+  'and then push using the group name',
+  '',
+  '    git push <groupname>',
+];
+
+const PUSH_NO_UPSTREAM = (branch: string, remote: string) => [
+  `fatal: The current branch ${branch} has no upstream branch.`,
+  'To push the current branch and set the remote as upstream, use',
+  '',
+  `    git push --set-upstream ${remote} ${branch}`,
+  '',
+  'To have this happen automatically for branches without a tracking',
+  "upstream, see 'push.autoSetupRemote' in 'git help config'.",
+  '',
+];
+
+const NOT_A_REMOTE = (name: string) => [
+  `fatal: '${name}' does not appear to be a git repository`,
+  'fatal: Could not read from remote repository.',
+  '',
+  'Please make sure you have the correct access rights',
+  'and the repository exists.',
+];
+
+const PUSH_REJECTED_HINTS = [
+  'hint: Updates were rejected because the tip of your current branch is behind',
+  'hint: its remote counterpart. If you want to integrate the remote changes,',
+  "hint: use 'git pull' before pushing again.",
+  "hint: See the 'Note about fast-forwards' in 'git push --help' for details.",
+];
+
+/** The rejected branch is not the one checked out (`git push origin main` from another branch). */
+const PUSH_REJECTED_OTHER_HINTS = [
+  'hint: Updates were rejected because a pushed branch tip is behind its remote',
+  "hint: counterpart. If you want to integrate the remote changes, use 'git pull'",
+  'hint: before pushing again.',
+  "hint: See the 'Note about fast-forwards' in 'git push --help' for details.",
+];
+
+/** `git push` on a branch whose upstream has another name (`git switch -c work origin/main`). */
+const PUSH_NAME_MISMATCH = (remote: string, upstreamBranch: string) => [
+  'fatal: The upstream branch of your current branch does not match',
+  'the name of your current branch.  To push to the upstream branch',
+  'on the remote, use',
+  '',
+  `    git push ${remote} HEAD:${upstreamBranch}`,
+  '',
+  'To push to the branch of the same name on the remote, use',
+  '',
+  `    git push ${remote} HEAD`,
+  '',
+  "To choose either option permanently, see push.default in 'git help config'.",
+  '',
+  'To avoid automatically configuring an upstream branch when its name',
+  "won't match the local branch, see option 'simple' of branch.autoSetupMerge",
+  "in 'git help config'.",
+  '',
+];
+
+const PULL_NOT_DEFAULT_REMOTE = (remote: string) => [
+  `You asked to pull from the remote '${remote}', but did not specify`,
+  'a branch. Because this is not the default configured remote',
+  'for your current branch, you must specify a branch on the command line.',
+];
+
+const PULL_DIVERGENT = [
+  'hint: You have divergent branches and need to specify how to reconcile them.',
+  'hint: You can do so by running one of the following commands sometime before',
+  'hint: your next pull:',
+  'hint:',
+  'hint:   git config pull.rebase false  # merge',
+  'hint:   git config pull.rebase true   # rebase',
+  'hint:   git config pull.ff only       # fast-forward only',
+  'hint:',
+  'hint: You can replace "git config" with "git config --global" to set a default',
+  'hint: preference for all repositories. You can also pass --rebase, --no-rebase,',
+  'hint: or --ff-only on the command line to override the configured default per',
+  'hint: invocation.',
+  'fatal: Need to specify how to reconcile divergent branches.',
+];
+
+const UPSTREAM_MISSING = (ref: string) => [
+  `fatal: the requested upstream branch '${ref}' does not exist`,
+  'hint:',
+  'hint: If you are planning on basing your work on an upstream',
+  'hint: branch that already exists at the remote, you may need to',
+  'hint: run "git fetch" to retrieve it.',
+  'hint:',
+  'hint: If you are planning to push out a new local branch that',
+  'hint: will track its remote counterpart, you may want to use',
+  'hint: "git push -u" to set the upstream config as you push.',
+  'hint: Disable this message with "git config set advice.setUpstreamFailure false"',
+];
+
+/** The remote git uses when none is named: `origin`, or the only one there is. */
+function defaultRemote(g: GitState): string | null {
+  const names = Object.keys(g.remotes);
+  return names.includes('origin') ? 'origin' : names.length === 1 ? names[0] : null;
+}
+
+/** Commits on `ours` that `theirs` lacks, and the reverse. */
+function aheadBehind(g: GitState, ours: string, theirs: string): { ahead: number; behind: number } {
+  const objects = g.objects ?? {};
+  const a = ancestors(objects, ours);
+  const b = ancestors(objects, theirs);
+  return { ahead: [...a].filter((h) => !b.has(h)).length, behind: [...b].filter((h) => !a.has(h)).length };
+}
+
+const commits = (n: number) => `${n} commit${n === 1 ? '' : 's'}`;
+
+/** What `git status` says under "On branch" about the branch's upstream, blank line included. */
+function trackingLines(g: GitState): string[] {
+  const up = g.upstream?.[g.branch];
+  const tip = g.refs?.[g.branch];
+  if (!up || !tip) return [];
+  const theirs = g.remoteRefs?.[up];
+  if (!theirs) return [`Your branch is based on '${up}', but the upstream is gone.`, '  (use "git branch --unset-upstream" to fixup)', ''];
+  const { ahead, behind } = aheadBehind(g, tip, theirs);
+  if (!ahead && !behind) return [`Your branch is up to date with '${up}'.`, ''];
+  if (!behind) return [`Your branch is ahead of '${up}' by ${commits(ahead)}.`, '  (use "git push" to publish your local commits)', ''];
+  if (!ahead) return [`Your branch is behind '${up}' by ${commits(behind)}, and can be fast-forwarded.`, '  (use "git pull" to update your local branch)', ''];
+  return [
+    `Your branch and '${up}' have diverged,`,
+    `and have ${ahead} and ${behind} different commits each, respectively.`,
+    '  (use "git pull" if you want to integrate the remote branch with yours)',
+    '',
+  ];
+}
+
+/** `[origin/main: ahead 1]` after `git branch -vv`; `-v` alone drops the name and says nothing when even. */
+function trackingTag(g: GitState, branch: string, withName: boolean): string {
+  const up = g.upstream?.[branch];
+  const tip = g.refs?.[branch];
+  if (!up || !tip) return '';
+  const theirs = g.remoteRefs?.[up];
+  const parts: string[] = [];
+  if (!theirs) parts.push('gone');
+  else {
+    const { ahead, behind } = aheadBehind(g, tip, theirs);
+    if (ahead) parts.push(`ahead ${ahead}`);
+    if (behind) parts.push(`behind ${behind}`);
+  }
+  if (withName) return ` [${up}${parts.length ? `: ${parts.join(', ')}` : ''}]`;
+  return parts.length ? ` [${parts.join(', ')}]` : '';
+}
+
+/** One line of push's report: flag, summary padded to 17, then `from -> to`. */
+const pushLine = (flag: string, summary: string, from: string, to: string, note = '') =>
+  ` ${flag} ${summary.padEnd(17)} ${from} -> ${to}${note}`;
+
+/**
+ * GitHub answers the first push of a branch with a link to open a pull
+ * request (any branch but the default one).
+ */
+function githubPullRequestHint(url: string, branch: string): string[] {
+  const m = url.match(/^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/);
+  if (!m) return [];
+  return [
+    'remote: ',
+    `remote: Create a pull request for '${branch}' on GitHub by visiting:`,
+    `remote:      https://github.com/${m[1]}/pull/new/${branch}`,
+    'remote: ',
+  ];
+}
+
 
 function notSimulated(what: string, newState: TerminalState): CommandOutput {
   return { lines: [{ text: `${what} n'est pas simulé dans ce terminal d'entraînement.`, type: 'info' }], newState, status: 1 };
@@ -923,29 +1124,49 @@ export function handleGit(
       target = h;
     }
     const refs = create && target ? { ...g.refs!, [branch]: target } : g.refs!;
+    // A branch started from a remote-tracking branch tracks it (branch.autoSetupMerge).
+    const tracks = create && start !== undefined && g.remoteRefs?.[start] ? start : undefined;
+    const upstream = tracks ? { ...g.upstream, [branch]: tracks } : g.upstream;
     if (target !== tip) {
       const m = moveTo(openRepo(newState), target ? commitOf(target).tree ?? {} : {});
       const blocked = blockedBy(m, 'checkout');
       if (blocked.length) return { lines: blocked, newState, status: 1 };
-      setGit({ ...g, refs, branch, index: m.index, previousBranch: g.branch, merge: undefined }, m.root);
-    } else setGit({ ...g, refs, branch, previousBranch: g.branch, merge: undefined });
+      setGit({ ...g, refs, branch, upstream, index: m.index, previousBranch: g.branch, merge: undefined }, m.root);
+    } else setGit({ ...g, refs, branch, upstream, previousBranch: g.branch, merge: undefined });
     // A new branch where HEAD already is changes no file: git lists nothing then.
     const carried = create && start === undefined ? [] : localChanges();
     const said = reset
       ? (branch === g.branch ? `Reset branch '${branch}'` : `Switched to and reset branch '${branch}'`)
       : create ? `Switched to a new branch '${branch}'` : `Switched to branch '${branch}'`;
-    return { lines: [...carried, { text: said, type: 'success' }], newState };
+    const after = tracks ? [`branch '${branch}' set up to track '${tracks}'.`] : create ? [] : branchTracking();
+    return { lines: [...carried, { text: said, type: 'success' }, ...after.map((text) => ({ text, type: 'output' as const }))], newState };
   };
+
+  /** What switching to a branch says about its upstream: status's lines, without the blank one. */
+  const branchTracking = () => trackingLines(newState.git!).filter(Boolean);
 
   /** `git switch feature` when only `origin/feature` exists: a local branch that tracks it. */
   const track = (branch: string, remote: string, verb: 'switch' | 'checkout', quiet = false): CommandOutput => {
-    const out = switchTo(branch, verb, true, remote);
-    if (out.status) return out;
-    if (quiet) return { ...out, lines: [] };
+    const out = switchTo(branch, verb, true, remote, { quiet });
+    if (out.status || quiet) return out;
+    // Here git says it first: the tracking line comes before "Switched to a new branch".
     const lines = [...out.lines];
-    lines.splice(lines.length - 1, 0, { text: `branch '${branch}' set up to track '${remote}'.`, type: 'output' });
-    return { ...out, lines };
+    const said = lines.splice(lines.length - 2, 1);
+    return { ...out, lines: [...lines, ...said] };
   };
+  /** A fetch that names no branch records the remote's default branch as `origin/HEAD` (git 2.48+). */
+  const recordRemoteHead = (remote: string) => {
+    const g = newState.git!;
+    if (g.remoteHead?.[remote] || !g.remoteRefs?.[`${remote}/main`]) return;
+    setGit({ ...g, remoteHead: { ...g.remoteHead, [remote]: 'main' } });
+  };
+
+  /** Naming the branch fetches it into FETCH_HEAD, and git says so. */
+  const fetchHeadLines = (url: string, name: string): OutputLine[] => [
+    { text: `From ${url.replace(/\.git$/, '')}`, type: 'output' },
+    { text: ` * ${'branch'.padEnd(17)} ${name.padEnd(10)} -> FETCH_HEAD`, type: 'output' },
+  ];
+
   /** Whether `rel` names something git knows or sees: a file or directory, or a path in a tree. */
   const known = (rel: string | null, ...trees: Tree[]) =>
     rel !== null && (!!nodeAt(newState.root, [...newState.git!.repoPath!, ...rel.split('/').filter(Boolean)])
@@ -1005,7 +1226,10 @@ export function handleGit(
       }
       const lines: OutputLine[] = [];
       if (o.short.has('b') || o.long.has('branch')) {
-        lines.push({ text: `## ${g.commits.length ? g.branch : `No commits yet on ${g.branch}`}`, type: 'output' });
+        // `## main...origin/main [ahead 1]`: the upstream and how far apart, when there is one.
+        const up = g.upstream?.[g.branch];
+        const head = g.commits.length ? `${g.branch}${up ? `...${up}${trackingTag(g, g.branch, false)}` : ''}` : `No commits yet on ${g.branch}`;
+        lines.push({ text: `## ${head}`, type: 'output' });
       }
       [...new Set([...x.keys(), ...y.keys()])].sort()
         .forEach((p) => lines.push({ text: `${x.get(p) ?? ' '}${y.get(p) ?? ' '} ${shown(p, from)}`, type: 'output' }));
@@ -1524,13 +1748,31 @@ export function handleGit(
       const g = newState.git!;
       const refs = g.refs!;
       const objects = g.objects!;
-      const o = parseOptions(args.slice(1), '', '', ['contains', 'no-contains', 'points-at', 'merged', 'no-merged']);
+      const o = parseOptions(args.slice(1), 'u', '', ['contains', 'no-contains', 'points-at', 'merged', 'no-merged', 'set-upstream-to']);
       if (o.short.has('h')) return { lines: BRANCH_USAGE.map((text) => ({ text, type: 'output' as const })), newState };
-      const unknown = unknownOption(o, 'dDmMcCvarlfq',
-        ['delete', 'move', 'copy', 'list', 'all', 'remotes', 'verbose', 'force', 'quiet', 'show-current', 'merged', 'no-merged', 'contains', 'no-contains', 'points-at', 'unset-upstream'], BRANCH_USAGE);
+      const unknown = unknownOption(o, 'dDmMcCvarlfqu',
+        ['delete', 'move', 'copy', 'list', 'all', 'remotes', 'verbose', 'force', 'quiet', 'show-current', 'merged', 'no-merged', 'contains', 'no-contains', 'points-at', 'unset-upstream', 'set-upstream-to'], BRANCH_USAGE);
       if (unknown) return { ...unknown, newState };
       if (o.long.has('show-current')) return { lines: [{ text: g.branch, type: 'output' }], newState };
-      if (o.long.has('unset-upstream')) return fail(128, `fatal: branch '${o.positional[0] ?? g.branch}' has no upstream information`);
+      if (o.long.has('unset-upstream')) {
+        const name = o.positional[0] ?? g.branch;
+        if (!g.upstream?.[name]) return fail(128, `fatal: branch '${name}' has no upstream information`);
+        const { [name]: _gone, ...rest } = g.upstream;
+        void _gone;
+        setGit({ ...g, upstream: rest });
+        return { lines: [], newState };
+      }
+      if (o.missing === 'u') return fail(129, "error: switch `u' requires a value");
+      if (o.long.get('set-upstream-to') === true) return fail(129, "error: option `set-upstream-to' requires a value");
+      const upstreamArg = o.values.get('u') ?? text(o.long.get('set-upstream-to'));
+      if (upstreamArg !== undefined) {
+        // `git branch -u origin/main [branch]`: the branch now tracks that remote branch.
+        const name = o.positional[0] ?? g.branch;
+        if (!refs[name]) return fail(128, `fatal: branch '${name}' does not exist`);
+        if (!g.remoteRefs?.[upstreamArg]) return fail(128, ...UPSTREAM_MISSING(upstreamArg));
+        setGit({ ...g, upstream: { ...g.upstream, [name]: upstreamArg } });
+        return { lines: [{ text: `branch '${name}' set up to track '${upstreamArg}'.`, type: 'output' }], newState };
+      }
       const force = o.short.has('D') || o.short.has('M') || o.short.has('C') || o.short.has('f') || o.long.has('force');
       const names = o.positional;
       const tip = refs[g.branch];
@@ -1538,6 +1780,7 @@ export function handleGit(
       if (o.short.has('d') || o.short.has('D') || o.long.has('delete')) {
         if (!names.length) return fail(128, 'fatal: branch name required');
         const next = { ...refs };
+        const upstream = { ...g.upstream };
         const lines: OutputLine[] = [];
         let status = 0;
         for (const name of names) {
@@ -1558,9 +1801,10 @@ export function handleGit(
           } else {
             lines.push({ text: `Deleted branch ${name} (was ${short(next[name])}).`, type: 'output' });
             delete next[name];
+            delete upstream[name];
           }
         }
-        setGit({ ...g, refs: next });
+        setGit({ ...g, refs: next, upstream });
         return { lines, newState, status };
       }
 
@@ -1577,7 +1821,10 @@ export function handleGit(
           next[to] = refs[from];
           if (moving && to !== from) delete next[from];
         }
-        setGit({ ...g, refs: next, branch: moving && g.branch === from ? to : g.branch });
+        // A renamed branch keeps tracking what it tracked.
+        const upstream = { ...g.upstream };
+        if (moving && upstream[from] && to !== from) { upstream[to] = upstream[from]; delete upstream[from]; }
+        setGit({ ...g, refs: next, upstream, branch: moving && g.branch === from ? to : g.branch });
         return { lines: [], newState };
       }
 
@@ -1601,6 +1848,8 @@ export function handleGit(
           }[key]!);
         }
         const verbose = o.short.has('v') || o.long.has('verbose');
+        // `-vv` adds the upstream's name: count every v, in clusters (`-avv`) and repeated flags.
+        const vv = args.slice(1).reduce((n, a) => n + (a === '--verbose' ? 1 : /^-[^-]/.test(a) ? [...a.slice(1)].filter((c) => c === 'v').length : 0), 0) >= 2;
         const remotesOnly = o.short.has('r') || o.long.has('remotes');
         const withRemotes = remotesOnly || o.short.has('a') || o.long.has('all');
         const local = remotesOnly ? [] : Object.keys(refs).sort()
@@ -1608,13 +1857,17 @@ export function handleGit(
           .filter((b) => filters.every((f) => f(refs[b])));
         const width = Math.max(0, ...local.map((b) => b.length));
         const lines: OutputLine[] = local.map((b) => ({
-          text: `${b === g.branch ? '* ' : '  '}${verbose ? `${b.padEnd(width)} ${short(refs[b])} ${subject(commitOf(refs[b]))}` : b}`,
+          text: `${b === g.branch ? '* ' : '  '}${verbose ? `${b.padEnd(width)} ${short(refs[b])}${trackingTag(g, b, vv)} ${subject(commitOf(refs[b]))}` : b}`,
           type: b === g.branch ? 'success' : 'output',
         }));
         if (withRemotes) {
-          Object.keys(g.remoteRefs ?? {}).sort()
-            .filter((r) => filters.every((f) => f(g.remoteRefs![r])))
-            .forEach((r) => lines.push({ text: `  ${remotesOnly ? r : `remotes/${r}`}`, type: 'removed' }));
+          // `origin/HEAD -> origin/main` after a clone, sorted with the others.
+          const heads = Object.entries(g.remoteHead ?? {}).map(([remote, b]) => [`${remote}/HEAD`, ` -> ${remote}/${b}`] as const);
+          const entries = [
+            ...Object.keys(g.remoteRefs ?? {}).filter((r) => filters.every((f) => f(g.remoteRefs![r]))).map((r) => [r, ''] as const),
+            ...(filters.length ? [] : heads),
+          ].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+          entries.forEach(([r, arrow]) => lines.push({ text: `  ${remotesOnly ? r : `remotes/${r}`}${arrow}`, type: 'removed' }));
         }
         return { lines, newState };
       }
@@ -1662,7 +1915,7 @@ export function handleGit(
         if (!remote) return fail(128, 'fatal: missing branch name; try -c');
         return track(name, remote, 'switch', quiet);
       }
-      if (name === g.branch) return { lines: quiet ? [] : [...localChanges(), { text: `Already on '${name}'`, type: 'output' }], newState };
+      if (name === g.branch) return { lines: quiet ? [] : [...localChanges(), ...[`Already on '${name}'`, ...branchTracking()].map((text) => ({ text, type: 'output' as const }))], newState };
       if (g.refs![name]) return switchTo(name, 'switch', false, undefined, { quiet });
       if (remote) return track(name, remote, 'switch', quiet);
       // A commit, a tag or HEAD is not a branch: switch refuses (checkout would detach HEAD).
@@ -1710,7 +1963,7 @@ export function handleGit(
         }
         if (!ours && !theirs) {
           if (conflicted && isBranch) return needsMerge();
-          if (name === g.branch) return { lines: quiet ? [] : [...localChanges(), { text: `Already on '${name}'`, type: 'output' }], newState };
+          if (name === g.branch) return { lines: quiet ? [] : [...localChanges(), ...[`Already on '${name}'`, ...branchTracking()].map((text) => ({ text, type: 'output' as const }))], newState };
           if (g.refs![name]) return switchTo(name, 'checkout', false, undefined, { quiet });
           if (remote) return track(name, remote, 'checkout', quiet);
           if (dashDash) return rev(name) ? notSimulated('La tête détachée (git checkout sur un commit)', newState) : fail(128, `fatal: invalid reference: ${name}`);
@@ -1907,100 +2160,220 @@ export function handleGit(
     case 'remote': {
       if (!inRepo()) return notARepo();
       const g = newState.git!;
-      const remoteSub = args[1]?.toLowerCase() ?? '';
-      if (!remoteSub || remoteSub === '-v' || remoteSub === '--verbose') {
-        if (Object.keys(g.remotes).length === 0) {
-          return { lines: [{ text: '(no remotes configured)', type: 'info' }], newState };
-        }
-        const lines: OutputLine[] = [];
-        Object.entries(g.remotes).forEach(([name, url]) => {
-          lines.push({ text: `${name}\t${url} (fetch)`, type: 'output' });
-          lines.push({ text: `${name}\t${url} (push)`, type: 'output' });
-        });
+      const verboseFirst = args[1] === '-v' || args[1] === '--verbose';
+      const remoteSub = args[verboseFirst ? 2 : 1] ?? '';
+      const rest = args.slice(verboseFirst ? 3 : 2);
+      const names = Object.keys(g.remotes).sort();
+      const noSuch = (name: string, colon: boolean) => fail(2, `error: No such remote${colon ? ':' : ''} '${name}'`);
+      if (!remoteSub) {
+        // Nothing configured: git prints nothing at all.
+        const lines: OutputLine[] = verboseFirst
+          ? names.flatMap((n) => [`${n}\t${g.remotes[n]} (fetch)`, `${n}\t${g.remotes[n]} (push)`]).map((text) => ({ text, type: 'output' as const }))
+          : names.map((text) => ({ text, type: 'output' as const }));
         return { lines, newState };
       }
-      if (remoteSub === 'add') {
-        const name = args[2] ?? '';
-        const url = args[3] ?? '';
-        if (!name || !url) return { lines: [{ text: 'Usage: git remote add <name> <url>', type: 'error' }], newState };
-        if (g.remotes[name]) return { lines: [{ text: `error: remote '${name}' already exists.`, type: 'error' }], newState };
-        setGit({ ...g, remotes: { ...g.remotes, [name]: url } });
-        return { lines: [{ text: `Remote '${name}' added (${url})`, type: 'success' }], newState };
+      switch (remoteSub) {
+        case 'add': {
+          const [name, url] = rest.filter((a) => !a.startsWith('-'));
+          if (!name || !url) return { lines: REMOTE_ADD_USAGE.map(err), newState, status: 129 };
+          if (g.remotes[name]) return fail(3, `error: remote ${name} already exists.`);
+          setGit({ ...g, remotes: { ...g.remotes, [name]: url } });
+          return { lines: [], newState };
+        }
+        case 'remove':
+        case 'rm': {
+          const name = rest[0];
+          if (!name) return { lines: ['usage: git remote remove <name>', ''].map(err), newState, status: 129 };
+          if (!g.remotes[name]) return noSuch(name, true);
+          // Its remote-tracking branches and every branch's tracking of it go too.
+          const { [name]: _url, ...remotes } = g.remotes;
+          void _url;
+          const keep = ([ref]: [string, string]) => !ref.startsWith(`${name}/`);
+          const { [name]: _head, ...remoteHead } = g.remoteHead ?? {};
+          void _head;
+          setGit({
+            ...g,
+            remotes,
+            remoteRefs: Object.fromEntries(Object.entries(g.remoteRefs ?? {}).filter(keep)),
+            upstream: Object.fromEntries(Object.entries(g.upstream ?? {}).filter(([, up]) => !up.startsWith(`${name}/`))),
+            remoteHead,
+          });
+          return { lines: [], newState };
+        }
+        case 'rename': {
+          const [from, to] = rest.filter((a) => !a.startsWith('-'));
+          if (!from || !to) return { lines: ['usage: git remote rename [--[no-]progress] <old> <new>', ''].map(err), newState, status: 129 };
+          if (!g.remotes[from]) return noSuch(from, true);
+          if (g.remotes[to]) return fail(3, `error: remote ${to} already exists.`);
+          const moved = (ref: string) => (ref.startsWith(`${from}/`) ? `${to}/${ref.slice(from.length + 1)}` : ref);
+          const { [from]: url, ...others } = g.remotes;
+          const { [from]: head, ...heads } = g.remoteHead ?? {};
+          setGit({
+            ...g,
+            remotes: { ...others, [to]: url },
+            remoteRefs: Object.fromEntries(Object.entries(g.remoteRefs ?? {}).map(([r, h]) => [moved(r), h])),
+            upstream: Object.fromEntries(Object.entries(g.upstream ?? {}).map(([b, up]) => [b, moved(up)])),
+            remoteHead: head ? { ...heads, [to]: head } : heads,
+          });
+          return { lines: [], newState };
+        }
+        case 'get-url': {
+          const name = rest.find((a) => !a.startsWith('-'));
+          if (!name) return notSimulated('git remote get-url sans nom', newState);
+          if (!g.remotes[name]) return noSuch(name, false);
+          return { lines: [{ text: g.remotes[name], type: 'output' }], newState };
+        }
+        case 'set-url': {
+          if (rest.some((a) => a.startsWith('-'))) return notSimulated(`L'option ${rest.find((a) => a.startsWith('-'))} de git remote set-url`, newState);
+          const [name, url] = rest;
+          if (!name || !url) return notSimulated('git remote set-url sans nom ni adresse', newState);
+          if (!g.remotes[name]) return noSuch(name, false);
+          setGit({ ...g, remotes: { ...g.remotes, [name]: url } });
+          return { lines: [], newState };
+        }
+        case 'show': case 'prune': case 'update': case 'set-head': case 'set-branches':
+          return notSimulated(`git remote ${remoteSub}`, newState);
+        default:
+          return { lines: [`error: unknown subcommand: \`${remoteSub}'`, ...REMOTE_USAGE].map(err), newState, status: 129 };
       }
-      if (remoteSub === 'remove' || remoteSub === 'rm') {
-        const name = args[2] ?? '';
-        if (!name) return { lines: [{ text: 'Usage: git remote remove <name>', type: 'error' }], newState };
-        if (!g.remotes[name]) return { lines: [{ text: `error: No such remote '${name}'`, type: 'error' }], newState };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [name]: _r, ...rest } = g.remotes;
-        setGit({ ...g, remotes: rest });
-        return { lines: [{ text: `Remote '${name}' removed.`, type: 'success' }], newState };
-      }
-      return { lines: [{ text: 'Usage: git remote add|remove|[-v]', type: 'error' }], newState };
     }
 
     // ── git push ──────────────────────────────────────────────────────────────
     case 'push': {
       if (!inRepo()) return notARepo();
       const g = newState.git!;
-      const hasRemote = Object.keys(g.remotes).length > 0;
-      const remoteName = args.find((a) => !a.startsWith('-') && a !== sub) ?? 'origin';
-      if (!hasRemote) {
-        return { lines: [{ text: `fatal: '${remoteName}' does not appear to be a git repository.\nHint: git remote add origin <url>`, type: 'error' }], newState };
+      const o = parseOptions(args.slice(1));
+      const known = new Set(['u', 'q']);
+      const knownLong = new Set(['set-upstream', 'quiet']);
+      const other = [...o.short].find((c) => !known.has(c)) ?? [...o.long.keys()].find((k) => !knownLong.has(k));
+      if (other) return notSimulated(`L'option ${other.length === 1 ? '-' : '--'}${other} de git push`, newState);
+      const setUpstream = o.short.has('u') || o.long.has('set-upstream');
+      let [remote, refspec] = o.positional;
+      // push.default=simple: with no branch named, git pushes the branch to its upstream,
+      // and only when both have the same name.
+      const up = g.upstream?.[g.branch];
+      const upRemote = up?.slice(0, up.indexOf('/'));
+      const upBranch = up?.slice(up.indexOf('/') + 1);
+      if (!remote) {
+        const fallback = defaultRemote(g);
+        if (!up || !upRemote || !upBranch) return fallback ? fail(128, ...PUSH_NO_UPSTREAM(g.branch, fallback)) : fail(128, ...PUSH_NO_DESTINATION);
+        if (upBranch !== g.branch) return fail(128, ...PUSH_NAME_MISMATCH(upRemote, upBranch));
+        remote = upRemote;
+        refspec = g.branch;
       }
-      if (g.commits.length === 0) {
-        return { lines: [{ text: 'Everything up-to-date (no commits to push).', type: 'info' }], newState };
+      const url = g.remotes[remote];
+      if (!url) {
+        // With no branch named, `origin` (or any name while no remote exists) gets the upstream answer first.
+        if (!refspec && (remote === 'origin' || !Object.keys(g.remotes).length)) return fail(128, ...PUSH_NO_UPSTREAM(g.branch, remote));
+        return fail(128, ...NOT_A_REMOTE(remote));
       }
-      const upstreamFlag = args.includes('-u') || args.includes('--set-upstream');
-      const lines: OutputLine[] = [
-        { text: `Enumerating objects: ${g.commits.length}, done.`, type: 'output' },
-        { text: `Counting objects: 100% (${g.commits.length}/${g.commits.length}), done.`, type: 'output' },
-        { text: `Writing objects: 100% (${g.commits.length}/${g.commits.length}), done.`, type: 'output' },
-        { text: `To ${Object.values(g.remotes)[0]}`, type: 'output' },
-        { text: `   ${short(g.commits[g.commits.length - 1].hash)}..${short(g.commits[0].hash)}  ${g.branch} -> ${g.branch}`, type: 'success' },
-      ];
-      if (upstreamFlag) {
-        lines.push({ text: `Branch '${g.branch}' set up to track remote branch '${g.branch}' from '${remoteName}'.`, type: 'success' });
+      if (!refspec) {
+        // `git push origin`: only the branch's own upstream, on that remote.
+        if (!upBranch || upRemote !== remote) return fail(128, ...PUSH_NO_UPSTREAM(g.branch, remote));
+        if (upBranch !== g.branch) return fail(128, ...PUSH_NAME_MISMATCH(remote, upBranch));
+        refspec = g.branch;
       }
-      // The remote now has the branch: `origin/main` follows it.
-      if (g.remotes[remoteName]) setGit({ ...g, remoteRefs: { ...g.remoteRefs, [`${remoteName}/${g.branch}`]: g.commits[0].hash } });
-      return { lines, newState };
-    }
-
-    // ── git pull ──────────────────────────────────────────────────────────────
-    case 'pull': {
-      if (!inRepo()) return notARepo();
-      const g = newState.git!;
-      if (Object.keys(g.remotes).length === 0) {
-        return { lines: [{ text: "There is no tracking information for the current branch.\nHint: git remote add origin <url>", type: 'error' }], newState };
+      const [srcTyped, dstTyped] = refspec.includes(':') ? refspec.split(':') : [refspec, refspec];
+      const src = srcTyped === 'HEAD' ? g.branch : srcTyped;
+      const dst = dstTyped === 'HEAD' ? g.branch : dstTyped;
+      const tip = g.refs?.[src];
+      if (!tip) return fail(1, `error: src refspec ${srcTyped} does not match any`, `error: failed to push some refs to '${url}'`);
+      const key = `${remote}/${dst}`;
+      const old = g.remoteRefs?.[key];
+      const tracking = setUpstream ? [{ text: `branch '${src}' set up to track '${key}'.`, type: 'output' as const }] : [];
+      const upstream = setUpstream ? { ...g.upstream, [src]: key } : g.upstream;
+      if (old === tip) {
+        setGit({ ...g, upstream });
+        return { lines: [{ text: 'Everything up-to-date', type: 'output' }, ...tracking], newState };
       }
+      if (old && !isAncestor(g.objects ?? {}, old, tip)) {
+        return {
+          lines: [
+            { text: `To ${url}`, type: 'output' },
+            err(pushLine('!', '[rejected]', srcTyped, dst, ' (non-fast-forward)')),
+            err(`error: failed to push some refs to '${url}'`),
+            ...(src === g.branch ? PUSH_REJECTED_HINTS : PUSH_REJECTED_OTHER_HINTS).map(err),
+          ],
+          newState,
+          status: 1,
+        };
+      }
+      const defaultBranch = g.remoteHead?.[remote] ?? 'main';
+      const hint = !old && dst !== defaultBranch ? githubPullRequestHint(url, dst) : [];
+      setGit({ ...g, remoteRefs: { ...g.remoteRefs, [key]: tip }, upstream });
       return {
         lines: [
-          { text: 'remote: Enumerating objects: 3, done.', type: 'output' },
-          { text: 'remote: Counting objects: 100% (3/3), done.', type: 'output' },
-          { text: 'Updating... Fast-forward', type: 'output' },
-          { text: 'Already up to date.', type: 'success' },
+          ...hint.map((text) => ({ text, type: 'output' as const })),
+          { text: `To ${url}`, type: 'output' },
+          { text: old ? pushLine(' ', `${short(old)}..${short(tip)}`, srcTyped, dst) : pushLine('*', '[new branch]', srcTyped, dst), type: 'output' },
+          ...tracking,
         ],
         newState,
       };
+    }
+
+    // ── git pull ──────────────────────────────────────────────────────────────
+    // The simulated remote never moves on its own: fetching brings nothing new,
+    // and pulling merges what the remote-tracking branch already holds.
+    case 'pull': {
+      if (!inRepo()) return notARepo();
+      const g = newState.git!;
+      const o = parseOptions(args.slice(1));
+      // --rebase prints what a merge prints when the branch is up to date or can be
+      // fast-forwarded; only replaying diverged commits differs (git 2.56, 1 October 2026).
+      const rebase = [o.short.delete('r'), o.long.delete('rebase')].some(Boolean);
+      if (o.short.size || o.long.size) return notSimulated(`L'option ${[...o.short].map((c) => `-${c}`).concat([...o.long.keys()].map((k) => `--${k}`))[0]} de git pull`, newState);
+      const [remote, branch] = o.positional;
+      let ref: string;
+      const fromLines: OutputLine[] = [];
+      const up = g.upstream?.[g.branch];
+      if (!remote) {
+        // With no remote at all, git still suggests origin for a rebase, `<remote>` for a merge.
+        if (!up) return fail(1, ...PULL_NO_TRACKING(g.branch, defaultRemote(g) ?? (rebase ? 'origin' : null), rebase));
+        ref = up;
+        recordRemoteHead(up.slice(0, up.indexOf('/')));
+      } else {
+        // git pull exits with 1 where fetch and push exit with 128.
+        const url = g.remotes[remote];
+        if (!url) return fail(1, ...NOT_A_REMOTE(remote));
+        if (!branch) {
+          // `git pull origin` pulls the upstream, and only from the remote it lives on.
+          if (!up?.startsWith(`${remote}/`)) return fail(1, ...PULL_NOT_DEFAULT_REMOTE(remote));
+          ref = up;
+          recordRemoteHead(remote);
+        } else {
+          ref = `${remote}/${branch}`;
+          if (!g.remoteRefs?.[ref]) return fail(1, `fatal: couldn't find remote ref ${branch}`);
+          fromLines.push(...fetchHeadLines(url, branch));
+        }
+      }
+      const theirs = g.remoteRefs?.[ref];
+      const tip = g.refs?.[g.branch];
+      if (!theirs) return fail(1, `fatal: couldn't find remote ref ${ref.slice(ref.indexOf('/') + 1)}`);
+      if (tip && isAncestor(g.objects ?? {}, theirs, tip)) return { lines: [...fromLines, { text: 'Already up to date.', type: 'output' }], newState };
+      if (tip && !isAncestor(g.objects ?? {}, tip, theirs)) {
+        if (rebase) return notSimulated('git pull --rebase sur des branches divergentes', newState);
+        return { lines: [...fromLines, ...PULL_DIVERGENT.map(err)], newState, status: 128 };
+      }
+      const merged = handleGit(newState, ['merge', '--ff-only', ref], env, resolve);
+      return { ...merged, lines: [...fromLines, ...merged.lines] };
     }
 
     // ── git fetch ─────────────────────────────────────────────────────────────
     case 'fetch': {
       if (!inRepo()) return notARepo();
       const g = newState.git!;
-      const remote = args.find((a) => !a.startsWith('-') && a !== sub) ?? 'origin';
-      if (!g.remotes[remote]) {
-        return { lines: [{ text: `error: '${remote}' does not appear to be a git repository.`, type: 'error' }], newState };
+      const o = parseOptions(args.slice(1));
+      const [remote, branch] = o.positional;
+      if (remote && !g.remotes[remote]) return fail(128, ...NOT_A_REMOTE(remote));
+      if (remote && branch) {
+        if (!g.remoteRefs?.[`${remote}/${branch}`]) return fail(128, `fatal: couldn't find remote ref ${branch}`);
+        return { lines: fetchHeadLines(g.remotes[remote], branch), newState };
       }
-      return {
-        lines: [
-          { text: `From ${g.remotes[remote]}`, type: 'output' },
-          { text: ` * branch            ${g.branch}     -> FETCH_HEAD`, type: 'output' },
-          { text: 'Fetched all remote refs.', type: 'success' },
-        ],
-        newState,
-      };
+      // Nothing new on the remote: git fetches silently, and notes the remote's HEAD.
+      const fetched = o.long.has('all') ? Object.keys(g.remotes) : [remote ?? g.upstream?.[g.branch]?.split('/')[0] ?? defaultRemote(g)];
+      fetched.forEach((name) => name && recordRemoteHead(name));
+      return { lines: [], newState };
     }
 
     // ── git clone ─────────────────────────────────────────────────────────────
@@ -2043,17 +2416,15 @@ export function handleGit(
         refs: {},
       };
       const first = makeCommit(cloned, newState.user, tree, [], 'Initial commit');
-      setGit({ ...advance(cloned, first), remoteRefs: { [`origin/${branch}`]: first.hash } }, root);
-      return {
-        lines: [
-          { text: `Cloning into '${dirName}'...`, type: 'output' },
-          { text: 'remote: Enumerating objects: 3, done.', type: 'output' },
-          { text: 'remote: Counting objects: 100% (3/3), done.', type: 'output' },
-          { text: 'remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0', type: 'output' },
-          { text: 'Receiving objects: 100% (3/3), done.', type: 'output' },
-        ],
-        newState,
-      };
+      // The cloned branch tracks its remote one, and origin/HEAD names the remote's default branch.
+      setGit({
+        ...advance(cloned, first),
+        remoteRefs: { [`origin/${branch}`]: first.hash },
+        upstream: { [branch]: `origin/${branch}` },
+        remoteHead: { origin: branch },
+      }, root);
+      // Without a terminal git prints no progress: only this line.
+      return { lines: [{ text: `Cloning into '${dirName}'...`, type: 'output' }], newState };
     }
 
     // ── git stash ─────────────────────────────────────────────────────────────

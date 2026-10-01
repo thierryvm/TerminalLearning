@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Les dépôts distants, sans rien inventer (1er octobre 2026)
+
+Le module GitHub était le suivant. Avant d'en faire des exercices, j'ai voulu savoir ce que le terminal répondait déjà. `git push` affichait toujours un succès, même sans dépôt distant configuré, et `git pull` ne savait pas qu'une branche peut en suivre une autre. Une leçon construite là-dessus aurait appris des réflexes faux.
+
+J'ai donc tout rejoué dans un vrai Git, avec un dépôt nu local qui joue le rôle de GitHub. Deux surprises. Sans terminal interactif, Git n'affiche aucune ligne de progression : le `Enumerating objects` des captures d'écran n'existe que dans un vrai terminal. Et le message d'un `git pull` sans suivi se termine par une ligne vide, que le simulateur oubliait.
+
+La notion de suivi (`upstream`) a fait le reste. Une fois qu'elle existe, `git status`, `git branch -vv`, `git push` et `git pull` racontent tous la même histoire, et les leçons peuvent montrer leur vraie sortie. Le module GitHub en exercices viendra ensuite, sur cette base.
+
+---
+
 ## Git, geste par geste (30 septembre 2026)
 
 Une fois le moteur d'étapes en place, le module Git était le premier candidat. Ses exercices demandaient `git init`, `git add .` ou `git merge`, une commande à la fois, alors que Git ne se comprend qu'en enchaînant : on prépare, on enregistre, on compare, on change de branche.
