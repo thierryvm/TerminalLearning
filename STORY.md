@@ -21,6 +21,16 @@ Ce projet a été construit avec l'aide de Claude — l'IA d'Anthropic, des mod�
 
 ---
 
+## Le collègue qui pousse avant vous (1er octobre 2026)
+
+Un `git pull` qui répond toujours « Already up to date. » n'apprend rien. Pour que la leçon montre le vrai rythme d'une équipe, il fallait qu'un autre que l'élève puisse pousser sur le dépôt distant.
+
+Le simulateur distingue maintenant deux choses que Git distingue aussi : ce que GitHub contient, et ce que le dépôt local en sait depuis son dernier `fetch`. C'est pour cela qu'un vrai `git status` dit « à jour » alors qu'un collègue a poussé une heure plus tôt : il ne regarde pas le réseau. J'ai vérifié chaque sortie avec deux clones d'un même dépôt, qui poussent chacun leur tour. L'ordre des lignes de `git fetch` m'a surpris : alphabétique, sauf la première fois, quand Git note la branche par défaut du dépôt distant et la place en tête.
+
+Pour `gh`, l'outil en ligne de commande de GitHub, j'ai fait le choix inverse : ne pas le simuler. Il agit sur un vrai compte, et je n'ai aucun moyen de vérifier ses sorties sans en créer un. Le terminal le dit, plutôt que d'inventer une réponse.
+
+---
+
 ## Les dépôts distants, sans rien inventer (1er octobre 2026)
 
 Le module GitHub était le suivant. Avant d'en faire des exercices, j'ai voulu savoir ce que le terminal répondait déjà. `git push` affichait toujours un succès, même sans dépôt distant configuré, et `git pull` ne savait pas qu'une branche peut en suivre une autre. Une leçon construite là-dessus aurait appris des réflexes faux.

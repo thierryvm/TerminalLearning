@@ -210,6 +210,44 @@ export const gitRepoWithRemote: LessonSetup = {
   note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin ajouté, rien encore envoyé).',
 };
 
+const REMOTE_URL = 'https://github.com/user/mon-projet.git';
+const COLLEAGUE_HASH = 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b';
+
+/**
+ * `main` pushed with `git push -u origin main`; since then a colleague pushed
+ * a commit to GitHub (an Installation section in README.md) that this
+ * repository has not fetched. As in real git: `git status` still says up to
+ * date, `git fetch` brings the commit, `git pull` fast-forwards, and a push
+ * before that is rejected with "fetch first".
+ */
+export const gitRepoBehindRemote: LessonSetup = {
+  apply: (s, env = 'linux') => {
+    const base = withGit(s, env, {
+      remotes: { origin: REMOTE_URL },
+      remoteRefs: { 'origin/main': INITIAL_HASH },
+      upstream: { main: 'origin/main' },
+    }, true);
+    const g = base.git!;
+    const first = g.objects![INITIAL_HASH];
+    const readme = first.tree?.['README.md'] ?? '';
+    const commit: GitCommit = {
+      hash: COLLEAGUE_HASH,
+      message: 'docs: ajoute la section Installation au README',
+      author: 'alice',
+      date: '2026-01-16',
+      tree: { ...first.tree, 'README.md': `${readme}\n## Installation\n\nnpm install\n` },
+      parents: [INITIAL_HASH],
+      time: T0 + DAY + 3 * 3600,
+      tz: BRUSSELS_WINTER,
+    };
+    return {
+      ...base,
+      git: syncGit({ ...g, objects: { ...g.objects, [COLLEAGUE_HASH]: commit }, remoteServer: { 'origin/main': COLLEAGUE_HASH } }),
+    };
+  },
+  note: 'Dépôt Git prêt dans ~/projets (main envoyée sur GitHub et suivie ; depuis, une collègue a poussé un commit).',
+};
+
 /**
  * The PowerShell profile that `$PROFILE` points to (see terminalEngine), so
  * `cat $PROFILE` shows a real profile instead of "file not found". It lives in

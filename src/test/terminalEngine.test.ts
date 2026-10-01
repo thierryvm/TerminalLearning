@@ -1992,6 +1992,19 @@ describe('kill', () => {
   });
 });
 
+// ─── gh (GitHub CLI) ──────────────────────────────────────────────────────────
+
+describe('gh', () => {
+  it('says it is not simulated and where to get it, without a red error', () => {
+    const r = processCommand(makeState(), 'gh pr create --fill');
+    expect(r.status).toBe(1);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0].type).toBe('info');
+    expect(r.lines[0].text).toContain("gh (GitHub CLI) n'est pas simulé");
+    expect(r.lines[0].text).toContain('https://cli.github.com');
+  });
+});
+
 // ─── git (Modules 9 & 10) ─────────────────────────────────────────────────────
 
 describe('git', () => {

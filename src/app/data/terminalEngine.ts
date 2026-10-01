@@ -2532,6 +2532,14 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       };
 
 
+    // ── GitHub CLI: talks to github.com with your account, nothing to simulate faithfully ──
+    case 'gh':
+      return {
+        lines: [{ text: "gh (GitHub CLI) n'est pas simulé dans ce terminal : il agit sur votre compte GitHub. Installez-le sur votre ordinateur (https://cli.github.com), puis connectez-vous avec gh auth login.", type: 'info' }],
+        newState,
+        status: 1,
+      };
+
     // ── Network & SSH (Module 8) → commands/network.ts ──────────────────────
     case 'ssh-keygen':
       return cmdSshKeygen(newState, args, env);
