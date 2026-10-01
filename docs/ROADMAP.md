@@ -397,6 +397,17 @@ Each branch = set of tracks + branch certificate + student portfolio (IDE projec
 - [ ] **LinkedIn integration**: one-click badge publish to LinkedIn profile
 - [ ] Branch selector in onboarding flow
 
+## Phase 12 — Story mode (after the main track) 🔮
+>
+> Decided with @thierry on 1 October 2026: started only once the main track is finished.
+
+- [ ] Learn by following a character: one module = one episode, one lesson = one scene (a few panels before the exercise, one after it succeeds)
+- [ ] The story moves on only when the command really worked (multi-step exercises check the terminal state)
+- [ ] Vertical panels for phones; speech-bubble text stays HTML (translatable, screen readers, zoom); the mode can be turned off
+- [ ] Pilot on one module before drawing the rest; who draws is still open (no illustrator, no budget for paid image generation)
+
+---
+
 ## Multi-Agent Architecture (implementation governance)
 >
 > Required to manage complexity without drift. Each domain has a dedicated agent with strict scope.
