@@ -76,6 +76,14 @@ describe('a remote that moved on: a colleague pushed', () => {
     expect(texts(t.run('git pull'))).toEqual(['Already up to date.']);
   });
 
+  it('git fetch -q fetches all the same, silently', () => {
+    const t = behind();
+    expect(texts(t.run('git fetch -q'))).toEqual([]);
+    expect(texts(t.run('git branch -r'))).toEqual(['  origin/HEAD -> origin/main', '  origin/main']);
+    expect(texts(t.run('git log HEAD..origin/main --oneline'))).toHaveLength(1);
+    expect(texts(t.run('git fetch --quiet origin main'))).toEqual([]);
+  });
+
   it('git pull fetches first, and says so', () => {
     const t = behind();
     expect(texts(t.run('git pull'))).toEqual([FROM, '   a3f8c12..e5d1a8c  main       -> origin/main', ...FAST_FORWARD]);

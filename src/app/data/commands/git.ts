@@ -2432,7 +2432,9 @@ export function handleGit(
       const o = parseOptions(args.slice(1));
       const [remote, branch] = o.positional;
       if (remote && !g.remotes[remote]) return fail(128, ...NOT_A_REMOTE(remote));
-      const output = (texts: string[]) => texts.map((text): OutputLine => ({ text, type: 'output' }));
+      // -q fetches all the same, and prints nothing.
+      const quiet = o.short.has('q') || o.long.has('quiet');
+      const output = (texts: string[]) => (quiet ? [] : texts.map((text): OutputLine => ({ text, type: 'output' })));
       if (remote && branch) {
         if (!serverBranches(remote)[branch]) return fail(128, `fatal: couldn't find remote ref ${branch}`);
         return { lines: output([fromLine(remote), fetchLine('*', 'branch', branch, 'FETCH_HEAD'), ...fetchFrom(remote, { branch })]), newState };
