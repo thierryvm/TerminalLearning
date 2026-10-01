@@ -189,7 +189,9 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       // backdrop ensures the centered modal does not get clipped by iOS
       // status bar / home indicator / notch in PWA standalone mode. The
       // flex centering remains, but happens inside the safe-area inset.
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+      // The card centers with my-auto, so a card taller than the screen
+      // (keyboard open, age gate) scrolls from its top instead of being cut.
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm pt-[var(--inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
@@ -197,7 +199,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="login-modal-title"
-        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl"
+        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-6 w-full max-w-sm mx-4 my-auto shadow-2xl"
       >
         <div className="flex justify-between items-center mb-6">
           <h2 id="login-modal-title" className="text-lg font-semibold text-[var(--github-text-primary)] font-mono">

@@ -5,6 +5,16 @@
 
 ---
 
+## 📱 1er octobre 2026 — Le haut de l'app installée sur iPhone, deuxième essai
+
+*App installée sur l'écran d'accueil · iOS 26 · retour sur un iPhone 14*
+
+- Le correctif du 29 septembre (une bande opaque derrière la barre d'état) n'a pas suffi : retesté sur l'iPhone, le flou d'iOS 26 recouvrait toujours le haut de l'app.
+- Ce flou est dessiné par iOS lui-même, au-dessus de la page, et aucun réglage ne l'enlève. Dans l'app installée sur iPhone, le contenu du haut (barre de navigation, menu, fenêtre de connexion, tuteur IA) démarre maintenant 2,5rem plus bas, sous la zone floue, et la bande opaque couvre ce même espace.
+- Rien ne change dans Safari ni sur ordinateur. L'app installée tenue à l'horizontale garde l'ancien espacement.
+
+---
+
 ## 🤝 1er octobre 2026 — Le module GitHub devient une suite de gestes
 
 *6 leçons · exercices en étapes · sorties vérifiées sur Git 2.56 et PowerShell 7*

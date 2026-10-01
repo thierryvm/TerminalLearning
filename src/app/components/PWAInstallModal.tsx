@@ -49,9 +49,9 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
 
   if (isInstalled) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[max(1rem,var(--inset-top))] bg-black/60 backdrop-blur-sm" onClick={onClose}>
         <div
-          className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-8 max-w-sm w-full text-center shadow-2xl"
+          className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl p-8 max-w-sm w-full my-auto text-center shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
@@ -70,9 +70,9 @@ export function PWAInstallModal({ onClose }: PWAInstallModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[max(1rem,var(--inset-top))] bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl w-full max-w-md shadow-2xl"
+        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl w-full max-w-md my-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

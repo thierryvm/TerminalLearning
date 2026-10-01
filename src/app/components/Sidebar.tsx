@@ -155,8 +155,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         // iPhone with the notch on the rotated side, the inset is ~44 px
         // and the sidebar content shifts inward so it does not get
         // clipped by the notch. Pattern matches the brick 7bis Landing
-        // nav `max(...,env())` baseline-preservation idiom.
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[var(--github-bg)] border-r border-[var(--github-border-primary)] flex flex-col transition-transform duration-300 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[max(0px,env(safe-area-inset-left))] focus:outline-none ${
+        // nav `max(...,env())` baseline-preservation idiom. The top
+        // padding is --inset-top (theme.css), below iOS 26's edge blur.
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 bg-[var(--github-bg)] border-r border-[var(--github-border-primary)] flex flex-col transition-transform duration-300 pt-[var(--inset-top)] pb-[env(safe-area-inset-bottom)] pl-[max(0px,env(safe-area-inset-left))] focus:outline-none ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >

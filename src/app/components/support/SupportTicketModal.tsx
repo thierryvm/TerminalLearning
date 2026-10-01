@@ -125,7 +125,7 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[max(1rem,var(--inset-top))] bg-black/60 backdrop-blur-sm"
       onClick={handleBackdrop}
     >
       <div
@@ -134,7 +134,7 @@ export function SupportTicketModal({ userId, onClose }: SupportTicketModalProps)
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl w-full max-w-md shadow-2xl focus:outline-none"
+        className="bg-[var(--github-border-secondary)] border border-[var(--github-border-primary)] rounded-xl w-full max-w-md my-auto shadow-2xl focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

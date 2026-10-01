@@ -1245,6 +1245,16 @@ Six validateurs de plus ont disparu. Les écarts entre la théorie et le termina
 
 ---
 
+### Le flou qu'aucun test ne voit (1er octobre 2026)
+
+Le 29 septembre, j'avais corrigé le flou en haut de l'app installée sur iPhone avec une bande opaque derrière la barre d'état. Plusieurs projets décrivaient cette astuce, les tests passaient, la page s'affichait bien dans tous mes navigateurs. Thierry a rouvert l'app sur son iPhone : le flou était toujours là.
+
+Ce défaut n'existe que dans une app installée, sur un vrai iPhone. Aucun navigateur de test ne le reproduit, donc aucun test automatique ne pouvait me prévenir. En relisant les correctifs des autres projets, j'ai vu ce qui m'avait échappé : la plupart précisaient eux-mêmes qu'ils n'avaient pas été vérifiés sur un appareil. Un seul l'avait été, et il ne combat pas le flou : il en éloigne le contenu.
+
+C'est la version appliquée. Dans l'app installée sur iPhone, le haut de l'app descend de 2,5rem, et le flou ne recouvre plus qu'une bande de couleur unie. Le verdict reste celui de l'iPhone de Thierry, pas celui des tests.
+
+---
+
 ## Épilogue ouvert
 
 Il y a des questions auxquelles on n'a pas encore de réponse.

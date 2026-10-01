@@ -290,7 +290,7 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
             // Mobile: full-screen drawer with safe-area padding (iOS notch + home bar).
             // Desktop (md+): floating bottom-right card.
             style={{
-              paddingTop: 'env(safe-area-inset-top, 0px)',
+              paddingTop: 'var(--inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
             // THI-152 brick 6/9: `overflow-x-hidden max-w-full` is a

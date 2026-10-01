@@ -1,5 +1,29 @@
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * How far the app's top content starts from the top of the screen.
+ *
+ * Installed on an iPhone home screen (black-translucent + viewport-fit=cover),
+ * iOS 26 draws its Liquid Glass edge blur as system chrome over the top of the
+ * app, about 40pt past the status bar; no CSS or meta tag turns it off. An
+ * opaque strip as tall as the status bar alone did not stop it on @thierry's
+ * iPhone 14 (#398, retested 1 October 2026). The fix confirmed on devices by
+ * other apps is to keep content below the blur: 2.5rem of clearance, only in
+ * the installed app on iOS (-webkit-touch-callout exists only in WebKit on
+ * iOS), and none on a landscape phone, where the status bar is hidden.
+ * Everywhere else it is the plain safe-area inset (0 in a browser tab).
+ */
+:root {
+  --inset-top: env(safe-area-inset-top, 0px);
+}
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) and (orientation: portrait) {
+    :root {
+      --inset-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+    }
+  }
+}
+
 :root {
   --font-size: 16px;
   --background: #ffffff;
