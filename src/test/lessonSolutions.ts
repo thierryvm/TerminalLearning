@@ -105,16 +105,27 @@ export const LESSON_SOLUTIONS: Record<string, Solution> = {
   },
   'git/git-merge': { all: ['git merge feature/ma-feature', 'git branch -d feature/ma-feature'] },
   // ── github-collaboration ──
-  'github-collaboration/git-remote': { all: ['git remote add origin https://github.com/user/mon-projet.git'] },
-  'github-collaboration/git-push-pull': { all: ['git push -u origin main'] },
-  'github-collaboration/git-fetch-clone': { all: ['git clone https://github.com/user/projet.git'] },
-  'github-collaboration/pull-requests': { all: ['git checkout -b feature/nouvelle-feature'] },
-  'github-collaboration/merge-strategies': { all: ['git merge --no-ff feature/ma-feature'] },
+  'github-collaboration/git-remote': {
+    all: ['git remote add origin https://github.com/user/mon-projet.git', 'git remote -v', 'git remote set-url origin git@github.com:user/mon-projet.git'],
+  },
+  'github-collaboration/git-push-pull': {
+    all: ['git pull', 'echo "Contact" > contact.html', 'git add contact.html', 'git commit -m "feat: ajoute la page contact"', 'git push'],
+    windows: ['git pull', 'Set-Content contact.html "Contact"', 'git add contact.html', 'git commit -m "feat: ajoute la page contact"', 'git push'],
+  },
+  'github-collaboration/git-fetch-clone': { all: ['git fetch', 'git log HEAD..origin/main --oneline', 'git merge origin/main'] },
+  'github-collaboration/pull-requests': {
+    all: ['git switch -c feature/contact', 'echo "Contact" > contact.html', 'git add contact.html', 'git commit -m "feat: ajoute la page contact"', 'git push -u origin feature/contact'],
+    windows: ['git switch -c feature/contact', 'Set-Content contact.html "Contact"', 'git add contact.html', 'git commit -m "feat: ajoute la page contact"', 'git push -u origin feature/contact'],
+  },
+  'github-collaboration/merge-strategies': { all: ['git merge --no-ff --no-edit feature/ma-feature', 'git branch -d feature/ma-feature'] },
   'github-collaboration/conflicts': {
     all: ['git merge feature/nouvelle-feature', 'cat index.html', 'git checkout --theirs index.html', 'git add index.html', 'git commit --no-edit'],
     windows: ['git merge feature/nouvelle-feature', 'Get-Content index.html', 'git checkout --theirs index.html', 'git add index.html', 'git commit --no-edit'],
   },
-  'github-collaboration/github-actions': { all: ['git status'] },
+  'github-collaboration/github-actions': {
+    all: ['mkdir -p .github/workflows', 'mv ci.yml .github/workflows/', 'git add .github', 'git commit -m "ci: ajoute le workflow de vérification"', 'git push'],
+    windows: ['New-Item -ItemType Directory .github/workflows', 'Move-Item ci.yml .github/workflows/', 'git add .github', 'git commit -m "ci: ajoute le workflow de vérification"', 'git push'],
+  },
   // ── ia-dev ──
   'ia-dev/ia-dev-intro': { all: ['ai-help'] },
   'ia-dev/ia-dev-capacites': { all: ['ai-help capabilities'] },

@@ -10,6 +10,7 @@
 import type { EnvId, Exercise, ExerciseCheckContext, ExerciseStep } from './curriculum';
 import type { OutputLine, TerminalState } from './commands/types';
 import { nodeAt } from './commands/gitTree';
+import { isAncestor } from './commands/gitHistory';
 import { exerciseAccepts, type ValidateFn } from './validators';
 
 /** The command printed an error line: it did not do its job. */
@@ -49,6 +50,24 @@ export function repoFile(state: TerminalState, path: string): string | null {
   const node = nodeAt(state.root, [...base, ...path.split('/')]);
   if (node?.type !== 'file') return null;
   return node.content ? `${node.content}\n` : '';
+}
+
+/** What the remote itself holds for `ref` (`origin/main`): a push or a colleague put it there, a fetch is not needed. */
+export function onServer(state: TerminalState, ref: string): string | undefined {
+  const git = state.git;
+  return (git?.remoteServer ?? git?.remoteRefs ?? {})[ref];
+}
+
+/** The local `branch` contains the commit `hash` (it is the tip or one of its ancestors). */
+export function branchContains(state: TerminalState, branch: string, hash: string | undefined): boolean {
+  const tip = state.git?.refs?.[branch];
+  return Boolean(hash && tip && isAncestor(state.git?.objects ?? {}, hash, tip));
+}
+
+/** The remote holds `branch` exactly as it is here: everything is pushed. */
+export function pushed(state: TerminalState, branch: string, remote = 'origin'): boolean {
+  const tip = state.git?.refs?.[branch];
+  return Boolean(tip) && onServer(state, `${remote}/${branch}`) === tip;
 }
 
 /** Git's conflict markers, each at the start of a line. */

@@ -5,6 +5,23 @@
 
 ---
 
+## 🤝 1er octobre 2026 — Le module GitHub devient une suite de gestes
+
+*6 leçons · exercices en étapes · sorties vérifiées sur Git 2.56 et PowerShell 7*
+
+Les six exercices du module GitHub demandaient une seule commande. Chacun est maintenant un vrai parcours, vérifié sur l'état du dépôt et pas sur la commande tapée.
+
+- **git remote** : ajouter `origin`, vérifier le lien avec `git remote -v`, le passer en SSH.
+- **git push & pull** : une collègue a poussé ; récupérer son commit, ajouter une page, la pousser. Pousser trop tôt est refusé (« fetch first »), et si l'élève a committé avant de récupérer, le terminal lui donne la commande qui fusionne les deux historiques.
+- **git fetch & clone** : télécharger, regarder ce qui arrive (`git log HEAD..origin/main`), puis intégrer.
+- **Pull Requests** : une branche, un commit, `git push -u origin feature/contact`, et le lien que GitHub renvoie pour ouvrir la PR.
+- **Stratégies de merge** : un commit de fusion avec `--no-ff`, puis la branche rangée. La théorie montre aussi `--squash` (et pourquoi `git branch -d` refuse ensuite) et le rebase, sur la branche de l'exercice.
+- **GitHub Actions** : ranger un vrai workflow dans `.github/workflows/`, le committer, le pousser. Versions à jour : `actions/checkout@v7`, `actions/setup-node@v7`, Node 24.
+- Sous Windows, `New-Item -ItemType Directory .github/workflows` crée aussi `.github`, comme dans PowerShell 7. `git pull --no-edit` est accepté.
+- Écarts entre la théorie des leçons et le terminal : **120 → 90**.
+
+---
+
 ## 📖 1er octobre 2026 — « Notre histoire » se lit dans l'ordre
 
 *Page /story · sommaire · aucun chapitre réécrit*

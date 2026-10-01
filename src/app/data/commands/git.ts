@@ -886,6 +886,20 @@ const PUSH_NAME_MISMATCH = (remote: string, upstreamBranch: string) => [
   '',
 ];
 
+/** `git pull --ff-only` when both sides have commits (git 2.56, 1 October 2026). */
+const PULL_FF_ONLY_DIVERGENT = [
+  "hint: Diverging branches can't be fast-forwarded, you need to either:",
+  'hint:',
+  'hint: \tgit merge --no-ff',
+  'hint:',
+  'hint: or:',
+  'hint:',
+  'hint: \tgit rebase',
+  'hint:',
+  'hint: Disable this message with "git config set advice.diverging false"',
+  'fatal: Not possible to fast-forward, aborting.',
+];
+
 const PULL_NOT_DEFAULT_REMOTE = (remote: string) => [
   `You asked to pull from the remote '${remote}', but did not specify`,
   'a branch. Because this is not the default configured remote',
@@ -2383,6 +2397,11 @@ export function handleGit(
       // --rebase prints what a merge prints when the branch is up to date or can be
       // fast-forwarded; only replaying diverged commits differs (git 2.56, 1 October 2026).
       const rebase = [o.short.delete('r'), o.long.delete('rebase')].some(Boolean);
+      // --no-rebase merges diverged branches; --ff-only refuses them.
+      const merge = o.long.delete('no-rebase');
+      const ffOnly = o.long.delete('ff-only');
+      // --no-edit keeps the merge message git proposes: this terminal never opens an editor anyway.
+      o.long.delete('no-edit');
       if (o.short.size || o.long.size) return notSimulated(`L'option ${[...o.short].map((c) => `-${c}`).concat([...o.long.keys()].map((k) => `--${k}`))[0]} de git pull`, newState);
       const [remote, branch] = o.positional;
       let ref: string;
@@ -2418,6 +2437,14 @@ export function handleGit(
       if (!theirs) return fail(1, `fatal: couldn't find remote ref ${ref.slice(ref.indexOf('/') + 1)}`);
       if (tip && isAncestor(now.objects ?? {}, theirs, tip)) return { lines: [...fromLines, { text: 'Already up to date.', type: 'output' }], newState };
       if (tip && !isAncestor(now.objects ?? {}, tip, theirs)) {
+        if (ffOnly) return { lines: [...fromLines, ...PULL_FF_ONLY_DIVERGENT.map(err)], newState, status: 128 };
+        if (merge) {
+          // The merge commit names the branch and where it came from: "Merge branch 'main' of <url>".
+          const from = ref.slice(0, ref.indexOf('/'));
+          const message = `Merge branch '${ref.slice(from.length + 1)}' of ${now.remotes[from].replace(/\.git$/, '')}`;
+          const merged = handleGit(newState, ['merge', '-m', message, ref], env, resolve);
+          return { ...merged, lines: [...fromLines, ...merged.lines] };
+        }
         if (rebase) return notSimulated('git pull --rebase sur des branches divergentes', newState);
         return { lines: [...fromLines, ...PULL_DIVERGENT.map(err)], newState, status: 128 };
       }

@@ -198,20 +198,18 @@ export function gitRepoWithConflict(branch: string): LessonSetup {
   };
 }
 
-/**
- * A repository with one commit and an `origin` remote that has received
- * nothing yet: the first `git push -u origin main` creates the branch there.
- */
-export const gitRepoWithRemote: LessonSetup = {
-  apply: (s, env = 'linux') => withGit(s, env, {
-    remotes: { origin: 'https://github.com/user/mon-projet.git' },
-    remoteRefs: {},
-  }, true),
-  note: 'Dépôt Git prêt dans ~/projets (1 commit, remote origin ajouté, rien encore envoyé).',
-};
-
 const REMOTE_URL = 'https://github.com/user/mon-projet.git';
 const COLLEAGUE_HASH = 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b';
+
+/** `main` pushed with `git push -u origin main`: on GitHub, tracked, nothing new on either side. */
+export const gitRepoPushed: LessonSetup = {
+  apply: (s, env = 'linux') => withGit(s, env, {
+    remotes: { origin: REMOTE_URL },
+    remoteRefs: { 'origin/main': INITIAL_HASH },
+    upstream: { main: 'origin/main' },
+  }, true),
+  note: 'Dépôt Git prêt dans ~/projets (main envoyée sur GitHub et suivie).',
+};
 
 /**
  * `main` pushed with `git push -u origin main`; since then a colleague pushed
@@ -222,11 +220,7 @@ const COLLEAGUE_HASH = 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b';
  */
 export const gitRepoBehindRemote: LessonSetup = {
   apply: (s, env = 'linux') => {
-    const base = withGit(s, env, {
-      remotes: { origin: REMOTE_URL },
-      remoteRefs: { 'origin/main': INITIAL_HASH },
-      upstream: { main: 'origin/main' },
-    }, true);
+    const base = gitRepoPushed.apply(s, env);
     const g = base.git!;
     const first = g.objects![INITIAL_HASH];
     const readme = first.tree?.['README.md'] ?? '';
@@ -246,6 +240,25 @@ export const gitRepoBehindRemote: LessonSetup = {
     };
   },
   note: 'Dépôt Git prêt dans ~/projets (main envoyée sur GitHub et suivie ; depuis, une collègue a poussé un commit).',
+};
+
+/**
+ * A GitHub Actions workflow, as checked on 1 October 2026: actions/checkout
+ * v7 is the current major. It runs the repository's own script, so it would
+ * pass on GitHub as it is.
+ */
+const CI_WORKFLOW = 'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\n\njobs:\n  verifier:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v7\n      - run: bash script.sh';
+
+/**
+ * `main` pushed and tracked, and a workflow written at the root of ~/projets
+ * (`ci.yml`, not tracked yet): GitHub only runs it from `.github/workflows/`.
+ */
+export const gitRepoWithWorkflow: LessonSetup = {
+  apply: (s, env = 'linux') => {
+    const state = gitRepoPushed.apply(s, env);
+    return { ...state, root: withNode(state.root, [...PROJECT_DIR, 'ci.yml'], file(CI_WORKFLOW, '-rw-r--r--')) };
+  },
+  note: 'Dépôt Git prêt dans ~/projets (main envoyée sur GitHub et suivie ; un workflow ci.yml attend à la racine, pas encore suivi).',
 };
 
 /**

@@ -275,6 +275,173 @@ describe('the Git module, out of order', () => {
   });
 });
 
+/**
+ * The GitHub module (1 October 2026). The outputs asserted here ("fetch first",
+ * the divergent-branches refusal, `push -u` on a branch already pushed) were
+ * checked against real Git 2.56 with a bare repository and two clones.
+ */
+describe('the GitHub module, out of order', () => {
+  const remote = () => session(find('github-collaboration', 'git-remote'));
+  const pushPull = () => session(find('github-collaboration', 'git-push-pull'));
+
+  it('remote: set-url before looking, then git remote -v completes it', () => {
+    const t = remote();
+    expect(t.type('git remote add origin https://github.com/user/mon-projet.git').index).toBe(1);
+    expect(t.type('git remote set-url origin git@github.com:user/mon-projet.git').index).toBe(1);
+    expect(t.type('git remote -v').completed).toBe(true);
+  });
+
+  it('remote: a remote with another name is flagged, and renaming it to origin counts', () => {
+    const t = remote();
+    const other = t.type('git remote add github https://github.com/user/mon-projet.git');
+    expect(other.index).toBe(0);
+    expect(other.messages[0].text).toBe('⚠ Ce remote s\'appelle github, pas origin. Renommez-le avec git remote rename github origin');
+    expect(t.type('git remote rename github origin').index).toBe(1);
+  });
+
+  it('remote: removing origin starts over at step 1', () => {
+    const t = remote();
+    t.type('git remote add origin https://github.com/user/mon-projet.git');
+    const removed = t.type('git remote remove origin');
+    expect(removed.index).toBe(0);
+    expect(removed.messages[0].text).toMatch(/^↺ Le remote origin n'existe plus/);
+    expect(t.type('git remote add origin https://github.com/user/mon-projet.git').index).toBe(1);
+  });
+
+  it('push & pull: pushing first is refused (fetch first), and the terminal says to pull', () => {
+    const t = pushPull();
+    const push = t.type('git push');
+    expect(push.output[1]).toBe(' ! [rejected]        main -> main (fetch first)');
+    expect(push.index).toBe(0);
+    expect(push.messages[0].text).toMatch(/^⚠ GitHub refuse votre push : .* git pull\.$/);
+    expect(t.type('git pull').index).toBe(1);
+  });
+
+  it('push & pull: committing before pulling diverges, and the advice (--no-rebase --no-edit) gets the learner out', () => {
+    const t = pushPull();
+    t.type('echo "Contact" > contact.html');
+    t.type('git add contact.html');
+    expect(t.type('git commit -m "feat: ajoute la page contact"').index).toBe(0);
+    expect(t.type('git push').messages[0].text).toMatch(/divergé\. Fusionnez-les avec git pull --no-rebase --no-edit/);
+    const pull = t.type('git pull');
+    expect(pull.output.slice(-1)[0]).toBe('fatal: Need to specify how to reconcile divergent branches.');
+    expect(pull.messages[0].text).toMatch(/git pull --no-rebase --no-edit/);
+    expect(t.type('git pull --no-rebase --no-edit').index).toBe(4);
+    expect(t.type('git push').completed).toBe(true);
+  });
+
+  it('fetch & clone: git pull does fetch and merge at once, and completes the exercise', () => {
+    expect(session(find('github-collaboration', 'git-fetch-clone')).type('git pull').completed).toBe(true);
+  });
+
+  it('fetch & clone: merging without looking first still completes it', () => {
+    const t = session(find('github-collaboration', 'git-fetch-clone'));
+    expect(t.type('git fetch').index).toBe(1);
+    expect(t.type('git merge origin/main').completed).toBe(true);
+  });
+
+  it('pull requests: a push without -u is flagged, and pushing again with -u completes it', () => {
+    const t = session(find('github-collaboration', 'pull-requests'));
+    t.type('git checkout -b feature/contact');
+    t.type('echo "Contact" > contact.html');
+    t.type('git add contact.html');
+    expect(t.type('git commit -m "feat: ajoute la page contact"').index).toBe(4);
+    const bare = t.type('git push origin feature/contact');
+    expect(bare.index).toBe(4);
+    expect(bare.messages[0].text).toMatch(/^⚠ La branche est sur GitHub, mais votre copie ne la suit pas .* git push -u origin feature\/contact$/);
+    const again = t.type('git push -u origin feature/contact');
+    expect(again.output).toEqual(['Everything up-to-date', "branch 'feature/contact' set up to track 'origin/feature/contact'."]);
+    expect(again.completed).toBe(true);
+  });
+
+  it('pull requests: the page committed on main before the branch is flagged', () => {
+    const t = session(find('github-collaboration', 'pull-requests'));
+    t.type('echo "Contact" > contact.html');
+    t.type('git add contact.html');
+    const early = t.type('git commit -m "feat: ajoute la page contact"');
+    expect(early.index).toBe(0);
+    expect(early.messages[0].text).toMatch(/^⚠ contact\.html vient d'être commité sur main/);
+  });
+
+  it('merge strategies: a fast-forward is flagged, since nothing is left to merge', () => {
+    const t = session(find('github-collaboration', 'merge-strategies'));
+    const ff = t.type('git merge feature/ma-feature');
+    expect(ff.output[1]).toBe('Fast-forward');
+    expect(ff.index).toBe(0);
+    expect(ff.messages[0].text).toMatch(/^⚠ Git a avancé main sans commit de fusion/);
+    expect(t.type('git merge --no-ff --no-edit feature/ma-feature').output).toEqual(['Already up to date.']);
+  });
+
+  it('merge strategies: --squash staged blocks the merge (as in git 2.56), and the terminal says to start over', () => {
+    const t = session(find('github-collaboration', 'merge-strategies'));
+    const squash = t.type('git merge --squash feature/ma-feature');
+    expect(squash.output[2]).toBe('Squash commit -- not updating HEAD');
+    expect(squash.messages[0].text).toMatch(/^⚠ --squash a préparé le travail de la branche sans fusionner/);
+    expect(t.type('git merge --no-ff --no-edit feature/ma-feature').output[0])
+      .toBe('error: Your local changes to the following files would be overwritten by merge:');
+  });
+
+  it('merge strategies: --squash committed is flagged, and the advised merge --no-ff still completes it', () => {
+    const t = session(find('github-collaboration', 'merge-strategies'));
+    t.type('git merge --squash feature/ma-feature');
+    const committed = t.type('git commit -m "feat: ajoute la page ma-feature (#42)"');
+    expect(committed.index).toBe(0);
+    expect(committed.messages[0].text).toMatch(/^⚠ Ce commit vient de --squash/);
+    // git 2.56: the branch tip is not in main yet, so --no-ff makes a real merge commit.
+    expect(t.type('git merge --no-ff --no-edit feature/ma-feature')).toMatchObject({ index: 1, output: ["Merge made by the 'ort' strategy."] });
+  });
+
+  it('merge strategies: undoing the merge with git reset --hard starts over at step 1', () => {
+    const t = session(find('github-collaboration', 'merge-strategies'));
+    t.type('git merge --no-ff --no-edit feature/ma-feature');
+    const undone = t.type('git reset --hard HEAD~1');
+    expect(undone.output).toEqual(['HEAD is now at a3f8c12 feat: premier commit du projet']);
+    expect(undone.index).toBe(0);
+    expect(undone.messages[0].text).toMatch(/^↺ La fusion a été annulée/);
+    expect(t.type('git merge --no-ff --no-edit feature/ma-feature').index).toBe(1);
+  });
+
+  it('push & pull: git pull --ff-only on diverged branches gets the same advice', () => {
+    const t = pushPull();
+    t.type('echo "Contact" > contact.html');
+    t.type('git add contact.html');
+    t.type('git commit -m "feat: ajoute la page contact"');
+    const ffOnly = t.type('git pull --ff-only');
+    expect(ffOnly.output.slice(-1)[0]).toBe('fatal: Not possible to fast-forward, aborting.');
+    expect(ffOnly.messages[0].text).toMatch(/git pull --no-rebase --no-edit/);
+  });
+
+  it('merge strategies: without --no-edit the merge commit counts too', () => {
+    const t = session(find('github-collaboration', 'merge-strategies'));
+    expect(t.type('git merge --no-ff feature/ma-feature').index).toBe(1);
+    expect(t.type('git branch -d feature/ma-feature').completed).toBe(true);
+  });
+
+  it('actions: mv before mkdir fails and changes nothing, then the steps go on', () => {
+    const t = session(find('github-collaboration', 'github-actions'));
+    const early = t.type('mv ci.yml .github/workflows/');
+    expect(early.output).toEqual(["mv: cannot move 'ci.yml' to '.github/workflows/': No such file or directory"]);
+    expect(early.messages).toEqual([]);
+    expect(t.type('mkdir -p .github/workflows').index).toBe(1);
+    expect(t.type('mv ci.yml .github/workflows/').index).toBe(2);
+    expect(t.type('git add .').index).toBe(3);
+  });
+
+  it('actions: ci.yml renamed to .github/workflows (no such folder yet) is flagged', () => {
+    const t = session(find('github-collaboration', 'github-actions'));
+    t.type('mkdir .github');
+    const renamed = t.type('mv ci.yml .github/workflows');
+    expect(renamed.index).toBe(0);
+    expect(renamed.messages[0].text).toMatch(/^⚠ ci\.yml n'est plus à la racine ni dans \.github\/workflows\//);
+  });
+
+  it('actions: on Windows, New-Item creates .github too and Move-Item moves the workflow in', () => {
+    const t = session(find('github-collaboration', 'github-actions'), 'windows');
+    expect(t.type('New-Item -ItemType Directory .github\\workflows').index).toBe(1);
+    expect(t.type('Move-Item ci.yml .github\\workflows\\').index).toBe(2);
+  });
+});
+
 describe('one-command exercises', () => {
   it('are a single step, done by the command the lesson asks for', () => {
     const pwd = find('navigation', 'pwd');

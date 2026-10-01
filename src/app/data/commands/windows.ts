@@ -262,13 +262,18 @@ export function handleWindows(
     // ── New-Item: file or directory ───────────────────────────────────────────
     case 'new-item':
     case 'ni': {
-      const isDir = args.some((a) => a.toLowerCase() === 'directory');
-      const nameIdx = args.findIndex((a) => a.toLowerCase() === '-name');
-      const pathIdx = args.findIndex((a) => a.toLowerCase() === '-path');
-      const name =
-        nameIdx >= 0 ? args[nameIdx + 1] :
-        pathIdx >= 0 ? args[pathIdx + 1] :
-        args.find((a) => !a.startsWith('-'));
+      // The value of a named parameter is not the path: in
+      // `New-Item -ItemType Directory .github/workflows` the path is the last word.
+      const NAMED = ['-name', '-path', '-itemtype', '-type', '-value'];
+      const valueOf = (names: string[]) => {
+        const i = args.findIndex((a) => names.includes(a.toLowerCase()));
+        return i >= 0 ? args[i + 1] : undefined;
+      };
+      const isDir = valueOf(['-itemtype', '-type'])?.toLowerCase() === 'directory';
+      const positional = args.find((a, i) => !a.startsWith('-') && !(i > 0 && NAMED.includes(args[i - 1].toLowerCase())));
+      const path = valueOf(['-path']) ?? positional;
+      const leaf = valueOf(['-name']);
+      const name = path && leaf ? `${path}/${leaf}` : leaf ?? path;
       if (!name) return { lines: [{ text: 'New-Item: -Name ou chemin requis', type: 'error' }], newState };
       if (isDir) {
         const { lines, newRoot } = deps.cmdMkdir(newState, [name]);

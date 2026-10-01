@@ -8,18 +8,17 @@ import {
   validateEnvVars, validatePathVariable, validateShellConfig, validateDotenv, validateScripts, validateCron,
   validatePing, validateCurl, validateWget, validateDns, validateSsh, validateScp,
   validateGitConfig, validateGitStatusLog,
-  validateGitRemote, validateGitPushPull, validateGitFetchClone, validatePullRequests, validateMergeStrategies, validateGithubActions,
   validateAiHelp, validateAiHelpCapabilities, validateAiHelpLimits, validateAiHelpPrompts,
   validateAiHelpContext, validateAiHelpValidate, validateAiHelpDebug, validateAiHelpSecurity,
   validateAiHelpClaudeCli, validateAiHelpCareers, validateAiHelpSenior, validateAiHelpWorkflow,
 } from './validators';
 import {
-  gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithConflict, gitRepoWithRemote, powershellProfile, sshDirectory,
+  gitRepoEmpty, gitRepoWithChange, gitRepoWithCommit, gitRepoWithBranch, gitRepoWithConflict, gitRepoBehindRemote, gitRepoPushed, gitRepoWithWorkflow, powershellProfile, sshDirectory,
   type LessonSetup,
 } from './lessonSetup';
 import type { OutputLine, TerminalState } from './commands/types';
 import {
-  hasConflictMarkers, homeDirExists, inHomeDir, printed, printedError, repoFile, repoInHomeDir, stepAccepts,
+  branchContains, hasConflictMarkers, homeDirExists, inHomeDir, onServer, printed, printedError, pushed, repoFile, repoInHomeDir, stepAccepts,
 } from './exerciseSteps';
 export type BlockType = 'text' | 'code' | 'tip' | 'warning' | 'info';
 
@@ -111,6 +110,18 @@ export interface Module {
   prerequisites?: string[];
   /** Module IDs that this module unlocks upon completion. */
   unlocks?: string[];
+}
+
+/**
+ * The GitHub Actions lesson's workflow is neither at the root nor in
+ * .github/workflows/ (renamed by `mv ci.yml .github/workflows` before the
+ * folder existed, or deleted): no command brings it back.
+ */
+function workflowLost(state: TerminalState): string | undefined {
+  const somewhere = ['ci.yml', '.github/workflows/ci.yml'].some((p) => repoFile(state, p) !== null || state.git?.head?.[p] !== undefined);
+  return somewhere
+    ? undefined
+    : 'ci.yml n\'est plus à la racine ni dans .github/workflows/ (renommé ou supprimé). Cliquez sur « Réinitialiser » pour recommencer.';
 }
 
 export const curriculum: Module[] = [
@@ -2702,12 +2713,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Ajouter un remote (étape après git init)\n$ git remote add origin https://github.com/user/mon-projet.git\n\n# Lister les remotes configurés\n$ git remote -v\norigin\thttps://github.com/user/mon-projet.git (fetch)\norigin\thttps://github.com/user/mon-projet.git (push)\n\n# Supprimer un remote\n$ git remote remove origin\n\n# Renommer un remote\n$ git remote rename origin upstream',
+            content: '# Ajouter un remote (étape après git init)\n$ git remote add origin https://github.com/user/mon-projet.git\n\n# Lister les remotes configurés\n$ git remote -v\norigin\thttps://github.com/user/mon-projet.git (fetch)\norigin\thttps://github.com/user/mon-projet.git (push)\n\n# Renommer un remote (origin devient upstream)\n$ git remote rename origin upstream\n$ git remote -v\nupstream\thttps://github.com/user/mon-projet.git (fetch)\nupstream\thttps://github.com/user/mon-projet.git (push)\n\n# Supprimer un remote : git remote -v n\'affiche plus rien\n$ git remote remove upstream\n$ git remote -v',
             label: 'Gérer les remotes (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# HTTPS vs SSH — deux méthodes d\'authentification\n\n# HTTPS (simple, authentification par token)\nhttps://github.com/user/repo.git\n\n# SSH (recommandé, clé cryptographique)\ngit@github.com:user/repo.git\n\n# Changer l\'URL d\'un remote existant\n$ git remote set-url origin git@github.com:user/repo.git',
+            content: '# HTTPS vs SSH — deux méthodes d\'authentification\n\n# HTTPS (simple, authentification par token)\nhttps://github.com/user/repo.git\n\n# SSH (recommandé, clé cryptographique)\ngit@github.com:user/repo.git\n\n# Changer l\'URL d\'un remote existant (ici, passer de HTTPS à SSH)\n$ git remote add origin https://github.com/user/repo.git\n$ git remote set-url origin git@github.com:user/repo.git\n$ git remote -v\norigin\tgit@github.com:user/repo.git (fetch)\norigin\tgit@github.com:user/repo.git (push)',
             label: 'HTTPS vs SSH',
           },
           {
@@ -2724,11 +2735,36 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Ajoutez un remote `origin` pointant vers `https://github.com/user/mon-projet.git` avec `git remote add origin https://github.com/user/mon-projet.git`.',
-          hint: 'Tapez: git remote add origin https://github.com/user/mon-projet.git',
-          validate: validateGitRemote,
+          instruction: 'Reliez votre dépôt à GitHub, vérifiez le lien, puis passez-le en SSH.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoWithCommit,
-          successMessage: 'Remote ajouté ! Votre dépôt local est maintenant connecté à GitHub.',
+          steps: [
+            {
+              instruction: 'Ajoutez le remote `origin` avec `git remote add origin https://github.com/user/mon-projet.git`.',
+              hint: 'Tapez : git remote add origin https://github.com/user/mon-projet.git',
+              check: ({ state }) => Boolean(state.git?.remotes.origin),
+              warn: ({ state }) => {
+                const [other] = Object.keys(state.git?.remotes ?? {});
+                return other && !state.git?.remotes.origin
+                  ? `Ce remote s'appelle ${other}, pas origin. Renommez-le avec git remote rename ${other} origin`
+                  : undefined;
+              },
+            },
+            {
+              instruction: 'Vérifiez le lien avec `git remote -v` : une ligne pour récupérer (fetch), une pour envoyer (push).',
+              hint: 'Tapez : git remote -v',
+              check: ({ lines }) => !printedError(lines) && /^origin\t\S+ \(fetch\)$/m.test(printed(lines)),
+            },
+            {
+              instruction: 'Passez le remote en SSH avec `git remote set-url origin git@github.com:user/mon-projet.git`. `git remote -v` montre ensuite la nouvelle adresse.',
+              hint: 'Tapez : git remote set-url origin git@github.com:user/mon-projet.git',
+              check: ({ state }) => state.git?.remotes.origin === 'git@github.com:user/mon-projet.git',
+            },
+          ],
+          restart: ({ state }) => (state.git?.remotes.origin
+            ? undefined
+            : 'Le remote origin n\'existe plus (supprimé ou renommé). On reprend à l\'étape 1.'),
+          successMessage: 'Votre dépôt sait où envoyer son travail : `origin` pointe vers GitHub, en SSH. `git push` et `git pull` passeront par ce lien.',
         },
       },
       {
@@ -2743,13 +2779,18 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Premier push : envoie main et la relie à origin/main (le suivi)\n$ git push -u origin main\nTo https://github.com/user/mon-projet.git\n * [new branch]      main -> main\nbranch \'main\' set up to track \'origin/main\'.\n# (Dans un vrai terminal, Git affiche aussi sa progression : Enumerating objects…, Writing objects…)\n\n# Push suivants : le suivi est configuré, git push suffit\n$ git push\nEverything up-to-date\n\n# Une nouvelle branche : GitHub répond avec le lien pour ouvrir une pull request\n$ git switch -c feature/panier\nSwitched to a new branch \'feature/panier\'\n$ git push -u origin feature/panier\nremote: \nremote: Create a pull request for \'feature/panier\' on GitHub by visiting:\nremote:      https://github.com/user/mon-projet/pull/new/feature/panier\nremote: \nTo https://github.com/user/mon-projet.git\n * [new branch]      feature/panier -> feature/panier\nbranch \'feature/panier\' set up to track \'origin/feature/panier\'.',
+            content: '# Le premier envoi d\'une branche se fait avec -u : git push -u origin main\n# -u relie main à sa copie sur GitHub, origin/main (le suivi). Ce dépôt l\'a déjà fait :\n$ git status\nOn branch main\nYour branch is up to date with \'origin/main\'.\n\nnothing to commit, working tree clean\n\n# « up to date » d\'après le dernier échange avec GitHub : git status ne le contacte pas.\n# Entre-temps, une collègue a poussé un commit. GitHub refuse d\'écraser son travail :\n$ git push\nTo https://github.com/user/mon-projet.git\n ! [rejected]        main -> main (fetch first)\nerror: failed to push some refs to \'https://github.com/user/mon-projet.git\'\nhint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: \'git pull\' before pushing again.\nhint: See the \'Note about fast-forwards\' in \'git push --help\' for details.',
             label: 'git push (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# Une fois main envoyée avec -u, git pull sait d\'où récupérer\n$ git push -u origin main\nTo https://github.com/user/mon-projet.git\n * [new branch]      main -> main\nbranch \'main\' set up to track \'origin/main\'.\n\n# Un collègue a poussé un commit : le récupérer ET l\'intégrer\n$ git pull\nFrom https://github.com/user/mon-projet\n   a3f8c12..c9f1e34  main       -> origin/main\nUpdating a3f8c12..c9f1e34\nFast-forward\n README.md | 3 +++\n 1 file changed, 3 insertions(+)\n\n# Pull avec rebase (historique linéaire) : rien de neuf cette fois\n$ git pull --rebase\nAlready up to date.\n\n# Vérifier qu\'il ne reste rien à intégrer : télécharger, puis lister ce qui manque (rien ici)\n$ git fetch && git log HEAD..origin/main --oneline',
+            content: '# Récupérer le commit de la collègue ET l\'intégrer\n$ git pull\nFrom https://github.com/user/mon-projet\n   a3f8c12..e5d1a8c  main       -> origin/main\nUpdating a3f8c12..e5d1a8c\nFast-forward\n README.md | 4 ++++\n 1 file changed, 4 insertions(+)\n\n# Travailler, committer, puis envoyer : cette fois, GitHub accepte\n$ echo "Contact" > contact.html\n$ git add contact.html\n$ git commit -q -m "feat: ajoute la page contact"\n$ git push\nTo https://github.com/user/mon-projet.git\n# (suivi de e5d1a8c..<hash de votre commit>  main -> main)\n# (Dans un vrai terminal, Git affiche aussi sa progression : Enumerating objects…, Writing objects…)\n\n# Plus rien de neuf sur GitHub\n$ git pull\nAlready up to date.',
             label: 'git pull',
+          },
+          {
+            type: 'code',
+            content: '# Vous avez committé AVANT de récupérer le commit de la collègue : les historiques divergent\n$ echo "Contact" > contact.html\n$ git add contact.html\n$ git commit -q -m "feat: ajoute la page contact"\n$ git pull\nFrom https://github.com/user/mon-projet\n   a3f8c12..e5d1a8c  main       -> origin/main\nhint: You have divergent branches and need to specify how to reconcile them.\n...\nfatal: Need to specify how to reconcile divergent branches.\n\n# Fusionner les deux historiques en un commit de fusion\n# (--no-edit garde le message proposé : sans lui, un vrai terminal ouvre un éditeur)\n$ git pull --no-rebase --no-edit\nMerge made by the \'ort\' strategy.\n README.md | 4 ++++\n 1 file changed, 4 insertions(+)\n\n# Autre choix : git pull --rebase rejoue votre commit par-dessus celui de la collègue\n# (historique linéaire ; ce cas n\'est pas simulé dans ce terminal)',
+            label: 'Quand git pull refuse : branches divergentes',
           },
           {
             type: 'info',
@@ -2769,11 +2810,45 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Envoyez vos commits vers GitHub avec `git push -u origin main`.',
-          hint: 'Tapez: git push -u origin main',
-          validate: validateGitPushPull,
-          setup: gitRepoWithRemote,
-          successMessage: 'Push réussi ! Vos commits sont maintenant sur GitHub, visibles par toute votre équipe.',
+          instruction: 'Une collègue a poussé un commit sur GitHub. Récupérez-le, ajoutez votre page, puis envoyez votre travail.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
+          setup: gitRepoBehindRemote,
+          steps: [
+            {
+              instruction: 'Partez du travail de l\'équipe : récupérez le commit de la collègue avec `git pull`.',
+              hint: 'Tapez : git pull',
+              check: ({ state }) => branchContains(state, 'main', onServer(state, 'origin/main')),
+              warn: ({ state, lines }) => {
+                if (!/\[rejected\]|divergent branches|Diverging branches/.test(printed(lines))) return undefined;
+                return (state.git?.commits.length ?? 0) > 1
+                  ? 'Vous avez committé avant de récupérer le commit de la collègue : les deux historiques ont divergé. Fusionnez-les avec git pull --no-rebase --no-edit (un commit de fusion).'
+                  : 'GitHub refuse votre push : il contient le commit de la collègue, que vous n\'avez pas encore. Récupérez-le d\'abord avec git pull.';
+              },
+            },
+            {
+              instruction: 'Créez votre page avec `echo "Contact" > contact.html`.',
+              instructionByEnv: { windows: 'Créez votre page avec `Set-Content contact.html "Contact"`.' },
+              hint: 'Tapez : echo "Contact" > contact.html',
+              hintByEnv: { windows: 'Tapez : Set-Content contact.html "Contact"' },
+              check: ({ state }) => repoFile(state, 'contact.html') !== null || state.git?.head?.['contact.html'] !== undefined,
+            },
+            {
+              instruction: 'Préparez-la avec `git add contact.html`.',
+              hint: 'Tapez : git add contact.html',
+              check: ({ state }) => Boolean(state.git?.stagedFiles.includes('contact.html')) || state.git?.head?.['contact.html'] !== undefined,
+            },
+            {
+              instruction: 'Enregistrez-la avec `git commit -m "feat: ajoute la page contact"`.',
+              hint: 'Tapez : git commit -m "feat: ajoute la page contact"',
+              check: ({ state }) => state.git?.head?.['contact.html'] !== undefined,
+            },
+            {
+              instruction: 'Envoyez votre travail avec `git push` : `main` suit déjà `origin/main`, pas besoin de `-u`.',
+              hint: 'Tapez : git push',
+              check: ({ state }) => state.git?.branch === 'main' && pushed(state, 'main') && state.git.head?.['contact.html'] !== undefined,
+            },
+          ],
+          successMessage: 'C\'est le rythme d\'une équipe : `git pull` pour partir du travail de tous, commit, puis `git push`. Quand GitHub refuse un push (« fetch first »), il contient un travail que vous n\'avez pas encore : `git pull`, puis `git push` à nouveau.',
         },
       },
       {
@@ -2788,17 +2863,17 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\n# (Dans un vrai terminal, Git affiche aussi sa progression : remote: Enumerating objects…, Receiving objects…)\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique (ici dans projet-develop)\n$ git clone -b develop https://github.com/org/projet.git projet-develop\n\n# Cloner en SSH (recommandé), dans un dossier qui n\'existe pas encore\n$ git clone git@github.com:org/projet.git projet-ssh',
+            content: '# On clone hors d\'un dépôt existant : depuis votre dossier personnel, par exemple\n$ cd ~\n\n# Cloner un dépôt public\n$ git clone https://github.com/org/projet.git\nCloning into \'projet\'...\n# (Dans un vrai terminal, Git affiche aussi sa progression : remote: Enumerating objects…, Receiving objects…)\n\n# Cloner dans un dossier spécifique\n$ git clone https://github.com/org/projet.git mon-dossier\n\n# Cloner une branche spécifique (ici dans projet-develop)\n$ git clone -b develop https://github.com/org/projet.git projet-develop\n\n# Cloner en SSH (recommandé), dans un dossier qui n\'existe pas encore\n$ git clone git@github.com:org/projet.git projet-ssh',
             label: 'git clone (Linux/macOS/Windows)',
           },
           {
             type: 'code',
-            content: '# Fetch : télécharger sans intégrer (ici, un collègue a poussé un commit)\n$ git fetch origin\nFrom https://github.com/org/projet\n   a3f8c12..c9f1e34  main       -> origin/main\n\n# Voir ce qui a changé sur le remote\n$ git fetch && git log HEAD..origin/main --oneline\n\n# Voir toutes les branches distantes\n$ git fetch --all\n\n# Comparer local vs remote après fetch\n$ git diff main origin/main',
+            content: '# Fetch : télécharger sans intégrer (ici, une collègue a poussé un commit)\n$ git fetch origin\nFrom https://github.com/user/mon-projet\n   a3f8c12..e5d1a8c  main       -> origin/main\n\n# Voir les commits arrivés sur origin/main, pas encore dans votre branche\n$ git log HEAD..origin/main --oneline\ne5d1a8c (origin/main, origin/HEAD) docs: ajoute la section Installation au README\n\n# Comparer votre branche à la copie de GitHub\n$ git diff main origin/main\ndiff --git a/README.md b/README.md\n...\n+## Installation\n+npm install\n\n# Intégrer quand vous êtes prêt\n$ git merge origin/main\nUpdating a3f8c12..e5d1a8c\nFast-forward\n README.md | 4 ++++\n 1 file changed, 4 insertions(+)\n\n# Récupérer tous les remotes d\'un coup (rien de neuf ici : aucune sortie)\n$ git fetch --all',
             label: 'git fetch',
           },
           {
             type: 'code',
-            content: '# Workflow de contribution typique en open source\n# 1. Forker sur GitHub (via l\'interface web)\n\n# 2. Cloner votre fork\n$ git clone git@github.com:VOTRE-USER/projet.git\n$ cd projet\n\n# 3. Ajouter l\'upstream (projet original)\n$ git remote add upstream git@github.com:org/projet.git\n\n# 4. Synchroniser régulièrement\n$ git fetch upstream\n$ git merge upstream/main',
+            content: '# Workflow de contribution typique en open source\n# 1. Forker sur GitHub (via l\'interface web)\n\n# 2. Cloner votre fork, depuis votre dossier personnel\n$ cd ~\n$ git clone git@github.com:VOTRE-USER/projet.git\n$ cd projet\n\n# 3. Ajouter l\'upstream (projet original)\n$ git remote add upstream git@github.com:org/projet.git\n\n# 4. Synchroniser régulièrement\n$ git fetch upstream\n$ git merge upstream/main',
             label: 'Workflow fork & contribution',
           },
           {
@@ -2807,10 +2882,32 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Clonez un dépôt distant avec `git clone https://github.com/user/projet.git`.',
-          hint: 'Tapez: git clone https://github.com/user/projet.git',
-          validate: validateGitFetchClone,
-          successMessage: 'Dépôt cloné ! Vous pouvez maintenant travailler sur un projet existant avec tout son historique.',
+          instruction: 'Une collègue a poussé un commit. Téléchargez-le sans toucher à votre travail, regardez-le, puis intégrez-le.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
+          setup: gitRepoBehindRemote,
+          steps: [
+            {
+              instruction: 'Téléchargez les nouveautés de GitHub avec `git fetch`. Vos fichiers ne bougent pas.',
+              hint: 'Tapez : git fetch',
+              check: ({ state }) => {
+                const server = onServer(state, 'origin/main');
+                return Boolean(server) && state.git?.remoteRefs?.['origin/main'] === server;
+              },
+            },
+            {
+              instruction: 'Voyez ce qui est arrivé avec `git log HEAD..origin/main --oneline` : les commits de `origin/main` que votre branche n\'a pas encore.',
+              hint: 'Tapez : git log HEAD..origin/main --oneline',
+              // Already merged: there is nothing left to look at.
+              check: ({ command, lines, state }) => (/^git\s+(log|diff|show)\b.*\borigin\/main\b/.test(command.trim()) && !printedError(lines))
+                || branchContains(state, 'main', onServer(state, 'origin/main')),
+            },
+            {
+              instruction: 'Intégrez-les dans votre branche avec `git merge origin/main`.',
+              hint: 'Tapez : git merge origin/main',
+              check: ({ state }) => branchContains(state, 'main', onServer(state, 'origin/main')),
+            },
+          ],
+          successMessage: '`git fetch` télécharge sans rien changer à votre travail ; vous regardez, puis vous intégrez avec `git merge`. `git pull` fait les deux d\'un coup. Pour démarrer sur un projet existant, `git clone` télécharge tout le dépôt.',
         },
       },
       {
@@ -2825,12 +2922,12 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Workflow complet pour ouvrir une PR\n\n# 1. Créer une branche feature\n$ git checkout -b feature/THI-28-git-modules\n\n# 2. Développer et committer\n$ git add .\n$ git commit -m "feat(curriculum): add git module"\n\n# 3. Pousser la branche\n$ git push -u origin feature/THI-28-git-modules\n\n# 4. Ouvrir la PR sur GitHub (interface web ou CLI)\n$ gh pr create --title "feat(curriculum): add git module" --body "..."',
+            content: '# Workflow complet pour ouvrir une PR\n\n# 1. Créer une branche pour le sujet\n$ git switch -c feature/contact\nSwitched to a new branch \'feature/contact\'\n\n# 2. Développer et committer\n$ echo "Contact" > contact.html\n$ git add contact.html\n$ git commit -q -m "feat: ajoute la page contact"\n\n# 3. Pousser la branche : GitHub répond avec le lien pour ouvrir la PR\n$ git push -u origin feature/contact\nremote:\nremote: Create a pull request for \'feature/contact\' on GitHub by visiting:\nremote:      https://github.com/user/mon-projet/pull/new/feature/contact\nremote:\nTo https://github.com/user/mon-projet.git\n * [new branch]      feature/contact -> feature/contact\nbranch \'feature/contact\' set up to track \'origin/feature/contact\'.\n\n# 4. Ouvrir la PR : le lien ci-dessus, ou GitHub CLI sur votre ordinateur\n# (gh n\'est pas simulé dans ce terminal : il agit sur votre compte GitHub)\n$ gh pr create --title "feat: ajoute la page contact" --body "..."',
             label: 'Workflow PR complet',
           },
           {
             type: 'code',
-            content: '# GitHub CLI (gh) — travailler avec les PRs depuis le terminal\n\n# Lister les PRs ouvertes\n$ gh pr list\n\n# Voir une PR spécifique\n$ gh pr view 42\n\n# Checkout d\'une PR pour review locale\n$ gh pr checkout 42\n\n# Approuver une PR\n$ gh pr review 42 --approve\n\n# Merger une PR\n$ gh pr merge 42 --squash',
+            content: '# GitHub CLI (gh) — travailler avec les PRs depuis le terminal\n# (à installer sur votre ordinateur : https://cli.github.com ; non simulé ici)\n\n# Lister les PRs ouvertes\n$ gh pr list\n\n# Voir une PR spécifique\n$ gh pr view 42\n\n# Checkout d\'une PR pour review locale\n$ gh pr checkout 42\n\n# Approuver une PR\n$ gh pr review 42 --approve\n\n# Merger une PR\n$ gh pr merge 42 --squash',
             label: 'GitHub CLI — PR management',
           },
           {
@@ -2847,11 +2944,60 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Simulez le début d\'un workflow PR : créez une branche `feature/nouvelle-feature` avec `git checkout -b feature/nouvelle-feature`.',
-          hint: 'Tapez: git checkout -b feature/nouvelle-feature',
-          validate: validatePullRequests,
-          setup: gitRepoWithCommit,
-          successMessage: 'Branche feature créée ! Dans un vrai projet, vous développeriez ici puis ouvreriez une PR vers main.',
+          instruction: 'Préparez une Pull Request : votre travail sur une branche, envoyé sur GitHub.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
+          setup: gitRepoPushed,
+          steps: [
+            {
+              instruction: 'Créez une branche pour votre sujet avec `git switch -c feature/contact`.',
+              hint: 'Tapez : git switch -c feature/contact',
+              check: ({ state }) => Boolean(state.git && state.git.branch !== 'main' && state.git.refs?.[state.git.branch]),
+              warn: ({ state }) => (state.git?.branch === 'main' && state.git.head?.['contact.html'] !== undefined
+                ? 'contact.html vient d\'être commité sur main, avant la création de la branche. Cliquez sur « Réinitialiser » pour recommencer.'
+                : undefined),
+            },
+            {
+              instruction: 'Créez la page avec `echo "Contact" > contact.html`.',
+              instructionByEnv: { windows: 'Créez la page avec `Set-Content contact.html "Contact"`.' },
+              hint: 'Tapez : echo "Contact" > contact.html',
+              hintByEnv: { windows: 'Tapez : Set-Content contact.html "Contact"' },
+              check: ({ state }) => repoFile(state, 'contact.html') !== null || state.git?.head?.['contact.html'] !== undefined,
+            },
+            {
+              instruction: 'Préparez-la avec `git add contact.html`.',
+              hint: 'Tapez : git add contact.html',
+              check: ({ state }) => Boolean(state.git?.stagedFiles.includes('contact.html')) || state.git?.head?.['contact.html'] !== undefined,
+            },
+            {
+              instruction: 'Enregistrez-la sur la branche avec `git commit -m "feat: ajoute la page contact"`.',
+              hint: 'Tapez : git commit -m "feat: ajoute la page contact"',
+              check: ({ state }) => state.git?.branch !== 'main' && state.git?.head?.['contact.html'] !== undefined,
+              warn: ({ state }) => {
+                const git = state.git;
+                if (git?.branch !== 'main') return undefined;
+                if (git.head?.['contact.html'] !== undefined) return 'Ce commit est parti sur main, pas sur la branche. Cliquez sur « Réinitialiser » pour recommencer.';
+                const branch = Object.keys(git.refs ?? {}).find((b) => b !== 'main');
+                if (branch && git.stagedFiles.includes('contact.html')) return `contact.html est préparé, mais vous êtes revenu sur main. Revenez avec git switch ${branch} (Git emporte le fichier préparé avec vous), puis commitez.`;
+                return undefined;
+              },
+            },
+            {
+              instruction: 'Envoyez la branche sur GitHub avec `git push -u origin feature/contact`. GitHub répond avec le lien pour ouvrir la Pull Request.',
+              hint: 'Tapez : git push -u origin feature/contact',
+              check: ({ state }) => {
+                const branch = state.git?.branch;
+                return Boolean(branch && branch !== 'main' && pushed(state, branch) && state.git?.upstream?.[branch] === `origin/${branch}`
+                  && state.git.head?.['contact.html'] !== undefined);
+              },
+              warn: ({ state }) => {
+                const branch = state.git?.branch;
+                return branch && branch !== 'main' && pushed(state, branch) && !state.git?.upstream?.[branch]
+                  ? `La branche est sur GitHub, mais votre copie ne la suit pas : sans -u, git push et git pull ne savent pas où aller. Tapez git push -u origin ${branch}`
+                  : undefined;
+              },
+            },
+          ],
+          successMessage: 'Votre branche est sur GitHub. Reste à ouvrir la Pull Request : le lien affiché par GitHub (`remote: Create a pull request…`), ou le bouton « Compare & pull request » sur la page du dépôt. Vos collègues relisent, commentent, puis fusionnent.',
         },
       },
       {
@@ -2866,17 +3012,22 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Stratégie 1 : Merge commit (--no-ff)\n# Garde la branche comme un bloc identifiable dans l\'historique\n\n$ git checkout main\n$ git merge --no-ff feature/panier\nMerge made by the \'ort\' strategy.\n panier.html | 42 ++++++\n cart.js     | 18 +++++\n 2 files changed, 60 insertions(+)\n\n$ git log --oneline --graph\n*   d4f8a91 Merge branch \'feature/panier\'\n|\\\n| * b7e2d45 feat(panier): add cart UI\n| * a3f8c12 feat(panier): init cart model\n|/\n* c1d2e34 chore: bump version',
+            content: '# Stratégie 1 : Merge commit (--no-ff)\n# Garde la branche comme un bloc identifiable dans l\'historique\n\n$ git checkout main\nAlready on \'main\'\n$ git merge --no-ff --no-edit feature/ma-feature\nMerge made by the \'ort\' strategy.\n ma-feature.html | 1 +\n 1 file changed, 1 insertion(+)\n create mode 100644 ma-feature.html\n# (--no-edit garde le message proposé : sans lui, un vrai terminal ouvre un éditeur)',
             label: '1️⃣ Merge commit (--no-ff)',
           },
           {
             type: 'code',
-            content: '# Stratégie 2 : Squash merge (--squash)\n# Condense toute la branche en UN SEUL commit sur main\n\n$ git checkout main\n$ git merge --squash feature/panier\n$ git commit -m "feat(panier): add cart module (#42)"\n\n$ git log --oneline\n* e5f6a78 feat(panier): add cart module (#42)\n* c1d2e34 chore: bump version\n\n# Équivalent via GitHub CLI :\n$ gh pr merge 42 --squash --delete-branch',
+            content: '*   d8fdc42 Merge branch \'feature/ma-feature\'\n|\\\n| * b7e2d45 feat(ma-feature): ajoute la page ma-feature.html\n|/\n* a3f8c12 feat: premier commit du projet',
+            label: 'Ce que montre ensuite git log --oneline --graph (le dessin n\'est pas simulé dans ce terminal)',
+          },
+          {
+            type: 'code',
+            content: '# Stratégie 2 : Squash merge (--squash)\n# Condense toute la branche en UN SEUL commit sur main\n\n$ git merge --squash feature/ma-feature\nUpdating a3f8c12..b7e2d45\nFast-forward\nSquash commit -- not updating HEAD\n ma-feature.html | 1 +\n 1 file changed, 1 insertion(+)\n create mode 100644 ma-feature.html\n$ git commit -q -m "feat: ajoute la page ma-feature (#42)"\n\n# Les commits de la branche ne sont pas dans main : git branch -d refuse\n$ git branch -d feature/ma-feature\nerror: the branch \'feature/ma-feature\' is not fully merged\nhint: If you are sure you want to delete it, run \'git branch -D feature/ma-feature\'\nhint: Disable this message with "git config set advice.forceDeleteBranch false"\n$ git branch -D feature/ma-feature\nDeleted branch feature/ma-feature (was b7e2d45).\n\n# Équivalent via GitHub CLI (non simulé dans ce terminal) :\n$ gh pr merge 42 --squash --delete-branch',
             label: '2️⃣ Squash merge (--squash)',
           },
           {
             type: 'code',
-            content: '# Stratégie 3 : Rebase merge (--rebase)\n# Rejoue les commits de la branche au sommet de main (historique linéaire, pas de merge commit)\n\n$ git checkout feature/panier\n$ git rebase main\n$ git checkout main\n$ git merge feature/panier  # fast-forward, linéaire\n\n$ git log --oneline\n* b7e2d45 feat(panier): add cart UI\n* a3f8c12 feat(panier): init cart model\n* c1d2e34 chore: bump version\n\n# Équivalent via GitHub CLI :\n$ gh pr merge 42 --rebase --delete-branch',
+            content: '# Stratégie 3 : Rebase (historique linéaire, pas de commit de fusion)\n# Rejoue les commits de la branche au sommet de main\n\n$ git checkout feature/ma-feature\nSwitched to branch \'feature/ma-feature\'\n$ git rebase main\nCurrent branch feature/ma-feature is up to date.\n# (main n\'a pas bougé depuis la création de la branche : rien à rejouer)\n$ git checkout main\nSwitched to branch \'main\'\n$ git merge feature/ma-feature\nUpdating a3f8c12..b7e2d45\nFast-forward\n ma-feature.html | 1 +\n 1 file changed, 1 insertion(+)\n create mode 100644 ma-feature.html\n\n$ git log --oneline\nb7e2d45 (HEAD -> main, feature/ma-feature) feat(ma-feature): ajoute la page ma-feature.html\na3f8c12 feat: premier commit du projet\n\n# Équivalent via GitHub CLI (non simulé dans ce terminal) :\n$ gh pr merge 42 --rebase --delete-branch',
             label: '3️⃣ Rebase merge (--rebase)',
           },
           {
@@ -2894,11 +3045,36 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Fusionnez la branche `feature/ma-feature` avec un **merge commit explicite** (option `--no-ff`) : `git merge --no-ff feature/ma-feature`.',
-          hint: 'Tapez: git merge --no-ff feature/ma-feature',
-          validate: validateMergeStrategies,
+          instruction: 'Fusionnez `feature/ma-feature` en gardant la trace de la branche (un commit de fusion), puis rangez-la.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
           setup: gitRepoWithBranch('feature/ma-feature'),
-          successMessage: 'Merge commit créé ! Votre branche reste identifiable dans l\'historique — utile pour retrouver le contexte d\'une feature 6 mois plus tard.',
+          steps: [
+            {
+              instruction: 'Fusionnez avec un commit de fusion : `git merge --no-ff --no-edit feature/ma-feature`. Sans `--no-ff`, Git avancerait simplement `main` (« Fast-forward »).',
+              hint: 'Tapez : git merge --no-ff --no-edit feature/ma-feature',
+              check: ({ state }) => state.git?.branch === 'main' && (state.git.commits[0]?.parents?.length ?? 0) === 2
+                && state.git.head?.['ma-feature.html'] !== undefined,
+              warn: ({ state }) => {
+                const git = state.git;
+                if (git?.branch !== 'main') return undefined;
+                if (branchContains(state, 'main', git.refs?.['feature/ma-feature'])) return 'Git a avancé main sans commit de fusion (« Fast-forward ») : il n\'y a plus rien à fusionner. Cliquez sur « Réinitialiser » pour recommencer avec --no-ff.';
+                if (!git.refs?.['feature/ma-feature']) return 'La branche feature/ma-feature n\'existe plus (supprimée avec -D, ou renommée) et son travail n\'a pas été fusionné. Cliquez sur « Réinitialiser » pour recommencer.';
+                // --squash copies the branch's changes without merging it (stratégie 2 of the lesson).
+                if (git.head?.['ma-feature.html'] !== undefined) return 'Ce commit vient de --squash : main a le travail de la branche, mais pas de commit de fusion. git merge --no-ff --no-edit feature/ma-feature en crée un quand même, ou cliquez sur « Réinitialiser » pour repartir proprement.';
+                if (git.stagedFiles.includes('ma-feature.html')) return '--squash a préparé le travail de la branche sans fusionner, et Git refuse maintenant de fusionner par-dessus. Cliquez sur « Réinitialiser » pour recommencer avec --no-ff.';
+                return undefined;
+              },
+            },
+            {
+              instruction: 'Supprimez la branche fusionnée avec `git branch -d feature/ma-feature`. Le commit de fusion garde sa trace dans l\'historique.',
+              hint: 'Tapez : git branch -d feature/ma-feature',
+              check: ({ state }) => !state.git?.refs?.['feature/ma-feature'] && state.git?.head?.['ma-feature.html'] !== undefined,
+            },
+          ],
+          restart: ({ state }) => (state.git?.head?.['ma-feature.html'] === undefined
+            ? 'La fusion a été annulée : main n\'a plus le travail de la branche. On reprend à l\'étape 1.'
+            : undefined),
+          successMessage: 'Le commit de fusion garde la branche visible : dans un vrai terminal, `git log --oneline --graph` dessine son embranchement (ce dessin n\'est pas simulé ici). Sur GitHub, c\'est le bouton « Create a merge commit » d\'une Pull Request.',
         },
       },
       {
@@ -3008,18 +3184,26 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '# Structure d\'un workflow GitHub Actions\n# Fichier : .github/workflows/ci.yml\n\nname: CI\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \'20\'\n      - run: npm install\n      - run: npm run lint\n      - run: npm test\n      - run: npm run build',
+            content: '# Structure d\'un workflow GitHub Actions (versions d\'octobre 2026)\n# Fichier : .github/workflows/ci.yml\n\nname: CI\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v7\n      - uses: actions/setup-node@v7\n        with:\n          node-version: 24\n      - run: npm ci\n      - run: npm run lint\n      - run: npm test\n      - run: npm run build',
             label: 'Workflow CI/CD minimal',
           },
           {
             type: 'code',
-            content: '# Workflow multi-jobs avec matrix\njobs:\n  test:\n    runs-on: ${{ matrix.os }}\n    strategy:\n      matrix:\n        os: [ubuntu-latest, windows-latest, macos-latest]\n        node: [18, 20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n      - run: npm test\n\n  deploy:\n    needs: test  # attend que tous les tests passent\n    if: github.ref == \'refs/heads/main\'\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Déploiement en production"',
+            content: '# Workflow multi-jobs avec matrix\njobs:\n  test:\n    runs-on: ${{ matrix.os }}\n    strategy:\n      matrix:\n        os: [ubuntu-latest, windows-latest, macos-latest]\n        node: [22, 24]\n    steps:\n      - uses: actions/checkout@v7\n      - uses: actions/setup-node@v7\n        with:\n          node-version: ${{ matrix.node }}\n      - run: npm test\n\n  deploy:\n    needs: test  # attend que tous les tests passent\n    if: github.ref == \'refs/heads/main\'\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Déploiement en production"',
             label: 'Matrix + déploiement conditionnel',
           },
           {
             type: 'code',
-            content: '# Commandes utiles avec GitHub CLI\n\n# Lister les workflows\n$ gh workflow list\n\n# Voir les runs récents\n$ gh run list\n\n# Voir les détails d\'un run\n$ gh run view 12345\n\n# Déclencher manuellement un workflow\n$ gh workflow run ci.yml\n\n# Télécharger les artifacts d\'un run\n$ gh run download 12345',
+            content: '# Commandes utiles avec GitHub CLI\n# (à installer sur votre ordinateur : https://cli.github.com ; non simulé ici)\n\n# Lister les workflows\n$ gh workflow list\n\n# Voir les runs récents\n$ gh run list\n\n# Voir les détails d\'un run\n$ gh run view 12345\n\n# Déclencher manuellement un workflow\n$ gh workflow run ci.yml\n\n# Télécharger les artifacts d\'un run\n$ gh run download 12345',
             label: 'Gestion via GitHub CLI',
+          },
+          {
+            type: 'code',
+            content: '# GitHub ne lit les workflows que dans .github/workflows/\n$ mkdir -p .github/workflows\n$ mv ci.yml .github/workflows/\n$ git add .github\n$ git commit -q -m "ci: ajoute le workflow de vérification"\n$ git push\nTo https://github.com/user/mon-projet.git\n# (suivi de a3f8c12..<hash de votre commit>  main -> main)\n# Sur GitHub, ce push lance le workflow : onglet Actions du dépôt',
+            contentByEnv: {
+              windows: '# GitHub ne lit les workflows que dans .github/workflows/\nPS> New-Item -ItemType Directory .github/workflows\n# (PowerShell affiche le dossier créé)\nPS> Move-Item ci.yml .github/workflows/\nPS> git add .github\nPS> git commit -q -m "ci: ajoute le workflow de vérification"\nPS> git push\nTo https://github.com/user/mon-projet.git\n# (suivi de a3f8c12..<hash de votre commit>  main -> main)\n# Sur GitHub, ce push lance le workflow : onglet Actions du dépôt',
+            },
+            label: 'Ajouter le workflow au dépôt',
           },
           {
             type: 'info',
@@ -3035,11 +3219,45 @@ export const curriculum: Module[] = [
           },
         ],
         exercise: {
-          instruction: 'Vérifiez l\'état de votre dépôt git avant un push avec `git status`.',
-          hint: 'Tapez: git status',
-          validate: validateGithubActions,
-          setup: gitRepoWithRemote,
-          successMessage: 'Parfait ! Avant chaque push, vérifiez toujours l\'état de votre dépôt. GitHub Actions fera ensuite tourner automatiquement vos tests et votre build.',
+          instruction: 'Un workflow `ci.yml` attend à la racine du dépôt. Placez-le là où GitHub le cherche, puis envoyez-le.',
+          hint: 'Suivez les étapes une par une : chacune donne sa commande.',
+          setup: gitRepoWithWorkflow,
+          steps: [
+            {
+              instruction: 'Créez le dossier des workflows avec `mkdir -p .github/workflows` (`-p` crée aussi `.github`).',
+              instructionByEnv: {
+                windows: 'Créez le dossier des workflows avec `New-Item -ItemType Directory .github/workflows` (PowerShell crée aussi `.github`).',
+              },
+              hint: 'Tapez : mkdir -p .github/workflows',
+              hintByEnv: { windows: 'Tapez : New-Item -ItemType Directory .github/workflows' },
+              check: ({ state }) => homeDirExists(state, 'projets', '.github', 'workflows'),
+              warn: ({ state }) => workflowLost(state),
+            },
+            {
+              instruction: 'Déplacez le workflow dedans avec `mv ci.yml .github/workflows/`.',
+              instructionByEnv: { windows: 'Déplacez le workflow dedans avec `Move-Item ci.yml .github/workflows/`.' },
+              hint: 'Tapez : mv ci.yml .github/workflows/',
+              hintByEnv: { windows: 'Tapez : Move-Item ci.yml .github/workflows/' },
+              check: ({ state }) => repoFile(state, '.github/workflows/ci.yml') !== null || state.git?.head?.['.github/workflows/ci.yml'] !== undefined,
+              warn: ({ state }) => workflowLost(state),
+            },
+            {
+              instruction: 'Faites-le suivre par Git avec `git add .github`.',
+              hint: 'Tapez : git add .github',
+              check: ({ state }) => Boolean(state.git?.stagedFiles.includes('.github/workflows/ci.yml')) || state.git?.head?.['.github/workflows/ci.yml'] !== undefined,
+            },
+            {
+              instruction: 'Enregistrez-le avec `git commit -m "ci: ajoute le workflow de vérification"`.',
+              hint: 'Tapez : git commit -m "ci: ajoute le workflow de vérification"',
+              check: ({ state }) => state.git?.head?.['.github/workflows/ci.yml'] !== undefined,
+            },
+            {
+              instruction: 'Envoyez-le avec `git push` : sur GitHub, c\'est ce push qui lance le workflow.',
+              hint: 'Tapez : git push',
+              check: ({ state }) => state.git?.branch === 'main' && pushed(state, 'main') && state.git.head?.['.github/workflows/ci.yml'] !== undefined,
+            },
+          ],
+          successMessage: 'Sur GitHub, l\'onglet Actions du dépôt montrerait maintenant le workflow CI en route : il récupère le code (`actions/checkout`) puis lance `bash script.sh`, à chaque push sur main et à chaque Pull Request. Ce terminal ne simule pas GitHub : votre push s\'arrête ici.',
         },
       },
     ],

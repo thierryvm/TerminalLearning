@@ -42,12 +42,6 @@ import {
   validateScp,
   validateGitConfig,
   validateGitStatusLog,
-  validateGitRemote,
-  validateGitPushPull,
-  validateGitFetchClone,
-  validatePullRequests,
-  validateMergeStrategies,
-  validateGithubActions,
   validateAiHelp,
   validateAiHelpCapabilities,
   validateAiHelpLimits,
@@ -411,61 +405,6 @@ describe('validateGitStatusLog', () => {
   it('accepts "git status -v"', () => expect(validateGitStatusLog('git status -v')).toBe(true));
   it('rejects "git log"', () => expect(validateGitStatusLog('git log')).toBe(false));
   it('rejects arbitrary args (git status foo bar)', () => expect(validateGitStatusLog('git status foo bar')).toBe(false));
-});
-
-describe('validateGitRemote', () => {
-  it('accepts "git remote add origin https://github.com/user/repo"', () => expect(validateGitRemote('git remote add origin https://github.com/user/repo')).toBe(true));
-  it('accepts "git remote add upstream https://github.com/org/repo"', () => expect(validateGitRemote('git remote add upstream https://github.com/org/repo')).toBe(true));
-  it('rejects "git remote -v"', () => expect(validateGitRemote('git remote -v')).toBe(false));
-});
-
-describe('validateGitPushPull', () => {
-  it('accepts "git push"', () => expect(validateGitPushPull('git push')).toBe(true));
-  it('accepts "git push -u origin main"', () => expect(validateGitPushPull('git push -u origin main')).toBe(true));
-  it('accepts "git push origin main"', () => expect(validateGitPushPull('git push origin main')).toBe(true));
-  it('rejects "git pull"', () => expect(validateGitPushPull('git pull')).toBe(false));
-});
-
-describe('validateGitFetchClone', () => {
-  it('accepts "git clone https://github.com/user/repo"', () => expect(validateGitFetchClone('git clone https://github.com/user/repo')).toBe(true));
-  it('rejects "git fetch"', () => expect(validateGitFetchClone('git fetch')).toBe(false));
-});
-
-// ── GitHub Collaboration ──────────────────────────────────────────────────────
-describe('validatePullRequests', () => {
-  it('accepts "git checkout -b feature/my-pr"', () => expect(validatePullRequests('git checkout -b feature/my-pr')).toBe(true));
-  it('accepts "git switch -c feature/my-pr"', () => expect(validatePullRequests('git switch -c feature/my-pr')).toBe(true));
-  it('rejects "git checkout -b fix/bug"', () => expect(validatePullRequests('git checkout -b fix/bug')).toBe(false));
-});
-
-describe('validateMergeStrategies', () => {
-  it('accepts "git merge --no-ff feature/ma-feature"', () =>
-    expect(validateMergeStrategies('git merge --no-ff feature/ma-feature')).toBe(true));
-  it('accepts "git merge --no-ff bugfix/123"', () =>
-    expect(validateMergeStrategies('git merge --no-ff bugfix/123')).toBe(true));
-  it('accepts flag-after-branch "git merge feature/ma-feature --no-ff"', () =>
-    expect(validateMergeStrategies('git merge feature/ma-feature --no-ff')).toBe(true));
-  it('accepts "git merge --no-ff feature/ma-feature -m \"msg\""', () =>
-    expect(validateMergeStrategies('git merge --no-ff feature/ma-feature -m "msg"')).toBe(true));
-  it('accepts "git merge --no-ff --no-edit feature/x" (extra harmless flag)', () =>
-    expect(validateMergeStrategies('git merge --no-ff --no-edit feature/x')).toBe(true));
-  it('rejects plain "git merge feature/ma-feature" (no --no-ff)', () =>
-    expect(validateMergeStrategies('git merge feature/ma-feature')).toBe(false));
-  it('rejects "git merge --squash feature/ma-feature"', () =>
-    expect(validateMergeStrategies('git merge --squash feature/ma-feature')).toBe(false));
-  it('rejects "git merge --no-ff --squash feature/x" (conflicting strategies)', () =>
-    expect(validateMergeStrategies('git merge --no-ff --squash feature/x')).toBe(false));
-  it('rejects "git merge --no-ff --ff-only feature/x" (conflicting strategies)', () =>
-    expect(validateMergeStrategies('git merge --no-ff --ff-only feature/x')).toBe(false));
-  it('rejects bare "git merge --no-ff" (no branch arg)', () =>
-    expect(validateMergeStrategies('git merge --no-ff')).toBe(false));
-  it('rejects "git mergeit --no-ff feature/x" (typo on subcommand)', () =>
-    expect(validateMergeStrategies('git mergeit --no-ff feature/x')).toBe(false));
-});
-
-describe('validateGithubActions', () => {
-  it('accepts "git status"', () => expect(validateGithubActions('git status')).toBe(true));
-  it('rejects "git push"', () => expect(validateGithubActions('git push')).toBe(false));
 });
 
 // ── AI Help (Module 11) ──────────────────────────────────────────────────────

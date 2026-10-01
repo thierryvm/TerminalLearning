@@ -1233,6 +1233,18 @@ La même conversation a tranché une autre question. La page d'accueil promet un
 
 ---
 
+### GitHub, geste par geste (1er octobre 2026)
+
+Avec un dépôt distant qui bouge, les six leçons du module GitHub pouvaient enfin devenir des exercices complets. L'une d'elles se terminait sur `git status` : vérifier son dépôt, puis « GitHub Actions fera le reste ». L'élève n'avait rien appris d'Actions. Elle lui fait maintenant ranger un vrai workflow dans `.github/workflows/`, le committer et le pousser.
+
+Le plus utile, dans ce chantier, a été de jouer l'élève qui se trompe d'ordre. S'il committe avant de récupérer le travail de sa collègue, `git pull` refuse : les historiques ont divergé. Le vrai Git propose trois options de configuration, ce qui n'aide pas un débutant. L'exercice lui donne la commande qui le sort de là, `git pull --no-rebase --no-edit`, et le `--no-edit` n'est pas un détail : sans lui, un vrai terminal ouvre un éditeur pour le message de fusion, souvent vim, dont beaucoup de débutants ne savent pas sortir. Même chose pour `git merge --no-ff`.
+
+Deux vérifications ont changé ce que j'allais écrire. Sous Windows, `New-Item -ItemType Directory .github/workflows` crée bien `.github` au passage dans un vrai PowerShell 7, mais le simulateur prenait le mot `Directory` pour le nom du dossier : il le corrige maintenant. Et les versions des actions GitHub de la théorie dataient : `actions/checkout` et `actions/setup-node` en sont à la v7, Node 24 est la version maintenue. Je les ai lues sur les pages de publication de GitHub, pas dans un résultat de recherche : deux sources s'y contredisaient.
+
+Six validateurs de plus ont disparu. Les écarts entre la théorie et le terminal passent de 120 à 90.
+
+---
+
 ## Épilogue ouvert
 
 Il y a des questions auxquelles on n'a pas encore de réponse.
