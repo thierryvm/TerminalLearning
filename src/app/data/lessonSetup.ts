@@ -213,6 +213,16 @@ export const gitRepoWithRemote: LessonSetup = {
 const REMOTE_URL = 'https://github.com/user/mon-projet.git';
 const COLLEAGUE_HASH = 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b';
 
+/** `main` pushed with `git push -u origin main`: on GitHub, tracked, nothing new on either side. */
+export const gitRepoPushed: LessonSetup = {
+  apply: (s, env = 'linux') => withGit(s, env, {
+    remotes: { origin: REMOTE_URL },
+    remoteRefs: { 'origin/main': INITIAL_HASH },
+    upstream: { main: 'origin/main' },
+  }, true),
+  note: 'Dépôt Git prêt dans ~/projets (main envoyée sur GitHub et suivie).',
+};
+
 /**
  * `main` pushed with `git push -u origin main`; since then a colleague pushed
  * a commit to GitHub (an Installation section in README.md) that this
@@ -222,11 +232,7 @@ const COLLEAGUE_HASH = 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b';
  */
 export const gitRepoBehindRemote: LessonSetup = {
   apply: (s, env = 'linux') => {
-    const base = withGit(s, env, {
-      remotes: { origin: REMOTE_URL },
-      remoteRefs: { 'origin/main': INITIAL_HASH },
-      upstream: { main: 'origin/main' },
-    }, true);
+    const base = gitRepoPushed.apply(s, env);
     const g = base.git!;
     const first = g.objects![INITIAL_HASH];
     const readme = first.tree?.['README.md'] ?? '';

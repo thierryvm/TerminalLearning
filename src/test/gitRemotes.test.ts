@@ -125,6 +125,43 @@ describe('a remote that moved on: a colleague pushed', () => {
     expect(texts(t.run('git push'))[1]).toBe(' ! [rejected]        main -> main (non-fast-forward)');
   });
 
+  it('diverged: git pull --ff-only refuses, git pull --no-rebase merges, then the push goes through', () => {
+    const t = behind();
+    t.run('echo "<p>Contact</p>" > contact.html');
+    t.run('git add contact.html');
+    t.run('git commit -q -m "feat: page contact"');
+    const ffOnly = t.run('git pull --ff-only');
+    expect(texts(ffOnly)).toEqual([
+      FROM,
+      '   a3f8c12..e5d1a8c  main       -> origin/main',
+      "hint: Diverging branches can't be fast-forwarded, you need to either:",
+      'hint:',
+      'hint: \tgit merge --no-ff',
+      'hint:',
+      'hint: or:',
+      'hint:',
+      'hint: \tgit rebase',
+      'hint:',
+      'hint: Disable this message with "git config set advice.diverging false"',
+      'fatal: Not possible to fast-forward, aborting.',
+    ]);
+    expect(ffOnly.status).toBe(128);
+    expect(texts(t.run('git pull --no-rebase'))).toEqual([
+      "Merge made by the 'ort' strategy.",
+      ' README.md | 4 ++++',
+      ' 1 file changed, 4 insertions(+)',
+    ]);
+    expect(texts(t.run('git log --oneline -1'))[0]).toMatch(/^[0-9a-f]{7} \(HEAD -> main\) Merge branch 'main' of https:\/\/github\.com\/user\/mon-projet$/);
+    expect(texts(t.run('git status')).slice(1, 3)).toEqual([
+      "Your branch is ahead of 'origin/main' by 2 commits.",
+      '  (use "git push" to publish your local commits)',
+    ]);
+    const push = t.run('git push');
+    expect(texts(push)[1]).toMatch(/^ {3}e5d1a8c\.\.[0-9a-f]{7} {2}main -> main$/);
+    expect(t.state.git!.remoteServer!['origin/main']).toBe(t.state.git!.refs!.main);
+    expect(texts(t.run('git pull --ff-only'))).toEqual(['Already up to date.']);
+  });
+
   it('new, forced and deleted branches in a fetch report', () => {
     const t = behind();
     t.run('git fetch -q');
