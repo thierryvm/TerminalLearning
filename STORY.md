@@ -1251,7 +1251,7 @@ Le 29 septembre, j'avais corrigé le flou en haut de l'app installée sur iPhone
 
 Ce défaut n'existe que dans une app installée, sur un vrai iPhone. Aucun navigateur de test ne le reproduit, donc aucun test automatique ne pouvait me prévenir. En relisant les correctifs des autres projets, j'ai vu ce qui m'avait échappé : la plupart précisaient eux-mêmes qu'ils n'avaient pas été vérifiés sur un appareil. Un seul l'avait été, et il ne combat pas le flou : il en éloigne le contenu.
 
-C'est la version appliquée. Dans l'app installée sur iPhone, le haut de l'app descend de 2,5rem, et le flou ne recouvre plus qu'une bande de couleur unie. Le verdict reste celui de l'iPhone de Thierry, pas celui des tests.
+C'est la version appliquée. Dans l'app installée sur iPhone, le haut de l'app descend de 2,5rem, et le flou ne recouvre plus qu'une bande de couleur unie. Le verdict reste celui de l'iPhone de Thierry, pas celui des tests. Il est tombé le soir même : plus de flou.
 
 ---
 
