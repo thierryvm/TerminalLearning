@@ -434,6 +434,8 @@ function decorations(g: GitState, hash: string): string {
   const names = [
     ...Object.entries(refs).filter(([b, h]) => h === hash && !(headHere && b === g.branch)).map(([b]) => `refs/heads/${b}`),
     ...Object.entries(g.remoteRefs ?? {}).filter(([, h]) => h === hash).map(([r]) => `refs/remotes/${r}`),
+    // origin/HEAD (after a clone or a fetch) sits on the remote's default branch.
+    ...Object.entries(g.remoteHead ?? {}).filter(([r, b]) => g.remoteRefs?.[`${r}/${b}`] === hash).map(([r]) => `refs/remotes/${r}/HEAD`),
     ...Object.entries(g.tags ?? {}).filter(([, h]) => h === hash).map(([t]) => `refs/tags/${t}`),
   ].sort().reverse().map((n) => (n.startsWith('refs/tags/') ? `tag: ${n.slice(10)}` : n.replace(/^refs\/(heads|remotes)\//, '')));
   const all = [...(headHere ? [`HEAD -> ${g.branch}`] : []), ...names];
@@ -975,6 +977,18 @@ function trackingTag(g: GitState, branch: string, withName: boolean): string {
 const pushLine = (flag: string, summary: string, from: string, to: string, note = '') =>
   ` ${flag} ${summary.padEnd(17)} ${from} -> ${to}${note}`;
 
+/** One line of fetch's report: like push's, the remote branch padded to 10. */
+const fetchLine = (flag: string, summary: string, from: string, to: string, note = '') =>
+  pushLine(flag, summary, from.padEnd(10), to, note);
+
+const PUSH_FETCH_FIRST_HINTS = [
+  'hint: Updates were rejected because the remote contains work that you do not',
+  'hint: have locally. This is usually caused by another repository pushing to',
+  'hint: the same ref. If you want to integrate the remote changes, use',
+  "hint: 'git pull' before pushing again.",
+  "hint: See the 'Note about fast-forwards' in 'git push --help' for details.",
+];
+
 /**
  * GitHub answers the first push of a branch with a link to open a pull
  * request (any branch but the default one).
@@ -1161,11 +1175,49 @@ export function handleGit(
     setGit({ ...g, remoteHead: { ...g.remoteHead, [remote]: 'main' } });
   };
 
-  /** Naming the branch fetches it into FETCH_HEAD, and git says so. */
-  const fetchHeadLines = (url: string, name: string): OutputLine[] => [
-    { text: `From ${url.replace(/\.git$/, '')}`, type: 'output' },
-    { text: ` * ${'branch'.padEnd(17)} ${name.padEnd(10)} -> FETCH_HEAD`, type: 'output' },
-  ];
+  /** The branches the remote itself holds, by name (`main`, not `origin/main`). */
+  const serverBranches = (remote: string): Record<string, string> => Object.fromEntries(
+    Object.entries(newState.git!.remoteServer ?? newState.git!.remoteRefs ?? {})
+      .filter(([ref]) => ref.startsWith(`${remote}/`))
+      .map(([ref, hash]) => [ref.slice(remote.length + 1), hash]),
+  );
+
+  /**
+   * Brings `remote`'s branches (only `branch` when one is named) into the
+   * remote-tracking branches, and returns git's report: one line per change,
+   * alphabetical, except that the fetch recording origin/HEAD lists the default
+   * branch first; `prune` drops what the remote deleted (git 2.56, 1 October 2026).
+   */
+  const fetchFrom = (remote: string, opts: { branch?: string; prune?: boolean } = {}): string[] => {
+    const g = newState.git!;
+    const server = serverBranches(remote);
+    const remoteRefs = { ...g.remoteRefs };
+    const lines: string[] = [];
+    if (opts.prune) {
+      for (const ref of Object.keys(remoteRefs).filter((r) => r.startsWith(`${remote}/`)).sort()) {
+        if (server[ref.slice(remote.length + 1)]) continue;
+        lines.push(fetchLine('-', '[deleted]', '(none)', ref));
+        delete remoteRefs[ref];
+      }
+    }
+    const names = opts.branch ? [opts.branch] : Object.keys(server).sort();
+    const headFirst = !opts.branch && !g.remoteHead?.[remote] && names.includes('main');
+    for (const name of headFirst ? ['main', ...names.filter((n) => n !== 'main')] : names) {
+      const ref = `${remote}/${name}`;
+      const [ours, theirs] = [remoteRefs[ref], server[name]];
+      if (!theirs || ours === theirs) continue;
+      if (!ours) lines.push(fetchLine('*', '[new branch]', name, ref));
+      else if (isAncestor(g.objects ?? {}, ours, theirs)) lines.push(fetchLine(' ', `${short(ours)}..${short(theirs)}`, name, ref));
+      else lines.push(fetchLine('+', `${short(ours)}...${short(theirs)}`, name, ref, '  (forced update)'));
+      remoteRefs[ref] = theirs;
+    }
+    setGit({ ...g, remoteRefs });
+    if (!opts.branch) recordRemoteHead(remote);
+    return lines;
+  };
+
+  /** `From <url>` heads a fetch report that has something to say. */
+  const fromLine = (remote: string) => `From ${newState.git!.remotes[remote].replace(/\.git$/, '')}`;
 
   /** Whether `rel` names something git knows or sees: a file or directory, or a path in a tree. */
   const known = (rel: string | null, ...trees: Tree[]) =>
@@ -2195,6 +2247,7 @@ export function handleGit(
             ...g,
             remotes,
             remoteRefs: Object.fromEntries(Object.entries(g.remoteRefs ?? {}).filter(keep)),
+            remoteServer: g.remoteServer && Object.fromEntries(Object.entries(g.remoteServer).filter(keep)),
             upstream: Object.fromEntries(Object.entries(g.upstream ?? {}).filter(([, up]) => !up.startsWith(`${name}/`))),
             remoteHead,
           });
@@ -2212,6 +2265,7 @@ export function handleGit(
             ...g,
             remotes: { ...others, [to]: url },
             remoteRefs: Object.fromEntries(Object.entries(g.remoteRefs ?? {}).map(([r, h]) => [moved(r), h])),
+            remoteServer: g.remoteServer && Object.fromEntries(Object.entries(g.remoteServer).map(([r, h]) => [moved(r), h])),
             upstream: Object.fromEntries(Object.entries(g.upstream ?? {}).map(([b, up]) => [b, moved(up)])),
             remoteHead: head ? { ...heads, [to]: head } : heads,
           });
@@ -2279,20 +2333,28 @@ export function handleGit(
       const tip = g.refs?.[src];
       if (!tip) return fail(1, `error: src refspec ${srcTyped} does not match any`, `error: failed to push some refs to '${url}'`);
       const key = `${remote}/${dst}`;
-      const old = g.remoteRefs?.[key];
+      // What the remote holds, which a colleague may have moved since our last fetch.
+      const old = serverBranches(remote)[dst];
       const tracking = setUpstream ? [{ text: `branch '${src}' set up to track '${key}'.`, type: 'output' as const }] : [];
       const upstream = setUpstream ? { ...g.upstream, [src]: key } : g.upstream;
+      const pushed = {
+        remoteRefs: { ...g.remoteRefs, [key]: tip },
+        remoteServer: g.remoteServer && { ...g.remoteServer, [key]: tip },
+      };
       if (old === tip) {
-        setGit({ ...g, upstream });
+        setGit({ ...g, ...pushed, upstream });
         return { lines: [{ text: 'Everything up-to-date', type: 'output' }, ...tracking], newState };
       }
       if (old && !isAncestor(g.objects ?? {}, old, tip)) {
+        // A commit this repository never fetched: git asks to fetch first.
+        const objects = g.objects ?? {};
+        const known = [...Object.values(g.refs ?? {}), ...Object.values(g.remoteRefs ?? {})].some((h) => ancestors(objects, h).has(old));
         return {
           lines: [
             { text: `To ${url}`, type: 'output' },
-            err(pushLine('!', '[rejected]', srcTyped, dst, ' (non-fast-forward)')),
+            err(pushLine('!', '[rejected]', srcTyped, dst, known ? ' (non-fast-forward)' : ' (fetch first)')),
             err(`error: failed to push some refs to '${url}'`),
-            ...(src === g.branch ? PUSH_REJECTED_HINTS : PUSH_REJECTED_OTHER_HINTS).map(err),
+            ...(!known ? PUSH_FETCH_FIRST_HINTS : src === g.branch ? PUSH_REJECTED_HINTS : PUSH_REJECTED_OTHER_HINTS).map(err),
           ],
           newState,
           status: 1,
@@ -2300,7 +2362,7 @@ export function handleGit(
       }
       const defaultBranch = g.remoteHead?.[remote] ?? 'main';
       const hint = !old && dst !== defaultBranch ? githubPullRequestHint(url, dst) : [];
-      setGit({ ...g, remoteRefs: { ...g.remoteRefs, [key]: tip }, upstream });
+      setGit({ ...g, ...pushed, upstream });
       return {
         lines: [
           ...hint.map((text) => ({ text, type: 'output' as const })),
@@ -2313,8 +2375,7 @@ export function handleGit(
     }
 
     // ── git pull ──────────────────────────────────────────────────────────────
-    // The simulated remote never moves on its own: fetching brings nothing new,
-    // and pulling merges what the remote-tracking branch already holds.
+    // A fetch first (its report under `From <url>`), then a merge of what it brought.
     case 'pull': {
       if (!inRepo()) return notARepo();
       const g = newState.git!;
@@ -2325,33 +2386,38 @@ export function handleGit(
       if (o.short.size || o.long.size) return notSimulated(`L'option ${[...o.short].map((c) => `-${c}`).concat([...o.long.keys()].map((k) => `--${k}`))[0]} de git pull`, newState);
       const [remote, branch] = o.positional;
       let ref: string;
-      const fromLines: OutputLine[] = [];
+      let fetched: string[];
       const up = g.upstream?.[g.branch];
       if (!remote) {
         // With no remote at all, git still suggests origin for a rebase, `<remote>` for a merge.
         if (!up) return fail(1, ...PULL_NO_TRACKING(g.branch, defaultRemote(g) ?? (rebase ? 'origin' : null), rebase));
         ref = up;
-        recordRemoteHead(up.slice(0, up.indexOf('/')));
+        const from = up.slice(0, up.indexOf('/'));
+        const report = fetchFrom(from);
+        fetched = report.length ? [fromLine(from), ...report] : [];
       } else {
         // git pull exits with 1 where fetch and push exit with 128.
-        const url = g.remotes[remote];
-        if (!url) return fail(1, ...NOT_A_REMOTE(remote));
+        if (!g.remotes[remote]) return fail(1, ...NOT_A_REMOTE(remote));
         if (!branch) {
           // `git pull origin` pulls the upstream, and only from the remote it lives on.
           if (!up?.startsWith(`${remote}/`)) return fail(1, ...PULL_NOT_DEFAULT_REMOTE(remote));
           ref = up;
-          recordRemoteHead(remote);
+          const report = fetchFrom(remote);
+          fetched = report.length ? [fromLine(remote), ...report] : [];
         } else {
           ref = `${remote}/${branch}`;
-          if (!g.remoteRefs?.[ref]) return fail(1, `fatal: couldn't find remote ref ${branch}`);
-          fromLines.push(...fetchHeadLines(url, branch));
+          if (!serverBranches(remote)[branch]) return fail(1, `fatal: couldn't find remote ref ${branch}`);
+          // Naming the branch fetches it into FETCH_HEAD, and git says so.
+          fetched = [fromLine(remote), fetchLine('*', 'branch', branch, 'FETCH_HEAD'), ...fetchFrom(remote, { branch })];
         }
       }
-      const theirs = g.remoteRefs?.[ref];
-      const tip = g.refs?.[g.branch];
+      const fromLines: OutputLine[] = fetched.map((text) => ({ text, type: 'output' }));
+      const now = newState.git!;
+      const theirs = now.remoteRefs?.[ref];
+      const tip = now.refs?.[now.branch];
       if (!theirs) return fail(1, `fatal: couldn't find remote ref ${ref.slice(ref.indexOf('/') + 1)}`);
-      if (tip && isAncestor(g.objects ?? {}, theirs, tip)) return { lines: [...fromLines, { text: 'Already up to date.', type: 'output' }], newState };
-      if (tip && !isAncestor(g.objects ?? {}, tip, theirs)) {
+      if (tip && isAncestor(now.objects ?? {}, theirs, tip)) return { lines: [...fromLines, { text: 'Already up to date.', type: 'output' }], newState };
+      if (tip && !isAncestor(now.objects ?? {}, tip, theirs)) {
         if (rebase) return notSimulated('git pull --rebase sur des branches divergentes', newState);
         return { lines: [...fromLines, ...PULL_DIVERGENT.map(err)], newState, status: 128 };
       }
@@ -2366,14 +2432,20 @@ export function handleGit(
       const o = parseOptions(args.slice(1));
       const [remote, branch] = o.positional;
       if (remote && !g.remotes[remote]) return fail(128, ...NOT_A_REMOTE(remote));
+      const output = (texts: string[]) => texts.map((text): OutputLine => ({ text, type: 'output' }));
       if (remote && branch) {
-        if (!g.remoteRefs?.[`${remote}/${branch}`]) return fail(128, `fatal: couldn't find remote ref ${branch}`);
-        return { lines: fetchHeadLines(g.remotes[remote], branch), newState };
+        if (!serverBranches(remote)[branch]) return fail(128, `fatal: couldn't find remote ref ${branch}`);
+        return { lines: output([fromLine(remote), fetchLine('*', 'branch', branch, 'FETCH_HEAD'), ...fetchFrom(remote, { branch })]), newState };
       }
-      // Nothing new on the remote: git fetches silently, and notes the remote's HEAD.
-      const fetched = o.long.has('all') ? Object.keys(g.remotes) : [remote ?? g.upstream?.[g.branch]?.split('/')[0] ?? defaultRemote(g)];
-      fetched.forEach((name) => name && recordRemoteHead(name));
-      return { lines: [], newState };
+      // Nothing new on the remote: git fetches silently (and still notes the remote's HEAD).
+      const prune = o.short.has('p') || o.long.has('prune');
+      const names = o.long.has('all') ? Object.keys(g.remotes) : [remote ?? g.upstream?.[g.branch]?.split('/')[0] ?? defaultRemote(g)];
+      const lines = names.flatMap((name) => {
+        if (!name) return [];
+        const report = fetchFrom(name, { prune });
+        return report.length ? [fromLine(name), ...report] : [];
+      });
+      return { lines: output(lines), newState };
     }
 
     // ── git clone ─────────────────────────────────────────────────────────────

@@ -82,6 +82,12 @@ export interface GitState {
   tags?: Record<string, string>;
   /** Remote-tracking branches (`origin/main`) and their commit, as the last push or fetch left them. */
   remoteRefs?: Record<string, string>;
+  /**
+   * The branches the remote itself holds, keyed like `remoteRefs`, once someone
+   * else pushed there (a colleague's commit this repository has not fetched yet).
+   * Absent: the remote holds exactly what `remoteRefs` says.
+   */
+  remoteServer?: Record<string, string>;
   /** The branch each local branch tracks (`main` → `origin/main`), set by `push -u`, `clone`, `branch -u`. */
   upstream?: Record<string, string>;
   /** Each remote's default branch, as `clone` records it (`origin/HEAD -> origin/main`). */

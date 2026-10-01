@@ -5,6 +5,20 @@
 
 ---
 
+## 👥 1er octobre 2026 — Un dépôt distant où quelqu'un d'autre pousse
+
+*Terminal · `git fetch` et `git pull` ramènent de vrais commits · sorties vérifiées sur Git 2.56*
+
+Jusqu'ici, le dépôt distant du terminal ne bougeait jamais : `git pull` n'avait rien à récupérer. Il peut maintenant recevoir les commits d'un collègue, comme sur GitHub.
+
+- **`git status` ne le sait pas tout de suite.** Comme le vrai Git, il compare avec ce que le dépôt a récupéré la dernière fois. Après `git fetch`, il annonce le retard.
+- **`git fetch` et `git pull` le racontent.** `From …` puis une ligne par branche : mise à jour, nouvelle branche, mise à jour forcée, ou branche supprimée avec `--prune`.
+- **Pousser trop tôt est refusé.** Un `git push` avant d'avoir récupéré le travail du collègue est rejeté (« fetch first »), avec le conseil de Git. C'est l'erreur la plus courante en équipe, elle se rencontre maintenant dans le terminal.
+- **`gh` (GitHub CLI) dit qu'il n'est pas simulé** au lieu de répondre « commande introuvable » : il agit sur un vrai compte GitHub, le terminal ne peut pas l'imiter honnêtement.
+- Écarts entre la théorie des leçons et le terminal : **146 → 120**.
+
+---
+
 ## 🔗 1er octobre 2026 — Push, pull et clone répondent comme le vrai Git
 
 *Terminal · commandes Git distantes · sorties vérifiées sur Git 2.56*

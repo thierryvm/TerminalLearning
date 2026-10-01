@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState, processCommand } from '../app/data/terminalEngine';
 import type { TerminalState } from '../app/data/commands/types';
+import { gitRepoBehindRemote } from '../app/data/lessonSetup';
 
 const texts = (r: { lines: { text: string }[] }) => r.lines.map((l) => l.text);
 const short = (h: string | undefined) => (h ?? '').slice(0, 7);
@@ -28,6 +29,113 @@ function repo() {
   for (const c of ['mkdir a', 'cd a', 'git init -q', 'echo x > R', 'git add .', 'git commit -q -m c1']) api.run(c);
   return api;
 }
+
+/** ~/projets pushed and tracked, and a colleague's commit on GitHub not fetched yet. */
+function behind() {
+  let s = gitRepoBehindRemote.apply(createInitialState(), 'linux');
+  return {
+    run(command: string) {
+      const r = processCommand(s, command, 'linux');
+      s = r.newState;
+      return r;
+    },
+    /** Moves the remote's branches, as other people pushing would. */
+    server(refs: Record<string, string>) {
+      s = { ...s, git: { ...s.git!, remoteServer: refs } };
+    },
+    get state() { return s; },
+  };
+}
+
+const FROM = 'From https://github.com/user/mon-projet';
+const FAST_FORWARD = ['Updating a3f8c12..e5d1a8c', 'Fast-forward', ' README.md | 4 ++++', ' 1 file changed, 4 insertions(+)'];
+
+describe('a remote that moved on: a colleague pushed', () => {
+  it('status does not know until git fetch brings the commit; then git pull fast-forwards', () => {
+    const t = behind();
+    expect(texts(t.run('git status'))).toEqual([
+      'On branch main',
+      "Your branch is up to date with 'origin/main'.",
+      '',
+      'nothing to commit, working tree clean',
+    ]);
+    expect(texts(t.run('git log HEAD..origin/main --oneline'))).toEqual([]);
+    expect(texts(t.run('git fetch'))).toEqual([FROM, '   a3f8c12..e5d1a8c  main       -> origin/main']);
+    expect(texts(t.run('git status')).slice(0, 3)).toEqual([
+      'On branch main',
+      "Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.",
+      '  (use "git pull" to update your local branch)',
+    ]);
+    // As in a terminal, where git decorates (git log --decorate when redirected).
+    expect(texts(t.run('git log HEAD..origin/main --oneline'))).toEqual(['e5d1a8c (origin/main, origin/HEAD) docs: ajoute la section Installation au README']);
+    expect(texts(t.run('git branch -r'))).toEqual(['  origin/HEAD -> origin/main', '  origin/main']);
+    expect(texts(t.run('git fetch'))).toEqual([]);
+    // Already fetched: git pull has nothing to report under From, it merges.
+    expect(texts(t.run('git pull'))).toEqual(FAST_FORWARD);
+    expect(texts(t.run('cat README.md')).slice(-3)).toEqual(['## Installation', '', 'npm install']);
+    expect(texts(t.run('git pull'))).toEqual(['Already up to date.']);
+  });
+
+  it('git pull fetches first, and says so', () => {
+    const t = behind();
+    expect(texts(t.run('git pull'))).toEqual([FROM, '   a3f8c12..e5d1a8c  main       -> origin/main', ...FAST_FORWARD]);
+  });
+
+  it('git pull origin main also names FETCH_HEAD', () => {
+    const t = behind();
+    expect(texts(t.run('git pull origin main'))).toEqual([
+      FROM,
+      ' * branch            main       -> FETCH_HEAD',
+      '   a3f8c12..e5d1a8c  main       -> origin/main',
+      ...FAST_FORWARD,
+    ]);
+  });
+
+  it('pushing before pulling is rejected (fetch first); after a fetch, the branches have diverged', () => {
+    const t = behind();
+    t.run('echo "<p>Contact</p>" > contact.html');
+    t.run('git add contact.html');
+    t.run('git commit -q -m "feat: page contact"');
+    const rejected = t.run('git push');
+    expect(texts(rejected)).toEqual([
+      'To https://github.com/user/mon-projet.git',
+      ' ! [rejected]        main -> main (fetch first)',
+      "error: failed to push some refs to 'https://github.com/user/mon-projet.git'",
+      'hint: Updates were rejected because the remote contains work that you do not',
+      'hint: have locally. This is usually caused by another repository pushing to',
+      'hint: the same ref. If you want to integrate the remote changes, use',
+      "hint: 'git pull' before pushing again.",
+      "hint: See the 'Note about fast-forwards' in 'git push --help' for details.",
+    ]);
+    expect(rejected.status).toBe(1);
+
+    const pull = t.run('git pull');
+    expect(texts(pull).slice(0, 3)).toEqual([FROM, '   a3f8c12..e5d1a8c  main       -> origin/main', 'hint: You have divergent branches and need to specify how to reconcile them.']);
+    expect(texts(pull).slice(-1)).toEqual(['fatal: Need to specify how to reconcile divergent branches.']);
+    expect(pull.status).toBe(128);
+    // Now the commit is known here: the same push is a non-fast-forward.
+    expect(texts(t.run('git push'))[1]).toBe(' ! [rejected]        main -> main (non-fast-forward)');
+  });
+
+  it('new, forced and deleted branches in a fetch report', () => {
+    const t = behind();
+    t.run('git fetch -q');
+    t.server({ 'origin/main': 'a3f8c129e4b7d60c1f25a8e3b9d47f0c6a1e582d', 'origin/zz': 'e5d1a8c3f7b29e04d6a3c81f5b7e2d90c4a6f13b', 'origin/aa': 'a3f8c129e4b7d60c1f25a8e3b9d47f0c6a1e582d' });
+    expect(texts(t.run('git fetch'))).toEqual([
+      FROM,
+      ' * [new branch]      aa         -> origin/aa',
+      ' + e5d1a8c...a3f8c12 main       -> origin/main  (forced update)',
+      ' * [new branch]      zz         -> origin/zz',
+    ]);
+    t.server({ 'origin/main': 'a3f8c129e4b7d60c1f25a8e3b9d47f0c6a1e582d' });
+    expect(texts(t.run('git fetch'))).toEqual([]);
+    expect(texts(t.run('git fetch --prune'))).toEqual([
+      FROM,
+      ' - [deleted]         (none)     -> origin/aa',
+      ' - [deleted]         (none)     -> origin/zz',
+    ]);
+  });
+});
 
 describe('git remote', () => {
   it('adds, lists, renames and refuses what real git refuses', () => {
