@@ -284,28 +284,6 @@ export const validateGitConfig: ValidateFn = (cmd) => /^git\s+config\s+(--list|-
 
 export const validateGitStatusLog: ValidateFn = (cmd) => /^git\s+status(\s+(-\w+|--\w[\w-]*))*$/.test(cmd.trim().toLowerCase());
 
-export const validateGitRemote: ValidateFn = (cmd) => /^git\s+remote\s+add\s+\S+\s+https?:\/\/\S+/.test(cmd.trim().toLowerCase());
-
-export const validateGitPushPull: ValidateFn = (cmd) => /^git\s+push(\s+-u\s+\S+\s+\S+|\s+\S+\s+\S+|\s*)$/.test(cmd.trim().toLowerCase());
-
-export const validateGitFetchClone: ValidateFn = (cmd) => /^git\s+clone\s+\S+/.test(cmd.trim().toLowerCase());
-
-export const validatePullRequests: ValidateFn = (cmd) => {
-    const c = cmd.trim().toLowerCase();
-    return /^git\s+checkout\s+-b\s+feature\/\S+/.test(c) || /^git\s+switch\s+-c\s+feature\/\S+/.test(c);
-  };
-
-export const validateMergeStrategies: ValidateFn = (cmd) => {
-  const c = cmd.trim().toLowerCase();
-  if (!/^git\s+merge\b/.test(c)) return false;
-  const tokens = c.split(/\s+/).slice(2);
-  if (!tokens.includes('--no-ff')) return false;
-  if (tokens.some((t) => t === '--squash' || t === '--ff-only' || t === '--ff')) return false;
-  return tokens.some((t) => !t.startsWith('-'));
-};
-
-export const validateGithubActions: ValidateFn = (cmd) => /^git\s+status/.test(cmd.trim().toLowerCase());
-
 // ── Module 11 — L'IA comme outil dev ─────────────────────────────────────────
 export const validateAiHelp: ValidateFn = (cmd) => /^ai-help(\s.*)?$/.test(cmd.trim().toLowerCase());
 export const validateAiHelpCapabilities: ValidateFn = (cmd) => /^ai-help\s+capabilities$/.test(cmd.trim().toLowerCase());
