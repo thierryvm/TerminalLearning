@@ -1229,7 +1229,7 @@ Thierry a relu cette page et posé une question simple : pourquoi une histoire c
 
 Le journal se lit maintenant du prologue à aujourd'hui, regroupé en huit parties, avec un sommaire et un lien pour reprendre au dernier chapitre. Rien n'a été réécrit : les chapitres ont seulement retrouvé leur place. Le changelog, lui, reste du plus récent au plus ancien, parce qu'on le consulte pour savoir ce qui vient de changer.
 
-La même conversation a tranché une autre question. La page d'accueil promet un « mode histoire » : apprendre le terminal en suivant un personnage, chaque leçon devenant une scène. Il attendra la fin du parcours principal : on termine d'abord ce qu'on enseigne.
+La même conversation a tranché une autre question. La page d'accueil promet un « mode histoire » : apprendre le terminal en suivant un personnage, chaque leçon devenant une scène. Il attendra la fin du parcours principal : on termine d'abord ce qu'on enseigne. La feuille de route de la page d'accueil le range désormais en dernier, sous « Après le parcours principal ».
 
 ---
 

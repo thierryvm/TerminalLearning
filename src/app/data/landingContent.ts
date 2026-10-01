@@ -161,7 +161,6 @@ export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
   {
     group: 'Gamification & UX',
     items: [
-      'Mode histoire narratif',
       'Badges & Open Badges 3.0 (CEFR + EQF)',
       'Révisions intelligentes',
     ],
@@ -172,6 +171,12 @@ export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
       'Intégration LMS (LTI 1.3 : Moodle, Canvas…)',
       'Tuteur IA V1.5 — modèles filtrés par rôle, isolation Web Worker',
       'Parcours avancés (Docker, scripting, IA augmentée)',
+    ],
+  },
+  {
+    group: 'Après le parcours principal',
+    items: [
+      'Mode histoire : suivre un personnage, chaque leçon devient une scène',
     ],
   },
 ];

@@ -12,6 +12,7 @@
 - **Du prologue à aujourd'hui.** La page mélangeait trois ordres : les chapitres récents à l'envers, le récit d'origine dans l'ordre, des journées de mai en vrac. Elle se lit maintenant du début à la fin, en huit parties datées (des fondations jusqu'au simulateur comparé à un vrai terminal).
 - **Un sommaire cliquable**, et un lien pour reprendre au dernier chapitre. Les liens fonctionnent aussi sur GitHub, et un test vérifie que chaque lien du sommaire mène à un titre existant.
 - Le changelog garde l'ordre inverse : on le consulte pour savoir ce qui vient de changer.
+- **Feuille de route** : le mode histoire (apprendre en suivant un personnage, chaque leçon devient une scène) passe en dernier, sous « Après le parcours principal ». On termine d'abord le parcours qu'on enseigne.
 
 ---
 
