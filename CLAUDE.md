@@ -76,6 +76,7 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Phase 3.5 ✅ Landing upgrade + OAuth GitHub/Google + security hardening + sidebar auth (3 avril 2026)
 - Phase 4 ✅ Curriculum v2 + multi-environment (Linux/macOS/Windows) + terminal profiles (9 avril 2026)
 - Phase 5 🔄 Curriculum expansion — 11 modules, 66 leçons, 900 tests unitaires + 176 E2E Playwright (en cours)
+- Phase 5d 🔜 Des bases au niveau intermédiaire — plan validé par @thierry le 1er octobre 2026 (`docs/strategy/2026-10-01-bases-vers-intermediaire.md`) : lots 0 à 9, une PR à la fois. Les outils de métier ne sont pas simulés : orientation vers des labos externes.
 - Phase 5.5 ✅ Terminal Sentinel — agents sécurité + contenus automatisés (PR #90, 12 avril 2026)
 - Phase 7 ✅ RBAC complet — student/teacher/institution_admin/super_admin + RLS + audit log (PR #92, 12 avril 2026)
 - THI-29 ✅ Module 11 — L'IA comme outil dev (12 leçons, `ai-help` + 11 sous-commandes, PR #103, 13 avril 2026)
@@ -166,6 +167,8 @@ App pédagogique pour apprendre le terminal. Bénévole, open source, 100% gratu
 - Invoquer l'agent **`curriculum-validator`** → analyser le rapport, corriger les CRITICAL avant de continuer
 
 ### Après chaque modification de `curriculum.ts`, `terminalEngine.ts` ou `commands/*.ts`
+
+- Suivre la liste de contrôle `docs/processes/curriculum-delivery-checklist.md`. Elle couvre les captures dans un vrai shell, les trois environnements, la page Référence, les compteurs publics (`landingContent.ts`, `index.html`, `llms*.txt`), CHANGELOG/STORY, les bandeaux, la preview et la prod.
 
 - Invoquer l'agent **`test-runner`** → si VERDICT = ❌ Fix required, corriger avant de proposer un commit
 - Si une sortie de terminal (moteur ou exemple de leçon) change : invoquer **`terminal-fidelity-auditor`** sur les commandes touchées. Un attendu de test vient du vrai shell, jamais de la sortie du moteur. Idem quand un exercice en étapes (`steps`, `warn`, `restart`, `successMessage`) fait taper une commande ou décrit un comportement du shell (depuis #403).

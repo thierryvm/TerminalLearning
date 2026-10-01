@@ -16,6 +16,8 @@
 | 5 | `src/app/data/landingContent.ts` | `TRUST_BADGES` (compteur tests si évolué), `ROADMAP_AVAILABLE` / `ROADMAP_PLANNED` si phase bouge |
 | 6 | `CLAUDE.md` (projet) | Section "Phases" — ajouter la phase ou mettre à jour son statut ✅/🔄 |
 
+> Pour une PR qui ajoute une commande, une leçon ou un module, voir aussi [`curriculum-delivery-checklist.md`](curriculum-delivery-checklist.md). Les compteurs publics vivent aussi dans `index.html` (métadonnées + FAQ JSON-LD), `public/llms.txt` et `public/llms-full.txt` (ajout du 1er octobre 2026).
+
 ## Checklist opérationnelle
 
 Avant de clôturer la session de release :
