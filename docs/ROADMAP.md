@@ -1,6 +1,8 @@
 # Roadmap — Terminal Learning
 
-> **Last updated:** 1 October 2026 CEST — 🩺 **Full check-up (P1 terminal fidelity, THI-353), continued**: #396 every reference example runs · #397 tables, blank lines and mobile keys · #398 the installed app clears iOS 26's edge blur · #399 git reads real files, outputs match Git 2.56 · **#400 real git branches** (commit graph, ids identical to real git, merges and real conflicts; two fidelity audits, two code reviews) · #401 the landing page only lists commands the terminal runs and the lessons teach, and its terminal preview prints what real shells print. Planned: a **customising the terminal** module (idea from @thierry, #402). **Multi-step exercises checked on the terminal state** (the conflict lesson now resolves a real conflict end to end; no more auto-advance, a « Suivant » button instead). **Git module as steps** (init, first commit, diff, branch, merge). **Remote repositories as in real git** (`push`, `pull`, `fetch`, `clone`, `remote`, branch tracking in `status` and `branch -vv`, #406). **A remote where a colleague pushes** (`fetch`/`pull` bring real commits, a push is rejected with "fetch first", `gh` says it is not simulated; theory gaps 146 → 120). **GitHub module as steps** (remote, push & pull, fetch, pull request, merge strategies, GitHub Actions; #410, theory gaps 120 → 90). **The top of the installed iPhone app is clear at last** (#411, confirmed on @thierry's iPhone). **#413 Windows fidelity** (`ls`/`Get-ChildItem` print PowerShell 7.6's real table, `rm`/`cp`/`mv` are the cmdlets with their parameters — `rm -rf` is refused —, PowerShell's error messages, reference page updated; bash shown on Windows 34 → 32). Next: the ~20 commands taught but not simulated yet (`find`, `sort`, `diff`, `tar`, `Where-Object`…) and the remaining Windows debt (`New-Item`'s table, case-insensitive paths).
+> **Decision (1 October 2026, @thierry):** Terminal Learning becomes **the reference for learning the terminal from scratch up to an intermediate level**, within what a faithful simulation can do. Job-specific tools (offensive security, network analysis, OSINT) are not simulated; the site points to the free platforms that already teach them. Ordered plan: [Phase 5d](#phase-5d--from-the-basics-to-an-intermediate-level--planned-1-october-2026). Delivery checklist: [`docs/processes/curriculum-delivery-checklist.md`](processes/curriculum-delivery-checklist.md).
+>
+> **Previous update:** 1 October 2026 CEST — 🩺 **Full check-up (P1 terminal fidelity, THI-353), continued**: #396 every reference example runs · #397 tables, blank lines and mobile keys · #398 the installed app clears iOS 26's edge blur · #399 git reads real files, outputs match Git 2.56 · **#400 real git branches** (commit graph, ids identical to real git, merges and real conflicts; two fidelity audits, two code reviews) · #401 the landing page only lists commands the terminal runs and the lessons teach, and its terminal preview prints what real shells print. Planned: a **customising the terminal** module (idea from @thierry, #402). **Multi-step exercises checked on the terminal state** (the conflict lesson now resolves a real conflict end to end; no more auto-advance, a « Suivant » button instead). **Git module as steps** (init, first commit, diff, branch, merge). **Remote repositories as in real git** (`push`, `pull`, `fetch`, `clone`, `remote`, branch tracking in `status` and `branch -vv`, #406). **A remote where a colleague pushes** (`fetch`/`pull` bring real commits, a push is rejected with "fetch first", `gh` says it is not simulated; theory gaps 146 → 120). **GitHub module as steps** (remote, push & pull, fetch, pull request, merge strategies, GitHub Actions; #410, theory gaps 120 → 90). **The top of the installed iPhone app is clear at last** (#411, confirmed on @thierry's iPhone). **#413 Windows fidelity** (`ls`/`Get-ChildItem` print PowerShell 7.6's real table, `rm`/`cp`/`mv` are the cmdlets with their parameters — `rm -rf` is refused —, PowerShell's error messages, reference page updated; bash shown on Windows 34 → 32). Next: the ~20 commands taught but not simulated yet (`find`, `sort`, `diff`, `tar`, `Where-Object`…) and the remaining Windows debt (`New-Item`'s table, case-insensitive paths).
 >
 > **Previous update (26 September 2026 CEST)**: 🩺 **Full check-up (P1 terminal fidelity, THI-353)**: #389 a real shell layer (`;` `&&` `||`, pipelines, every redirection) — **198/198 exercises validate with no red line**; #390 output matches a real shell (`pwd`, `cd -`, `ls` in a pipe, `wc`, `apt`); #391 permanent replay of every lesson's theory (754 commands); #392 `cp`/`mv` into a directory (a `mv file .` wiped the home directory) and native Windows paths in PowerShell — theory gaps **174 → 162**, bash shown on Windows **39 → 37**; #393 audit agents refreshed (13 Opus / 8 Sonnet) + new `terminal-fidelity-auditor` (simulator vs real bash / PowerShell). Public landing roadmap corrected (LTI is a disabled spike, OpenAI BYOK blocked by CORS). Next: PowerShell error messages, `/app/reference` pedagogy, remaining theory gaps (Git history, `gh`, jobs).
 >
@@ -157,6 +159,24 @@ Full-stack developer path — 11 modules ✅ (66 lessons, 1035 unit tests)
 - [ ] **Full dedicated courses** (long-term vision): Git deep-dive, Docker, shell scripting masterclass
 - [ ] **Customising the terminal** (idea from @thierry, 29 September 2026; after "Variables & Scripts"): the profile file (`$PROFILE`, `~/.bashrc`, `~/.zshrc`), aliases and functions, writing one's own prompt (`PS1`, PowerShell's `prompt` function) with the folder, the git branch and the Node version, ANSI colours, then Starship (one config for bash, zsh and PowerShell) and Oh My Posh. The practice terminal shows the prompt the learner builds, live; an "export my config" button gives the real profile to copy. Includes the security lesson of `curl … | sh` / `iex (irm …)` installers. Needs multi-step exercises validated on the terminal state first. Installing Starship or Nerd Fonts cannot happen in the browser: the lessons simulate the configuration's effect.
 
+## Phase 5d — From the basics to an intermediate level 🔜 Planned (1 October 2026)
+
+Full rationale and scope: [`docs/strategy/2026-10-01-bases-vers-intermediaire.md`](strategy/2026-10-01-bases-vers-intermediaire.md) (FR). One PR at a time, each following the [delivery checklist](processes/curriculum-delivery-checklist.md). Expected outputs come from real shells: Git Bash, PowerShell 7 (en-US) and Ubuntu under WSL 2.
+
+- [ ] **Lot 0** — this plan, roadmap and delivery checklist
+- [ ] **Lot 0b** — counter guards: `llms.txt`, `llms-full.txt` and `index.html` metadata checked by a test
+- [ ] **Lot 1** — search and sort: `sort`, `uniq`, `cut`, `find`, `xargs`, `diff`, useful `wc`/`grep` options; PowerShell `Sort-Object`, `Where-Object`, `Select-Object` (3–4 PRs)
+- [ ] **Lot 2** — archives and disk: `tar`, `gzip`, `zip`/`unzip`, `Compress-Archive`, `du`, `df`, `which`/`type`/`Get-Command` (1–2 PRs)
+- [ ] **Lot 3** — `sed` and `awk`, the subset a beginner uses, with an honest note beyond it (1–2 PRs)
+- [ ] **Lot 4** — "Investigating logs" module: fictional auth and web server logs, step-by-step missions without the answer (2–3 PRs)
+- [ ] **Lot 5** — editors: `nano`, and surviving `vim` (1–2 PRs)
+- [ ] **Lot 6** — Scripts module: a small bash interpreter (`if`/`test`, loops, functions, arguments, exit codes), then lessons, then a PowerShell subset (4–6 PRs)
+- [ ] **Lot 7** — Linux system, only with outputs captured on WSL: `apt`, `systemctl status`, `journalctl`, `free` (1–2 PRs)
+- [ ] **Lot 8** — final mission: a no-hint scenario across modules that unlocks what follows; can be taken directly to test out (1–2 PRs)
+- [ ] **Lot 9** — bridges: the "Customising the terminal" module (with installing a real terminal and WSL) and a "What next?" page that points each job to free external labs (OverTheWire, picoCTF, TryHackMe free rooms…) (2–3 PRs)
+
+At every lot, not at the end: reference page, landing page (commands, counters, public roadmap; the landing tells the new path once Lots 4 and 8 ship), SEO and `llms*.txt`, CHANGELOG and STORY, plan and roadmap banners.
+
 ## Phase 5b — Exercise Quality Uplift + CBE Foundation 🔮
 
 - [ ] 3–5 exercises per lesson (currently 1)
@@ -171,6 +191,8 @@ Full-stack developer path — 11 modules ✅ (66 lessons, 1035 unit tests)
   - Full-Stack track → Node.js/web context; Sysadmin track → systemd/server context
 
 ## Phase 5c — Advanced Modules (fullstack → expert networks/servers) 🔮
+
+> **Reframed on 1 October 2026:** editors, scripting and system tools move into [Phase 5d](#phase-5d--from-the-basics-to-an-intermediate-level--planned-1-october-2026). Docker, security and server administration need a real environment and are not simulated; the Lot 9 "What next?" page points to external labs instead.
 
 Full module track for senior fullstack + network/server expert + security fundamentals:
 
@@ -378,6 +400,8 @@ Full module track for senior fullstack + network/server expert + security fundam
 ## Phase 11b — Career Branches + Open Credentials 🔮
 >
 > Full professional track system + verifiable credentials for employers and institutions.
+>
+> **On hold since 1 October 2026:** internal career branches are replaced by the Phase 5d Lot 9 orientation page (jobs → external labs). Credentials wait for the final mission (Lot 8). To be reopened only if a partner (school, lab platform) brings a real environment.
 
 **6 Career Branches:**
 | Branch | Level | Target Audience |
