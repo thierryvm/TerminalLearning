@@ -129,4 +129,4 @@ export const KNOWN_THEORY_GAPS = new Set<string>([
 ]);
 
 /** Lessons whose code blocks show bash to a Windows learner (no Windows variant). */
-export const BASH_SHOWN_ON_WINDOWS_MAX = 34;
+export const BASH_SHOWN_ON_WINDOWS_MAX = 32;

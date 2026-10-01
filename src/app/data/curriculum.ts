@@ -250,7 +250,11 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '$ ls\ndocuments  downloads  projets',
+            contentByEnv: {
+              windows: 'PS> Get-ChildItem\n\n    Directory: C:\\Users\\user\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\nd----           3/30/2026 10:00 AM                documents\nd----           3/30/2026 10:00 AM                downloads\nd----           3/30/2026 10:00 AM                projets\n-a---           3/30/2026 10:00 AM            107 .bashrc\n-a---           3/30/2026 10:00 AM             86 .profile\n-a---           3/30/2026 10:00 AM            177 .zshrc',
+            },
             label: 'ls simple',
+            labelByEnv: { windows: 'Get-ChildItem (alias : ls, dir)' },
           },
           {
             type: 'text',
@@ -259,12 +263,19 @@ export const curriculum: Module[] = [
           {
             type: 'code',
             content: '$ ls documents\nnotes.txt  rapport.md',
+            contentByEnv: {
+              windows: 'PS> Get-ChildItem documents\n\n    Directory: C:\\Users\\user\\documents\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\n-a---           3/30/2026 10:00 AM            142 notes.txt\n-a---           3/30/2026 10:00 AM            179 rapport.md',
+            },
             label: 'ls avec chemin',
+            labelByEnv: { windows: 'Get-ChildItem avec chemin' },
           },
           {
             type: 'tip',
             content:
               'Sur la plupart des systèmes, `ls` colore les répertoires en bleu et les fichiers exécutables en vert pour les distinguer visuellement.',
+            contentByEnv: {
+              windows: 'PowerShell affiche un tableau : le mode (`d` pour un dossier, `a` pour un fichier), la date de modification, la taille en octets (`Length`) et le nom. Les dossiers viennent d\'abord. `ls` et `dir` sont des alias de `Get-ChildItem` : ils affichent le même tableau.',
+            },
           },
         ],
         exercise: {
@@ -289,31 +300,51 @@ export const curriculum: Module[] = [
             type: 'text',
             content:
               '`ls` accepte des options (ou "flags") qui modifient son comportement. Les deux plus importantes sont `-l` (format long) et `-a` (afficher les cachés).',
+            contentByEnv: {
+              windows: '`Get-ChildItem` accepte des paramètres qui modifient son comportement. Il montre déjà les détails (un tableau) ; le paramètre important ici est `-Force`, qui affiche aussi les éléments cachés.',
+            },
           },
           {
             type: 'code',
             content: '$ ls -l\ntotal 3\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 documents\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 downloads\ndrwxr-xr-x 2 user user   4096 Mar 30 10:00 projets',
+            contentByEnv: {
+              windows: 'PS> Get-ChildItem\n\n    Directory: C:\\Users\\user\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\nd----           3/30/2026 10:00 AM                documents\nd----           3/30/2026 10:00 AM                downloads\nd----           3/30/2026 10:00 AM                projets\n-a---           3/30/2026 10:00 AM            107 .bashrc\n-a---           3/30/2026 10:00 AM             86 .profile\n-a---           3/30/2026 10:00 AM            177 .zshrc',
+            },
             label: 'ls -l (format long)',
+            labelByEnv: { windows: 'Get-ChildItem (déjà détaillé)' },
           },
           {
             type: 'info',
             content:
               'Le format long montre : les permissions, le nombre de liens, le propriétaire, le groupe, la taille, la date de modification et le nom.',
+            contentByEnv: {
+              windows: 'Le tableau montre : le mode (`d` dossier, `a` fichier, `h` caché), la date de modification, la taille en octets (`Length`) et le nom.',
+            },
           },
           {
             type: 'code',
             content: '$ ls -a\n.  ..  .bashrc  .profile  .zshrc  documents  downloads  projets',
+            contentByEnv: {
+              windows: 'PS> cd projets\nPS> git init\nInitialized empty Git repository in C:/Users/user/projets/.git/\n\n# Sans -Force, le dossier .git n\'apparaît pas\nPS> Get-ChildItem -Name\n.env\nREADME.md\nscript.sh\n\n# Avec -Force, il apparaît : h (caché) dans la colonne Mode\nPS> Get-ChildItem -Force\n\n    Directory: C:\\Users\\user\\projets\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\nd--h-           3/30/2026 10:00 AM                .git\n-a---           3/30/2026 10:00 AM            223 .env\n-a---           3/30/2026 10:00 AM            116 README.md\n-a---           3/30/2026 10:00 AM             67 script.sh',
+            },
             label: 'ls -a (fichiers cachés)',
+            labelByEnv: { windows: 'Get-ChildItem -Force (éléments cachés)' },
           },
           {
             type: 'text',
             content:
               'Les fichiers commençant par un `.` sont cachés. Vous pouvez combiner les flags : `ls -la` ou `ls -al` — les deux sont équivalents.',
+            contentByEnv: {
+              windows: 'Sous Windows, un nom qui commence par un `.` n\'est pas caché : `.bashrc` ou `.env` apparaissent sans `-Force`. Est caché ce qui porte l\'attribut « caché » (le `h` de la colonne Mode), comme le dossier `.git` que Git crée.',
+            },
           },
           {
             type: 'warning',
             content:
               'Les répertoires `.` (répertoire courant) et `..` (répertoire parent) apparaissent toujours avec `ls -a`. C\'est normal !',
+            contentByEnv: {
+              windows: '`ls -la` n\'existe pas en PowerShell : `ls` y est un alias de `Get-ChildItem`, qui répond « A parameter cannot be found that matches parameter name \'la\' ». Tapez `Get-ChildItem -Force`.',
+            },
           },
         ],
         exercise: {

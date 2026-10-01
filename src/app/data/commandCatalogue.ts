@@ -58,7 +58,10 @@ const baseCatalogue: BaseCategory[] = [
         compatibility: ['linux', 'macos', 'windows'],
         syntax: 'ls [options] [chemin]',
         summary: "Lister le contenu d'un dossier",
-        commonErrors: ["Confondre ls et dir selon l'environnement"],
+        commonErrors: [
+          "Confondre ls et dir selon l'environnement",
+          "Taper ls -la dans PowerShell : ce paramètre n'existe pas, Get-ChildItem -Force affiche les éléments cachés",
+        ],
       },
       {
         id: 'cd',
@@ -199,6 +202,7 @@ const baseCatalogue: BaseCategory[] = [
         commonErrors: [
           'Confondre suppression fichier et dossier',
           'Utiliser rm -rf sans comprendre',
+          "Taper rm -rf dans PowerShell : rm y est Remove-Item, qui ne connaît pas -rf. Écrire Remove-Item dossier -Recurse",
         ],
       },
     ],

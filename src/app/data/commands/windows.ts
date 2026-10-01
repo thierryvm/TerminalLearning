@@ -1,10 +1,14 @@
 import type { TerminalState, TerminalEnv, CommandOutput, OutputLine, DirectoryNode } from './types';
 import { dotnetDateFormat, psDefaultDate, strftime } from './dateFormat';
+import { COPY_ITEM, MOVE_ITEM, REMOVE_ITEM, parsePsArgs, psList, psNotSimulated } from './psParams';
+import type { PsArgs } from './psParams';
 
 export interface WindowsCmdDeps {
   cmdPwd: (state: TerminalState, env: TerminalEnv) => OutputLine[];
   cmdCd: (state: TerminalState, args: string[], env?: TerminalEnv) => { lines: OutputLine[]; newCwd?: string[] };
   cmdLs: (state: TerminalState, args: string[]) => OutputLine[];
+  /** Get-ChildItem as PowerShell prints it (a table per folder). */
+  childItems: (state: TerminalState, args: string[]) => OutputLine[];
   cmdCat: (state: TerminalState, args: string[]) => OutputLine[];
   cmdMkdir: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
   cmdTouch: (state: TerminalState, args: string[]) => { lines: OutputLine[]; newRoot?: DirectoryNode };
@@ -14,6 +18,8 @@ export interface WindowsCmdDeps {
   cmdEcho: (args: string[]) => OutputLine[];
   cmdGrep: (state: TerminalState, args: string[]) => OutputLine[];
   cmdEnv: (state: TerminalState) => OutputLine[];
+  /** How many items a folder holds, or undefined when the path is not a folder. */
+  childCount: (state: TerminalState, path: string) => number | undefined;
   /** Content of a file, or why it cannot be read. */
   readFile: (state: TerminalState, path: string) => { content: string } | { error: 'missing' | 'directory' };
   /** Writes (or appends to) a file; `errors` explains a refusal. */
@@ -98,8 +104,8 @@ function getHistory(state: TerminalState): OutputLine[] {
   ].map((text) => ({ text, type: 'output' as const }));
 }
 
-/** `-Recurse`, or any prefix PowerShell accepts for it (`-r`, `-rec`…). */
-const RECURSE_PARAM = /^-r(e(c(u(r(se?)?)?)?)?)?$/i;
+/** New-Item's `-Force`, or a prefix of it (`-f` is enough: no other New-Item parameter starts with f). */
+const FORCE_PARAM = /^-f(o(r(ce?)?)?)?$/i;
 
 const EXECUTION_POLICIES = ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass', 'Undefined', 'Default'];
 
@@ -115,17 +121,32 @@ function psPath(args: string[]): string | undefined {
   return i >= 0 ? args[i + 1] : args.find((a) => !a.startsWith('-'));
 }
 
-/** `Copy-Item a b`, or `-Path a -Destination b` in any order → `[a, b]`. */
-function psSourceAndDestination(args: string[]): string[] {
-  const NAMED = ['-path', '-literalpath', '-destination'];
-  const valueOf = (names: string[]) => {
-    const i = args.findIndex((a) => names.includes(a.toLowerCase()));
-    return i >= 0 ? args[i + 1] : undefined;
-  };
-  const positional = args.filter((a, i) => !a.startsWith('-') && !(i > 0 && NAMED.includes(args[i - 1].toLowerCase())));
-  const source = valueOf(['-path', '-literalpath']) ?? positional.shift();
-  const destination = valueOf(['-destination']) ?? positional.shift();
-  return [source, destination].filter((a): a is string => a !== undefined);
+/** `Copy-Item a b`, `-Path a -Destination b` in any order, or `a.txt, b.txt docs` → the sources, then the destination. */
+function psSourceAndDestination({ values }: PsArgs): string[] {
+  return [...psList(values.Path ?? values.LiteralPath), ...(values.Destination !== undefined ? [values.Destination] : [])];
+}
+
+/**
+ * The shared file commands answer like GNU tools; under PowerShell the same
+ * failure reads differently. These are PowerShell 7.6's messages (en-US,
+ * checked on 1 October 2026), with the full Windows path it shows.
+ */
+function psErrors(cmdlet: string, lines: OutputLine[], state: TerminalState, env: TerminalEnv, deps: WindowsCmdDeps): OutputLine[] {
+  if (env !== 'windows') return lines;
+  const win = (p: string) => deps.winPath(state, p);
+  const err = (text: string): OutputLine => ({ text, type: 'error' });
+  return lines.map((l) => {
+    if (l.type !== 'error') return l;
+    let m: RegExpMatchArray | null;
+    if ((m = l.text.match(/cannot create directory '(.+)': File exists$/))) return err(`New-Item: An item with the specified name ${win(m[1])} already exists.`);
+    if ((m = l.text.match(/^(?:mv|cp): cannot stat '(.+)': No such file or directory$/) ?? l.text.match(/^rm: cannot remove '(.+)': No such file or directory$/))) {
+      return err(`${cmdlet}: Cannot find path '${win(m[1])}' because it does not exist.`);
+    }
+    if ((m = l.text.match(/^touch: cannot touch '(.+)': No such file or directory$/))) return err(`New-Item: Could not find a part of the path '${win(m[1])}'.`);
+    if (/^mv: cannot move '.+' to '.+': No such file or directory$/.test(l.text)) return err('Move-Item: Could not find a part of the path.');
+    if ((m = l.text.match(/^cd: (.+): No such file or directory$/))) return err(`Set-Location: Cannot find path '${win(m[1])}' because it does not exist.`);
+    return l;
+  });
 }
 
 /**
@@ -150,7 +171,7 @@ export function handleWindows(
     case 'sl': {
       const { lines, newCwd } = deps.cmdCd(newState, args, env);
       if (newCwd) newState = { ...newState, cwd: newCwd, previousCwd: newState.cwd };
-      return { lines, newState };
+      return { lines: psErrors('Set-Location', lines, newState, env, deps), newState };
     }
 
     // ── ls equivalents ────────────────────────────────────────────────────────
@@ -160,7 +181,7 @@ export function handleWindows(
       if (args[0]?.toLowerCase() === 'env:') {
         return { lines: deps.cmdEnv(newState), newState };
       }
-      return { lines: deps.cmdLs(newState, args), newState };
+      return { lines: env === 'windows' ? deps.childItems(newState, args) : deps.cmdLs(newState, args), newState };
 
     // ── Get-Item: the item itself (not its content), or a "cannot find path" error ──
     case 'get-item':
@@ -275,38 +296,77 @@ export function handleWindows(
       const leaf = valueOf(['-name']);
       const name = path && leaf ? `${path}/${leaf}` : leaf ?? path;
       if (!name) return { lines: [{ text: 'New-Item: -Name ou chemin requis', type: 'error' }], newState };
+      // -Force accepts a folder that is already there and replaces a file with an empty one.
+      const force = args.some((a) => FORCE_PARAM.test(a));
       if (isDir) {
-        const { lines, newRoot } = deps.cmdMkdir(newState, [name]);
+        const { lines, newRoot } = deps.cmdMkdir(newState, force ? ['-p', name] : [name]);
         if (newRoot) newState = { ...newState, root: newRoot };
-        return { lines, newState };
-      } else {
-        const { lines, newRoot } = deps.cmdTouch(newState, [name]);
-        if (newRoot) newState = { ...newState, root: newRoot };
-        return { lines, newState };
+        return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
       }
+      if (env === 'windows' && force && 'content' in deps.readFile(newState, name)) {
+        const { root: newRoot, errors } = deps.writeFile(newState, name, '', false, 'New-Item');
+        return { lines: errors, newState: { ...newState, root: newRoot } };
+      }
+      // Unlike touch, New-Item refuses a file that is already there.
+      if (env === 'windows' && 'content' in deps.readFile(newState, name)) {
+        return { lines: [{ text: `New-Item: The file '${deps.winPath(newState, name)}' already exists.`, type: 'error' }], newState };
+      }
+      const { lines, newRoot } = deps.cmdTouch(newState, [name]);
+      if (newRoot) newState = { ...newState, root: newRoot };
+      return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
     }
 
     // ── cp equivalents ────────────────────────────────────────────────────────
     case 'copy-item':
     case 'cpi':
     case 'copy': {
-      const cpArgs = psSourceAndDestination(args);
-      // -Recurse copies a folder with its content, like `cp -r`.
-      const recurse = args.some((a) => RECURSE_PARAM.test(a));
-      const { lines, newRoot } = deps.cmdCp(newState, [...(recurse ? ['-r'] : []), '--', ...cpArgs]);
+      const parsed = parsePsArgs(COPY_ITEM, args);
+      if (!('switches' in parsed)) return { lines: [parsed], newState };
+      const skipped = psNotSimulated(COPY_ITEM, parsed, ['Container', 'Filter', 'Include', 'Exclude', 'PassThru', 'Credential', 'WhatIf', 'Confirm', 'FromSession', 'ToSession']);
+      if (skipped) return { lines: skipped, newState };
+      const cpArgs = psSourceAndDestination(parsed);
+      // -Recurse copies a folder with its content, like `cp -r`. Without it,
+      // Copy-Item still copies the folder, empty.
+      const [source, destination] = cpArgs;
+      if (!parsed.switches.has('Recurse') && cpArgs.length === 2 && source !== undefined && destination !== undefined && deps.childCount(newState, source) !== undefined) {
+        const into = deps.childCount(newState, destination) !== undefined;
+        const target = into ? `${destination}/${source.replace(/[\\/]+$/, '').split(/[\\/]/).pop()}` : destination;
+        const { lines, newRoot } = deps.cmdMkdir(newState, ['-p', target]);
+        if (newRoot) newState = { ...newState, root: newRoot };
+        return { lines: psErrors('Copy-Item', lines, newState, env, deps), newState };
+      }
+      const { lines, newRoot } = deps.cmdCp(newState, [...(parsed.switches.has('Recurse') ? ['-r'] : []), '--', ...cpArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('Copy-Item', lines, newState, env, deps), newState };
     }
 
     // ── mv equivalents ────────────────────────────────────────────────────────
     case 'move-item':
     case 'mi':
     case 'move': {
-      const mvArgs = psSourceAndDestination(args);
+      const parsed = parsePsArgs(MOVE_ITEM, args);
+      if (!('switches' in parsed)) return { lines: [parsed], newState };
+      const skipped = psNotSimulated(MOVE_ITEM, parsed, ['Filter', 'Include', 'Exclude', 'PassThru', 'Credential', 'WhatIf', 'Confirm']);
+      if (skipped) return { lines: skipped, newState };
+      const mvArgs = psSourceAndDestination(parsed);
+      const [source, destination] = mvArgs;
+      if (env === 'windows' && mvArgs.length === 2 && source !== undefined && destination !== undefined) {
+        const read = (p: string) => deps.readFile(newState, p);
+        const isFile = (p: string) => 'content' in read(p);
+        const is = (p: string, error: 'missing' | 'directory') => { const r = read(p); return 'error' in r && r.error === error; };
+        // Move-Item does not overwrite a file without -Force.
+        if (isFile(source) && isFile(destination) && !parsed.switches.has('Force')) {
+          return { lines: [{ text: 'Move-Item: Cannot create a file when that file already exists.', type: 'error' }], newState };
+        }
+        // A missing `dir/` in an existing folder is no folder to move into: PowerShell renames the file to `dir`.
+        const bare = destination.replace(/[\\/]+$/, '');
+        const cut = Math.max(bare.lastIndexOf('/'), bare.lastIndexOf('\\'));
+        if (bare !== destination && is(bare, 'missing') && is(cut >= 0 ? bare.slice(0, cut) || '/' : '.', 'directory')) mvArgs[1] = bare;
+      }
       const { lines, newRoot, newCwd } = deps.cmdMv(newState, ['--', ...mvArgs]);
       if (newRoot) newState = { ...newState, root: newRoot };
       if (newCwd) newState = { ...newState, cwd: newCwd };
-      return { lines, newState };
+      return { lines: psErrors('Move-Item', lines, newState, env, deps), newState };
     }
 
     // ── rm equivalents ────────────────────────────────────────────────────────
@@ -314,12 +374,21 @@ export function handleWindows(
     case 'ri':
     case 'del':
     case 'erase': {
-      const rmArgs = args.filter((a) => !a.startsWith('-'));
-      // -Recurse removes a folder with its content, like `rm -r`.
-      const recurse = args.some((a) => RECURSE_PARAM.test(a));
-      const { lines, newRoot } = deps.cmdRm(newState, recurse ? ['-r', ...rmArgs] : rmArgs);
+      const parsed = parsePsArgs(REMOVE_ITEM, args);
+      if (!('switches' in parsed)) return { lines: [parsed], newState };
+      const skipped = psNotSimulated(REMOVE_ITEM, parsed, ['Filter', 'Include', 'Exclude', 'Credential', 'WhatIf', 'Confirm', 'Stream']);
+      if (skipped) return { lines: skipped, newState };
+      const rmArgs = psList(parsed.values.Path ?? parsed.values.LiteralPath);
+      // -Recurse removes a folder with its content, like `rm -r`. An empty
+      // folder goes without it; for one with content, PowerShell asks first.
+      const recurse = parsed.switches.has('Recurse');
+      if (!recurse && rmArgs.some((a) => (deps.childCount(newState, a) ?? 0) > 0)) {
+        return { lines: [{ text: "PowerShell demande une confirmation avant de supprimer un dossier qui n'est pas vide. Ce terminal d'entraînement ne pose pas la question : ajoute -Recurse pour supprimer le dossier et tout son contenu.", type: 'info' }], newState };
+      }
+      const empty = rmArgs.some((a) => deps.childCount(newState, a) === 0);
+      const { lines, newRoot } = deps.cmdRm(newState, recurse || empty ? ['-r', ...rmArgs] : rmArgs);
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('Remove-Item', lines, newState, env, deps), newState };
     }
 
     // ── echo equivalents ──────────────────────────────────────────────────────
@@ -391,9 +460,10 @@ export function handleWindows(
 
     // ── mkdir alias ───────────────────────────────────────────────────────────
     case 'md': {
-      const { lines, newRoot } = deps.cmdMkdir(newState, args);
+      // mkdir is New-Item in a function: -Force accepts a folder that is already there.
+      const { lines, newRoot } = deps.cmdMkdir(newState, args.map((a) => (FORCE_PARAM.test(a) ? '-p' : a)));
       if (newRoot) newState = { ...newState, root: newRoot };
-      return { lines, newState };
+      return { lines: psErrors('New-Item', lines, newState, env, deps), newState };
     }
 
     // ── script execution policy (PowerShell only) ─────────────────────────────

@@ -9,6 +9,7 @@ import { fingerprintLine, keygenOptions, keygenType, sshKeygen } from './command
 import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
+import { GET_CHILD_ITEM, parsePsArgs, psNotSimulated } from './commands/psParams';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
 import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
@@ -433,6 +434,106 @@ function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
   for (const [name, n] of entries) {
     lines.push({ text: formatLongEntry(name, n), type: 'output' });
   }
+  return lines;
+}
+
+/** `*.md`, `?ote*` against a name, case-insensitive, as PowerShell wildcards. */
+const psWildcard = (pattern: string) =>
+  new RegExp(`^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`, 'i');
+
+/** One row of Get-ChildItem's table; every date is the one `ls -l` shows (30 March, 10:00). */
+function childItemRow(name: string, node: FSNode, hidden: boolean): string {
+  const mode = node.type === 'directory' ? `d--${hidden ? 'h' : '-'}-` : `-a-${hidden ? 'h' : '-'}-`;
+  const length = node.type === 'file' ? String(new TextEncoder().encode(node.content).length) : '';
+  return `${mode.padEnd(16)}${'3/30/2026 10:00 AM'.padStart(18)}${length.padStart(15)} ${name}`;
+}
+
+/**
+ * Get-ChildItem (and its aliases `ls`, `dir`, `gci` under PowerShell), as
+ * PowerShell 7.6 prints it (checked on 1 October 2026, en-US): a table per
+ * directory under `Directory: C:\…`, folders first, then files, each sorted
+ * by name. Only `.git` is hidden (git marks it so on Windows); a name that
+ * starts with a dot is an ordinary file. Into a cmdlet that does not format
+ * (see stdoutIsFormatted), one name per line, so `Get-ChildItem |
+ * Measure-Object` counts the items as PowerShell does.
+ */
+function cmdChildItem(state: TerminalState, args: string[]): OutputLine[] {
+  const fail = (text: string): OutputLine[] => [{ text: `Get-ChildItem: ${text}`, type: 'error' }];
+  const parsed = parsePsArgs(GET_CHILD_ITEM, args);
+  if (!('switches' in parsed)) return [parsed];
+  const { switches: set, values } = parsed;
+  if (values.Depth !== undefined && !/^\d+$/.test(values.Depth)) {
+    return fail(`Cannot bind parameter 'Depth'. Cannot convert value "${values.Depth}" to type "System.UInt32". Error: "The input string '${values.Depth}' was not in a correct format."`);
+  }
+  const skipped = psNotSimulated(GET_CHILD_ITEM, parsed, ['Include', 'Exclude', 'Attributes', 'ReadOnly', 'System', 'FollowSymlink']);
+  if (skipped) return skipped;
+
+  let typedPath: string | undefined = values.Path ?? values.LiteralPath;
+  let filter = values.Filter;
+  // A wildcard in the last segment filters that folder: `Get-ChildItem *.md`.
+  if (typedPath !== undefined && values.LiteralPath === undefined && /[*?]/.test(typedPath)) {
+    const cut = Math.max(typedPath.lastIndexOf('/'), typedPath.lastIndexOf('\\'));
+    filter = typedPath.slice(cut + 1);
+    typedPath = cut >= 0 ? typedPath.slice(0, cut) || '/' : undefined;
+  }
+  const basePath = typedPath !== undefined ? resolvePath(state, typedPath) : state.cwd;
+  const base = getNode(state.root, basePath);
+  if (!base) return fail(`Cannot find path '${displayPathForEnv(basePath, 'windows')}' because it does not exist.`);
+
+  const recurse = set.has('Recurse') || values.Depth !== undefined;
+  const depth = values.Depth !== undefined ? Number(values.Depth) : Infinity;
+  const matchesFilter = filter ? psWildcard(filter) : null;
+  const shown = (name: string, node: FSNode, hidden: boolean) =>
+    (set.has('Hidden') ? hidden : set.has('Force') || !hidden)
+    && !(set.has('Directory') && node.type !== 'directory')
+    && !(set.has('File') && node.type !== 'file')
+    && (!matchesFilter || matchesFilter.test(name));
+
+  // Each folder listed: its items, then each sub-folder in turn.
+  type Item = { key: string; name: string; node: FSNode; hidden: boolean };
+  const byName = (a: string, b: string) => {
+    const x = a.toLowerCase();
+    const y = b.toLowerCase();
+    return x < y ? -1 : x > y ? 1 : 0;
+  };
+  const groups: { path: string[]; items: Item[] }[] = [];
+  const walk = (path: string[], dir: DirectoryNode, level: number) => {
+    const children = Object.entries(dir.children)
+      .map(([key, node]): Item => ({ key, name: windowsName(path, key, true), node, hidden: key === '.git' }))
+      .sort((a, b) => (a.node.type === b.node.type ? byName(a.name, b.name) : a.node.type === 'directory' ? -1 : 1));
+    groups.push({ path, items: children.filter((c) => shown(c.name, c.node, c.hidden)) });
+    if (!recurse || level >= depth) return;
+    for (const c of children) {
+      if (c.node.type === 'directory' && (!c.hidden || set.has('Force') || set.has('Hidden'))) walk([...path, c.key], c.node, level + 1);
+    }
+  };
+  if (base.type === 'file') {
+    const key = basePath[basePath.length - 1];
+    groups.push({ path: basePath.slice(0, -1), items: [{ key, name: key, node: base, hidden: false }] });
+  } else {
+    walk(basePath, base, 0);
+  }
+
+  const relative = (path: string[], name: string) => [...path.slice(basePath.length), name].join('\\');
+  if (set.has('Name') || !stdoutIsFormatted) {
+    return groups.flatMap((g) => g.items.map(({ name }) => ({
+      text: set.has('Name') && base.type === 'directory' ? relative(g.path, name) : name,
+      type: 'output' as const,
+    })));
+  }
+  const lines: OutputLine[] = [];
+  for (const g of groups) {
+    if (!g.items.length) continue;
+    lines.push(
+      { text: '', type: 'output' },
+      { text: `    Directory: ${displayPathForEnv(g.path, 'windows')}`, type: 'output' },
+      { text: '', type: 'output' },
+      { text: 'Mode                 LastWriteTime         Length Name', type: 'output' },
+      { text: '----                 -------------         ------ ----', type: 'output' },
+      ...g.items.map(({ name, node, hidden }) => ({ text: childItemRow(name, node, hidden), type: 'output' as const })),
+    );
+  }
+  if (lines.length) lines.push({ text: '', type: 'output' });
   return lines;
 }
 
@@ -1191,6 +1292,17 @@ function runScript(state: TerminalState, call: ScriptCall, env: TerminalEnv): Co
  */
 let stdoutIsTerminal = true;
 
+/**
+ * Whether PowerShell would format what the command running now outputs: on
+ * the screen, into a file (`> liste.txt`), or into a cmdlet that formats
+ * (`| Tee-Object`, `| Out-File`). Into any other cmdlet it passes objects,
+ * which this simulator stands in for with one name per line.
+ */
+let stdoutIsFormatted = true;
+
+/** Cmdlets that receive objects and write them as PowerShell shows them. */
+const FORMATTING_CMDLETS = new Set(['tee-object', 'tee', 'out-file', 'out-string', 'out-host', 'oh', 'format-table', 'ft']);
+
 /** Where a stream goes: the screen, the next command, a file, or nowhere. */
 type Sink = { kind: 'screen' } | { kind: 'pipe' } | { kind: 'null' } | { kind: 'file'; key: string };
 
@@ -1441,7 +1553,8 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
         if (lower.includes('-character')) out.push(`Characters : ${stdin.length}`);
         return same(outLines(out));
       }
-      return same(outLines([`Count    : ${items.length}`, 'Average  :', 'Sum      :', 'Maximum  :', 'Minimum  :', 'Property :']));
+      // PowerShell 7.6's list (1 October 2026): a blank line, then every property, empty ones included.
+      return same(outLines(['', `Count             : ${items.length}`, ...['Average', 'Sum', 'Maximum', 'Minimum', 'StandardDeviation', 'Property'].map((p) => `${p.padEnd(17)} : `), '']));
     }
 
     case 'tee':
@@ -1562,12 +1675,16 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
     }
 
     const outerTerminal = stdoutIsTerminal;
+    const outerFormatted = stdoutIsFormatted;
+    const nextCmd = isLast ? '' : (stages[i + 1].text.trim().split(/\s+/)[0] ?? '').toLowerCase();
     stdoutIsTerminal = outerTerminal && fds[1].kind === 'screen';
+    stdoutIsFormatted = outerFormatted && (fds[1].kind !== 'pipe' || FORMATTING_CMDLETS.has(nextCmd));
     let result: CommandOutput;
     try {
       result = stdin !== undefined ? runFilter(base, stage.text, stdin, env) : runSimple(base, stage.text, env);
     } finally {
       stdoutIsTerminal = outerTerminal;
+      stdoutIsFormatted = outerFormatted;
     }
     if (result.clear) { screen = []; clear = true; }
     ok = result.status !== undefined ? result.status === 0 : !result.lines.some((l) => l.type === 'error');
@@ -2139,6 +2256,13 @@ function splitSingleQuoted(line: string): string[] {
 
 /** PowerShell aliases whose cmdlet behaves differently from the Unix command of the same name. */
 const PS_ALIASES: Record<string, string> = {
+  ls: 'get-childitem',
+  cp: 'copy-item',
+  mv: 'move-item',
+  rm: 'remove-item',
+  cd: 'set-location',
+  chdir: 'set-location',
+  mkdir: 'md',
   cat: 'get-content',
   type: 'get-content',
   history: 'get-history',
@@ -2225,8 +2349,12 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
 
   // Dependencies for Windows/macOS alias handler
   const winDeps: WindowsCmdDeps = {
-    cmdPwd, cmdCd, cmdLs, cmdCat, cmdMkdir, cmdTouch,
+    cmdPwd, cmdCd, cmdLs, childItems: cmdChildItem, cmdCat, cmdMkdir, cmdTouch,
     cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep, cmdEnv,
+    childCount: (s, p) => {
+      const node = getNode(s.root, resolvePath(s, p));
+      return node?.type === 'directory' ? Object.keys(node.children).length : undefined;
+    },
     readFile: (s, p) => {
       const node = getNode(s.root, resolvePath(s, p));
       if (!node) return { error: 'missing' };

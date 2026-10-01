@@ -287,6 +287,182 @@ describe('PowerShell aliases — navigation', () => {
   });
 });
 
+/**
+ * Get-ChildItem as PowerShell 7.6 prints it (en-US, 1 October 2026), checked
+ * on a folder laid out like the simulated home: a table per folder, folders
+ * first, `.git` hidden (git marks it so), names starting with a dot visible.
+ * Lengths depend on file contents, so file rows are checked by layout.
+ */
+describe('Get-ChildItem — the table PowerShell prints', () => {
+  const run = (...cmds: string[]) => {
+    let state = createInitialState();
+    let lines: string[] = [];
+    for (const c of cmds) {
+      const r = processCommand(state, c, 'windows');
+      state = r.newState;
+      lines = r.lines.map((l) => l.text);
+    }
+    return lines;
+  };
+  const HEADER = ['Mode                 LastWriteTime         Length Name', '----                 -------------         ------ ----'];
+  const dirRow = (name: string, mode = 'd----') => `${mode}           3/30/2026 10:00 AM                ${name}`;
+  const fileRow = (name: string) => new RegExp(`^-a--- {11}3/30/2026 10:00 AM +\\d+ ${name.replace('.', '\\.')}$`);
+
+  it('lists a folder under its Directory heading, folders first, dot files visible', () => {
+    const out = run('Get-ChildItem');
+    expect(out.slice(0, 8)).toEqual(['', '    Directory: C:\\Users\\user', '', ...HEADER, dirRow('documents'), dirRow('downloads'), dirRow('projets')]);
+    ['.bashrc', '.profile', '.zshrc'].forEach((name, i) => expect(out[8 + i]).toMatch(fileRow(name)));
+    expect(out.slice(-1)).toEqual(['']);
+    // The name column starts where the header's Name does.
+    expect(out[8].indexOf('.bashrc')).toBe(HEADER[0].indexOf('Name'));
+  });
+
+  it('ls, dir and gci are the same cmdlet under PowerShell', () => {
+    expect(run('ls')).toEqual(run('Get-ChildItem'));
+    expect(run('gci projets')).toEqual(run('dir projets'));
+  });
+
+  it('hides only .git: -Force shows it, -Hidden shows only it', () => {
+    const repo = (cmd: string) => run('cd projets', 'git init', cmd);
+    expect(repo('Get-ChildItem').join('\n')).not.toContain('.git\n');
+    expect(repo('Get-ChildItem -Force')[5]).toBe(dirRow('.git', 'd--h-'));
+    expect(repo('Get-ChildItem -Hidden').slice(5)).toEqual([dirRow('.git', 'd--h-'), '']);
+  });
+
+  it('-Name prints names; -Recurse goes into each folder after listing it', () => {
+    expect(run('Get-ChildItem -Name')).toEqual(['documents', 'downloads', 'projets', '.bashrc', '.profile', '.zshrc']);
+    expect(run('Get-ChildItem -Recurse -Name').slice(6)).toEqual(['documents\\notes.txt', 'documents\\rapport.md', 'projets\\.env', 'projets\\README.md', 'projets\\script.sh']);
+    const tables = run('Get-ChildItem -Recurse').filter((l) => l.startsWith('    Directory: '));
+    // downloads is empty: no table for it.
+    expect(tables).toEqual(['    Directory: C:\\Users\\user', '    Directory: C:\\Users\\user\\documents', '    Directory: C:\\Users\\user\\projets']);
+  });
+
+  it('-Directory, -File, a file path and a wildcard filter the rows', () => {
+    expect(run('Get-ChildItem -Directory').slice(5, -1)).toEqual([dirRow('documents'), dirRow('downloads'), dirRow('projets')]);
+    expect(run('Get-ChildItem -Name -File projets')).toEqual(['.env', 'README.md', 'script.sh']);
+    expect(run('Get-ChildItem documents/notes.txt')[1]).toBe('    Directory: C:\\Users\\user\\documents');
+    expect(run('Get-ChildItem -Name documents\\*.md')).toEqual(['rapport.md']);
+    expect(run('Get-ChildItem downloads')).toEqual([]);
+  });
+
+  it('resolves shortened parameters as PowerShell does, and says why it cannot', () => {
+    expect(run('gci -fo -n projets')).toEqual(['.env', 'README.md', 'script.sh']);
+    expect(run('Get-ChildItem -la')).toEqual(["Get-ChildItem: A parameter cannot be found that matches parameter name 'la'."]);
+    expect(run('ls -a')).toEqual(["Get-ChildItem: Parameter cannot be processed because the parameter name 'a' is ambiguous. Possible matches include: -Attributes -Directory -File -Hidden -ReadOnly -System."]);
+    expect(run('ls -f')).toEqual(["Get-ChildItem: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Filter -Force."]);
+    expect(run('ls -p')).toEqual(["Get-ChildItem: Parameter cannot be processed because the parameter name 'p' is ambiguous. Possible matches include: -Path -ProgressAction -PipelineVariable -LiteralPath."]);
+    expect(run('ls -d x')).toEqual(['Get-ChildItem: Cannot bind parameter \'Depth\'. Cannot convert value "x" to type "System.UInt32". Error: "The input string \'x\' was not in a correct format."']);
+    expect(run('Get-ChildItem nope')).toEqual(["Get-ChildItem: Cannot find path 'C:\\Users\\user\\nope' because it does not exist."]);
+  });
+
+  it('into a pipe, one item per line: Measure-Object counts the items', () => {
+    expect(run('Get-ChildItem | Measure-Object')).toEqual([
+      '',
+      'Count             : 6',
+      'Average           : ',
+      'Sum               : ',
+      'Maximum           : ',
+      'Minimum           : ',
+      'StandardDeviation : ',
+      'Property          : ',
+      '',
+    ]);
+  });
+
+  it('a parameter without its value names the type PowerShell expects', () => {
+    const missing = (name: string, type: string) => [`Get-ChildItem: Missing an argument for parameter '${name}'. Specify a parameter of type '${type}' and try again.`];
+    expect(run('ls -Depth')).toEqual(missing('Depth', 'System.UInt32'));
+    expect(run('ls -Path')).toEqual(missing('Path', 'System.String[]'));
+    expect(run('ls -Filter')).toEqual(missing('Filter', 'System.String'));
+    expect(run('ls -ErrorAction')).toEqual(missing('ErrorAction', 'System.Management.Automation.ActionPreference'));
+    expect(run('ls -OutBuffer')).toEqual(missing('OutBuffer', 'System.Int32'));
+  });
+
+  it('-Path:value binds like -Path value', () => {
+    expect(run('Get-ChildItem -Path:documents -Name')).toEqual(['notes.txt', 'rapport.md']);
+  });
+
+  it('rm, cp and mv are Remove-Item, Copy-Item and Move-Item, with their parameters and messages', () => {
+    expect(run('rm -rf documents')).toEqual(["Remove-Item: A parameter cannot be found that matches parameter name 'rf'."]);
+    expect(run('rm -f documents/notes.txt')).toEqual(["Remove-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Filter -Force."]);
+    expect(run('cp -f a.txt c.txt')).toEqual(["Copy-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Force -Filter."]);
+    expect(run('mv -f a.txt d.txt')).toEqual(["Move-Item: Parameter cannot be processed because the parameter name 'f' is ambiguous. Possible matches include: -Force -Filter."]);
+    expect(run('cp -p a.txt e.txt')).toEqual(["Copy-Item: Parameter cannot be processed because the parameter name 'p' is ambiguous. Possible matches include: -Path -PassThru -ProgressAction -PipelineVariable -LiteralPath."]);
+    expect(run('cp -a documents docs3')).toEqual(["Copy-Item: A parameter cannot be found that matches parameter name 'a'."]);
+    expect(run('mv -n a.txt z.txt')).toEqual(["Move-Item: A parameter cannot be found that matches parameter name 'n'."]);
+    expect(run('mv nope.txt documents')).toEqual(["Move-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    expect(run('cp nope.txt x.txt')).toEqual(["Copy-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    expect(run('rm nope.txt')).toEqual(["Remove-Item: Cannot find path 'C:\\Users\\user\\nope.txt' because it does not exist."]);
+    // One bare word per position: Path (and Destination); a list is written with commas.
+    const two = ['Set-Content a.txt a', 'Set-Content b.txt b'];
+    expect(run(...two, 'mv a.txt b.txt documents')).toEqual(["Move-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'cp a.txt b.txt documents')).toEqual(["Copy-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'rm a.txt b.txt')).toEqual(["Remove-Item: A positional parameter cannot be found that accepts argument 'b.txt'."]);
+    expect(run(...two, 'mv -Path a.txt b.txt documents')).toEqual(["Move-Item: A positional parameter cannot be found that accepts argument 'documents'."]);
+    expect(run(...two, 'rm a.txt, b.txt', 'Get-ChildItem -Name -File')).toEqual(['.bashrc', '.profile', '.zshrc']);
+    expect(run(...two, 'rm -- a.txt', 'Get-ChildItem -Name -File')).toEqual(['.bashrc', '.profile', '.zshrc', 'b.txt']);
+    expect(run('ls documents *.md extra')).toEqual(["Get-ChildItem: A positional parameter cannot be found that accepts argument 'extra'."]);
+    // -r is -Recurse for all three.
+    expect(run('cp -r documents docs2', 'Get-ChildItem -Name docs2')).toEqual(['notes.txt', 'rapport.md']);
+    expect(run('rm -r documents', 'Get-ChildItem -Name -Directory')).toEqual(['downloads', 'projets']);
+  });
+
+  it('Remove-Item deletes an empty folder without -Recurse, and does not pretend to ask for a full one', () => {
+    expect(run('mkdir vide', 'rm vide', 'Get-ChildItem -Name -Directory')).toEqual(['documents', 'downloads', 'projets']);
+    const full = processCommand(createInitialState(), 'Remove-Item documents', 'windows');
+    expect(full.lines.map((l) => l.type)).toEqual(['info']);
+    expect(processCommand(full.newState, 'Get-ChildItem -Name documents', 'windows').lines.map((l) => l.text)).toEqual(['notes.txt', 'rapport.md']);
+  });
+
+  it('Copy-Item copies a folder without -Recurse, empty', () => {
+    expect(run('Copy-Item documents vide', 'Get-ChildItem -Name vide')).toEqual([]);
+    expect(run('Copy-Item documents vide', 'Get-ChildItem -Name -Directory')).toEqual(['documents', 'downloads', 'projets', 'vide']);
+  });
+
+  // New-Item also prints the item it made; that table is not simulated yet, so only the absence of an error is checked.
+  it('-Force: New-Item replaces a file with an empty one, and accepts a folder that exists', () => {
+    const errorsOf = (...cmds: string[]) => {
+      let state = createInitialState();
+      let errors: string[] = [];
+      for (const c of cmds) {
+        const r = processCommand(state, c, 'windows');
+        state = r.newState;
+        errors = r.lines.filter((l) => l.type === 'error').map((l) => l.text);
+      }
+      return errors;
+    };
+    expect(errorsOf('Set-Content a.txt hello', 'New-Item -Force a.txt')).toEqual([]);
+    expect(run('Set-Content a.txt hello', 'New-Item -Force a.txt', 'Get-ChildItem a.txt').slice(-2)).toEqual(['-a---           3/30/2026 10:00 AM              0 a.txt', '']);
+    expect(errorsOf('New-Item -ItemType Directory -Force projets')).toEqual([]);
+    expect(errorsOf('mkdir -Force projets')).toEqual([]);
+  });
+
+  it('file cmdlets fail with PowerShell 7.6 messages, not GNU ones (en-US, 1 October 2026)', () => {
+    const before = ['Set-Content ci.yml "name: CI"', 'Set-Content a.txt "a"', 'New-Item -ItemType Directory docs'];
+    expect(run(...before, 'New-Item -ItemType Directory docs')).toEqual(['New-Item: An item with the specified name C:\\Users\\user\\docs already exists.']);
+    expect(run(...before, 'mkdir docs')).toEqual(['New-Item: An item with the specified name C:\\Users\\user\\docs already exists.']);
+    expect(run(...before, 'New-Item a.txt')).toEqual(["New-Item: The file 'C:\\Users\\user\\a.txt' already exists."]);
+    expect(run(...before, 'New-Item -ItemType File nope/x.txt')).toEqual(["New-Item: Could not find a part of the path 'C:\\Users\\user\\nope\\x.txt'."]);
+    expect(run(...before, 'Move-Item ci.yml gh/workflows/')).toEqual(['Move-Item: Could not find a part of the path.']);
+    expect(run(...before, 'Move-Item nofile.yml docs')).toEqual(["Move-Item: Cannot find path 'C:\\Users\\user\\nofile.yml' because it does not exist."]);
+    expect(run(...before, 'Copy-Item nofile.txt docs')).toEqual(["Copy-Item: Cannot find path 'C:\\Users\\user\\nofile.txt' because it does not exist."]);
+    expect(run(...before, 'Remove-Item nofile.txt')).toEqual(["Remove-Item: Cannot find path 'C:\\Users\\user\\nofile.txt' because it does not exist."]);
+    expect(run('cd nope')).toEqual(["Set-Location: Cannot find path 'C:\\Users\\user\\nope' because it does not exist."]);
+  });
+
+  it('Move-Item refuses to overwrite a file without -Force, and renames to a missing dir/', () => {
+    const before = ['Set-Content ci.yml "name: CI"', 'Set-Content a.txt "a"', 'New-Item -ItemType Directory docs'];
+    expect(run(...before, 'Move-Item ci.yml a.txt')).toEqual(['Move-Item: Cannot create a file when that file already exists.']);
+    expect(run(...before, 'Move-Item ci.yml a.txt -Force', 'Get-Content a.txt')).toEqual(['name: CI']);
+    // docs exists, docs/sub does not: the file becomes docs\sub (PowerShell 7.6).
+    expect(run(...before, 'Move-Item ci.yml docs/sub/', 'Get-ChildItem -Name -File docs')).toEqual(['sub']);
+  });
+
+  it('ls on Linux and macOS is still GNU / BSD ls', () => {
+    expect(processCommand(createInitialState(), 'ls', 'linux').lines.map((l) => l.text)).toEqual(['documents  downloads  projets']);
+  });
+});
+
 describe('PowerShell aliases — file operations', () => {
   it('Get-Content reads a file', () => {
     const state = createInitialState();
@@ -1625,22 +1801,22 @@ describe('Windows paths in PowerShell', () => {
   });
 
   it('accepts drive paths, C:\\Users is the parent of the home', () => {
-    expect(run('windows', 'ls C:\\Users\\user\\projets')).toEqual(['README.md  script.sh']);
+    expect(run('windows', 'ls -Name C:\\Users\\user\\projets')).toEqual(['.env', 'README.md', 'script.sh']);
     expect(run('windows', 'cd C:\\Users\\user\\downloads', 'pwd')).toEqual(['C:\\Users\\user\\downloads']);
     expect(run('windows', 'cd ..', 'pwd')).toEqual(['C:\\Users']);
     expect(run('windows', 'cd \\', 'pwd')).toEqual(['C:\\']);
   });
 
   it('mkdir creates missing parent folders, like New-Item -ItemType Directory', () => {
-    expect(run('windows', 'mkdir archives\\2025', 'ls archives')).toEqual(['2025']);
+    expect(run('windows', 'mkdir archives\\2025', 'ls -Name archives')).toEqual(['2025']);
     expect(run('linux', 'mkdir archives/2025')[0]).toContain('No such file or directory');
   });
 
   it('New-Item takes the path after -ItemType Directory, and creates its parents (PowerShell 7, 1 October 2026)', () => {
-    expect(run('windows', 'New-Item -ItemType Directory .github/workflows', 'ls .github')).toEqual(['workflows']);
-    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls .github')).toEqual(['workflows']);
-    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls').join(' ')).not.toMatch(/\bDirectory\b/);
-    expect(run('windows', 'New-Item -Path archives -Name 2025 -ItemType Directory', 'ls archives')).toEqual(['2025']);
+    expect(run('windows', 'New-Item -ItemType Directory .github/workflows', 'ls -Name .github')).toEqual(['workflows']);
+    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls -Name .github')).toEqual(['workflows']);
+    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls -Name')).not.toContain('Directory');
+    expect(run('windows', 'New-Item -Path archives -Name 2025 -ItemType Directory', 'ls -Name archives')).toEqual(['2025']);
   });
 
   it('Tab completes after a backslash on Windows, keeping the backslash', () => {
@@ -1651,15 +1827,15 @@ describe('Windows paths in PowerShell', () => {
   });
 
   it('C:\\ shows Users (never the internal home) for ls, cd and Tab', () => {
-    expect(run('windows', 'ls C:\\')).toEqual(['Users  tmp']);
+    expect(run('windows', 'ls -Name C:\\')).toEqual(['tmp', 'Users']);
     expect(run('windows', 'cd \\', 'cd users', 'pwd')).toEqual(['C:\\Users']);
     expect(getTabCompletions('cd C:\\U', createInitialState(), 'windows')).toEqual(['cd C:\\Users\\']);
     expect(run('linux', 'ls /')).toEqual(['home  tmp']);
   });
 
   it('Copy-Item and Move-Item read -Path / -Destination in any order', () => {
-    expect(run('windows', 'Copy-Item -Destination downloads -Path documents/notes.txt', 'ls downloads')).toEqual(['notes.txt']);
-    expect(run('windows', 'Move-Item -Destination projets documents/rapport.md', 'ls projets')).toEqual(['README.md  rapport.md  script.sh']);
+    expect(run('windows', 'Copy-Item -Destination downloads -Path documents/notes.txt', 'ls -Name downloads')).toEqual(['notes.txt']);
+    expect(run('windows', 'Move-Item -Destination projets documents/rapport.md', 'ls -Name projets')).toEqual(['.env', 'rapport.md', 'README.md', 'script.sh']);
   });
 
   it('bash does not treat a backslash as a separator', () => {
@@ -1776,7 +1952,7 @@ describe('cp / mv — destination directory (GNU semantics)', () => {
 
   it('Remove-Item -Recurse removes a folder with its content', () => {
     const { out } = session('windows', 'mkdir archives', 'Remove-Item -Recurse archives');
-    expect(out('ls')).toEqual(['documents  downloads  projets']);
+    expect(out('ls -Name -Directory')).toEqual(['documents', 'downloads', 'projets']);
   });
 
   it('Move-Item and Copy-Item -Recurse follow the same rules on Windows', () => {

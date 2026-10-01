@@ -1255,6 +1255,20 @@ C'est la version appliquée. Dans l'app installée sur iPhone, le haut de l'app 
 
 ---
 
+### Un `ls` qui parle PowerShell (1er octobre 2026)
+
+La leçon `ls -la` enseignait aux élèves Windows ce qu'on enseigne sous Linux : un fichier dont le nom commence par un point est caché, `-a` le montre. Dans un vrai PowerShell, c'est faux deux fois. `.bashrc` y est visible comme n'importe quel fichier, parce que Windows cache un fichier par un attribut, pas par son nom. Et `ls -la` n'existe pas : PowerShell cherche un paramètre dont le nom commence par « la », n'en trouve aucun, et le dit. `ls -a` est plus curieux encore : six paramètres commencent par un « a » une fois les alias comptés, et PowerShell refuse de choisir.
+
+Le simulateur affiche maintenant le tableau que l'élève verra chez lui, colonne par colonne. Chaque sortie vient d'un PowerShell 7.6 lancé sur cette machine, et un détail l'a rappelé : la première capture titrait « Répertoire : », parce que Windows est réglé en français ici. L'élève qui a un Windows en anglais lira « Directory: ». Les leçons montrent la version anglaise, celle de la documentation.
+
+Les erreurs ont suivi le même chemin. `New-Item` sur un fichier qui existe le dit, là où `touch` se contente de changer sa date. `Move-Item` refuse d'écraser un fichier sans `-Force`. Les messages reprennent ceux de PowerShell, avec le chemin Windows complet.
+
+L'audit de fidélité a ensuite trouvé ce que j'avais laissé passer : sous Windows, `rm`, `cp` et `mv` répondaient encore comme sous Linux. Dans PowerShell, ce sont trois raccourcis vers des cmdlets qui ont leurs propres paramètres. `rm -r` marche parce que `-r` est le début de `-Recurse`, mais `rm -rf` est refusé : aucun paramètre ne s'appelle « rf ». Un élève qui recopie une commande trouvée pour Linux doit voir cette erreur ici plutôt que chez lui.
+
+Une capture ratée m'a aussi appris quelque chose : lancé depuis le dossier du projet, mon premier script a laissé quatre fichiers vides à sa racine. Ils n'ont pas atteint le dépôt, mais depuis, chaque capture tourne dans un dossier temporaire neuf.
+
+---
+
 ## Épilogue ouvert
 
 Il y a des questions auxquelles on n'a pas encore de réponse.
