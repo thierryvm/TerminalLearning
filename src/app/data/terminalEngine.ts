@@ -717,8 +717,14 @@ function transfer(cmd: 'cp' | 'mv', state: TerminalState, args: string[]): Trans
     }
     const parent = getNode(newRoot, targetPath.slice(0, -1));
     const trailingSlashOnFile = !intoDir && dst.endsWith('/');
+    // `dir/` names a directory: an existing file there cannot be one; a missing
+    // one is not created by mv, and cp says the file it would create is no folder.
+    if (trailingSlashOnFile && parent?.type === 'directory' && parent.children[targetPath[targetPath.length - 1]]) {
+      lines.push(err(`failed to access '${dst}': Not a directory`));
+      continue;
+    }
     if (!parent || parent.type !== 'directory' || trailingSlashOnFile) {
-      const reason = trailingSlashOnFile && parent ? 'Not a directory' : 'No such file or directory';
+      const reason = trailingSlashOnFile && parent && cmd === 'cp' ? 'Not a directory' : 'No such file or directory';
       lines.push(err(cmd === 'mv'
         ? `cannot move '${src}' to '${shown}': ${reason}`
         : `cannot create ${srcNode.type === 'directory' ? 'directory' : 'regular file'} '${shown}': ${reason}`));

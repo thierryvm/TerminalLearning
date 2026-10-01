@@ -2400,6 +2400,8 @@ export function handleGit(
       // --no-rebase merges diverged branches; --ff-only refuses them.
       const merge = o.long.delete('no-rebase');
       const ffOnly = o.long.delete('ff-only');
+      // --no-edit keeps the merge message git proposes: this terminal never opens an editor anyway.
+      o.long.delete('no-edit');
       if (o.short.size || o.long.size) return notSimulated(`L'option ${[...o.short].map((c) => `-${c}`).concat([...o.long.keys()].map((k) => `--${k}`))[0]} de git pull`, newState);
       const [remote, branch] = o.positional;
       let ref: string;

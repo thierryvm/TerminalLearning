@@ -1636,6 +1636,13 @@ describe('Windows paths in PowerShell', () => {
     expect(run('linux', 'mkdir archives/2025')[0]).toContain('No such file or directory');
   });
 
+  it('New-Item takes the path after -ItemType Directory, and creates its parents (PowerShell 7, 1 October 2026)', () => {
+    expect(run('windows', 'New-Item -ItemType Directory .github/workflows', 'ls .github')).toEqual(['workflows']);
+    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls .github')).toEqual(['workflows']);
+    expect(run('windows', 'New-Item -ItemType Directory .github\\workflows', 'ls').join(' ')).not.toMatch(/\bDirectory\b/);
+    expect(run('windows', 'New-Item -Path archives -Name 2025 -ItemType Directory', 'ls archives')).toEqual(['2025']);
+  });
+
   it('Tab completes after a backslash on Windows, keeping the backslash', () => {
     const state = createInitialState();
     expect(getTabCompletions('cat documents\\n', state, 'windows')).toEqual(['cat documents\\notes.txt']);
@@ -1681,6 +1688,14 @@ describe('cp / mv — destination directory (GNU semantics)', () => {
     const { out } = session('linux', 'mv documents/notes.txt projets');
     expect(out('ls projets')).toEqual(['README.md  notes.txt  script.sh']);
     expect(out('ls -F')).toEqual(['documents/  downloads/  projets/']);
+  });
+
+  it('a trailing slash names a directory: missing or a file, GNU says why (coreutils 8.32, 1 October 2026)', () => {
+    const { out } = session('linux');
+    expect(out('mv documents/notes.txt manquant/')).toEqual(["mv: cannot move 'documents/notes.txt' to 'manquant/': No such file or directory"]);
+    expect(out('cp documents/notes.txt manquant/')).toEqual(["cp: cannot create regular file 'manquant/': Not a directory"]);
+    expect(out('mv documents/notes.txt documents/rapport.md/')).toEqual(["mv: failed to access 'documents/rapport.md/': Not a directory"]);
+    expect(out('cp documents/notes.txt documents/rapport.md/')).toEqual(["cp: failed to access 'documents/rapport.md/': Not a directory"]);
   });
 
   it('mv several files needs a directory as last argument', () => {

@@ -162,6 +162,20 @@ describe('a remote that moved on: a colleague pushed', () => {
     expect(texts(t.run('git pull --ff-only'))).toEqual(['Already up to date.']);
   });
 
+  it('git pull --no-rebase --no-edit fetches and merges, as without --no-edit (git 2.56, 1 October 2026)', () => {
+    const t = behind();
+    t.run('echo "<p>Contact</p>" > contact.html');
+    t.run('git add contact.html');
+    t.run('git commit -q -m "feat: page contact"');
+    expect(texts(t.run('git pull --no-rebase --no-edit'))).toEqual([
+      FROM,
+      '   a3f8c12..e5d1a8c  main       -> origin/main',
+      "Merge made by the 'ort' strategy.",
+      ' README.md | 4 ++++',
+      ' 1 file changed, 4 insertions(+)',
+    ]);
+  });
+
   it('new, forced and deleted branches in a fetch report', () => {
     const t = behind();
     t.run('git fetch -q');
