@@ -200,7 +200,7 @@ export function MarkdownPage({ content, title, subtitle, seo }: MarkdownPageProp
         <meta name="twitter:creator" content="@thierryvm" />
       </Helmet>
       {/* Nav */}
-      <nav className="border-b border-[var(--github-border-primary)]/50 px-6 py-4 flex items-center justify-between max-w-4xl mx-auto">
+      <nav className="border-b border-[var(--github-border-primary)]/50 px-6 pb-4 pt-[max(1rem,var(--inset-top))] flex items-center justify-between max-w-4xl mx-auto">
         <div className="flex items-center gap-2.5">
           <Terminal size={18} className="text-emerald-400" />
           <span className="font-mono text-sm text-[var(--github-text-primary)]">Terminal Learning</span>
