@@ -1295,6 +1295,14 @@ Une capture a aussi mal tourné. Une commande passée à WSL a été découpée 
 
 Dernière découverte, la plus importante pour la suite : le terminal Linux ne remplace pas les jokers. `ls *.txt` ou `rm documents/*` échouent, alors que c'est l'un des premiers réflexes de bash. Ce sera la prochaine correction.
 
+### Une étoile qui ne voulait rien dire (2 octobre 2026)
+
+Le dernier défaut révélé par `find` était le plus étonnant : depuis le début, le terminal ne connaissait pas les jokers. Un élève qui tapait `rm *.txt` recevait « No such file or directory », comme si un fichier s'appelait vraiment « * ».
+
+Dans bash, ce n'est pas la commande qui comprend l'étoile, c'est le shell. Avant même que `rm` démarre, bash remplace `*.txt` par la liste des fichiers qui correspondent. Le simulateur le fait maintenant au même endroit, au moment où il découpe la ligne en mots. Il retient pour chaque caractère s'il a été tapé librement ou protégé par des guillemets ou une barre oblique inverse, puisque `'*'` et `\*` doivent rester des étoiles.
+
+Les quarante captures faites sur le vrai bash ont fixé le reste : l'ordre des résultats, les fichiers cachés, `*/` pour les dossiers, et le mot laissé tel quel quand rien ne correspond. Elles ont aussi montré que `ls` n'affichait que le premier fichier quand on lui en donnait plusieurs, un défaut invisible tant que personne ne pouvait taper `ls documents/*`.
+
 ---
 
 ## Épilogue ouvert

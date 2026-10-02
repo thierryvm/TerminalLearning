@@ -5,6 +5,17 @@
 
 ---
 
+## ✳️ 2 octobre 2026 — Les jokers `*`, `?` et `[...]` fonctionnent
+
+*Terminal Linux et macOS · comportement vérifié sur bash 5.2 (Ubuntu 24.04)*
+
+- **`ls *.md`, `rm documents/*.txt`, `cat documents/*`, `wc -l documents/*`** : le terminal remplace maintenant les jokers par les fichiers qui correspondent, comme bash. Avant, `*` restait écrit tel quel et la commande cherchait un fichier nommé « * ».
+- Les règles sont celles de bash : les fichiers cachés ne sont pris que par un motif qui commence par un point, `*/` ne garde que les dossiers, `[!d]*` exclut, et un motif entre guillemets ou précédé de `\` reste écrit tel quel. Quand rien ne correspond, le mot reste inchangé : `ls *.txt` répond `cannot access '*.txt'`, comme sur un vrai système.
+- **`ls` avec plusieurs fichiers ou dossiers** les affiche tous, comme GNU `ls` : d'abord les fichiers, puis chaque dossier sous son nom. Avant, seul le premier apparaissait.
+- Sous Windows, rien ne change : PowerShell laisse chaque cmdlet lire les jokers elle-même.
+
+---
+
 ## 🔎 2 octobre 2026 — Chercher des fichiers et enchaîner : `find`, `xargs`, `rmdir`
 
 *Phase 5d, lot 1 · sorties vérifiées sur Ubuntu 24.04 (findutils 4.9, coreutils 9.4, grep 3.11)*
