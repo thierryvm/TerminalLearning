@@ -39,7 +39,7 @@
 - [ ] `index.html` : métadonnées (description, Open Graph, Twitter) et FAQ en JSON-LD.
 - [ ] `public/llms.txt` et `public/llms-full.txt`.
 - [ ] `README.md`, `CLAUDE.md` (section Phases), `docs/ARCHITECTURE.md`, `docs/exports/README.md`.
-- [ ] Les tests `docLessonCount`, `landingTotals` et `seo` doivent passer. Un échec signale un compteur à corriger partout, pas un test à ajuster.
+- [ ] Les tests `docLessonCount`, `landingTotals`, `publicCounters` (`llms*.txt` et métadonnées d'`index.html`, depuis le 2 octobre 2026) et `seo` doivent passer. Un échec signale un compteur à corriger partout, pas un test à ajuster.
 
 ## 3. Avant la PR
 

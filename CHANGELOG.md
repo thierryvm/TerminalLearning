@@ -5,6 +5,15 @@
 
 ---
 
+## 🤖 2 octobre 2026 — Ce que lisent les moteurs IA reste à jour
+
+*Fichiers `llms.txt` et `llms-full.txt` · métadonnées de la page d'accueil · Phase 5d, lot 0b*
+
+- Un nouveau test compare `llms.txt`, `llms-full.txt` et les métadonnées d'`index.html` au vrai curriculum : nombre de modules et de leçons, titre de chaque module, titre et adresse de chaque leçon. Un module ou une leçon ajoutés sans mettre ces fichiers à jour font maintenant échouer la CI.
+- Dès son premier passage, il a trouvé **10 titres de leçon périmés** dans `llms-full.txt` (une leçon du module GitHub et neuf du module IA), renommées depuis. Ils sont corrigés.
+
+---
+
 ## 🪟 1er octobre 2026 — Sous Windows, `ls` répond comme PowerShell
 
 *Environnement Windows · `Get-ChildItem` · sorties vérifiées sur PowerShell 7.6*

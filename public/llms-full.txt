@@ -161,7 +161,7 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 | git push & pull — Synchroniser avec GitHub | `git push`, `git pull`, `git push -u origin` | /app/learn/github-collaboration/git-push-pull |
 | git fetch & clone — Récupérer et cloner | `git fetch`, `git clone` | /app/learn/github-collaboration/git-fetch-clone |
 | Pull Requests — Code Review & Collaboration | GitHub PR workflow, review, approvals | /app/learn/github-collaboration/pull-requests |
-| Merge strategies — merge vs rebase vs squash | fast-forward, merge commits, `git rebase`, squash strategy | /app/learn/github-collaboration/merge-strategies |
+| Stratégies de merge — Merge commit, Squash, Rebase | fast-forward, merge commits, `git rebase`, squash strategy | /app/learn/github-collaboration/merge-strategies |
 | Conflits de merge — Les résoudre comme un pro | conflict markers, `git mergetool`, resolution strategies | /app/learn/github-collaboration/conflicts |
 | GitHub Actions — CI/CD automatisé | `.github/workflows/`, YAML syntax, triggers, jobs | /app/learn/github-collaboration/github-actions |
 
@@ -177,14 +177,14 @@ Terminal Learning is a free, open-source, browser-based interactive platform to 
 | Ce que l'IA sait vraiment faire | `ai-help capabilities` | /app/learn/ia-dev/ia-dev-capacites |
 | Ce que l'IA ne sait pas faire | `ai-help limits` | /app/learn/ia-dev/ia-dev-limites |
 | Écrire un bon prompt — les bases | `ai-help prompts` | /app/learn/ia-dev/ia-dev-prompts-basics |
-| Prompts avancés — contexte technique | `ai-help context` | /app/learn/ia-dev/ia-dev-prompts-avances |
-| Valider la sortie de l'IA | `ai-help validate` | /app/learn/ia-dev/ia-dev-valider |
-| Debug assisté par IA | `ai-help debug` | /app/learn/ia-dev/ia-dev-debug |
-| Sécurité et code IA | `ai-help security` | /app/learn/ia-dev/ia-dev-securite |
-| Claude CLI dans le terminal | `ai-help claude-cli` | /app/learn/ia-dev/ia-dev-claude-cli |
-| L'IA dans différents métiers | `ai-help professions` | /app/learn/ia-dev/ia-dev-metiers |
-| La posture professionnelle face à l'IA | `ai-help posture` | /app/learn/ia-dev/ia-dev-posture |
-| Workflow complet avec l'IA | `ai-help workflow` | /app/learn/ia-dev/ia-dev-workflow |
+| Prompts avancés — donner du contexte technique | `ai-help context` | /app/learn/ia-dev/ia-dev-prompts-avances |
+| Valider la sortie — ne jamais copier-coller aveuglément | `ai-help validate` | /app/learn/ia-dev/ia-dev-valider |
+| Déboguer avec l'IA — workflow pratique | `ai-help debug` | /app/learn/ia-dev/ia-dev-debug |
+| Sécurité & IA — ce qu'il ne faut jamais partager | `ai-help security` | /app/learn/ia-dev/ia-dev-securite |
+| Claude Code CLI — l'IA dans le terminal | `ai-help claude-cli` | /app/learn/ia-dev/ia-dev-claude-cli |
+| L'IA par parcours métier | `ai-help professions` | /app/learn/ia-dev/ia-dev-metiers |
+| Posture senior : l'IA comme amplificateur | `ai-help posture` | /app/learn/ia-dev/ia-dev-posture |
+| Workflow complet — du brief au déploiement avec l'IA | `ai-help workflow` | /app/learn/ia-dev/ia-dev-workflow |
 
 ---
 
