@@ -1267,6 +1267,14 @@ L'audit de fidélité a ensuite trouvé ce que j'avais laissé passer : sous Win
 
 Une capture ratée m'a aussi appris quelque chose : lancé depuis le dossier du projet, mon premier script a laissé quatre fichiers vides à sa racine. Ils n'ont pas atteint le dépôt, mais depuis, chaque capture tourne dans un dossier temporaire neuf.
 
+### Le test qui a trouvé dix titres oubliés (2 octobre 2026)
+
+Avant d'ajouter la moindre commande, on a voulu que le site ne puisse plus mentir sur lui-même. Les assistants IA et les moteurs de recherche lisent deux fichiers, `llms.txt` et `llms-full.txt`, qui décrivent chaque module et chaque leçon. Aucun test ne les surveillait.
+
+Le garde-fou écrit ce matin compare ces fichiers au curriculum lui-même. Il a échoué dès son premier passage : dix leçons avaient été renommées depuis l'écriture de `llms-full.txt`, et le fichier donnait encore les anciens titres. Rien de grave, mais un assistant IA qui citait « Debug assisté par IA » renvoyait vers une leçon qui s'appelle autrement.
+
+On a aussi vérifié que le test sait échouer : en remettant volontairement un mauvais compteur dans chaque fichier, il passe au rouge à chaque fois. Les lots suivants ajouteront des modules et des leçons. Ces fichiers ne pourront plus rester en arrière.
+
 ---
 
 ## Épilogue ouvert
@@ -1282,4 +1290,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 1er octobre 2026 (le journal se lit désormais dans l'ordre, du prologue à aujourd'hui).*
+*Dernière mise à jour : 2 octobre 2026.*
