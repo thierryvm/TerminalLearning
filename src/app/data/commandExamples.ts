@@ -28,6 +28,7 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
     { command: 'ls', explanation: 'Liste les fichiers et dossiers visibles du dossier courant.', environments: UNIX },
     { command: 'ls -la', explanation: '-l affiche le détail (droits, propriétaire, taille, date) et -a ajoute les fichiers cachés, ceux dont le nom commence par un point.', environments: UNIX },
     { command: 'ls documents', explanation: 'Liste le contenu d\'un autre dossier sans t\'y déplacer.', environments: UNIX },
+    { command: 'ls documents/*.md', explanation: 'L\'étoile est un joker : avant même que ls démarre, le shell la remplace par les fichiers qui correspondent. Si rien ne correspond, le mot reste tel quel et ls répond qu\'il ne trouve pas « *.md ».', environments: UNIX },
     { command: 'Get-ChildItem', explanation: 'Liste le contenu du dossier courant dans un tableau : type (Mode), date de modification, taille en octets et nom. ls et dir sont des raccourcis de cette commande.', environments: WIN },
     { command: 'Get-ChildItem -Name', explanation: 'Seulement les noms, un par ligne, sans le tableau.', environments: WIN },
     { command: 'Get-ChildItem -Force', explanation: 'Ajoute les éléments cachés, comme le dossier .git. Sous Windows, un nom qui commence par un point ne cache rien : c\'est un attribut qui cache un fichier. ls -la, lui, ne fonctionne pas dans PowerShell.', environments: WIN },

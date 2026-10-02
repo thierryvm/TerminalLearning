@@ -3890,6 +3890,180 @@ describe('find, xargs, rmdir (Phase 5d, lot 1)', () => {
     expect(sh('find . -mtime 1 -bogus')).toEqual(["find: unknown predicate `-bogus'"]);
   });
 
+  it('wildcards: bash 5.2 expands *, ? and [...] against the files (Linux and macOS)', () => {
+    expect(sh('echo *')).toEqual(['documents downloads projets']);
+    expect(sh('echo .*')).toEqual(['.bashrc .profile .zshrc']);
+    expect(sh('echo documents/*')).toEqual(['documents/notes.txt documents/rapport.md']);
+    expect(sh('echo documents/*.md')).toEqual(['documents/rapport.md']);
+    expect(sh('echo *.txt')).toEqual(['*.txt']);
+    expect(sh('ls *.txt')).toEqual(["ls: cannot access '*.txt': No such file or directory"]);
+    expect(sh('echo [dp]*')).toEqual(['documents downloads projets']);
+    expect(sh('echo ?ownloads')).toEqual(['downloads']);
+    expect(sh('echo */')).toEqual(['documents/ downloads/ projets/']);
+    expect(sh('echo projets/*')).toEqual(['projets/README.md projets/script.sh']);
+    expect(sh('echo projets/.*')).toEqual(['projets/.env']);
+    expect(sh("echo '*'")).toEqual(['*']);
+    expect(sh('echo "documents/*"')).toEqual(['documents/*']);
+    expect(sh('echo \\*')).toEqual(['*']);
+    expect(sh('echo doc*/no*')).toEqual(['documents/notes.txt']);
+    expect(sh('echo */*.md')).toEqual(['documents/rapport.md projets/README.md']);
+    expect(sh('echo ~/doc*')).toEqual(['/home/user/documents']);
+    expect(sh('echo [!d]*')).toEqual(['projets']);
+    expect(sh('echo [^d]*')).toEqual(['projets']);
+    expect(sh('echo [a-e]*')).toEqual(['documents downloads']);
+    expect(sh('echo x*y')).toEqual(['x*y']);
+    expect(sh('echo [z-a]*')).toEqual(['[z-a]*']);
+    expect(sh('echo documents/[')).toEqual(['documents/[']);
+    // Sorted in the locale's order, like sort: case and punctuation only break ties.
+    expect(sh('touch B.txt a.txt c.txt; echo *.txt')).toEqual(['a.txt B.txt c.txt']);
+    expect(sh('touch Zed alpha .cache _under 10 9; echo *')).toEqual(['10 9 alpha documents downloads projets _under Zed']);
+    expect(sh("mkdir 'mon dossier'; touch 'mon dossier/f.txt'; echo mon*/*")).toEqual(['mon dossier/f.txt']);
+  });
+
+  it('wildcards reach every command: rm, wc, grep, cp, cat', () => {
+    expect(sh('rm documents/*.txt; ls documents')).toEqual(['rapport.md']);
+    expect(sh('wc -l documents/*')).toEqual(['  6 documents/notes.txt', ' 10 documents/rapport.md', ' 16 total']);
+    expect(sh('grep -l Rapport documents/*')).toEqual(['documents/rapport.md']);
+    expect(sh('cp documents/* downloads/; ls downloads')).toEqual(['notes.txt  rapport.md']);
+    expect(sh('cat documents/*.md | head -2')).toEqual(['# Rapport Mensuel', '']);
+    // PowerShell leaves wildcards to each cmdlet: the word reaches it as typed.
+    expect(sh('echo documents\\*', 'windows')).toEqual(['documents\\*']);
+  });
+
+  it('ls with several operands: errors, then files, then each folder under a header (GNU ls)', () => {
+    expect(sh('ls documents/*')).toEqual(['documents/notes.txt  documents/rapport.md']);
+    expect(sh('ls documents/* | cat')).toEqual(['documents/notes.txt', 'documents/rapport.md']);
+    expect(sh('ls documents projets')).toEqual(['documents:', 'notes.txt  rapport.md', '', 'projets:', 'README.md  script.sh']);
+    expect(sh('ls documents projets | cat')).toEqual(['documents:', 'notes.txt', 'rapport.md', '', 'projets:', 'README.md', 'script.sh']);
+    expect(sh('ls documents .bashrc projets')).toEqual(['.bashrc', '', 'documents:', 'notes.txt  rapport.md', '', 'projets:', 'README.md  script.sh']);
+    expect(sh('ls nope documents .bashrc')).toEqual([
+      "ls: cannot access 'nope': No such file or directory", '.bashrc', '', 'documents:', 'notes.txt  rapport.md',
+    ]);
+    expect(sh('ls -a documents downloads')).toEqual(['documents:', '.  ..  notes.txt  rapport.md', '', 'downloads:', '.  ..']);
+    expect(sh('ls -d documents projets')).toEqual(['documents  projets']);
+    expect(sh('ls -1 documents/notes.txt projets')).toEqual(['documents/notes.txt', '', 'projets:', 'README.md', 'script.sh']);
+    expect(sh('ls downloads documents')).toEqual(['documents:', 'notes.txt  rapport.md', '', 'downloads:']);
+    expect(sh('ls -F projets documents/notes.txt')).toEqual(['documents/notes.txt', '', 'projets:', 'README.md  script.sh*']);
+  });
+
+  // Captured with bash 5.2 / coreutils 9.4 on Ubuntu (2 October 2026); bash run from a
+  // script adds "line 1:" after "bash:", which an interactive shell does not print.
+  it('audit fixes (#419): a wildcard in a redirection is expanded and must name one file', () => {
+    expect(sh('echo hi > documents/*.md; cat documents/rapport.md')).toEqual(['hi']);
+    expect(sh('echo hi >> documents/n*; tail -n 2 documents/notes.txt')).toEqual(['Fin du fichier', 'hi']);
+    expect(sh('echo hi > d*; ls | cat')).toEqual(['bash: d*: ambiguous redirect', 'documents', 'downloads', 'projets']);
+    expect(sh('echo hi > *')).toEqual(['bash: *: ambiguous redirect']);
+    expect(sh('echo hi > [dp]*')).toEqual(['bash: [dp]*: ambiguous redirect']);
+    expect(sh('echo hi > new*.txt; ls | cat')).toEqual(['documents', 'downloads', 'new*.txt', 'projets']);
+    expect(sh('echo hi > $NOPE_UNSET')).toEqual(['bash: $NOPE_UNSET: ambiguous redirect']);
+    expect(sh('cat < documents/n* | head -1')).toEqual(['Mes notes importantes']);
+    expect(sh('cat < d*')).toEqual(['bash: d*: ambiguous redirect']);
+    expect(sh('cat < *.md')).toEqual(['bash: *.md: No such file or directory']);
+    expect(sh("echo hi > 'd*'; cat 'd*'")).toEqual(['hi']);
+  });
+
+  it('audit fixes (#419): cd, chmod, rm and mkdir with several operands', () => {
+    const s = createInitialState();
+    const cd = processCommand(s, 'cd d*', 'linux');
+    expect(cd.lines.map((l) => l.text)).toEqual(['bash: cd: too many arguments']);
+    expect(cd.newState.cwd).toEqual(s.cwd);
+    expect(sh('cd documents projets')).toEqual(['bash: cd: too many arguments']);
+    expect(sh('cd p*; pwd')).toEqual(['/home/user/projets']);
+    // chmod gives every file the mode (the confirmation line is the simulator's, see plan.md).
+    const modes = sh('chmod +x documents/*; ls -l documents').filter((l) => l.startsWith('-')).map((l) => l.slice(0, 10));
+    expect(modes).toEqual(['-rwxr-xr-x', '-rwxr-xr-x']);
+    expect(sh('chmod 644 nope1 nope2')).toEqual([
+      "chmod: cannot access 'nope1': No such file or directory", "chmod: cannot access 'nope2': No such file or directory",
+    ]);
+    expect(sh('chmod +x nope documents/notes.txt; ls -l documents').filter((l) => !l.startsWith('Mode')).map((l) => l.slice(0, 10)))
+      .toEqual(["chmod: can", 'total 2', '-rwxr-xr-x', '-rw-r--r--']);
+    expect(sh('rm *')).toEqual([
+      "rm: cannot remove 'documents': Is a directory", "rm: cannot remove 'downloads': Is a directory", "rm: cannot remove 'projets': Is a directory",
+    ]);
+    expect(sh('rm nope documents/notes.txt; ls documents')).toEqual(["rm: cannot remove 'nope': No such file or directory", 'rapport.md']);
+    expect(sh('rm -f nope documents/notes.txt; ls documents')).toEqual(['rapport.md']);
+    expect(sh('rm -f')).toEqual([]);
+    expect(sh('rm --force nope')).toEqual([]);
+    expect(sh('rm -r d*; ls | cat')).toEqual(['projets']);
+    expect(sh('mkdir new1 documents new2; ls | cat')).toEqual([
+      'mkdir: cannot create directory ‘documents’: File exists', 'documents', 'downloads', 'new1', 'new2', 'projets',
+    ]);
+    expect(sh('mkdir d*')).toEqual([
+      'mkdir: cannot create directory ‘documents’: File exists', 'mkdir: cannot create directory ‘downloads’: File exists',
+    ]);
+  });
+
+  it('audit fixes (#419): head and tail with several files, and the -N form', () => {
+    expect(sh('head -n 1 documents/*')).toEqual(['==> documents/notes.txt <==', 'Mes notes importantes', '', '==> documents/rapport.md <==', '# Rapport Mensuel']);
+    expect(sh('tail -n 1 documents/*')).toEqual(['==> documents/notes.txt <==', 'Fin du fichier', '', '==> documents/rapport.md <==', "Excellent travail de l'équipe."]);
+    expect(sh('head -n2 documents/notes.txt projets/README.md')).toEqual([
+      '==> documents/notes.txt <==', 'Mes notes importantes', 'Tâches du jour:', '', '==> projets/README.md <==', '# Mes Projets', '',
+    ]);
+    expect(sh('head *')).toEqual([
+      '==> documents <==', "head: error reading 'documents': Is a directory", '',
+      '==> downloads <==', "head: error reading 'downloads': Is a directory", '',
+      '==> projets <==', "head: error reading 'projets': Is a directory",
+    ]);
+    expect(sh('head -n 1 nope documents/notes.txt')).toEqual([
+      "head: cannot open 'nope' for reading: No such file or directory", '==> documents/notes.txt <==', 'Mes notes importantes',
+    ]);
+    expect(sh('tail -n 1 documents/notes.txt nope')).toEqual([
+      '==> documents/notes.txt <==', 'Fin du fichier', "tail: cannot open 'nope' for reading: No such file or directory",
+    ]);
+    expect(sh('head nope')).toEqual(["head: cannot open 'nope' for reading: No such file or directory"]);
+    expect(sh('tail documents')).toEqual(["tail: error reading 'documents': Is a directory"]);
+    expect(sh('head -2 documents/notes.txt')).toEqual(['Mes notes importantes', 'Tâches du jour:']);
+    expect(sh('tail -2 documents/notes.txt')).toEqual(['3. Maîtriser les permissions', 'Fin du fichier']);
+    // Review follow-ups: 0, +N and -N counts.
+    expect(sh('tail -n 0 documents/notes.txt')).toEqual([]);
+    expect(sh('tail -0 documents/notes.txt')).toEqual([]);
+    expect(sh('head -n 0 documents/notes.txt')).toEqual([]);
+    expect(sh('tail -n +5 documents/notes.txt')).toEqual(['3. Maîtriser les permissions', 'Fin du fichier']);
+    expect(sh('tail -n+5 documents/notes.txt')).toEqual(['3. Maîtriser les permissions', 'Fin du fichier']);
+    expect(sh('tail -n -2 documents/notes.txt')).toEqual(['3. Maîtriser les permissions', 'Fin du fichier']);
+    expect(sh('head -n -4 documents/notes.txt')).toEqual(['Mes notes importantes', 'Tâches du jour:']);
+    expect(sh('head -n +2 documents/notes.txt')).toEqual(['Mes notes importantes', 'Tâches du jour:']);
+  });
+
+  it('audit fixes (#419): ls options -A, -r, -F with -l, long names, -- and exit status 2', () => {
+    expect(sh('ls -A projets | cat')).toEqual(['.env', 'README.md', 'script.sh']);
+    expect(sh('ls -r documents | cat')).toEqual(['rapport.md', 'notes.txt']);
+    expect(sh('ls -ra projets | cat')).toEqual(['script.sh', 'README.md', '.env', '..', '.']);
+    expect(sh('ls -1r projets')).toEqual(['script.sh', 'README.md']);
+    expect(sh('ls -rd documents projets | cat')).toEqual(['projets', 'documents']);
+    expect(sh('ls -r documents projets | cat')).toEqual(['projets:', 'script.sh', 'README.md', '', 'documents:', 'rapport.md', 'notes.txt']);
+    expect(sh('ls -F projets | cat')).toEqual(['README.md', 'script.sh*']);
+    expect(sh('ls -lF projets').map((l) => l.split(' ').pop())).toEqual(['2', 'README.md', 'script.sh*']);
+    expect(sh('ls --all documents projets | cat')).toEqual([
+      'documents:', '.', '..', 'notes.txt', 'rapport.md', '', 'projets:', '.', '..', '.env', 'README.md', 'script.sh',
+    ]);
+    expect(sh('ls --directory documents projets | cat')).toEqual(['documents', 'projets']);
+    expect(sh('ls -- -x')).toEqual(["ls: cannot access '-x': No such file or directory"]);
+    expect(sh('ls -- documents projets | cat')).toEqual(['documents:', 'notes.txt', 'rapport.md', '', 'projets:', 'README.md', 'script.sh']);
+    expect(processCommand(createInitialState(), 'ls nope', 'linux').status).toBe(2);
+    expect(processCommand(createInitialState(), 'ls nope documents', 'linux').status).toBe(2);
+    expect(processCommand(createInitialState(), 'ls documents', 'linux').status).toBe(0);
+  });
+
+  it('audit fixes (#419): bracket classes and a leading ] in a wildcard', () => {
+    expect(sh('echo [[:alpha:]]*')).toEqual(['documents downloads projets']);
+    expect(sh('echo [[:lower:]]*')).toEqual(['documents downloads projets']);
+    expect(sh('echo [[:upper:]]*')).toEqual(['[[:upper:]]*']);
+    expect(sh('echo [[:digit:]]*')).toEqual(['[[:digit:]]*']);
+    expect(sh('echo [[:foo:]]*')).toEqual(['[[:foo:]]*']);
+    expect(sh('echo [[:alpha:]')).toEqual(['[[:alpha:]']);
+    expect(sh('echo []d]*')).toEqual(['documents downloads']);
+    expect(sh('echo [!]d]*')).toEqual(['projets']);
+    expect(sh('echo []')).toEqual(['[]']);
+    expect(sh('echo [!]')).toEqual(['[!]']);
+    expect(sh('touch ab Ab aB AB b B; echo [[:lower:]]*')).toEqual(['ab aB b documents downloads projets']);
+    expect(sh('touch 1 a; echo [[:digit:]-a]*')).toEqual(['1 a']);
+    expect(sh('touch x; echo [[:graph:]]')).toEqual(['x']);
+    expect(sh('touch x; echo [[:print:]]')).toEqual(['x']);
+    expect(sh('echo [[:cntrl:]]*')).toEqual(['[[:cntrl:]]*']);
+    expect(sh('echo hi > ""')).toEqual(['bash: : No such file or directory']);
+  });
+
   it('audit fixes: rmdir -p, -v, --ignore-fail-on-non-empty, ".", options', () => {
     expect(sh('mkdir -p a/b/c; rmdir -p a/b/c; ls -d a')).toEqual(["ls: cannot access 'a': No such file or directory"]);
     expect(sh('mkdir -p a/b/c; touch a/x; rmdir -p a/b/c; ls a')).toEqual(["rmdir: failed to remove directory 'a': Directory not empty", 'x']);

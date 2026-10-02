@@ -138,7 +138,7 @@ function psErrors(cmdlet: string, lines: OutputLine[], state: TerminalState, env
   return lines.map((l) => {
     if (l.type !== 'error') return l;
     let m: RegExpMatchArray | null;
-    if ((m = l.text.match(/cannot create directory '(.+)': File exists$/))) return err(`New-Item: An item with the specified name ${win(m[1])} already exists.`);
+    if ((m = l.text.match(/cannot create directory ['‘](.+)['’]: File exists$/))) return err(`New-Item: An item with the specified name ${win(m[1])} already exists.`);
     if ((m = l.text.match(/^(?:mv|cp): cannot stat '(.+)': No such file or directory$/) ?? l.text.match(/^rm: cannot remove '(.+)': No such file or directory$/))) {
       return err(`${cmdlet}: Cannot find path '${win(m[1])}' because it does not exist.`);
     }

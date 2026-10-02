@@ -14,6 +14,7 @@ import type { PsCmdlet } from './commands/psParams';
 import { GET_UNIQUE, GROUP_OBJECT, SORT_OBJECT, helpNote, psGetUnique, psGroupLines, psSortLines, runCut, runSort, runUniq, runWc } from './commands/textTools';
 import type { ReadText } from './commands/textTools';
 import { runFind, runXargs } from './commands/find';
+import { expandGlob } from './commands/glob';
 import type { FindDeps } from './commands/find';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
@@ -315,9 +316,24 @@ function deepCloneRoot(root: DirectoryNode): DirectoryNode {
  * a leading `~` and `\$` (a literal dollar) under bash and zsh. An unset bash
  * variable expands to nothing.
  */
-function parseArgs(input: string, expand?: { vars: Record<string, string>; env: TerminalEnv }): string[] {
+type Expansion = { vars: Record<string, string>; env: TerminalEnv; glob?: (word: string, meta: boolean[]) => string[] };
+
+function parseArgs(input: string, expand?: Expansion): string[] {
   const result: string[] = [];
   let current = '';
+  // One flag per character of `current`: true for a wildcard typed without quotes or backslash.
+  let meta: boolean[] = [];
+  const add = (text: string, active = false) => {
+    current += text;
+    for (let k = 0; k < text.length; k++) meta.push(active);
+  };
+  const pushWord = () => {
+    const matches = expand?.glob && meta.some(Boolean) ? expand.glob(current, meta) : [];
+    if (matches.length) result.push(...matches);
+    else result.push(current);
+    current = '';
+    meta = [];
+  };
   // `""` is an empty argument (`ssh-keygen -N ""`); an unquoted empty expansion is not.
   let quoted = false;
   let inQuote = false;
@@ -332,7 +348,7 @@ function parseArgs(input: string, expand?: { vars: Record<string, string>; env: 
     const ch = input[i];
     const literal = inQuote && quoteChar === "'";
     if (expand && !windows && !literal && ch === '\\' && input[i + 1] === '$') {
-      current += '$';
+      add('$');
       i++;
       continue;
     }
@@ -340,14 +356,14 @@ function parseArgs(input: string, expand?: { vars: Record<string, string>; env: 
     // `\(`, `\*`); inside double quotes, only before $ ` " and \. PowerShell's escape is the backtick:
     // there a backslash separates folders.
     if (expand && !windows && ch === '\\' && i + 1 < input.length && (!inQuote || (quoteChar === '"' && '`"\\'.includes(input[i + 1])))) {
-      current += input[i + 1];
+      add(input[i + 1]);
       if (!inQuote) quoted = true;
       i++;
       continue;
     }
     // `~` at the start of an unquoted word is the home folder (`echo ~/documents`).
     if (expand && !windows && !inQuote && ch === '~' && !current && !quoted && /^(?:$|[/\s])/.test(input.slice(i + 1, i + 2))) {
-      current += capValue(Object.prototype.hasOwnProperty.call(expand.vars, 'HOME') ? expand.vars.HOME : '/home/user');
+      add(capValue(Object.prototype.hasOwnProperty.call(expand.vars, 'HOME') ? expand.vars.HOME : '/home/user'));
       continue;
     }
     if (expand && ch === '$' && !literal) {
@@ -357,25 +373,25 @@ function parseArgs(input: string, expand?: { vars: Record<string, string>; env: 
           ? (m[2] ? (m[2].toLowerCase() === 'home' ? 'USERPROFILE' : 'PWD') : m[1])
           : m[1] ?? m[2] ?? m[3];
         const key = windows ? envKey(expand.vars, name) : name;
-        current += Object.prototype.hasOwnProperty.call(expand.vars, key) ? capValue(expand.vars[key]) : '';
+        add(Object.prototype.hasOwnProperty.call(expand.vars, key) ? capValue(expand.vars[key]) : '');
         i += m[0].length - 1;
         continue;
       }
     }
     if (inQuote) {
       if (ch === quoteChar) inQuote = false;
-      else current += ch;
+      else add(ch);
     } else if (ch === '"' || ch === "'") {
       inQuote = true;
       quoted = true;
       quoteChar = ch;
     } else if (ch === ' ' || ch === '\t') {
-      if (current || quoted) { result.push(current); current = ''; quoted = false; }
+      if (current || quoted) { pushWord(); quoted = false; }
     } else {
-      current += ch;
+      add(ch, ch === '*' || ch === '?' || ch === '[');
     }
   }
-  if (current || quoted) result.push(current);
+  if (current || quoted) pushWord();
   return result;
 }
 
@@ -403,50 +419,114 @@ function cmdPwd(state: TerminalState, env: TerminalEnv = 'linux'): OutputLine[] 
   return [{ text: absolutePath(state.cwd, env), type: 'output' }];
 }
 
-function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
-  const flags = args.filter((a) => a.startsWith('-'));
-  const paths = args.filter((a) => !a.startsWith('-'));
-  const showAll = flags.some((f) => f.includes('a'));
-  const longFormat = flags.some((f) => f.includes('l'));
+/** Long options of GNU ls the simulator knows, as their one-letter form. */
+const LS_LONG_OPTIONS: Record<string, string> = {
+  '--all': 'a', '--almost-all': 'A', '--directory': 'd', '--reverse': 'r', '--classify': 'F',
+};
 
-  const targetPath = paths[0] ? resolvePath(state, paths[0]) : state.cwd;
-  const node = getNode(state.root, targetPath);
-
-  if (!node) return [{ text: `ls: cannot access '${paths[0]}': No such file or directory`, type: 'error' }];
-  if (node.type === 'file') {
-    return longFormat
-      ? [{ text: formatLongEntry(paths[0] || '', node), type: 'output' }]
-      : [{ text: paths[0] || '', type: 'output' }];
+/** `ls` arguments as GNU ls reads them: bundled letters (`-la`), long names, and `--` before operands. */
+function lsArgs(args: string[]): { opts: Set<string>; paths: string[] } {
+  const opts = new Set<string>();
+  const paths: string[] = [];
+  let operandsOnly = false;
+  for (const a of args) {
+    if (operandsOnly || a === '-' || !a.startsWith('-')) paths.push(a);
+    else if (a === '--') operandsOnly = true;
+    else if (a.startsWith('--')) {
+      if (Object.prototype.hasOwnProperty.call(LS_LONG_OPTIONS, a)) opts.add(LS_LONG_OPTIONS[a]);
+    } else for (const c of a.slice(1)) opts.add(c);
   }
+  return { opts, paths };
+}
+
+/** A name as `ls -F` marks it: `/` for a folder, `*` for an executable file. */
+function lsClassify(name: string, node: FSNode, opts: Set<string>): string {
+  if (!opts.has('F')) return name;
+  if (node.type === 'directory') return `${name}/`;
+  return node.permissions[3] === 'x' ? `${name}*` : name;
+}
+
+function cmdLs(state: TerminalState, args: string[]): OutputLine[] {
+  const { opts, paths } = lsArgs(args);
+  const longFormat = opts.has('l');
+  const dirsAsFiles = opts.has('d');
+
+  if (paths.length <= 1 && !dirsAsFiles) {
+    const targetPath = paths[0] ? resolvePath(state, paths[0]) : state.cwd;
+    const node = getNode(state.root, targetPath);
+    if (!node) return [{ text: `ls: cannot access '${paths[0]}': No such file or directory`, type: 'error' }];
+    if (node.type === 'file') return listFiles([[paths[0] || '', node]], opts);
+    return listDirectory(node, targetPath, opts);
+  }
+
+  // Several operands (often from a wildcard: `ls documents/*`), as GNU ls prints them
+  // (captured on Ubuntu, 2 October 2026): errors first, then the files together,
+  // then each folder under a "name:" header, separated by blank lines.
+  const errors: OutputLine[] = [];
+  const files: [string, FSNode][] = [];
+  const dirs: [string, DirectoryNode, string[]][] = [];
+  for (const p of paths.length ? paths : ['.']) {
+    const target = resolvePath(state, p);
+    const node = getNode(state.root, target);
+    if (!node) errors.push({ text: `ls: cannot access '${p}': No such file or directory`, type: 'error' });
+    else if (node.type === 'file' || dirsAsFiles) files.push([p, node]);
+    else dirs.push([p, node, target]);
+  }
+  const byName = <T,>(a: [string, ...T[]], b: [string, ...T[]]) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+  files.sort(byName);
+  dirs.sort(byName);
+  if (opts.has('r')) { files.reverse(); dirs.reverse(); }
+  const out: OutputLine[] = [...errors];
+  let printed = false;
+  if (files.length) { out.push(...listFiles(files, opts)); printed = true; }
+  for (const [name, node, target] of dirs) {
+    if (printed) out.push({ text: '', type: 'output' });
+    out.push({ text: `${name}:`, type: 'output' });
+    out.push(...listDirectory(node, target, opts).filter((l) => l.text !== '' || longFormat));
+    printed = true;
+  }
+  return out;
+}
+
+/** Files named on the command line: together on one line in a terminal, one per line otherwise. */
+function listFiles(files: [string, FSNode][], opts: Set<string>): OutputLine[] {
+  if (opts.has('l')) return files.map(([name, n]) => ({ text: formatLongEntry(lsClassify(name, n, opts), n), type: 'output' as const }));
+  const names = files.map(([name, n]) => lsClassify(name, n, opts));
+  if (!stdoutIsTerminal || opts.has('1')) return names.map((text) => ({ text, type: 'output' as const }));
+  return [{ text: names.join('  '), type: 'output' }];
+}
+
+/** The contents of one folder, as `ls` lists it. */
+function listDirectory(node: DirectoryNode, targetPath: string[], opts: Set<string>): OutputLine[] {
+  // `-a` adds the hidden files and `.` and `..`; `-A` only the hidden files.
+  const showAll = opts.has('a');
+  const showHidden = showAll || opts.has('A');
+  const longFormat = opts.has('l');
 
   // Like `ls` in the C locale: one alphabetical list, hidden files first, no directories-first.
   const entries = Object.entries(node.children)
     .map(([name, child]): [string, FSNode] => [windowsName(targetPath, name, windowsPaths), child])
-    .filter(([name]) => showAll || !name.startsWith('.'))
+    .filter(([name]) => showHidden || !name.startsWith('.'))
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
   if (showAll) {
     entries.unshift(['.', node], ['..', node]);
   }
+  if (opts.has('r')) entries.reverse();
 
+  // `-F` marks directories with `/` and executables with `*`; plain `ls` marks nothing.
+  const shown = (name: string, n: FSNode) => (name === '.' || name === '..' ? name : lsClassify(name, n, opts));
   if (!longFormat) {
+    const names = entries.map(([name, n]) => shown(name, n));
     // Into a pipe or a file, a real `ls` writes one plain name per line
     // (that is what `ls | wc -l` counts); `-1` asks for it on screen too.
-    if (!stdoutIsTerminal) return entries.map(([name]) => ({ text: name, type: 'output' as const }));
-    // `-F` marks directories with `/` and executables with `*`; plain `ls` marks nothing.
-    const classify = flags.some((f) => f.includes('F'));
-    const names = entries.map(([name, n]) => {
-      if (!classify || name === '.' || name === '..') return name;
-      if (n.type === 'directory') return name + '/';
-      return n.permissions[3] === 'x' ? name + '*' : name;
-    });
-    if (flags.some((f) => f.includes('1'))) return names.map((text) => ({ text, type: 'output' as const }));
+    if (!stdoutIsTerminal || opts.has('1')) return names.map((text) => ({ text, type: 'output' as const }));
     return [{ text: names.join('  '), type: 'output' }];
   }
 
   const lines: OutputLine[] = [{ text: `total ${entries.length}`, type: 'output' }];
   for (const [name, n] of entries) {
-    lines.push({ text: formatLongEntry(name, n), type: 'output' });
+    lines.push({ text: formatLongEntry(shown(name, n), n), type: 'output' });
   }
   return lines;
 }
@@ -552,6 +632,8 @@ function cmdChildItem(state: TerminalState, args: string[]): OutputLine[] {
 }
 
 function cmdCd(state: TerminalState, args: string[], env: TerminalEnv = 'linux'): { lines: OutputLine[]; newCwd?: string[] } {
+  // `cd d*` with two matches: bash refuses and stays where it is.
+  if (env !== 'windows' && args.length > 1) return { lines: [{ text: 'bash: cd: too many arguments', type: 'error' }] };
   const target = args[0];
   if (target === '-') {
     // `cd -` returns to $OLDPWD; bash prints where it lands. PowerShell 6.2+ (the
@@ -586,6 +668,8 @@ function cmdMkdir(state: TerminalState, args: string[]): { lines: OutputLine[]; 
   if (!paths.length) return { lines: [{ text: 'mkdir: missing operand', type: 'error' }] };
 
   const newRoot = deepCloneRoot(state.root);
+  // Like GNU mkdir, a folder that cannot be made does not stop the others (`mkdir new documents`).
+  const errors: OutputLine[] = [];
 
   for (const p of paths) {
     const resolved = resolvePath(state, p);
@@ -597,7 +681,7 @@ function cmdMkdir(state: TerminalState, args: string[]): { lines: OutputLine[]; 
         }
         const next = cur.children[seg];
         if (next.type !== 'directory') {
-          return { lines: [{ text: `mkdir: cannot create directory '${p}': Not a directory`, type: 'error' }] };
+          return { lines: [{ text: `mkdir: cannot create directory ‘${p}’: Not a directory`, type: 'error' }] };
         }
         cur = next;
       }
@@ -616,15 +700,17 @@ function cmdMkdir(state: TerminalState, args: string[]): { lines: OutputLine[]; 
       }
       const parent = getNode(newRoot, parentPath) as DirectoryNode;
       if (!parent || parent.type !== 'directory') {
-        return { lines: [{ text: `mkdir: cannot create directory '${p}': No such file or directory`, type: 'error' }] };
+        errors.push({ text: `mkdir: cannot create directory ‘${p}’: No such file or directory`, type: 'error' });
+        continue;
       }
       if (parent.children[name]) {
-        return { lines: [{ text: `mkdir: cannot create directory '${p}': File exists`, type: 'error' }] };
+        errors.push({ text: `mkdir: cannot create directory ‘${p}’: File exists`, type: 'error' });
+        continue;
       }
       parent.children[name] = makeDir({});
     }
   }
-  return { lines: [], newRoot };
+  return { lines: errors, newRoot };
 }
 
 function cmdTouch(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
@@ -679,10 +765,17 @@ function cmdCat(state: TerminalState, args: string[]): OutputLine[] {
 const MAX_ENV_VAR_LENGTH = 1024;
 
 /** Variables a command line expands: the session's, and PWD for the current folder. */
-function expansionVars(state: TerminalState, env: TerminalEnv): { vars: Record<string, string>; env: TerminalEnv } {
+function expansionVars(state: TerminalState, env: TerminalEnv): Expansion {
   const shown = varsForEnv(state.envVars, env);
   const pwd = env === 'windows' ? displayPathForEnv(state.cwd, env) : '/' + state.cwd.join('/');
-  return { vars: { PWD: pwd, ...shown }, env };
+  // bash expands wildcards against the files; PowerShell leaves them to each cmdlet.
+  const glob = env === 'windows' ? undefined : (word: string, meta: boolean[]) => expandGlob(word, meta, state.cwd, (parts) => {
+    const node = getNode(state.root, parts);
+    return node?.type === 'directory'
+      ? Object.entries(node.children).map(([name, child]) => ({ name, isDir: child.type === 'directory' }))
+      : null;
+  });
+  return { vars: { PWD: pwd, ...shown }, env, glob };
 }
 
 /** A variable value, cut at MAX_ENV_VAR_LENGTH so a huge variable cannot flood the terminal [H3]. */
@@ -710,9 +803,12 @@ function cmdEcho(args: string[]): OutputLine[] {
 function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
   const flags = args.filter((a) => a.startsWith('-'));
   const paths = args.filter((a) => !a.startsWith('-'));
-  const recursive = flags.some((f) => f.includes('r') || f.includes('R'));
+  const letters = flags.filter((f) => !f.startsWith('--')).join('');
+  const recursive = /[rR]/.test(letters) || flags.includes('--recursive');
+  // `-f` ignores missing files and says nothing (`rm -f *.tmp` when there is none).
+  const force = letters.includes('f') || flags.includes('--force');
 
-  if (!paths.length) return { lines: [{ text: 'rm: missing operand', type: 'error' }] };
+  if (!paths.length) return { lines: force ? [] : [{ text: 'rm: missing operand', type: 'error' }] };
   // GNU rm refuses to wipe the whole system (`rm -rf /`) unless forced explicitly.
   if (recursive && paths.some((p) => resolvePath(state, p).length === 0) && !flags.includes('--no-preserve-root')) {
     return { lines: [
@@ -722,6 +818,8 @@ function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; new
   }
 
   const newRoot = deepCloneRoot(state.root);
+  // GNU rm reports each operand it cannot remove and still removes the others (`rm *`).
+  const errors: OutputLine[] = [];
 
   for (const p of paths) {
     const resolved = resolvePath(state, p);
@@ -729,16 +827,18 @@ function cmdRm(state: TerminalState, args: string[]): { lines: OutputLine[]; new
     const name = resolved[resolved.length - 1];
     const parent = getNode(newRoot, parentPath) as DirectoryNode;
 
-    if (!parent || !parent.children[name]) {
-      return { lines: [{ text: `rm: cannot remove '${p}': No such file or directory`, type: 'error' }] };
+    if (!parent || parent.type !== 'directory' || !parent.children[name]) {
+      if (!force) errors.push({ text: `rm: cannot remove '${p}': No such file or directory`, type: 'error' });
+      continue;
     }
     const target = parent.children[name];
     if (target.type === 'directory' && !recursive) {
-      return { lines: [{ text: `rm: cannot remove '${p}': Is a directory (use -r)`, type: 'error' }] };
+      errors.push({ text: `rm: cannot remove '${p}': Is a directory`, type: 'error' });
+      continue;
     }
     delete parent.children[name];
   }
-  return { lines: [], newRoot };
+  return { lines: errors, newRoot };
 }
 
 // ─── cp / mv ──────────────────────────────────────────────────────────────────
@@ -976,22 +1076,49 @@ function cmdGrep(state: TerminalState, args: string[]): { lines: OutputLine[]; s
   return { lines: [...out, ...errors], status: errors.length ? 2 : selected ? 0 : 1 };
 }
 
+/**
+ * `head` and `tail` as GNU coreutils 9.4 prints them (captured on Ubuntu, 2 October
+ * 2026): `-n 3`, `-n3` or the old `-3`; `head -n -3` drops the last 3 lines and
+ * `tail -n +3` starts at line 3. With several files, each one under a
+ * `==> name <==` header, blank lines between them, and an error for a missing one.
+ */
 function cmdHeadTail(state: TerminalState, args: string[], cmd: 'head' | 'tail'): OutputLine[] {
-  let n = 10;
-  let filePath = '';
-  const parseN = (raw: string) => { const p = parseInt(raw, 10); if (!Number.isNaN(p)) n = p; };
+  let count = '10';
+  const files: string[] = [];
+  const parseN = (raw: string) => { if (/^[+-]?\d+$/.test(raw)) count = raw; };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '-n' && args[i + 1]) { parseN(args[i + 1]); i++; }
     else if (args[i].startsWith('-n')) { parseN(args[i].slice(2)); }
-    else filePath = args[i];
+    else if (/^-\d+$/.test(args[i])) { parseN(args[i].slice(1)); }
+    else files.push(args[i]);
   }
+  const k = Math.abs(Number(count));
+  const pick = (lines: string[]): string[] => {
+    if (cmd === 'head') return count.startsWith('-') ? lines.slice(0, Math.max(0, lines.length - k)) : lines.slice(0, k);
+    if (count.startsWith('+')) return lines.slice(Math.max(0, k - 1));
+    return k === 0 ? [] : lines.slice(-k);
+  };
   const pfx = `${cmd}:`;
-  if (!filePath) return [{ text: `${pfx} missing file operand`, type: 'error' }];
-  const node = getNode(state.root, resolvePath(state, filePath));
-  if (!node) return [{ text: `${pfx} cannot open '${filePath}': No such file or directory`, type: 'error' }];
-  if (node.type === 'directory') return [{ text: `${pfx} ${filePath}: Is a directory`, type: 'error' }];
-  const lines = node.content.split('\n');
-  return (cmd === 'head' ? lines.slice(0, n) : lines.slice(-n)).map((line) => ({ text: line, type: 'output' as const }));
+  if (!files.length) return [{ text: `${pfx} missing file operand`, type: 'error' }];
+  const out: OutputLine[] = [];
+  let headers = 0;
+  for (const file of files) {
+    const node = getNode(state.root, resolvePath(state, file));
+    if (!node) {
+      out.push({ text: `${pfx} cannot open '${file}' for reading: No such file or directory`, type: 'error' });
+      continue;
+    }
+    if (files.length > 1) {
+      if (headers++) out.push({ text: '', type: 'output' });
+      out.push({ text: `==> ${file} <==`, type: 'output' });
+    }
+    if (node.type === 'directory') {
+      out.push({ text: `${pfx} error reading '${file}': Is a directory`, type: 'error' });
+      continue;
+    }
+    out.push(...pick(node.content.split('\n')).map((line) => ({ text: line, type: 'output' as const })));
+  }
+  return out;
 }
 
 function cmdHead(state: TerminalState, args: string[]): OutputLine[] {
@@ -1038,17 +1165,21 @@ function cmdWc(state: TerminalState, args: string[]): OutputLine[] {
 
 function cmdChmod(state: TerminalState, args: string[]): { lines: OutputLine[]; newRoot?: DirectoryNode } {
   if (args.length < 2) return { lines: [{ text: 'chmod: missing operand', type: 'error' }] };
-  const mode = args[0];
-  const filePath = args[1];
+  const [mode, ...files] = args;
+  if (!applyChmodMode('-rw-r--r--', mode)) return { lines: [{ text: `chmod: invalid mode: '${mode}'`, type: 'error' }] };
   const newRoot = deepCloneRoot(state.root);
-  const resolved = resolvePath(state, filePath);
-  const node = getNode(newRoot, resolved);
-  if (!node) return { lines: [{ text: `chmod: cannot access '${filePath}': No such file or directory`, type: 'error' }] };
-
-  const next = applyChmodMode(node.permissions, mode);
-  if (!next) return { lines: [{ text: `chmod: invalid mode: '${mode}'`, type: 'error' }] };
-  node.permissions = next;
-  return { lines: [{ text: `Mode de '${filePath}' changé`, type: 'success' }], newRoot };
+  // Every file gets the mode (`chmod +x documents/*`); a missing one is reported and skipped.
+  const lines: OutputLine[] = [];
+  for (const filePath of files) {
+    const node = getNode(newRoot, resolvePath(state, filePath));
+    if (!node) {
+      lines.push({ text: `chmod: cannot access '${filePath}': No such file or directory`, type: 'error' });
+      continue;
+    }
+    node.permissions = applyChmodMode(node.permissions, mode) ?? node.permissions;
+    lines.push({ text: `Mode de '${filePath}' changé`, type: 'success' });
+  }
+  return { lines, newRoot };
 }
 
 /**
@@ -1345,6 +1476,20 @@ function openFailure(typed: string, reason: string, env: TerminalEnv, cmdlet = '
   return env === 'windows'
     ? { text: `${cmdlet}: Could not find a part of the path '${typed}'.`, type: 'error' }
     : { text: `bash: ${typed}: ${reason}`, type: 'error' };
+}
+
+/**
+ * The file a redirection names. bash expands the word like an argument (variables,
+ * `~`, wildcards) and needs exactly one result: `> *` or `> $UNSET` is an
+ * "ambiguous redirect" (bash 5.2, captured on Ubuntu, 2 October 2026).
+ * PowerShell takes the path as typed.
+ */
+function redirectTarget(state: TerminalState, raw: string, unquoted: string, env: TerminalEnv): { target: string } | { error: OutputLine } {
+  if (env === 'windows') return { target: unquoted };
+  const words = parseArgs(raw, expansionVars(state, env));
+  if (words.length !== 1) return { error: { text: `bash: ${raw}: ambiguous redirect`, type: 'error' } };
+  if (words[0] === '') return { error: { text: 'bash: : No such file or directory', type: 'error' } };
+  return { target: words[0] };
 }
 
 /** Checks a redirection target the way the shell opens it: before the command runs. */
@@ -1868,14 +2013,16 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
         fds[r.fd] = fds[r.to];
         continue;
       }
+      const named = redirectTarget(base, r.raw, r.target, env);
+      if ('error' in named) { openError = named.error; break; }
       let sink: Sink;
-      if (isNullDevice(r.target, env)) {
+      if (isNullDevice(named.target, env)) {
         sink = { kind: 'null' };
       } else {
-        const target = checkWritable(base, r.target, env);
+        const target = checkWritable(base, named.target, env);
         if ('error' in target) { openError = target.error; break; }
         const key = target.path.join('/');
-        if (!files.has(key)) files.set(key, { path: target.path, typed: r.target, append: r.append, chunks: [] });
+        if (!files.has(key)) files.set(key, { path: target.path, typed: named.target, append: r.append, chunks: [] });
         sink = { kind: 'file', key };
       }
       if (r.fd === 'both') { fds[1] = sink; fds[2] = sink; } else fds[r.fd] = sink;
@@ -1883,9 +2030,13 @@ function runPipeline(state: TerminalState, stages: Stage[], env: TerminalEnv): P
 
     let stdin = piped;
     if (!openError && stage.stdinFile !== undefined) {
-      const node = getNode(base.root, resolvePath(base, stage.stdinFile));
-      if (node?.type === 'file') stdin = node.content;
-      else openError = openFailure(stage.stdinFile, node ? 'Is a directory' : 'No such file or directory', env);
+      const named = redirectTarget(base, stage.stdinRaw ?? stage.stdinFile, stage.stdinFile, env);
+      if ('error' in named) openError = named.error;
+      else {
+        const node = getNode(base.root, resolvePath(base, named.target));
+        if (node?.type === 'file') stdin = node.content;
+        else openError = openFailure(named.target, node ? 'Is a directory' : 'No such file or directory', env);
+      }
     }
 
     piped = '';
@@ -2639,8 +2790,11 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     case 'pwd':
       return { lines: cmdPwd(newState, env), newState };
 
-    case 'ls':
-      return { lines: cmdLs(newState, args), newState };
+    case 'ls': {
+      // GNU ls exits with 2 when an operand cannot be read.
+      const lines = cmdLs(newState, args);
+      return { lines, newState, status: lines.some((l) => l.type === 'error') ? 2 : 0 };
+    }
 
     case 'cd': {
       const { lines, newCwd } = cmdCd(newState, args, env);
