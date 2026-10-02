@@ -11,8 +11,10 @@ import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
 import { GET_CHILD_ITEM, parsePsArgs, psNotSimulated } from './commands/psParams';
 import type { PsCmdlet } from './commands/psParams';
-import { GET_UNIQUE, GROUP_OBJECT, SORT_OBJECT, psGetUnique, psGroupLines, psSortLines, runCut, runSort, runUniq } from './commands/textTools';
+import { GET_UNIQUE, GROUP_OBJECT, SORT_OBJECT, helpNote, psGetUnique, psGroupLines, psSortLines, runCut, runSort, runUniq, runWc } from './commands/textTools';
 import type { ReadText } from './commands/textTools';
+import { runFind, runXargs } from './commands/find';
+import type { FindDeps } from './commands/find';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
 import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
@@ -331,6 +333,15 @@ function parseArgs(input: string, expand?: { vars: Record<string, string>; env: 
     const literal = inQuote && quoteChar === "'";
     if (expand && !windows && !literal && ch === '\\' && input[i + 1] === '$') {
       current += '$';
+      i++;
+      continue;
+    }
+    // Outside quotes, bash drops a backslash and keeps the next character as typed (`find . -exec cat {} \;`,
+    // `\(`, `\*`); inside double quotes, only before $ ` " and \. PowerShell's escape is the backtick:
+    // there a backslash separates folders.
+    if (expand && !windows && ch === '\\' && i + 1 < input.length && (!inQuote || (quoteChar === '"' && '`"\\'.includes(input[i + 1])))) {
+      current += input[i + 1];
+      if (!inQuote) quoted = true;
       i++;
       continue;
     }
@@ -904,10 +915,10 @@ function buildGrepRegex(
   }
 }
 
-function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
+function cmdGrep(state: TerminalState, args: string[]): { lines: OutputLine[]; status?: number } {
   const flags = args.filter((a) => a.startsWith('-'));
   const rest = args.filter((a) => !a.startsWith('-'));
-  if (rest.length < 2) return [{ text: 'grep: usage: grep [OPTIONS] PATTERN FILE', type: 'error' }];
+  if (rest.length < 2) return { lines: [{ text: 'grep: usage: grep [OPTIONS] PATTERN FILE', type: 'error' }], status: 2 };
 
   const [pattern, ...paths] = rest;
   const showLineNumbers = flags.some((f) => f.includes('n'));
@@ -915,7 +926,7 @@ function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
   const recursive = flags.some((f) => /^-[^-]*[rR]/.test(f) || f === '--recursive');
 
   const regexResult = buildGrepRegex(pattern, ignoreCase ? 'i' : '');
-  if (!regexResult.ok) return [regexResult.error];
+  if (!regexResult.ok) return { lines: [regexResult.error], status: 2 };
   const regex = regexResult.regex;
 
   // Files to search, as grep names them: a directory given with -r expands to its
@@ -939,15 +950,30 @@ function cmdGrep(state: TerminalState, args: string[]): OutputLine[] {
 
   // Like grep: the file name prefixes each match as soon as several files can match.
   const withName = recursive || paths.length > 1;
+  const invert = flags.some((f) => /^-[^-]*v/.test(f));
+  const count = flags.some((f) => /^-[^-]*c/.test(f));
+  const listMatching = flags.some((f) => /^-[^-]*l/.test(f));
+  const listOthers = flags.some((f) => /^-[^-]*L/.test(f));
   const out: OutputLine[] = [];
+  let selected = false;
   for (const { name, content } of targets) {
-    content.split('\n').forEach((line, i) => {
-      if (!regex.test(line)) return;
+    const hits = content.split('\n').map((line, i) => ({ line, i })).filter(({ line }) => regex.test(line) !== invert);
+    // -l / -L list file names (GNU grep 3.11, 2 October 2026), -c counts per file.
+    if (listMatching || listOthers) {
+      if ((hits.length > 0) === listMatching) out.push({ text: name, type: 'output' });
+      // grep 3.11: with -L too, the exit status says whether a line matched, not whether a name was listed.
+      if (hits.length) selected = true;
+      continue;
+    }
+    if (hits.length) selected = true;
+    if (count) { out.push({ text: `${withName ? `${name}:` : ''}${hits.length}`, type: 'output' }); continue; }
+    for (const { line, i } of hits) {
       const prefix = `${withName ? `${name}:` : ''}${showLineNumbers ? `${i + 1}:` : ''}`;
       out.push({ text: `${prefix}${line}`, type: 'output' });
-    });
+    }
   }
-  return [...out, ...errors];
+  // Exit status: 0 when a line (or file) was selected, 1 when none, 2 after an error.
+  return { lines: [...out, ...errors], status: errors.length ? 2 : selected ? 0 : 1 };
 }
 
 function cmdHeadTail(state: TerminalState, args: string[], cmd: 'head' | 'tail'): OutputLine[] {
@@ -1448,13 +1474,13 @@ function lineCount(args: string[], fallback: number): number {
  * `sort`, `uniq` and `cut` (GNU): from their files, from standard input, or
  * both (`-`). `sort -o` and `uniq in out` write a file instead of the screen.
  */
-function runTextTool(state: TerminalState, cmd: 'sort' | 'uniq' | 'cut', args: string[], stdin: string | undefined): CommandOutput {
+function runTextTool(state: TerminalState, cmd: 'sort' | 'uniq' | 'cut' | 'wc', args: string[], stdin: string | undefined): CommandOutput {
   const read: ReadText = (p) => {
     const node = getNode(state.root, resolvePath(state, p));
     if (!node) return { error: 'missing' };
     return node.type === 'directory' ? { error: 'directory' } : { content: node.content };
   };
-  const result = (cmd === 'sort' ? runSort : cmd === 'uniq' ? runUniq : runCut)(args, stdin, read);
+  const result = ({ sort: runSort, uniq: runUniq, cut: runCut, wc: runWc })[cmd](args, stdin, read);
   if (!result.writeTo) return { lines: result.lines, newState: state, status: result.status };
   const typed = result.writeTo.path;
   const path = resolvePath(state, typed);
@@ -1466,6 +1492,103 @@ function runTextTool(state: TerminalState, cmd: 'sort' | 'uniq' | 'cut', args: s
     return { lines: [{ text, type: 'error' }], newState: state, status: cmd === 'sort' ? 2 : 1 };
   }
   return { lines: [], newState: { ...state, root: writeFileAt(state.root, path, result.writeTo.lines.join('\n'), false) }, status: 0 };
+}
+
+/** Builtins of bash with no program of the same name on Ubuntu (`ls /usr/bin/cd` fails). */
+const SHELL_BUILTINS = new Set(['cd', 'export', 'alias', 'unalias', 'unset', 'source', '.', 'exit', 'set', 'history', 'pushd', 'popd', 'dirs', 'jobs', 'fg', 'bg', 'umask', 'read', 'eval', 'exec', 'shopt', 'declare', 'local', 'type', 'hash']);
+
+/**
+ * What `find -exec`, `find -delete` and `xargs` need: the node at a path and a
+ * way to run one command, both in a state that changes as those commands run.
+ */
+function commandRunner(start: TerminalState, env: TerminalEnv): { deps: FindDeps; state: () => TerminalState } {
+  let s = start;
+  return {
+    deps: {
+      node: (typed) => getNode(s.root, resolvePath(s, typed)) ?? undefined,
+      run: (line) => {
+        const name = parseArgs(line, expansionVars(s, env))[0] ?? '';
+        // find and xargs start programs: a shell builtin (cd, export…) is not one.
+        if (SHELL_BUILTINS.has(name)) return { lines: [], ok: false, notFound: true };
+        const result = runSimple(s, line, env);
+        s = result.newState;
+        const notFound = result.lines.length === 1 && result.lines[0].text.startsWith(`${name}: commande introuvable.`);
+        const ok = result.status !== undefined ? result.status === 0 : !result.lines.some((l) => l.type === 'error');
+        return { lines: result.lines, ok, notFound };
+      },
+    },
+    state: () => s,
+  };
+}
+
+const runHelpNote = (cmd: string, option: string) => {
+  const note = helpNote(cmd, option === '--help' ? 'help' : 'version');
+  return { lines: note.lines, status: note.status };
+};
+
+/** `rmdir`: removes empty folders only (GNU coreutils 9.4's messages, captured 2 October 2026). */
+function cmdRmdir(state: TerminalState, args: string[]): CommandOutput {
+  const fail = (...texts: string[]): CommandOutput => ({ lines: texts.map((text) => ({ text, type: 'error' as const })), newState: state, status: 1 });
+  const help = "Try 'rmdir --help' for more information.";
+  let parents = false;
+  let verbose = false;
+  let ignoreNonEmpty = false;
+  const dirs: string[] = [];
+  let options = true;
+  for (const a of args) {
+    if (options && a === '--') { options = false; continue; }
+    if (options && a.startsWith('--')) {
+      if (a === '--parents') parents = true;
+      else if (a === '--verbose') verbose = true;
+      else if (a === '--ignore-fail-on-non-empty') ignoreNonEmpty = true;
+      else if (a === '--help' || a === '--version') return { ...runHelpNote('rmdir', a), newState: state };
+      else return fail(`rmdir: unrecognized option '${a}'`, help);
+      continue;
+    }
+    if (options && a.startsWith('-') && a !== '-') {
+      for (const c of a.slice(1)) {
+        if (c === 'p') parents = true;
+        else if (c === 'v') verbose = true;
+        else return fail(`rmdir: invalid option -- '${c}'`, help);
+      }
+      continue;
+    }
+    dirs.push(a);
+  }
+  if (!dirs.length) return fail('rmdir: missing operand', help);
+
+  let s = state;
+  const lines: OutputLine[] = [];
+  let status = 0;
+  const remove = (dir: string, parent = false): boolean => {
+    const node = getNode(s.root, resolvePath(s, dir));
+    const last = dir.replace(/\/+$/, '').split('/').pop();
+    const why = last === '.' || last === '..' ? 'Invalid argument'
+      : !node ? 'No such file or directory'
+      : node.type !== 'directory' ? 'Not a directory'
+      : Object.keys(node.children).length ? 'Directory not empty' : undefined;
+    if (why) {
+      if (!(why === 'Directory not empty' && ignoreNonEmpty)) {
+        lines.push({ text: `rmdir: failed to remove ${parent ? 'directory ' : ''}'${dir}': ${why}`, type: 'error' });
+        status = 1;
+      }
+      return false;
+    }
+    if (verbose) lines.push({ text: `rmdir: removing directory, '${dir}'`, type: 'output' });
+    const { newRoot } = cmdRm(s, ['-r', '--', dir]);
+    if (newRoot) s = { ...s, root: newRoot };
+    return true;
+  };
+  for (const dir of dirs) {
+    if (!remove(dir) || !parents) continue;
+    // -p: then each parent named in the path, a/b/c → a/b → a.
+    let path = dir.replace(/\/+$/, '');
+    while (path.includes('/')) {
+      path = path.slice(0, path.lastIndexOf('/'));
+      if (!path || !remove(path, true)) break;
+    }
+  }
+  return { lines, newState: s, status };
 }
 
 /** A PowerShell table as the simulator prints it, with the blank lines that frame it (`Group-Object`). */
@@ -1547,6 +1670,7 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
 
   switch (cmd) {
     case 'wc': {
+      if (env !== 'windows') return runTextTool(state, 'wc', args, stdin);
       const { lines, words, bytes } = textCounts(stdin);
       if (flags.some((f) => f.includes('l'))) return same(outLines([String(lines)]));
       if (flags.some((f) => f.includes('w'))) return same(outLines([String(words)]));
@@ -1702,10 +1826,16 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
       // `git diff | claude "…"`: the lessons teach the pattern; the tool runs on the learner's machine.
       return same([{ text: `(claude reçoit ${input.length} ligne(s) par le pipe — Claude Code n'est pas simulé dans ce terminal, essayez-le sur votre machine.)`, type: 'info' }]);
 
+    case 'xargs': {
+      if (env === 'windows') return runSimple(state, text, env);
+      const runner = commandRunner(state, env);
+      const result = runXargs(args, stdin, runner.deps);
+      return { lines: result.lines, newState: { ...state, root: runner.state().root, git: runner.state().git }, status: result.status };
+    }
+
     case 'sed':
     case 'awk':
     case 'tr':
-    case 'xargs':
       // Not simulated yet: say so rather than pretend the text was transformed.
       return same([...outLines(input), { text: `(${cmd} n'est pas encore simulé : le texte passe tel quel.)`, type: 'info' }]);
 
@@ -2352,6 +2482,8 @@ const PS_ALIASES: Record<string, string> = {
   cp: 'copy-item',
   mv: 'move-item',
   rm: 'remove-item',
+  rmdir: 'remove-item',
+  rd: 'remove-item',
   cd: 'set-location',
   chdir: 'set-location',
   mkdir: 'md',
@@ -2448,7 +2580,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   // Dependencies for Windows/macOS alias handler
   const winDeps: WindowsCmdDeps = {
     cmdPwd, cmdCd, cmdLs, childItems: cmdChildItem, cmdCat, cmdMkdir, cmdTouch,
-    cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep, cmdEnv,
+    cmdCp, cmdMv, cmdRm, cmdEcho, cmdGrep: (s, a) => cmdGrep(s, a).lines, cmdEnv,
     childCount: (s, p) => {
       const node = getNode(s.root, resolvePath(s, p));
       return node?.type === 'directory' ? Object.keys(node.children).length : undefined;
@@ -2472,6 +2604,28 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
   }
 
   if ((cmd === 'sort' || cmd === 'uniq' || cmd === 'cut') && env !== 'windows') return runTextTool(newState, cmd, args, undefined);
+  if ((cmd === 'find' || cmd === 'xargs') && env !== 'windows') {
+    const runner = commandRunner(newState, env);
+    const result = cmd === 'find' ? runFind(args, runner.deps) : runXargs(args, undefined, runner.deps);
+    // The commands they start are other processes: only the files they change come back.
+    return { lines: result.lines, newState: { ...newState, root: runner.state().root, git: runner.state().git }, status: result.status };
+  }
+  if (cmd === 'rmdir' && env !== 'windows') return cmdRmdir(newState, args);
+  if (cmd === 'find' && env === 'windows') {
+    // In PowerShell, find is Windows' find.exe, a text search: a Linux-style call fails, exit 2.
+    // Captured on a French Windows: `find . -name "*.md"` takes *.md for a file to search
+    // (« Fichier introuvable - *.md »); other forms give « FIND : format incorrect de paramètre ».
+    const nameAt = args.findIndex((a) => /^-i?name$/i.test(a));
+    const missing = nameAt >= 0 ? args[nameAt + 1] : undefined;
+    return {
+      lines: [
+        { text: missing ? `File not found - ${missing}` : 'FIND: Parameter format not correct', type: 'error' },
+        { text: "Dans PowerShell, find est find.exe, l'outil de recherche de texte de Windows. Pour chercher des fichiers : Get-ChildItem -Recurse -Filter *.txt", type: 'info' },
+      ],
+      newState,
+      status: 2,
+    };
+  }
   // With nothing piped in, these cmdlets have nothing to sort or group: PowerShell prints nothing
   // (`sort fruits.txt` is Sort-Object -Property fruits.txt), unless a parameter is wrong.
   // A Map, not an object literal: a typed `constructor` must not find Object's own.
@@ -2596,9 +2750,8 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
     }
 
     case 'grep': {
-      const lines = cmdGrep(newState, args);
       // Exit 1 when nothing matched, so `grep x f || …` works.
-      return { lines, newState, status: lines.some((l) => l.type === 'output') ? 0 : 1 };
+      return { ...cmdGrep(newState, args), newState };
     }
 
     case 'head':
@@ -2608,6 +2761,7 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       return { lines: cmdTail(newState, args), newState };
 
     case 'wc':
+      if (env !== 'windows') return runTextTool(newState, 'wc', args, undefined);
       return { lines: cmdWc(newState, args), newState };
 
     case 'chmod': {

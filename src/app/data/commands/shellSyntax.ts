@@ -54,6 +54,12 @@ function tokenize(line: string, env: TerminalEnv): { tokens: Token[] } | { error
     const next = line[i + 1];
 
     if (quote) {
+      // In bash, `\"` and `\\` inside double quotes do not end the string (`echo "say \"hi\""`).
+      if (quote === '"' && escape === '\\' && ch === '\\' && (next === '"' || next === '\\')) {
+        word += ch + next;
+        i++;
+        continue;
+      }
       word += ch;
       if (ch === quote) quote = '';
       continue;

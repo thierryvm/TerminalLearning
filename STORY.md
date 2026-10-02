@@ -1285,6 +1285,16 @@ PowerShell a réservé sa propre surprise. `Sort-Object` ignore vraiment la cass
 
 Quatre séries de captures, plus de 150 commandes, ont fixé chaque détail : `cut -c` compte des octets (« Tâches » coupé à 5 donne « Tâch »), un `-r` global inverse aussi le départage des lignes égales, mais pas un `-r` écrit dans la clé. Un des tests existants a même trouvé un bug que nous n'avions pas vu : une commande nommée `constructor` remontait jusqu'au prototype d'un objet JavaScript.
 
+### Ce que `find` a révélé (2 octobre 2026)
+
+`find` n'avait jamais existé dans le simulateur. En l'écrivant, on a buté sur une question simple : dans quel ordre l'afficher ? Sur l'Ubuntu de WSL, `find .` a rendu les fichiers dans un ordre qui ne ressemble à rien. Sur un disque Linux, cet ordre dépend d'un calcul interne et change d'une machine à l'autre. Le simulateur suit donc l'ordre de Git Bash sous Windows, alphabétique, et la page Référence conseille d'ajouter `| sort` quand l'ordre compte.
+
+Les vraies sorties de `find` et de `xargs` ont ensuite fait remonter trois défauts plus anciens. `find . -exec cat {} \;`, l'usage le plus courant, ne marchait pas, parce que le terminal ne retirait pas la barre oblique inverse comme le fait bash. `grep -l` affichait les lignes au lieu des noms de fichiers. Et `wc` n'alignait pas ses colonnes comme le vrai : deux de nos propres tests attendaient même la mauvaise largeur, et la leçon `wc` la montrait. Tout a été corrigé à partir des captures, y compris le texte de la leçon.
+
+Une capture a aussi mal tourné. Une commande passée à WSL a été découpée autrement que prévu, et le décor de test s'est écrit dans le vrai dossier personnel de l'Ubuntu, par-dessus deux fichiers de configuration. Rien n'a été supprimé : les fichiers écrits par erreur sont en quarantaine, les originaux d'Ubuntu ont été remis, et le script refuse désormais de s'exécuter ailleurs que dans un dossier temporaire.
+
+Dernière découverte, la plus importante pour la suite : le terminal Linux ne remplace pas les jokers. `ls *.txt` ou `rm documents/*` échouent, alors que c'est l'un des premiers réflexes de bash. Ce sera la prochaine correction.
+
 ---
 
 ## Épilogue ouvert

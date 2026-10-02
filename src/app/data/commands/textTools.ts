@@ -29,6 +29,14 @@ const notSimulated = (cmd: string, option: string): TextToolResult => ({
   status: 0,
 });
 
+/** `--help` and `--version`: what a real system prints is long; say where to look instead of faking it. */
+export function helpNote(cmd: string, option: 'help' | 'version'): TextToolResult {
+  const text = option === 'help'
+    ? `Sur un vrai système, ${cmd} --help affiche le mode d'emploi complet de ${cmd}. Ici, la page Référence en donne l'essentiel, avec des exemples à essayer.`
+    : `Sur un vrai système, ${cmd} --version affiche sa version et sa licence. Ce terminal d'entraînement imite GNU ${cmd === 'find' || cmd === 'xargs' ? 'findutils 4.9' : 'coreutils 9.4'}.`;
+  return { lines: [{ text, type: 'info' }], status: 0 };
+}
+
 /**
  * With neither a file nor a pipe, the real tool waits for text typed at the
  * keyboard (until Ctrl+D); the practice terminal says what to give it instead.
@@ -105,12 +113,7 @@ function getopt(cmd: string, args: string[], spec: OptionSpec): Parsed | TextToo
       const known = Object.prototype.hasOwnProperty.call(spec.long, name) ? spec.long[name] : undefined;
       if (!known) {
         if (spec.unsupportedLong.includes(name)) return notSimulated(cmd, `--${name}`);
-        if (name === 'help') {
-          return {
-            lines: [{ text: `Sur un vrai système, ${cmd} --help affiche le mode d'emploi complet de ${cmd}. Ici, la page Référence en donne l'essentiel, avec des exemples à essayer.`, type: 'info' }],
-            status: 0,
-          };
-        }
+        if (name === 'help' || name === 'version') return helpNote(cmd, name);
         return fail(`${cmd}: unrecognized option '${arg}'`, tryHelp(cmd));
       }
       if (known.valued) {
@@ -520,6 +523,88 @@ export function runCut(args: string[], stdin: string | undefined, read: ReadText
       if (kept !== undefined) lines.push({ text: kept, type: 'output' });
     }
   }
+  return { lines, status };
+}
+
+// ─── wc ────────────────────────────────────────────────────────────────────
+
+const WC_SPEC: OptionSpec = {
+  flags: 'lwcmL',
+  valued: '',
+  unsupported: '',
+  long: {
+    lines: { key: 'l', valued: false }, words: { key: 'w', valued: false }, bytes: { key: 'c', valued: false },
+    chars: { key: 'm', valued: false }, 'max-line-length': { key: 'L', valued: false },
+  },
+  unsupportedLong: ['files0-from', 'total'],
+};
+
+/**
+ * The counts of a text as the simulator stores it. A file's content has no
+ * final newline here, but stands for a file that ends with one (what an
+ * editor writes): `wc` counts that newline, as it did on the captured files.
+ */
+function wcCounts(text: string) {
+  if (text === '') return { l: 0, w: 0, m: 0, c: 0, L: 0 };
+  const lines = text.split('\n');
+  const width = (line: string) => [...line].reduce((col, ch) => (ch === '\t' ? col + 8 - (col % 8) : col + 1), 0);
+  return {
+    l: lines.length,
+    w: text.split(/\s+/).filter(Boolean).length,
+    m: [...text].length + 1,
+    c: utf8.encode(text).length + 1,
+    L: Math.max(...lines.map(width)),
+  };
+}
+
+/**
+ * `wc` in GNU coreutils 9.4. Widths follow wc.c: one count of one input is
+ * not padded; otherwise every count is as wide as the total size of the files
+ * in digits, at least 7 when an input is not a regular file (a pipe, a folder).
+ */
+export function runWc(args: string[], stdin: string | undefined, read: ReadText): TextToolResult {
+  const parsed = getopt('wc', args, WC_SPEC);
+  if ('status' in parsed) return parsed;
+  const waiting = waitsForKeyboard('wc', parsed.operands, stdin);
+  if (waiting) return waiting;
+  const asked = new Set(parsed.options.map((o) => o.key));
+  // Printed in this order whatever the order typed; none asked means lines, words, bytes.
+  const keys = (['l', 'w', 'm', 'c', 'L'] as const).filter((k) => asked.has(k));
+  if (!keys.length) keys.push('l', 'w', 'c');
+
+  type Input = { name?: string; counts?: ReturnType<typeof wcCounts>; error?: string; regular: boolean };
+  const inputs: Input[] = (parsed.operands.length ? parsed.operands : ['-']).map((name) => {
+    if (name === '-') return { counts: wcCounts(stdin ?? ''), regular: false, name: parsed.operands.length ? '-' : undefined };
+    const file = read(name);
+    if ('content' in file) return { name, counts: wcCounts(file.content), regular: true };
+    return file.error === 'directory'
+      ? { name, error: `wc: ${name}: Is a directory`, counts: wcCounts(''), regular: false }
+      : { name, error: `wc: ${name}: No such file or directory`, regular: false };
+  });
+
+  // wc.c's compute_number_width: skipped when the first input could not be opened.
+  let width = 1;
+  if (!(keys.length === 1 && inputs.length === 1) && inputs[0].counts) {
+    const opened = inputs.filter((i) => i.counts);
+    let total = opened.filter((i) => i.regular).reduce((sum, i) => sum + i.counts!.c, 0);
+    while (total >= 10) { width++; total = Math.floor(total / 10); }
+    // Standard input counts as a pipe here (`wc < file` reads a regular file on a real system).
+    if (opened.some((i) => !i.regular)) width = Math.max(width, 7);
+  }
+  const row = (counts: ReturnType<typeof wcCounts>, name?: string) =>
+    [...keys.map((k) => String(counts[k]).padStart(width)), ...(name !== undefined ? [name] : [])].join(' ');
+
+  const lines: OutputLine[] = [];
+  const total = { l: 0, w: 0, m: 0, c: 0, L: 0 };
+  let status = 0;
+  for (const input of inputs) {
+    if (input.error) { lines.push(...err(input.error)); status = 1; }
+    if (!input.counts) continue;
+    lines.push({ text: row(input.counts, input.name), type: 'output' });
+    for (const k of ['l', 'w', 'm', 'c'] as const) total[k] += input.counts[k];
+    total.L = Math.max(total.L, input.counts.L);
+  }
+  if (inputs.length > 1) lines.push({ text: row(total, 'total'), type: 'output' });
   return { lines, status };
 }
 

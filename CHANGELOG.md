@@ -5,6 +5,20 @@
 
 ---
 
+## 🔎 2 octobre 2026 — Chercher des fichiers et enchaîner : `find`, `xargs`, `rmdir`
+
+*Phase 5d, lot 1 · sorties vérifiées sur Ubuntu 24.04 (findutils 4.9, coreutils 9.4, grep 3.11)*
+
+- **`find` fonctionne** : il cherche par nom (`-name`, `-iname`, `-path`, `-regex`), par type, par taille et par profondeur, trouve les fichiers vides, combine les tests (`!`, `-o`, parenthèses), lance une commande sur chaque résultat (`-exec … \;` ou `+`) et supprime (`-delete`). Avant, `find` répondait « commande introuvable ».
+- **`xargs` transforme les lignes d'un pipe en arguments** (`find . -name "*.md" | xargs wc -l`), avec `-n`, `-L`, `-I {}` et `-t`, et les vrais messages d'erreur.
+- **`rmdir`** supprime un dossier vide et refuse un dossier plein, comme sur un vrai système.
+- **`wc` aligne ses colonnes comme GNU** et ajoute une ligne `total` quand il compte plusieurs fichiers. `grep` sur des fichiers connaît `-v`, `-c`, `-l` et `-L`, et rend le bon code de sortie.
+- Le terminal Linux retire la barre oblique inverse comme bash : `find . -exec cat {} \;` et `\(` fonctionnent.
+- Sous Windows, `find` répond comme `find.exe`, l'outil de recherche de texte de Windows, et le terminal indique `Get-ChildItem -Recurse` à la place. `rmdir` et `rd` y sont des alias de `Remove-Item`.
+- **La page Référence passe de 79 à 81 commandes** : `xargs` et `rmdir`, et de nouveaux exemples pour `find`.
+
+---
+
 ## 🔤 2 octobre 2026 — Trier, compter et découper du texte : `sort`, `uniq`, `cut`
 
 *Phase 5d, lot 1 · sorties vérifiées sur Ubuntu 24.04 (coreutils 9.4) et PowerShell 7.6*

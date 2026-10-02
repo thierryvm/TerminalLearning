@@ -81,6 +81,10 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
     { command: 'Remove-Item documents\\rapport.md', explanation: 'Supprime le fichier définitivement, sans passer par la corbeille.', environments: WIN },
     { command: 'Remove-Item downloads -Recurse', explanation: '-Recurse supprime un dossier et tout ce qu\'il contient.', environments: WIN },
   ],
+  rmdir: [
+    { command: 'rmdir downloads', explanation: 'Supprime un dossier vide. Avec un dossier qui contient quelque chose, rmdir refuse : c\'est une sécurité, là où rm -r supprimerait tout.', environments: UNIX },
+    { command: 'rmdir downloads', explanation: 'Dans PowerShell, rmdir est un alias de Remove-Item : un dossier vide est supprimé ; pour un dossier plein, PowerShell demande une confirmation.', environments: WIN },
+  ],
 
   // ─── Lecture de fichiers ──────────────────────────────────
   cat: [
@@ -109,7 +113,16 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
   find: [
     { command: 'find . -name "*.txt"', explanation: 'Cherche, depuis le dossier courant (.) et dans tous ses sous-dossiers, les fichiers dont le nom finit par .txt. Les guillemets empêchent le shell de remplacer * trop tôt.', environments: UNIX },
     { command: 'find . -type d', explanation: 'Liste uniquement les dossiers.', environments: UNIX },
+    { command: 'find . -maxdepth 1 -type f', explanation: '-maxdepth 1 reste dans le dossier courant, sans descendre dans les sous-dossiers : ici, les fichiers (cachés compris) du dossier personnel.', environments: UNIX },
+    { command: 'find . -empty', explanation: 'Les fichiers et dossiers vides : ici, le dossier downloads.', environments: UNIX },
+    { command: 'find . -name "*.md" -exec wc -l {} +', explanation: '-exec lance une commande sur ce que find trouve : {} est remplacé par les chemins, et + les donne tous en une fois. Avec \\; à la place de +, la commande tourne une fois par fichier.', environments: UNIX },
     { command: 'Get-ChildItem -Recurse -Filter *.txt', explanation: 'L\'équivalent PowerShell : cherche les fichiers .txt dans le dossier courant et tous ses sous-dossiers.', environments: WIN },
+  ],
+  xargs: [
+    { command: 'find . -name "*.md" | xargs wc -l', explanation: 'xargs transforme les lignes reçues par le pipe en arguments : wc -l reçoit les deux chemins, comme si on les avait tapés.', environments: UNIX },
+    { command: 'find . -name "*.txt" | xargs grep -l Apprendre', explanation: 'Les fichiers trouvés par find qui contiennent le mot : grep -l n\'affiche que leur nom.', environments: UNIX },
+    { command: 'echo "a b c" | xargs -n 1 echo', explanation: '-n 1 lance la commande une fois par argument : trois echo, trois lignes.', environments: UNIX },
+    { command: 'Get-ChildItem -Recurse -Filter *.md | ForEach-Object { Get-Content $_ }', explanation: 'PowerShell n\'a pas besoin de xargs : le pipe transmet des objets, et ForEach-Object lance une commande pour chacun ($_).', environments: WIN },
   ],
   wc: [
     { command: 'wc documents/notes.txt', explanation: 'Compte les lignes, les mots et les octets du fichier, dans cet ordre.', environments: UNIX },
@@ -474,8 +487,8 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
 export const NOT_SIMULATED: Record<string, EnvironmentId[]> = {
   tree: ['linux', 'macos', 'windows'],
   less_more: ['linux', 'macos', 'windows'],
-  find: ['linux', 'macos', 'windows'],
   cut: ['windows'],
+  xargs: ['windows'],
   getcomputerinfo: ['windows'],
   alias: ['linux', 'macos', 'windows'],
   id: ['linux', 'macos', 'windows'],

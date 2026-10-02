@@ -876,7 +876,7 @@ export const curriculum: Module[] = [
           },
           {
             type: 'code',
-            content: '$ wc documents/notes.txt\n 6 22 143 documents/notes.txt',
+            content: '$ wc documents/notes.txt\n  6  22 143 documents/notes.txt',
             label: 'wc complet (lignes mots octets)',
           },
           {
