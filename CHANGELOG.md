@@ -11,7 +11,11 @@
 
 - **`ls *.md`, `rm documents/*.txt`, `cat documents/*`, `wc -l documents/*`** : le terminal remplace maintenant les jokers par les fichiers qui correspondent, comme bash. Avant, `*` restait écrit tel quel et la commande cherchait un fichier nommé « * ».
 - Les règles sont celles de bash : les fichiers cachés ne sont pris que par un motif qui commence par un point, `*/` ne garde que les dossiers, `[!d]*` exclut, et un motif entre guillemets ou précédé de `\` reste écrit tel quel. Quand rien ne correspond, le mot reste inchangé : `ls *.txt` répond `cannot access '*.txt'`, comme sur un vrai système.
-- **`ls` avec plusieurs fichiers ou dossiers** les affiche tous, comme GNU `ls` : d'abord les fichiers, puis chaque dossier sous son nom. Avant, seul le premier apparaissait.
+- **`ls` avec plusieurs fichiers ou dossiers** les affiche tous, comme GNU `ls` : d'abord les fichiers, puis chaque dossier sous son nom. Avant, seul le premier apparaissait. `ls -A`, `ls -r`, `ls -lF`, `--all` et `--` répondent aussi comme le vrai, et une erreur rend le code de sortie 2.
+- **Les commandes qui reçoivent plusieurs fichiers les traitent tous** : `chmod +x documents/*`, `rm *` (un message par dossier refusé), `mkdir`, et `head` / `tail`, qui affichent chaque fichier sous un en-tête `==> nom <==`. `head -2` fonctionne, et `rm -f` se tait quand il n'y a rien à effacer.
+- **Les jokers marchent aussi dans les redirections** : `echo hi > documents/*.md` écrit dans `rapport.md`, et `echo hi > *` répond `ambiguous redirect` comme bash. `cd d*` répond `too many arguments` quand deux dossiers correspondent.
+- Les classes `[[:alpha:]]`, `[[:lower:]]`… sont reconnues entre crochets.
+- Un audit de 573 commandes comparées au vrai bash a guidé ces corrections.
 - Sous Windows, rien ne change : PowerShell laisse chaque cmdlet lire les jokers elle-même.
 
 ---

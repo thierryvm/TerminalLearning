@@ -10,8 +10,11 @@ import type { TerminalEnv } from './types';
 export type Fd = 1 | 2;
 
 export type Redirect =
-  /** `>`, `>>`, `2>`, `&>` (fd 'both'): send a stream to a file. */
-  | { kind: 'file'; fd: Fd | 'both'; append: boolean; target: string }
+  /**
+   * `>`, `>>`, `2>`, `&>` (fd 'both'): send a stream to a file. `target` has its
+   * outer quotes removed; `raw` is the word as typed, for bash to expand.
+   */
+  | { kind: 'file'; fd: Fd | 'both'; append: boolean; target: string; raw: string }
   /** `2>&1`, `>&2`: point `fd` wherever `to` currently points. */
   | { kind: 'dup'; fd: Fd; to: Fd };
 
@@ -21,6 +24,8 @@ export interface Stage {
   redirects: Redirect[];
   /** `< file`: read standard input from a file. */
   stdinFile?: string;
+  /** The `< file` word as typed. */
+  stdinRaw?: string;
 }
 
 export interface ListItem {
@@ -129,14 +134,16 @@ export function parseCommandLine(line: string, env: TerminalEnv): ParseResult {
   let words: string[] = [];
   let redirects: Redirect[] = [];
   let stdinFile: string | undefined;
+  let stdinRaw: string | undefined;
   let pendingOp: ListItem['op'] = null;
 
   const endStage = (next: string): string | null => {
     if (words.length === 0) return `syntax error near unexpected token \`${next}'`;
-    stages.push({ text: words.join(' '), redirects, ...(stdinFile !== undefined ? { stdinFile } : {}) });
+    stages.push({ text: words.join(' '), redirects, ...(stdinFile !== undefined ? { stdinFile, stdinRaw } : {}) });
     words = [];
     redirects = [];
     stdinFile = undefined;
+    stdinRaw = undefined;
     return null;
   };
 
@@ -155,8 +162,8 @@ export function parseCommandLine(line: string, env: TerminalEnv): ParseResult {
       }
       i++;
       const path = unquote(target.raw);
-      if (tk.inFile) stdinFile = path;
-      else redirects.push({ kind: 'file', fd: tk.fd, append: tk.append, target: path });
+      if (tk.inFile) { stdinFile = path; stdinRaw = target.raw; }
+      else redirects.push({ kind: 'file', fd: tk.fd, append: tk.append, target: path, raw: target.raw });
     } else if (tk.op === '|') {
       const err = endStage('|');
       if (err) return { ok: false, error: err };

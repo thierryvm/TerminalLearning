@@ -38,13 +38,13 @@ describe('shell syntax — parseCommandLine', () => {
     expect(r.list).toHaveLength(1);
     expect(r.list[0].stages).toHaveLength(1);
     expect(r.list[0].stages[0].text).toBe('grep "a|b" f');
-    expect(r.list[0].stages[0].redirects).toEqual([{ kind: 'file', fd: 1, append: false, target: 'x > y.txt' }]);
+    expect(r.list[0].stages[0].redirects).toEqual([{ kind: 'file', fd: 1, append: false, target: 'x > y.txt', raw: '"x > y.txt"' }]);
   });
 
   it('keeps redirections in the order they are written', () => {
     const r = parseCommandLine('cmd > out.txt 2>&1', 'linux');
     expect(r.ok && r.list[0].stages[0].redirects).toEqual([
-      { kind: 'file', fd: 1, append: false, target: 'out.txt' },
+      { kind: 'file', fd: 1, append: false, target: 'out.txt', raw: 'out.txt' },
       { kind: 'dup', fd: 2, to: 1 },
     ]);
   });

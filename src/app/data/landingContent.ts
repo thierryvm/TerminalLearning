@@ -143,7 +143,7 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
   {
     group: 'Des bases au niveau intermédiaire',
     items: [
-      'Chercher, trier, compter et découper : sort, uniq, cut, find et xargs sont là ; diff arrive',
+      'Chercher, trier, compter et découper : sort, uniq, cut, find, xargs et les jokers (*, ?, [...]) sont là ; diff arrive',
       'Archives et disque, sed et awk, les éditeurs nano et vim',
       'Enquêter dans des journaux, écrire ses premiers scripts',
       'Une mission finale sans indice, puis une page « Et après ? » vers des labos gratuits pour chaque métier',

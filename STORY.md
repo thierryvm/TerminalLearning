@@ -1303,6 +1303,8 @@ Dans bash, ce n'est pas la commande qui comprend l'étoile, c'est le shell. Avan
 
 Les quarante captures faites sur le vrai bash ont fixé le reste : l'ordre des résultats, les fichiers cachés, `*/` pour les dossiers, et le mot laissé tel quel quand rien ne correspond. Elles ont aussi montré que `ls` n'affichait que le premier fichier quand on lui en donnait plusieurs, un défaut invisible tant que personne ne pouvait taper `ls documents/*`.
 
+L'auditeur de fidélité a ensuite rejoué 573 commandes contre le vrai bash. Le cœur des jokers tenait bon, mais l'étoile a révélé une famille entière de défauts cachés : `chmod`, `rm`, `mkdir`, `head` et `tail` ne traitaient que leur premier fichier. Personne ne l'avait vu, parce qu'avant les jokers, presque personne ne leur en donnait plusieurs. Une seule nouveauté a suffi à rendre visibles des écarts anciens : c'est pour cela que chaque PR repasse devant un vrai shell.
+
 ---
 
 ## Épilogue ouvert

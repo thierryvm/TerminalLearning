@@ -21,6 +21,47 @@ export type ListDir = (parts: string[]) => GlobEntry[] | null;
 /** Does this word hold a wildcard typed without quotes or backslash? */
 export const hasActiveWildcard = (meta: boolean[]) => meta.some(Boolean);
 
+/** The character classes bash knows inside brackets (`[[:alpha:]]*`). */
+const CHAR_CLASSES: Record<string, string> = {
+  alpha: '\\p{L}', upper: '\\p{Lu}', lower: '\\p{Ll}', digit: '0-9', alnum: '\\p{L}\\p{N}',
+  space: '\\s', blank: ' \\t', punct: '\\p{P}\\p{S}', xdigit: '0-9A-Fa-f',
+  graph: '\\p{L}\\p{M}\\p{N}\\p{P}\\p{S}', print: '\\p{L}\\p{M}\\p{N}\\p{P}\\p{S} ', cntrl: '\\p{Cc}',
+};
+
+/**
+ * The bracket expression that starts at `chars[start]` (a `[`), as bash reads it:
+ * `!` or `^` negates, a `]` right after the opening is a member, and `[:name:]`
+ * is a class. Returns its RegExp text and where it ends; 'literal' when there is
+ * no closing bracket (the `[` is then an ordinary character); 'never' for an
+ * unknown class, which matches nothing.
+ */
+function bracketExpression(chars: string[], start: number): { re: string; end: number } | 'literal' | 'never' {
+  let i = start + 1;
+  const negate = chars[i] === '!' || chars[i] === '^';
+  if (negate) i++;
+  let body = '';
+  // A `-` right after a class is a plain member (`[[:digit:]-a]`), not a range.
+  let afterClass = false;
+  for (let first = true; i < chars.length; i++, first = false) {
+    const c = chars[i];
+    if (c === ']' && !first) return { re: `[${negate ? '^' : ''}${body}]`, end: i };
+    if (c === '[' && chars[i + 1] === ':') {
+      const close = chars.join('').indexOf(':]', i + 2);
+      if (close > 0) {
+        const name = chars.slice(i + 2, close).join('');
+        if (!Object.prototype.hasOwnProperty.call(CHAR_CLASSES, name)) return 'never';
+        body += CHAR_CLASSES[name];
+        i = close + 1;
+        afterClass = true;
+        continue;
+      }
+    }
+    body += '\\[]^'.includes(c) || (c === '-' && afterClass) ? `\\${c}` : c;
+    afterClass = false;
+  }
+  return 'literal';
+}
+
 /** One path segment as a RegExp; null when the pattern cannot match anything (`[z-a]`). */
 function segmentRegex(chars: string[], meta: boolean[]): RegExp | null {
   let re = '';
@@ -30,16 +71,15 @@ function segmentRegex(chars: string[], meta: boolean[]): RegExp | null {
     if (meta[i] && c === '*') { if (!re.endsWith('.*')) re += '.*'; }
     else if (meta[i] && c === '?') re += '.';
     else if (meta[i] && c === '[') {
-      const end = chars.indexOf(']', i + 2);
-      if (end < 0) { re += '\\['; continue; }
-      let body = chars.slice(i + 1, end).join('');
-      if (body.startsWith('!') || body.startsWith('^')) body = `^${body.slice(1)}`;
-      re += `[${body.replace(/\\/g, '\\\\')}]`;
-      i = end;
+      const bracket = bracketExpression(chars, i);
+      if (bracket === 'never') return null;
+      if (bracket === 'literal') { re += '\\['; continue; }
+      re += bracket.re;
+      i = bracket.end;
     } else re += c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   try {
-    return new RegExp(`^${re}$`, 's');
+    return new RegExp(`^${re}$`, 'su');
   } catch {
     return null;
   }
