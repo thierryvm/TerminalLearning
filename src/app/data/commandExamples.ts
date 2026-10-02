@@ -117,6 +117,28 @@ export const COMMAND_EXAMPLES: Record<string, CommandExample[]> = {
     { command: 'ls | wc -l', explanation: 'Avec un pipe, wc compte ce qu\'une autre commande produit : ici, le nombre d\'éléments du dossier.', environments: UNIX },
     { command: '(Get-Content documents\\notes.txt).Count', explanation: 'Nombre de lignes du fichier : Get-Content renvoie une liste de lignes, .Count les compte.', environments: WIN },
   ],
+  sort: [
+    { command: 'sort documents/notes.txt', explanation: 'Affiche les lignes dans l\'ordre alphabétique, sans modifier le fichier. Sur un système en français ou en anglais, majuscules et minuscules sont rangées ensemble, et la ponctuation ne compte qu\'à égalité.', environments: UNIX },
+    { command: 'sort -r documents/notes.txt', explanation: '-r inverse l\'ordre : de Z à A.', environments: UNIX },
+    { command: 'sort -t= -k2 projets/.env', explanation: '-t= coupe chaque ligne sur le signe =, -k2 trie sur le deuxième morceau : ici, les valeurs des variables. Les commentaires, sans =, ont une clé vide et passent en premier.', environments: UNIX },
+    { command: 'ps aux | sort -k3 -rn | head -3', explanation: 'Les processus qui utilisent le plus le processeur : -k3 trie sur la 3e colonne (%CPU), -n compare des nombres, -r met les plus grands en haut. La ligne de titre n\'est pas un nombre : elle compte comme 0 et se glisse parmi les processus.', environments: UNIX },
+    { command: 'Get-Content documents\\notes.txt | Sort-Object', explanation: 'L\'équivalent PowerShell : Get-Content lit les lignes, Sort-Object les trie. Il ignore la casse : deux lignes qui ne diffèrent que par une majuscule restent dans leur ordre de départ.', environments: WIN },
+    { command: 'Get-Content documents\\notes.txt | Sort-Object -Descending', explanation: '-Descending inverse l\'ordre, comme sort -r.', environments: WIN },
+    { command: 'Get-Process | Sort-Object CPU -Descending | Select-Object -First 3', explanation: 'Sur un tableau, Sort-Object trie par une colonne : ici, les trois processus qui ont utilisé le plus de temps processeur.', environments: WIN },
+  ],
+  uniq: [
+    { command: 'sort .bashrc .zshrc | uniq -d', explanation: 'Les lignes présentes dans les deux fichiers : sort les rend voisines, uniq -d ne garde que celles qui se répètent.', environments: UNIX },
+    { command: 'sort .bashrc .zshrc | uniq -c', explanation: '-c écrit devant chaque ligne combien de fois elle apparaît.', environments: UNIX },
+    { command: 'sort .bashrc .zshrc | uniq -c | sort -rn', explanation: 'Le classique pour trouver ce qui revient le plus souvent : compter avec uniq -c, puis trier ces nombres du plus grand au plus petit.', environments: UNIX },
+    { command: 'Get-Content documents\\notes.txt | Sort-Object | Get-Unique', explanation: 'L\'équivalent PowerShell de sort | uniq. Get-Unique, comme uniq, ne retire que les doublons voisins.', environments: WIN },
+    { command: 'Get-Content documents\\notes.txt | Group-Object -NoElement', explanation: 'L\'équivalent de uniq -c : un tableau avec le nombre de fois que chaque ligne apparaît. Sans -NoElement, une colonne Group liste les lignes de chaque groupe.', environments: WIN },
+  ],
+  cut: [
+    { command: 'cut -d= -f1 projets/.env', explanation: '-d= coupe chaque ligne sur le signe =, -f1 garde le premier morceau : les noms des variables. Une ligne sans = (un commentaire) est affichée telle quelle.', environments: UNIX },
+    { command: 'cut -d= -f1 projets/.env | sort', explanation: 'Les noms des variables, triés.', environments: UNIX },
+    { command: 'cut -c1-3 documents/notes.txt', explanation: 'Les trois premiers octets de chaque ligne. Une lettre accentuée en occupe deux : « Tâches » donne « Tâ ».', environments: UNIX },
+    { command: "Get-Content projets\\.env | ForEach-Object { $_.Split('=')[0] }", explanation: 'L\'équivalent PowerShell : pour chaque ligne ($_), Split coupe sur le = et [0] garde le premier morceau.', environments: WIN },
+  ],
 
   // ─── Système ──────────────────────────────────────────────
   echo: [
@@ -453,6 +475,7 @@ export const NOT_SIMULATED: Record<string, EnvironmentId[]> = {
   tree: ['linux', 'macos', 'windows'],
   less_more: ['linux', 'macos', 'windows'],
   find: ['linux', 'macos', 'windows'],
+  cut: ['windows'],
   getcomputerinfo: ['windows'],
   alias: ['linux', 'macos', 'windows'],
   id: ['linux', 'macos', 'windows'],

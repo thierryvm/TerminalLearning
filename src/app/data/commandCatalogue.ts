@@ -335,6 +335,57 @@ const baseCatalogue: BaseCategory[] = [
         summary: 'Compter lignes, mots et caractères',
         commonErrors: [],
       },
+      {
+        id: 'sort',
+        name: 'sort',
+        category: 'search',
+        level: 1,
+        recommendedFor: ['linux', 'macos'],
+        variants: [
+          { environment: 'windows', command: 'Get-Content fichier.txt | Sort-Object', shell: 'PowerShell' },
+        ],
+        compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'sort [options] [fichier...]',
+        summary: 'Trier des lignes',
+        commonErrors: [
+          'Trier des nombres sans -n : sort compare les caractères un à un, donc 10 passe avant 9.',
+          "Écrire sort fichier.txt dans PowerShell : sort y est Sort-Object, qui attend des lignes par un pipe. Écrire Get-Content fichier.txt | Sort-Object.",
+        ],
+      },
+      {
+        id: 'uniq',
+        name: 'uniq',
+        category: 'search',
+        level: 1,
+        recommendedFor: ['linux', 'macos'],
+        variants: [
+          { environment: 'windows', command: 'Get-Content fichier.txt | Sort-Object | Get-Unique', shell: 'PowerShell' },
+          { environment: 'windows', command: 'Get-Content fichier.txt | Group-Object', shell: 'PowerShell' },
+        ],
+        compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'uniq [options] [fichier]',
+        summary: 'Fusionner ou compter les lignes répétées',
+        commonErrors: [
+          "Utiliser uniq sur un fichier non trié : uniq ne fusionne que des lignes voisines. Trier d'abord : sort fichier.txt | uniq.",
+        ],
+      },
+      {
+        id: 'cut',
+        name: 'cut',
+        category: 'search',
+        level: 1,
+        recommendedFor: ['linux', 'macos'],
+        variants: [
+          { environment: 'windows', command: "Get-Content fichier.csv | ForEach-Object { $_.Split(',')[0] }", shell: 'PowerShell' },
+        ],
+        compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'cut -d séparateur -f champs [fichier...]',
+        summary: 'Garder certaines colonnes de chaque ligne',
+        commonErrors: [
+          "Oublier -d : sans lui, cut coupe sur la tabulation, pas sur l'espace ni sur la virgule.",
+          'Compter les lettres avec -c : GNU cut compte des octets, et une lettre accentuée en occupe deux.',
+        ],
+      },
     ],
   },
 
@@ -1347,6 +1398,19 @@ const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
   ],
   find: [{ label: 'man7.org (Linux)', url: `${M1}find.1.html` }],
   wc: [{ label: 'man7.org (Linux)', url: `${M1}wc.1.html` }],
+  sort: [
+    { label: 'man7.org (Linux)', url: `${M1}sort.1.html` },
+    { label: 'Microsoft Learn — Sort-Object (Windows)', url: `${PS}microsoft.powershell.utility/sort-object` },
+  ],
+  uniq: [
+    { label: 'man7.org (Linux)', url: `${M1}uniq.1.html` },
+    { label: 'Microsoft Learn — Get-Unique (Windows)', url: `${PS}microsoft.powershell.utility/get-unique` },
+    { label: 'Microsoft Learn — Group-Object (Windows)', url: `${PS}microsoft.powershell.utility/group-object` },
+  ],
+  cut: [
+    { label: 'man7.org (Linux)', url: `${M1}cut.1.html` },
+    { label: 'Microsoft Learn — ForEach-Object (Windows)', url: `${PS}microsoft.powershell.core/foreach-object` },
+  ],
   // systeme
   echo: [
     { label: 'man7.org (Linux)', url: `${M1}echo.1.html` },

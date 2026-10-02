@@ -10,6 +10,9 @@ import { handleAiHelp } from './commands/ai';
 import { cmdEnv, handleEnv } from './commands/env';
 import { handleWindows } from './commands/windows';
 import { GET_CHILD_ITEM, parsePsArgs, psNotSimulated } from './commands/psParams';
+import type { PsCmdlet } from './commands/psParams';
+import { GET_UNIQUE, GROUP_OBJECT, SORT_OBJECT, psGetUnique, psGroupLines, psSortLines, runCut, runSort, runUniq } from './commands/textTools';
+import type { ReadText } from './commands/textTools';
 import { parseCommandLine, isPlainCommand, isNullDevice } from './commands/shellSyntax';
 import type { Stage, Fd } from './commands/shellSyntax';
 import { UNIX_DEFAULT_PATH, varsForEnv } from './commands/shellVars';
@@ -1442,6 +1445,94 @@ function lineCount(args: string[], fallback: number): number {
 }
 
 /**
+ * `sort`, `uniq` and `cut` (GNU): from their files, from standard input, or
+ * both (`-`). `sort -o` and `uniq in out` write a file instead of the screen.
+ */
+function runTextTool(state: TerminalState, cmd: 'sort' | 'uniq' | 'cut', args: string[], stdin: string | undefined): CommandOutput {
+  const read: ReadText = (p) => {
+    const node = getNode(state.root, resolvePath(state, p));
+    if (!node) return { error: 'missing' };
+    return node.type === 'directory' ? { error: 'directory' } : { content: node.content };
+  };
+  const result = (cmd === 'sort' ? runSort : cmd === 'uniq' ? runUniq : runCut)(args, stdin, read);
+  if (!result.writeTo) return { lines: result.lines, newState: state, status: result.status };
+  const typed = result.writeTo.path;
+  const path = resolvePath(state, typed);
+  const parent = getNode(state.root, path.slice(0, -1));
+  const why = !parent || parent.type !== 'directory' ? 'No such file or directory'
+    : getNode(state.root, path)?.type === 'directory' ? 'Is a directory' : undefined;
+  if (why) {
+    const text = cmd === 'sort' ? `sort: open failed: ${typed}: ${why}` : `${cmd}: ${typed}: ${why}`;
+    return { lines: [{ text, type: 'error' }], newState: state, status: cmd === 'sort' ? 2 : 1 };
+  }
+  return { lines: [], newState: { ...state, root: writeFileAt(state.root, path, result.writeTo.lines.join('\n'), false) }, status: 0 };
+}
+
+/** A PowerShell table as the simulator prints it, with the blank lines that frame it (`Group-Object`). */
+function framedTable(input: string[]): { lead: boolean; header: string[]; rows: string[]; trail: boolean } {
+  const lead = input[0] === '';
+  const trail = input.length > 1 && input[input.length - 1] === '';
+  const { header, rows } = splitHeader(input.slice(lead ? 1 : 0, trail ? -1 : undefined));
+  return { lead, header, rows, trail };
+}
+
+/**
+ * One cell of a simulated PowerShell table. Group-Object's Name can hold
+ * spaces, so its columns are read by position (Count is 5 wide, Name 25);
+ * other tables have one-word cells.
+ */
+function tableCell(row: string, columns: string[], column: number): string {
+  if (columns[0] === 'count' && columns[1] === 'name') {
+    if (column === 0) return row.slice(0, 5).trim();
+    if (column === 1) return (columns.length === 2 ? row.slice(6) : row.slice(6, 31)).trim();
+    return row.slice(32);
+  }
+  return row.trim().split(/\s+/)[column] ?? '';
+}
+
+/** Script blocks (`Sort-Object { [int]$_ }`) are not simulated: say so rather than print a false error. */
+function scriptBlockNote(cmdlet: string, args: string[]): OutputLine[] | null {
+  return args.some((a) => a.startsWith('{'))
+    ? [{ text: `Les blocs de script { … } de ${cmdlet} ne sont pas simulés dans ce terminal d'entraînement.`, type: 'info' }]
+    : null;
+}
+
+/**
+ * `Sort-Object` (and `sort`, its alias in PowerShell): plain lines of text
+ * through psSortLines; a table by one of its columns (`Get-Process |
+ * Sort-Object CPU -Descending`). Ties keep their order, as in PowerShell.
+ */
+function psSortObject(args: string[], input: string[]): { lines: OutputLine[]; status?: number } {
+  const scriptBlock = scriptBlockNote('Sort-Object', args);
+  if (scriptBlock) return { lines: scriptBlock };
+  const table = framedTable(input);
+  // Nothing came down the pipe (the command before it failed): nothing to sort, nothing to say.
+  if (input.every((l) => l === '')) {
+    const parsed = parsePsArgs(SORT_OBJECT, args);
+    return 'switches' in parsed ? { lines: [] } : { lines: [parsed], status: 1 };
+  }
+  if (!table.header.length) {
+    const result = psSortLines(args, input);
+    return { lines: result.lines, status: result.status };
+  }
+  const parsed = parsePsArgs(SORT_OBJECT, args);
+  if (!('switches' in parsed)) return { lines: [parsed], status: 1 };
+  const columns = table.header[0].trim().split(/\s+/).map((h) => h.toLowerCase());
+  const prop = parsed.values.Property?.toLowerCase();
+  // Get-Process's Name is an alias of its ProcessName column.
+  const wanted = prop === 'name' && !columns.includes('name') && columns.includes('processname') ? 'processname' : prop;
+  const column = wanted ? columns.indexOf(wanted) : -1;
+  const cell = (row: string) => (column >= 0 ? tableCell(row, columns, column) : row);
+  const rows = table.rows.filter(Boolean);
+  const numeric = rows.length > 0 && rows.every((r) => !Number.isNaN(parseFloat(cell(r))));
+  const direction = parsed.switches.has('Descending') ? -1 : 1;
+  let sorted = [...rows].sort((a, b) => direction * compareValues(cell(a), cell(b), numeric));
+  if (parsed.values.Top !== undefined) sorted = sorted.slice(0, parseInt(parsed.values.Top, 10) || 0);
+  else if (parsed.values.Bottom !== undefined) sorted = sorted.slice(Math.max(0, sorted.length - (parseInt(parsed.values.Bottom, 10) || 0)));
+  return { lines: outLines([...(table.lead ? [''] : []), ...table.header, ...sorted, ...(table.trail ? [''] : [])]) };
+}
+
+/**
  * A command that reads standard input (the right side of `|`, or `< file`).
  * Commands that do not read it run as usual; unknown readers pass the text through.
  */
@@ -1488,28 +1579,29 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
       return { ...same(outLines(matches)), status: matches.length ? 0 : 1 };
     }
 
-    case 'sort': {
-      // `-r`, `-n`, `-k3`, and combined forms such as `-k3rn` or `-rn`.
-      const joined = flags.join('');
-      const keyArg = args.find((a) => /^-k\d/.test(a)) ?? (args.includes('-k') ? `-k${args[args.indexOf('-k') + 1]}` : undefined);
-      const key = keyArg ? parseInt(keyArg.slice(2), 10) : 0;
-      const numeric = /n/.test(joined);
-      const reverse = /r/.test(joined);
-      const field = (l: string) => (key ? l.trim().split(/\s+/)[key - 1] ?? '' : l);
-      const sorted = input.filter(Boolean).sort((a, b) => compareValues(field(a), field(b), numeric));
-      if (reverse) sorted.reverse();
-      return same(outLines(sorted));
+    case 'sort':
+    case 'uniq':
+    case 'cut':
+      // Under PowerShell, sort is Sort-Object; uniq and cut do not exist there.
+      if (env !== 'windows') return runTextTool(state, cmd, args, stdin);
+      if (cmd !== 'sort') return runSimple(state, text, env);
+      return { ...psSortObject(args, input), newState: state };
+
+    case 'sort-object':
+      return { ...psSortObject(args, input), newState: state };
+
+    case 'get-unique':
+    case 'gu': {
+      const result = psGetUnique(args, input);
+      return { lines: result.lines, newState: state, status: result.status };
     }
 
-    case 'sort-object': {
-      const { header, rows } = splitHeader(input.filter(Boolean));
-      const prop = operands[0]?.toLowerCase();
-      const column = prop && header.length ? header[0].trim().split(/\s+/).findIndex((h) => h.toLowerCase() === prop) : -1;
-      const cell = (row: string) => (column >= 0 ? row.trim().split(/\s+/)[column] ?? '' : row);
-      const numeric = rows.length > 0 && rows.every((r) => !Number.isNaN(parseFloat(cell(r))));
-      const sorted = [...rows].sort((a, b) => compareValues(cell(a), cell(b), numeric));
-      if (flags.some((f) => f.toLowerCase().startsWith('-desc'))) sorted.reverse();
-      return same(outLines([...header, ...sorted]));
+    case 'group-object':
+    case 'group': {
+      const scriptBlock = scriptBlockNote('Group-Object', args);
+      if (scriptBlock) return same(scriptBlock);
+      const result = psGroupLines(args, input);
+      return { lines: result.lines, newState: state, status: result.status };
     }
 
     case 'head':
@@ -1521,25 +1613,26 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
     }
 
     case 'select-object': {
-      const { header, rows } = splitHeader(input);
+      // A table keeps its title and the blank lines around it; only its rows are picked.
+      const table = framedTable(input);
+      const { lead, header, trail } = table;
+      const framed = header.length > 0;
+      // Plain lines keep their blank lines: only a table's frame is set aside.
+      const rows = framed ? table.rows : input;
       const first = psParam(args, '-first');
       const last = psParam(args, '-last');
       const skip = parseInt(psParam(args, '-skip') ?? '0', 10) || 0;
       let picked = rows.slice(skip);
-      if (first !== undefined) picked = picked.slice(0, parseInt(first, 10) || 0);
-      else if (last !== undefined) picked = picked.slice(Math.max(0, picked.length - (parseInt(last, 10) || 0)));
-      return same(outLines([...header, ...picked]));
-    }
-
-    case 'uniq': {
-      const groups: { line: string; count: number }[] = [];
-      for (const line of input) {
-        const prev = groups[groups.length - 1];
-        if (prev && prev.line === line) prev.count++;
-        else groups.push({ line, count: 1 });
+      // -Last picks before -Unique (`-Unique -Last 1` is the last line); -First after it.
+      if (last !== undefined && first === undefined) picked = picked.slice(Math.max(0, picked.length - (parseInt(last, 10) || 0)));
+      // -Unique keeps the first of each line, case included (-CaseInsensitive ignores it).
+      if (args.some((a) => /^-u(n(i(q(ue?)?)?)?)?$/i.test(a))) {
+        const caseInsensitive = args.some((a) => /^-caseinsensitive$/i.test(a));
+        const key = (l: string) => (caseInsensitive ? l.toLowerCase() : l);
+        picked = picked.filter((line, i) => picked.findIndex((other) => key(other) === key(line)) === i);
       }
-      const counted = flags.some((f) => f.includes('c'));
-      return same(outLines(groups.map((g) => (counted ? `${String(g.count).padStart(7)} ${g.line}` : g.line))));
+      if (first !== undefined) picked = picked.slice(0, parseInt(first, 10) || 0);
+      return same(outLines([...(framed && lead ? [''] : []), ...header, ...picked, ...(framed && trail ? [''] : [])]));
     }
 
     case 'measure-object':
@@ -1611,7 +1704,6 @@ function runFilter(state: TerminalState, text: string, stdin: string, env: Termi
 
     case 'sed':
     case 'awk':
-    case 'cut':
     case 'tr':
     case 'xargs':
       // Not simulated yet: say so rather than pretend the text was transformed.
@@ -2269,6 +2361,12 @@ const PS_ALIASES: Record<string, string> = {
   h: 'get-history',
 };
 
+/** PowerShell cmdlets that only work on piped input, by every name they answer to. */
+const INPUT_CMDLETS = new Map<string, PsCmdlet>([
+  ['sort', SORT_OBJECT], ['sort-object', SORT_OBJECT], ['get-unique', GET_UNIQUE], ['gu', GET_UNIQUE],
+  ['group-object', GROUP_OBJECT], ['group', GROUP_OBJECT],
+]);
+
 /** The command name as typed (not lower-cased): that is what a real shell repeats. */
 function commandNotFound(typed: string, state: TerminalState): CommandOutput {
   return { lines: [{ text: `${typed}: commande introuvable. Tapez 'help' pour la liste des commandes.`, type: 'error' }], newState: state };
@@ -2371,6 +2469,16 @@ function runSimple(state: TerminalState, trimmed: string, env: TerminalEnv): Com
       const result = handleWindows(cmdlet, args, newState, env, winDeps);
       if (result) return result;
     }
+  }
+
+  if ((cmd === 'sort' || cmd === 'uniq' || cmd === 'cut') && env !== 'windows') return runTextTool(newState, cmd, args, undefined);
+  // With nothing piped in, these cmdlets have nothing to sort or group: PowerShell prints nothing
+  // (`sort fruits.txt` is Sort-Object -Property fruits.txt), unless a parameter is wrong.
+  // A Map, not an object literal: a typed `constructor` must not find Object's own.
+  const inputCmdlet = env === 'windows' ? INPUT_CMDLETS.get(cmd) : undefined;
+  if (inputCmdlet) {
+    const parsed = parsePsArgs(inputCmdlet, args);
+    return { lines: 'switches' in parsed ? [] : [parsed], newState };
   }
 
   switch (cmd) {

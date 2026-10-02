@@ -15,7 +15,7 @@ import type { SelectedEnvironment } from '../context/EnvironmentContext';
 // `src/test/landingTotals.test.ts` re-imports both and fails if these
 // constants get out of sync with the actual catalogue/curriculum.
 export const TOTAL_LESSONS = 66;
-export const TOTAL_COMMANDS = 76;
+export const TOTAL_COMMANDS = 79;
 /** Count of environments with `status: 'active'` in `types/curriculum.ts`. */
 export const ACTIVE_ENVIRONMENTS_COUNT = 3;
 
@@ -140,6 +140,15 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
       'Une variante PowerShell pour chaque leçon',
     ],
   },
+  {
+    group: 'Des bases au niveau intermédiaire',
+    items: [
+      'Trier, compter et découper du texte : sort, uniq et cut sont là ; find, xargs et diff arrivent',
+      'Archives et disque, sed et awk, les éditeurs nano et vim',
+      'Enquêter dans des journaux, écrire ses premiers scripts',
+      'Une mission finale sans indice, puis une page « Et après ? » vers des labos gratuits pour chaque métier',
+    ],
+  },
 ];
 
 export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
@@ -170,7 +179,6 @@ export const ROADMAP_PLANNED: readonly RoadmapGroup[] = [
     items: [
       'Intégration LMS (LTI 1.3 : Moodle, Canvas…)',
       'Tuteur IA V1.5 — modèles filtrés par rôle, isolation Web Worker',
-      'Parcours avancés (Docker, scripting, IA augmentée)',
     ],
   },
   {

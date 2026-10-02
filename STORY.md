@@ -1275,6 +1275,16 @@ Le garde-fou écrit ce matin compare ces fichiers au curriculum lui-même. Il a 
 
 On a aussi vérifié que le test sait échouer : en remettant volontairement un mauvais compteur dans chaque fichier, il passe au rouge à chaque fois. Les lots suivants ajouteront des modules et des leçons. Ces fichiers ne pourront plus rester en arrière.
 
+### Trier comme un vrai Linux (2 octobre 2026)
+
+On pensait que trier des lignes serait la partie facile. Le premier essai a montré le contraire : selon la langue du système, `sort` ne range pas les lignes de la même façon. Sur un Ubuntu en français ou en anglais, `.cache` se range comme « cache », et `Pomme` arrive entre `ecole` et `Zèbre`. Sur un serveur réglé en `C`, les majuscules passent toutes avant les minuscules.
+
+Pour savoir lequel imiter, il fallait un vrai Linux. L'Ubuntu installé sous WSL sur la machine de @thierry ne connaissait que la langue `C`. On y a ajouté l'anglais, le français de France et celui de Belgique, puis on a trié la même liste de 69 lignes piégées dans chacune. Le tri du navigateur ne donnait pas le même résultat. Il a fallu ignorer la ponctuation, puis les symboles comme `+`, avant de retrouver l'ordre exact de glibc, ligne pour ligne.
+
+PowerShell a réservé sa propre surprise. `Sort-Object` ignore vraiment la casse : deux lignes qui ne diffèrent que par une majuscule gardent leur ordre de départ. Au-delà de seize lignes, l'algorithme de .NET peut les échanger. Les fichiers des leçons sont plus courts, et le code le dit.
+
+Quatre séries de captures, plus de 150 commandes, ont fixé chaque détail : `cut -c` compte des octets (« Tâches » coupé à 5 donne « Tâch »), un `-r` global inverse aussi le départage des lignes égales, mais pas un `-r` écrit dans la clé. Un des tests existants a même trouvé un bug que nous n'avions pas vu : une commande nommée `constructor` remontait jusqu'au prototype d'un objet JavaScript.
+
 ---
 
 ## Épilogue ouvert

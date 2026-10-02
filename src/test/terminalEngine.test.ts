@@ -3488,3 +3488,235 @@ describe('reference replay gaps — engine matches the real shells', () => {
     expect(run(['Get-ScheduledTask'], 'windows').lines[1].text).toMatch(/^TaskPath\s+TaskName\s+State$/);
   });
 });
+
+// ─── sort, uniq, cut and their PowerShell counterparts ──────────────────────
+// Expected values: GNU coreutils 9.4 on Ubuntu 24.04 (WSL 2) in en_US.UTF-8, and
+// PowerShell 7.6.6 in en-US, both run on 2 October 2026 in a sandbox holding the
+// same files.
+describe('sort, uniq, cut (Phase 5d, lot 1)', () => {
+  const FRUITS = 'pomme\nbanane\npomme\nPomme\ncerise\nbanane\nbanane';
+  const AGES = 'alice,32,Liège\nbob,7,Namur\ncharlie,120,Bruxelles\ndavid,32,Anvers';
+  function home(extra: Record<string, string> = {}): TerminalState {
+    const s = createInitialState();
+    const user = (s.root.children.home as typeof s.root).children.user as typeof s.root;
+    const notes = (user.children.documents as typeof s.root).children['notes.txt'];
+    for (const [name, content] of Object.entries({ 'fruits.txt': FRUITS, 'ages.csv': AGES, ...extra })) {
+      user.children[name] = { ...notes, content } as typeof notes;
+    }
+    return { ...s, cwd: ['home', 'user'] };
+  }
+  const sh = (cmd: string, env: 'linux' | 'macos' | 'windows' = 'linux', state = home()) =>
+    processCommand(state, cmd, env).lines.map((l) => l.text);
+
+  it('sort orders lines as glibc does in a UTF-8 locale: case and punctuation only break ties', () => {
+    expect(sh('sort fruits.txt')).toEqual(['banane', 'banane', 'banane', 'cerise', 'pomme', 'pomme', 'Pomme']);
+    expect(sh('sort documents/notes.txt')).toEqual([
+      '1. Apprendre les commandes bash', '2. Pratiquer la navigation', '3. Maîtriser les permissions',
+      'Fin du fichier', 'Mes notes importantes', 'Tâches du jour:',
+    ]);
+    expect(sh('sort .bashrc .zshrc')).toEqual([
+      'alias la="ls -a"', 'alias la="ls -a"', 'alias ll="ls -la"', 'alias ll="ls -la"', '# Configuration Bash',
+      '# Configuration Zsh (Oh My Zsh)', 'export EDITOR=nano', 'export PATH=$PATH:/usr/local/bin',
+      'export PATH=$PATH:/usr/local/bin', 'export ZSH="$HOME/.oh-my-zsh"', 'plugins=(git node npm)', 'ZSH_THEME="robbyrussell"',
+    ]);
+    // Lines from the 69 sorted by glibc 2.39: punctuation and symbols count last, then accents, then case.
+    const tricky = ['banane', 'Pomme', 'apple', '#commentaire', '_tiret', 'École', 'ecole', '10', '9', '2 mots', 'Zèbre', '.cache', '+7', '-5', 'a-b', 'ab', 'a b', 'AB'];
+    expect(sh('sort tricky.txt', 'linux', home({ 'tricky.txt': tricky.join('\n') }))).toEqual([
+      '10', '2 mots', '-5', '+7', '9', 'a b', 'a-b', 'ab', 'AB', 'apple', 'banane', '.cache', '#commentaire', 'ecole', 'École', 'Pomme', '_tiret', 'Zèbre',
+    ]);
+  });
+
+  it('sort options: -r, -u, -f, -n, -h, -d, long forms, options after the file', () => {
+    expect(sh('sort -r documents/notes.txt')[0]).toBe('Tâches du jour:');
+    expect(sh('sort fruits.txt -r')).toEqual(['Pomme', 'pomme', 'pomme', 'cerise', 'banane', 'banane', 'banane']);
+    expect(sh('sort --reverse fruits.txt')).toEqual(sh('sort -r fruits.txt'));
+    expect(sh('sort -u fruits.txt')).toEqual(['banane', 'cerise', 'pomme', 'Pomme']);
+    expect(sh('sort -fu fruits.txt')).toEqual(['banane', 'cerise', 'pomme']);
+    expect(sh('sort -r -n -u fruits.txt')).toEqual(['pomme']);
+    expect(sh('sort -n n.txt', 'linux', home({ 'n.txt': '10\n-5\n3.5\nabc\n\n2\n-0.5\n+4' }))).toEqual(['-5', '-0.5', '', '+4', 'abc', '2', '3.5', '10']);
+    expect(sh('sort -h h.txt', 'linux', home({ 'h.txt': '1.5K\tlogs\n200M\tvideos\n12K\tdocs\n1.2G\tbackup\n4.0K\tnotes\n999\tbrut' })))
+      .toEqual(['999\tbrut', '1.5K\tlogs', '4.0K\tnotes', '12K\tdocs', '200M\tvideos', '1.2G\tbackup']);
+    // en_US reads the comma as a thousands separator: 1,5K is 15K.
+    expect(sh('sort -h h.txt', 'linux', home({ 'h.txt': '1,5K\tlogs\n200M\tvideos\n12K\tdocs\n1,2G\tbackup\n4,0K\tnotes' })))
+      .toEqual(['12K\tdocs', '1,5K\tlogs', '4,0K\tnotes', '200M\tvideos', '1,2G\tbackup']);
+    expect(sh('sort -d d.txt', 'linux', home({ 'd.txt': 'b-2\na_1\nb.1' }))).toEqual(['a_1', 'b.1', 'b-2']);
+  });
+
+  it('sort -k and -t: fields, per-key options, and the whole line breaking ties', () => {
+    expect(sh('sort -t, -k2 ages.csv')).toEqual(['charlie,120,Bruxelles', 'david,32,Anvers', 'alice,32,Liège', 'bob,7,Namur']);
+    expect(sh('sort -t, -k2n ages.csv')).toEqual(['bob,7,Namur', 'alice,32,Liège', 'david,32,Anvers', 'charlie,120,Bruxelles']);
+    expect(sh('sort -t, -k2nr ages.csv')).toEqual(['charlie,120,Bruxelles', 'alice,32,Liège', 'david,32,Anvers', 'bob,7,Namur']);
+    // A global -r does not reach a key with its own options, but reverses the tie-break.
+    expect(sh('sort -rt, -k2n ages.csv')).toEqual(['bob,7,Namur', 'david,32,Anvers', 'alice,32,Liège', 'charlie,120,Bruxelles']);
+    expect(sh('sort -t, -k2,2n -k1,1r ages.csv')).toEqual(['bob,7,Namur', 'david,32,Anvers', 'alice,32,Liège', 'charlie,120,Bruxelles']);
+    expect(sh('sort -u -t, -k2,2n ages.csv')).toEqual(['bob,7,Namur', 'alice,32,Liège', 'charlie,120,Bruxelles']);
+    expect(sh('sort -t, -k2.2 ages.csv')).toEqual(['charlie,120,Bruxelles', 'david,32,Anvers', 'alice,32,Liège', 'bob,7,Namur']);
+    expect(sh('sort -k2 documents/notes.txt')).toEqual([
+      '1. Apprendre les commandes bash', 'Fin du fichier', 'Tâches du jour:', '3. Maîtriser les permissions',
+      'Mes notes importantes', '2. Pratiquer la navigation',
+    ]);
+    const ps = home({ 'ps.txt': 'user      1234  0.0  0.2 bash\nuser      2048  0.1  1.2 node\nuser      5678  0.0  0.1 ps aux' });
+    expect(sh('sort -k3rn ps.txt', 'linux', ps)).toEqual([
+      'user      2048  0.1  1.2 node', 'user      1234  0.0  0.2 bash', 'user      5678  0.0  0.1 ps aux',
+    ]);
+    expect(sh('sort -k3 -rn ps.txt', 'linux', ps)).toEqual([
+      'user      2048  0.1  1.2 node', 'user      5678  0.0  0.1 ps aux', 'user      1234  0.0  0.2 bash',
+    ]);
+  });
+
+  it('sort reads a pipe, writes with -o, checks with -c, and fails like GNU sort', () => {
+    expect(sh('cut -d= -f1 projets/.env | sort')).toEqual([
+      'API_KEY', 'DB_HOST', 'DB_NAME', 'DB_PASSWORD', 'DB_PORT', 'DB_USER', '# NE JAMAIS committer ce fichier !', 'NODE_ENV',
+      "# Variables d'environnement du projet",
+    ]);
+    expect(sh('sort fruits.txt - < ages.csv')[0]).toBe('alice,32,Liège');
+    expect(sh('sort -o trie.txt fruits.txt; cat trie.txt')).toEqual(['banane', 'banane', 'banane', 'cerise', 'pomme', 'pomme', 'Pomme']);
+    expect(sh('sort -c fruits.txt')).toEqual(['sort: fruits.txt:2: disorder: banane']);
+    expect(sh('sort absent.txt')).toEqual(['sort: cannot read: absent.txt: No such file or directory']);
+    expect(sh('sort fruits.txt absent.txt')).toEqual(['sort: cannot read: absent.txt: No such file or directory']);
+    expect(sh('sort documents')).toEqual(['sort: read failed: documents: Is a directory']);
+    expect(sh('sort -o absent/x.txt fruits.txt')).toEqual(['sort: open failed: absent/x.txt: No such file or directory']);
+    expect(sh('sort -x fruits.txt')).toEqual(["sort: invalid option -- 'x'", "Try 'sort --help' for more information."]);
+    expect(sh('sort --foo fruits.txt')).toEqual(["sort: unrecognized option '--foo'", "Try 'sort --help' for more information."]);
+    expect(sh('sort --constructor fruits.txt')).toEqual(["sort: unrecognized option '--constructor'", "Try 'sort --help' for more information."]);
+    expect(sh('cut --toString -f1 ages.csv')).toEqual(["cut: unrecognized option '--toString'", "Try 'cut --help' for more information."]);
+    expect(sh('sort -k')).toEqual(["sort: option requires an argument -- 'k'", "Try 'sort --help' for more information."]);
+    expect(sh('sort -k ages.csv')).toEqual(['sort: invalid number at field start: invalid count at start of ‘ages.csv’']);
+    expect(sh('sort -k0 fruits.txt')).toEqual(['sort: field number is zero: invalid field specification ‘0’']);
+    expect(sh('sort -k2.0 fruits.txt')).toEqual(['sort: character offset is zero: invalid field specification ‘2.0’']);
+    expect(sh('sort -k2x fruits.txt')).toEqual(['sort: stray character in field spec: invalid field specification ‘2x’']);
+    expect(sh('sort -t ages.csv')).toEqual(['sort: multi-character tab ‘ages.csv’']);
+    expect(processCommand(home(), 'sort absent.txt', 'linux').lines[0].type).toBe('error');
+  });
+
+  it('uniq merges neighbouring lines only, compared byte for byte', () => {
+    expect(sh('uniq fruits.txt')).toEqual(['pomme', 'banane', 'pomme', 'Pomme', 'cerise', 'banane']);
+    expect(sh('uniq -c fruits.txt')).toEqual(['      1 pomme', '      1 banane', '      1 pomme', '      1 Pomme', '      1 cerise', '      2 banane']);
+    expect(sh('uniq -ic fruits.txt')).toEqual(['      1 pomme', '      1 banane', '      2 pomme', '      1 cerise', '      2 banane']);
+    expect(sh('uniq -d -c fruits.txt')).toEqual(['      2 banane']);
+    expect(sh('uniq -D fruits.txt')).toEqual(['banane', 'banane']);
+    expect(sh('sort fruits.txt | uniq -c')).toEqual(['      3 banane', '      1 cerise', '      2 pomme', '      1 Pomme']);
+    expect(sh('sort fruits.txt | uniq -c | sort -rn')).toEqual(['      3 banane', '      2 pomme', '      1 Pomme', '      1 cerise']);
+    expect(sh('sort fruits.txt | uniq -u')).toEqual(['cerise', 'Pomme']);
+    expect(sh('sort .bashrc .zshrc | uniq -d')).toEqual(['alias la="ls -a"', 'alias ll="ls -la"', 'export PATH=$PATH:/usr/local/bin']);
+    // -i folds ASCII letters only: é and É stay different.
+    expect(sh('uniq -i e.txt', 'linux', home({ 'e.txt': 'Ecole\nécole\nÉcole' }))).toEqual(['Ecole', 'école', 'École']);
+    expect(sh('uniq fruits.txt sortie.txt; cat sortie.txt')).toEqual(['pomme', 'banane', 'pomme', 'Pomme', 'cerise', 'banane']);
+    expect(sh('uniq absent.txt')).toEqual(['uniq: absent.txt: No such file or directory']);
+    expect(sh('uniq documents')).toEqual(["uniq: error reading 'documents': Is a directory"]);
+    expect(sh('uniq a b c')).toEqual(['uniq: extra operand ‘c’', "Try 'uniq --help' for more information."]);
+    expect(sh('uniq fruits.txt absent/x.txt')).toEqual(['uniq: absent/x.txt: No such file or directory']);
+  });
+
+  it('cut keeps fields, or bytes (-c counts bytes in GNU cut 9.4)', () => {
+    expect(sh('cut -d= -f1 projets/.env').slice(2)).toEqual(['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'API_KEY', 'NODE_ENV']);
+    expect(sh('cut -s -d= -f2 projets/.env')[0]).toBe('localhost');
+    expect(sh('cut -d, -f1,3 ages.csv')).toEqual(['alice,Liège', 'bob,Namur', 'charlie,Bruxelles', 'david,Anvers']);
+    expect(sh('cut -d, -f3,1 ages.csv')).toEqual(sh('cut -d, -f1,3 ages.csv'));
+    expect(sh('cut -d, -f2- ages.csv')).toEqual(['32,Liège', '7,Namur', '120,Bruxelles', '32,Anvers']);
+    expect(sh('cut -d, -f2 --complement ages.csv')).toEqual(['alice,Liège', 'bob,Namur', 'charlie,Bruxelles', 'david,Anvers']);
+    expect(sh("cut -d, -f1,2 --output-delimiter=' | ' ages.csv")[0]).toBe('alice | 32');
+    expect(sh('cut --delimiter=, --fields=1 ages.csv')).toEqual(['alice', 'bob', 'charlie', 'david']);
+    expect(sh('cut -f1 ages.csv')).toEqual(AGES.split('\n'));
+    expect(sh('cut -c1-5 documents/notes.txt')).toEqual(['Mes n', 'Tâch', '1. Ap', '2. Pr', '3. Ma', 'Fin d']);
+    expect(sh('cut -c2-3,5 fruits.txt')[0]).toBe('ome');
+    expect(sh('cut -d, -f2 ages.csv | sort -n | uniq -c')).toEqual(['      1 7', '      2 32', '      1 120']);
+    const words = home({ 'w.txt': 'a b  c\nd' });
+    expect(sh("cut -d' ' -f3 w.txt", 'linux', words)).toEqual(['', 'd']);
+    expect(sh("cut -d' ' -f2 -s w.txt", 'linux', words)).toEqual(['b']);
+  });
+
+  it('cut fails like GNU cut', () => {
+    const help = "Try 'cut --help' for more information.";
+    expect(sh('cut ages.csv')).toEqual(['cut: you must specify a list of bytes, characters, or fields', help]);
+    expect(sh('cut -d, ages.csv')).toEqual(['cut: you must specify a list of bytes, characters, or fields', help]);
+    expect(sh('cut -d, -f0 ages.csv')).toEqual(['cut: fields are numbered from 1', help]);
+    expect(sh('cut -d ab -f1 ages.csv')).toEqual(['cut: the delimiter must be a single character', help]);
+    expect(sh('cut -d, -f1-2,x ages.csv')).toEqual(['cut: invalid field value ‘x’', help]);
+    expect(sh('cut -c fruits.txt')).toEqual(['cut: invalid byte/character position ‘fruits.txt’', help]);
+    expect(sh('cut -d, -f3-1 ages.csv')).toEqual(['cut: invalid decreasing range', help]);
+    expect(sh('cut -d, -f- ages.csv')).toEqual(['cut: invalid range with no endpoint: -', help]);
+    expect(sh('cut -c1 -f1 ages.csv')).toEqual(['cut: only one list may be specified', help]);
+    expect(sh('cut -c1 -d, ages.csv')).toEqual(['cut: an input delimiter may be specified only when operating on fields', help]);
+    expect(sh('cut -f')).toEqual(["cut: option requires an argument -- 'f'", help]);
+    expect(sh('cut -d, -f1 absent.txt')).toEqual(['cut: absent.txt: No such file or directory']);
+    expect(sh('cut -d, -f1 documents')).toEqual(['cut: documents: Is a directory']);
+  });
+
+  it('with neither a file nor a pipe, says what to give instead of waiting for the keyboard', () => {
+    const out = processCommand(home(), 'sort', 'linux').lines;
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('info');
+    expect(processCommand(home(), 'sort -g fruits.txt', 'linux').lines[0].type).toBe('info');
+  });
+
+  it('PowerShell: Sort-Object ignores case and keeps ties in order; -Descending, -Unique, -CaseSensitive', () => {
+    const ps = (cmd: string) => sh(cmd, 'windows');
+    expect(ps('Get-Content fruits.txt | Sort-Object')).toEqual(['banane', 'banane', 'banane', 'cerise', 'pomme', 'pomme', 'Pomme']);
+    expect(ps('Get-Content fruits.txt | Sort-Object -Descending')).toEqual(['pomme', 'pomme', 'Pomme', 'cerise', 'banane', 'banane', 'banane']);
+    expect(ps('Get-Content fruits.txt | sort -Descending')).toEqual(ps('Get-Content fruits.txt | Sort-Object -Descending'));
+    expect(ps('Get-Content fruits.txt | Sort-Object -Unique')).toEqual(['banane', 'cerise', 'pomme']);
+    expect(ps('Get-Content fruits.txt | sort -u')).toEqual(['banane', 'cerise', 'pomme']);
+    expect(ps('Get-Content fruits.txt | Sort-Object -CaseSensitive -Unique')).toEqual(['banane', 'cerise', 'pomme', 'Pomme']);
+    expect(ps('Get-Content documents\\notes.txt | Sort-Object')).toEqual(sh('sort documents/notes.txt'));
+    // Without input, sort is Sort-Object -Property fruits.txt with nothing to sort.
+    expect(ps('sort fruits.txt')).toEqual([]);
+  });
+
+  it('PowerShell: Get-Unique, Select-Object -Unique and Group-Object', () => {
+    const ps = (cmd: string) => sh(cmd, 'windows');
+    expect(ps('Get-Content fruits.txt | Get-Unique')).toEqual(['pomme', 'banane', 'pomme', 'Pomme', 'cerise', 'banane']);
+    expect(ps('Get-Content fruits.txt | Sort-Object | Get-Unique')).toEqual(['banane', 'cerise', 'pomme', 'Pomme']);
+    expect(ps('Get-Content fruits.txt | Select-Object -Unique')).toEqual(['pomme', 'banane', 'Pomme', 'cerise']);
+    expect(ps('Get-Content fruits.txt | Group-Object')).toEqual([
+      '',
+      'Count Name                      Group',
+      '----- ----                      -----',
+      '    3 banane                    {banane, banane, banane}',
+      '    1 cerise                    {cerise}',
+      '    3 pomme                     {pomme, pomme, Pomme}',
+      '',
+    ]);
+    expect(ps('Get-Content fruits.txt | Group-Object | Sort-Object Count -Descending')).toEqual([
+      '',
+      'Count Name                      Group',
+      '----- ----                      -----',
+      '    3 banane                    {banane, banane, banane}',
+      '    3 pomme                     {pomme, pomme, Pomme}',
+      '    1 cerise                    {cerise}',
+      '',
+    ]);
+    expect(ps('Get-Content fruits.txt | Group-Object -NoElement')).toEqual(['', 'Count Name', '----- ----', '    3 banane', '    1 cerise', '    3 pomme', '']);
+  });
+
+  // Found by terminal-fidelity-auditor on 2 October 2026; expected values from the same real shells.
+  it('audit fixes: sort -h without a suffix, cut -d \'\', --help, script blocks', () => {
+    const sizes = home({ 'sizes.txt': '1K\n2M\n500\n3G\n10K\n1.5K' });
+    expect(sh('sort -h sizes.txt', 'linux', sizes)).toEqual(['500', '1K', '1.5K', '10K', '2M', '3G']);
+    expect(sh('sort -hr sizes.txt', 'linux', sizes)).toEqual(['3G', '2M', '10K', '1.5K', '1K', '500']);
+    expect(sh("cut -d '' -f1 fruits.txt")).toEqual(FRUITS.split('\n'));
+    for (const cmd of ['sort --help', 'uniq --help', 'cut --help']) {
+      const out = processCommand(home(), cmd, 'linux').lines;
+      expect(out.map((l) => l.type), cmd).toEqual(['info']);
+    }
+    expect(processCommand(home(), 'Get-Content fruits.txt | Sort-Object { $_.Length }', 'windows').lines.map((l) => l.type)).toEqual(['info']);
+  });
+
+  it('audit fixes: PowerShell tables keep their frame through Select-Object, Name is ProcessName', () => {
+    const ps = (cmd: string, state = home()) => sh(cmd, 'windows', state);
+    const words = home({ 'words.txt': 'the cat\nthe dog\nthe cat\na bird\nthe dog\nthe cat' });
+    expect(ps('Get-Content words.txt | Group-Object -NoElement | Select-Object -First 1', words)).toEqual(['', 'Count Name', '----- ----', '    1 a bird', '']);
+    expect(ps('Get-Content words.txt | Group-Object -NoElement | Sort-Object Name -Descending', words)).toEqual([
+      '', 'Count Name', '----- ----', '    2 the dog', '    3 the cat', '    1 a bird', '',
+    ]);
+    expect(ps('Get-Content fruits.txt | Select-Object -Unique -Last 1')).toEqual(['banane']);
+    const names = (cmd: string) => ps(cmd).slice(2).map((row) => row.trim().split(/\s+/).pop());
+    expect(names('Get-Process | Sort-Object Name')).toEqual(['node', 'pwsh', 'WindowsTerminal']);
+    expect(names('Get-Process | Sort-Object Name -Descending')).toEqual(['WindowsTerminal', 'pwsh', 'node']);
+  });
+
+  it('macOS shows the GNU behaviour too (no Mac to check the BSD tools on)', () => {
+    expect(sh('sort fruits.txt', 'macos')).toEqual(sh('sort fruits.txt'));
+    expect(sh('cut -d, -f1 ages.csv', 'macos')).toEqual(['alice', 'bob', 'charlie', 'david']);
+  });
+});
