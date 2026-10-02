@@ -5,6 +5,20 @@
 
 ---
 
+## 🔤 2 octobre 2026 — Trier, compter et découper du texte : `sort`, `uniq`, `cut`
+
+*Phase 5d, lot 1 · sorties vérifiées sur Ubuntu 24.04 (coreutils 9.4) et PowerShell 7.6*
+
+- **`sort`, `uniq` et `cut` fonctionnent sur des fichiers**, plus seulement derrière un pipe. Avant, `sort fichier.txt` répondait « commande introuvable ».
+- `sort` range les lignes comme un vrai Linux en français ou en anglais : majuscules et minuscules ensemble, la ponctuation ne compte qu'à égalité. Il connaît `-r`, `-n`, `-h`, `-u`, `-f`, `-d`, `-b`, `-k`, `-t`, `-o`, `-c` et `-s`. Le tri par colonne (`sort -t, -k2n`) suit les mêmes règles que GNU, jusqu'au départage des lignes égales.
+- `uniq` fusionne les lignes voisines, compte (`-c`), garde les doublons (`-d`, `-D`) ou les lignes uniques (`-u`). `cut` garde des colonnes (`-d`, `-f`, `--complement`, `--output-delimiter`) ou des octets (`-c`, `-b`) : comme sur Linux, une lettre accentuée compte pour deux.
+- Les messages d'erreur sont ceux de GNU (`sort: cannot read: …`, `cut: you must specify a list…`). Une option réelle mais pas encore simulée affiche une note, jamais un résultat faux.
+- **Sous Windows** : `Sort-Object` (et son alias `sort`) trie du texte en ignorant la casse, avec `-Descending`, `-Unique`, `-CaseSensitive`, `-Top` et `-Bottom`. `Get-Unique`, `Select-Object -Unique` et `Group-Object` (l'équivalent de `uniq -c`) arrivent.
+- **La page Référence passe de 76 à 79 commandes** : `sort`, `uniq` et `cut`, avec leurs équivalents PowerShell, des exemples à essayer et les erreurs fréquentes.
+- Sur la page d'accueil, la feuille de route annonce la suite du parcours : des bases jusqu'au niveau intermédiaire.
+
+---
+
 ## 🤖 2 octobre 2026 — Ce que lisent les moteurs IA reste à jour
 
 *Fichiers `llms.txt` et `llms-full.txt` · métadonnées de la page d'accueil · Phase 5d, lot 0b*
