@@ -50,6 +50,7 @@ describe('public/llms.txt follows the curriculum', () => {
 
   it('lists every lesson URL of each module, in order, and nothing else', () => {
     curriculum.forEach((mod, i) => {
+      expect(sections[i], `llms.txt has no "### Module ${i + 1}" heading`).toBeDefined();
       const urls = [...sections[i].body.matchAll(/^- https:\/\/terminallearning\.dev(\/app\/learn\/\S+)$/gm)].map((u) => u[1]);
       expect(urls, `llms.txt, module ${i + 1} (${mod.id})`).toEqual(mod.lessons.map((l) => lessonPath(mod.id, l.id)));
     });
@@ -76,6 +77,7 @@ describe('public/llms-full.txt follows the curriculum', () => {
 
   it('has a table row for every lesson of each module, with its title and URL, in order', () => {
     curriculum.forEach((mod, i) => {
+      expect(sections[i], `llms-full.txt has no "### Module ${i + 1}" heading`).toBeDefined();
       const rows = [...sections[i].body.matchAll(/^\| (.+?) \| .* \| (\/app\/learn\/\S+) \|$/gm)].map((r) => ({
         // A "|" inside a Markdown table cell is written "\|".
         title: r[1].trim().replace(/\\\|/g, '|'),
