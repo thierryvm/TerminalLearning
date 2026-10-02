@@ -205,6 +205,22 @@ const baseCatalogue: BaseCategory[] = [
           "Taper rm -rf dans PowerShell : rm y est Remove-Item, qui ne connaît pas -rf. Écrire Remove-Item dossier -Recurse",
         ],
       },
+      {
+        id: 'rmdir',
+        name: 'rmdir',
+        category: 'fichiers',
+        level: 1,
+        recommendedFor: ['linux', 'macos', 'windows'],
+        variants: [
+          { environment: 'windows', command: 'rmdir dossier', shell: 'PowerShell' },
+        ],
+        compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'rmdir dossier',
+        summary: 'Supprimer un dossier vide',
+        commonErrors: [
+          "S'étonner de « Directory not empty » : rmdir ne supprime que les dossiers vides. Vider le dossier d'abord, ou utiliser rm -r en relisant la commande.",
+        ],
+      },
     ],
   },
 
@@ -313,9 +329,30 @@ const baseCatalogue: BaseCategory[] = [
           { environment: 'windows', command: 'where nomcommande', shell: 'CMD' },
         ],
         compatibility: ['linux', 'macos', 'windows'],
-        syntax: 'find . -name motif',
+        syntax: 'find [dossier...] [tests] [actions]',
         summary: 'Trouver des fichiers ou commandes',
-        commonErrors: [],
+        commonErrors: [
+          "Oublier les guillemets autour du motif : sans eux, le shell remplace *.txt par les fichiers du dossier courant avant que find le voie. Écrire find . -name \"*.txt\".",
+          'Sur macOS, find exige un dossier de départ : find . -name "*.txt", et non find -name "*.txt".',
+          "Taper find dans PowerShell : c'est find.exe, l'outil de recherche de texte de Windows. Pour chercher des fichiers : Get-ChildItem -Recurse -Filter *.txt.",
+          "Compter sur l'ordre des résultats : find les donne dans l'ordre du disque, qui change d'une machine à l'autre. Ajouter | sort pour un ordre stable.",
+        ],
+      },
+      {
+        id: 'xargs',
+        name: 'xargs',
+        category: 'search',
+        level: 1,
+        recommendedFor: ['linux', 'macos'],
+        variants: [
+          { environment: 'windows', command: 'Get-ChildItem -Recurse -Filter *.md | ForEach-Object { Get-Content $_ }', shell: 'PowerShell' },
+        ],
+        compatibility: ['linux', 'macos', 'windows'],
+        syntax: 'commande | xargs [options] commande [arguments]',
+        summary: "Lancer une commande avec les lignes reçues d'un pipe",
+        commonErrors: [
+          'Passer des noms de fichiers qui contiennent des espaces : xargs coupe sur les espaces. Utiliser find … -exec commande {} + à la place.',
+        ],
       },
       {
         id: 'wc',
@@ -1397,6 +1434,14 @@ const OFFICIAL_DOCS: Record<string, OfficialDoc[]> = {
     { label: 'Microsoft Learn — Select-String (Windows)', url: `${PS}microsoft.powershell.utility/select-string` },
   ],
   find: [{ label: 'man7.org (Linux)', url: `${M1}find.1.html` }],
+  xargs: [
+    { label: 'man7.org (Linux)', url: `${M1}xargs.1.html` },
+    { label: 'Microsoft Learn — ForEach-Object (Windows)', url: `${PS}microsoft.powershell.core/foreach-object` },
+  ],
+  rmdir: [
+    { label: 'man7.org (Linux)', url: `${M1}rmdir.1.html` },
+    { label: 'Microsoft Learn — Remove-Item (Windows)', url: `${PS}microsoft.powershell.management/remove-item` },
+  ],
   wc: [{ label: 'man7.org (Linux)', url: `${M1}wc.1.html` }],
   sort: [
     { label: 'man7.org (Linux)', url: `${M1}sort.1.html` },

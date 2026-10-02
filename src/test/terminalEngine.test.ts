@@ -2104,10 +2104,10 @@ describe('wc', () => {
     expect(result.lines[0].text).toContain('test.txt');
   });
 
-  it('returns error when no operand given', () => {
+  it('with neither a file nor a pipe, says what to give it (the real wc waits for the keyboard)', () => {
+    // Until 2 October 2026 this printed "wc: missing file operand", which no real wc says.
     const result = processCommand(makeState(), 'wc');
-    expect(result.lines[0].type).toBe('error');
-    expect(result.lines[0].text).toContain('missing file operand');
+    expect(result.lines.map((l) => l.type)).toEqual(['info']);
   });
 });
 
@@ -3134,16 +3134,18 @@ describe('theory ↔ terminal: engine fidelity', () => {
   });
 
   it('wc counts bytes (UTF-8) and the final newline, like the real wc', () => {
-    // Real wc on this exact content: "6 22 143" (â and î are two bytes each).
+    // Real wc on this exact content: 6 22 143 (â and î are two bytes each). Widths, as captured on
+    // 2 October 2026 in Git Bash (coreutils 8.32) and Ubuntu (9.4) alike: the number of digits of the
+    // file size (143 → 3); one count of one file is not padded; a pipe gets at least 7.
     const s = createInitialState();
-    expect(out(s, 'wc documents/notes.txt')).toBe(' 6 22 143 documents/notes.txt');
-    expect(out(s, 'wc -c documents/notes.txt')).toBe(' 143 documents/notes.txt');
+    expect(out(s, 'wc documents/notes.txt')).toBe('  6  22 143 documents/notes.txt');
+    expect(out(s, 'wc -c documents/notes.txt')).toBe('143 documents/notes.txt');
     const e = build('linux', 'touch vide.txt', 'echo x > x.txt');
-    expect(out(e, 'wc vide.txt')).toBe(' 0 0 0 vide.txt');
-    expect(out(e, 'wc x.txt')).toBe(' 1 1 2 x.txt');
-    // Real: printf 'pomme\npoire\n' | wc  ->  2 2 12
+    expect(out(e, 'wc vide.txt')).toBe('0 0 0 vide.txt');
+    expect(out(e, 'wc x.txt')).toBe('1 1 2 x.txt');
+    // Real: printf 'pomme\npoire\n' | wc  ->  "      2       2      12"
     const p = build('linux', 'echo pomme > f', 'echo poire >> f');
-    expect(out(p, 'cat f | wc')).toBe('2 2 12');
+    expect(out(p, 'cat f | wc')).toBe('      2       2      12');
   });
 
   it('ls sorts like ls (no directories-first) and marks nothing, -F adds the /', () => {
@@ -3715,8 +3717,202 @@ describe('sort, uniq, cut (Phase 5d, lot 1)', () => {
     expect(names('Get-Process | Sort-Object Name -Descending')).toEqual(['WindowsTerminal', 'pwsh', 'node']);
   });
 
+  it('wc: GNU widths, a total for several files, -m and -L, a folder', () => {
+    expect(sh('wc -l documents/notes.txt')).toEqual(['6 documents/notes.txt']);
+    expect(sh('wc -lw documents/notes.txt')).toEqual(['  6  22 documents/notes.txt']);
+    expect(sh('wc documents/notes.txt documents/rapport.md')).toEqual([
+      '  6  22 143 documents/notes.txt', ' 10  28 180 documents/rapport.md', ' 16  50 323 total',
+    ]);
+    expect(sh('wc -c projets/.env .bashrc')).toEqual(['224 projets/.env', '108 .bashrc', '332 total']);
+    expect(sh('cat documents/notes.txt | wc')).toEqual(['      6      22     143']);
+    expect(sh('cat documents/notes.txt | wc -l')).toEqual(['6']);
+    expect(sh('cat documents/notes.txt | wc -lc')).toEqual(['      6     143']);
+    expect(sh('wc -m documents/notes.txt')).toEqual(['141 documents/notes.txt']);
+    expect(sh('wc -L documents/notes.txt')).toEqual(['31 documents/notes.txt']);
+    expect(sh('wc -l documents/notes.txt absent')).toEqual(['  6 documents/notes.txt', 'wc: absent: No such file or directory', '  6 total']);
+    expect(sh('wc documents')).toEqual(['wc: documents: Is a directory', '      0       0       0 documents']);
+    expect(sh('wc -x documents/notes.txt')).toEqual(["wc: invalid option -- 'x'", "Try 'wc --help' for more information."]);
+  });
+
   it('macOS shows the GNU behaviour too (no Mac to check the BSD tools on)', () => {
     expect(sh('sort fruits.txt', 'macos')).toEqual(sh('sort fruits.txt'));
     expect(sh('cut -d, -f1 ages.csv', 'macos')).toEqual(['alice', 'bob', 'charlie', 'david']);
+  });
+});
+
+// ─── find, xargs, rmdir, grep -l ────────────────────────────────────────────
+// Expected values: GNU findutils 4.9.0, coreutils 9.4 and grep 3.11 on Ubuntu 24.04 (WSL 2),
+// 2 October 2026, in a copy of the simulator's home generated from createInitialState.
+// Order: ext4 lists a folder in an order that changes between machines; the simulator
+// follows NTFS (Git Bash's find on the same files): by name, case ignored.
+describe('find, xargs, rmdir (Phase 5d, lot 1)', () => {
+  const sh = (cmd: string, env: 'linux' | 'macos' | 'windows' = 'linux', state = createInitialState()) =>
+    processCommand(state, cmd, env).lines.map((l) => l.text);
+
+  it('find walks the tree depth first, folders by name (Git Bash on NTFS)', () => {
+    expect(sh('find .')).toEqual([
+      '.', './.bashrc', './.profile', './.zshrc', './documents', './documents/notes.txt', './documents/rapport.md',
+      './downloads', './projets', './projets/.env', './projets/README.md', './projets/script.sh',
+    ]);
+    expect(sh('find documents projets')).toEqual([
+      'documents', 'documents/notes.txt', 'documents/rapport.md', 'projets', 'projets/.env', 'projets/README.md', 'projets/script.sh',
+    ]);
+    expect(sh('find documents/ -type f')).toEqual(['documents/notes.txt', 'documents/rapport.md']);
+    expect(sh('find -name "*.md"')).toEqual(['./documents/rapport.md', './projets/README.md']);
+  });
+
+  it('find tests: -name, -iname, -path, -type, -maxdepth, -mindepth, -empty, -size, !, -o, parentheses', () => {
+    expect(sh('find . -name "*.txt"')).toEqual(['./documents/notes.txt']);
+    expect(sh("find . -iname 'readme*'")).toEqual(['./projets/README.md']);
+    expect(sh('find . -name "*.TXT"')).toEqual([]);
+    expect(sh("find . -name 'not?s.txt'")).toEqual(['./documents/notes.txt']);
+    expect(sh("find . -name '[nr]*'")).toEqual(['./documents/notes.txt', './documents/rapport.md']);
+    expect(sh('find . -path "./projets/*"')).toEqual(['./projets/.env', './projets/README.md', './projets/script.sh']);
+    expect(sh('find . -type d')).toEqual(['.', './documents', './downloads', './projets']);
+    expect(sh('find . -maxdepth 1 -type d')).toEqual(['.', './documents', './downloads', './projets']);
+    expect(sh('find . -mindepth 1 -maxdepth 1 -type f')).toEqual(['./.bashrc', './.profile', './.zshrc']);
+    // "." is named "." and matches .*
+    expect(sh("find . -maxdepth 1 -name '.*'")).toEqual(['.', './.bashrc', './.profile', './.zshrc']);
+    expect(sh('find . -maxdepth 0')).toEqual(['.']);
+    expect(sh('find . -mindepth 2')).toEqual([
+      './documents/notes.txt', './documents/rapport.md', './projets/.env', './projets/README.md', './projets/script.sh',
+    ]);
+    expect(sh('find . -empty')).toEqual(['./downloads']);
+    expect(sh('find . -type f -empty')).toEqual([]);
+    expect(sh('find . -name "*.txt" -o -name "*.md"')).toEqual(['./documents/notes.txt', './documents/rapport.md', './projets/README.md']);
+    expect(sh('find . \\( -name "*.txt" -o -name "*.md" \\) -type f')).toEqual(['./documents/notes.txt', './documents/rapport.md', './projets/README.md']);
+    expect(sh('find . ! -name "*.txt" -type f')).toEqual(sh('find . -not -name "*.txt" -type f'));
+    expect(sh('find . ! -name "*.txt" -type f')).toEqual([
+      './.bashrc', './.profile', './.zshrc', './documents/rapport.md', './projets/.env', './projets/README.md', './projets/script.sh',
+    ]);
+    expect(sh("find . -type f -name '*.sh' -o -type d -name 'doc*'")).toEqual(['./documents', './projets/script.sh']);
+    // Sizes round up to the unit: 512-byte blocks by default, -1k only matches empty files.
+    expect(sh('find . -size +100c -type f')).toEqual([
+      './.bashrc', './.zshrc', './documents/notes.txt', './documents/rapport.md', './projets/.env', './projets/README.md',
+    ]);
+    expect(sh('find . -size -1k -type f')).toEqual([]);
+    expect(sh('find . -size 1 -type f')).toHaveLength(8);
+    expect(sh("find . -regex '.*md'")).toEqual(['./documents/rapport.md', './projets/README.md']);
+    expect(sh('find . -type l')).toEqual([]);
+  });
+
+  it('find actions: -exec with \\; and +, -print, -delete', () => {
+    expect(sh('find documents -name notes.txt -exec cat {} \\;')).toEqual([
+      'Mes notes importantes', 'Tâches du jour:', '1. Apprendre les commandes bash', '2. Pratiquer la navigation',
+      '3. Maîtriser les permissions', 'Fin du fichier',
+    ]);
+    expect(sh('find . -name "*.md" -exec wc -l {} +')).toEqual([' 10 ./documents/rapport.md', '  6 ./projets/README.md', ' 16 total']);
+    expect(sh("find . -name '*.md' -print -exec wc -l {} \\;")).toEqual([
+      './documents/rapport.md', '10 ./documents/rapport.md', './projets/README.md', '6 ./projets/README.md',
+    ]);
+    expect(sh("find . -name '*.txt' -exec grep -l Apprendre {} +")).toEqual(['./documents/notes.txt']);
+    expect(sh('find . -name "*.txt" -delete; find . -name "*.txt" | wc -l')).toEqual(['0']);
+    expect(sh('find downloads -empty -delete; ls -d downloads')).toEqual(["ls: cannot access 'downloads': No such file or directory"]);
+    expect(sh('find documents -delete; ls')).toEqual(['downloads  projets']);
+  });
+
+  it('find fails like GNU find', () => {
+    expect(sh('find absent')).toEqual(['find: ‘absent’: No such file or directory']);
+    expect(sh('find . -name')).toEqual(["find: missing argument to `-name'"]);
+    expect(sh('find . -name a -name')).toEqual(["find: missing argument to `-name'"]);
+    expect(sh('find . -foo')).toEqual(["find: unknown predicate `-foo'"]);
+    expect(sh('find . -type x')).toEqual(['find: Unknown argument to -type: x']);
+    expect(sh('find . -exec echo {}')).toEqual(["find: missing argument to `-exec'"]);
+    expect(sh('find . -maxdepth -1')).toEqual(['find: Expected a positive decimal integer argument to -maxdepth, but got ‘-1’']);
+    expect(sh('find . -newer x')).toEqual(['find: ‘x’: No such file or directory']);
+    expect(sh('find . absent')[12]).toBe('find: ‘absent’: No such file or directory');
+    expect(processCommand(createInitialState(), 'find . -mtime -1', 'linux').lines.map((l) => l.type)).toEqual(['info']);
+  });
+
+  it('xargs turns piped lines into arguments', () => {
+    expect(sh('find . -name "*.txt" | xargs wc -l')).toEqual(['6 ./documents/notes.txt']);
+    expect(sh('echo "a b c" | xargs echo')).toEqual(['a b c']);
+    expect(sh('echo "a b c" | xargs -n 1 echo')).toEqual(['a', 'b', 'c']);
+    expect(sh('echo "a b" | xargs -t -n 1 echo')).toEqual(['echo a', 'a', 'echo b', 'b']);
+    expect(sh("echo 'documents/notes.txt' | xargs -I {} cp {} copie.txt; ls copie.txt")).toEqual(['copie.txt']);
+    expect(sh('echo "x y" | xargs -I {} echo [{}]')).toEqual(['[x y]']);
+    expect(sh('echo | xargs echo vide')).toEqual(['vide']);
+    expect(sh('find . -name "*.md" | xargs rm; find . -name "*.md" | wc -l')).toEqual(['0']);
+    expect(sh('echo a | xargs -z echo')).toEqual(["xargs: invalid option -- 'z'", "Try 'xargs --help' for more information."]);
+    expect(sh('echo a b | xargs -n 0 echo')).toEqual(['xargs: value 0 for -n option should be >= 1', "Try 'xargs --help' for more information."]);
+    expect(sh('echo a | xargs -I')).toEqual(["xargs: option requires an argument -- 'I'", "Try 'xargs --help' for more information."]);
+    expect(sh('echo "it\'s" | xargs echo')).toEqual(['xargs: unmatched single quote; by default quotes are special to xargs unless you use the -0 option']);
+    expect(sh('echo a | xargs nexistepas')).toEqual(['xargs: nexistepas: No such file or directory']);
+  });
+
+  it('rmdir removes empty folders only; grep -l, -L, -c on files', () => {
+    expect(sh('rmdir downloads; ls')).toEqual(['documents  projets']);
+    expect(sh('rmdir documents')).toEqual(["rmdir: failed to remove 'documents': Directory not empty"]);
+    expect(sh('rmdir documents/x')).toEqual(["rmdir: failed to remove 'documents/x': No such file or directory"]);
+    expect(sh('grep -l Apprendre documents/notes.txt documents/rapport.md')).toEqual(['documents/notes.txt']);
+    expect(sh('grep -L Apprendre documents/notes.txt documents/rapport.md')).toEqual(['documents/rapport.md']);
+    expect(sh('grep -c Apprendre documents/notes.txt documents/rapport.md')).toEqual(['documents/notes.txt:1', 'documents/rapport.md:0']);
+    expect(sh('grep -li apprendre documents/notes.txt')).toEqual(['documents/notes.txt']);
+    expect(processCommand(createInitialState(), 'grep -l Apprendre documents/rapport.md', 'linux').status).toBe(1);
+  });
+
+  it('Windows: find is find.exe, a text search', () => {
+    // Captured on a French Windows: « Fichier introuvable - *.txt » and « FIND : format incorrect de paramètre ».
+    const named = processCommand(createInitialState(), 'find . -name "*.txt"', 'windows');
+    expect(named.lines[0]).toEqual({ text: 'File not found - *.txt', type: 'error' });
+    expect(named.status).toBe(2);
+    expect(processCommand(createInitialState(), 'find . -type f', 'windows').lines[0].text).toBe('FIND: Parameter format not correct');
+  });
+
+  // Second audit (terminal-fidelity-auditor, 2 October 2026); expected values captured on Ubuntu the same evening.
+  it('audit fixes: -delete sees the tree as it is now, Emacs -regex, find errors, documents//', () => {
+    expect(sh('mkdir -p x/y; find x -type d -empty -delete; ls -d x')).toEqual(["ls: cannot access 'x': No such file or directory"]);
+    // "." is never reported; the folders that keep files are.
+    expect(sh('find . -type d -delete')).toEqual([
+      'find: cannot delete ‘./documents’: Directory not empty', 'find: cannot delete ‘./projets’: Directory not empty',
+    ]);
+    expect(sh("find . -regex '.*\\.\\(md\\|sh\\)'")).toEqual(['./documents/rapport.md', './projets/README.md', './projets/script.sh']);
+    expect(sh("find . -regex '.*\\.(md\\|sh)'")).toEqual([]);
+    expect(sh('find . -size abc')).toEqual(["find: Invalid argument `abc' to -size"]);
+    expect(sh('find . -name x -a')).toEqual(["find: expected an expression after '-a'"]);
+    expect(sh('find . -name x -o')).toEqual(["find: expected an expression after '-o'"]);
+    expect(sh('find . !')).toEqual(["find: expected an expression after '!'"]);
+    expect(sh('find documents// -type f')).toEqual(['documents//notes.txt', 'documents//rapport.md']);
+    expect(sh('find . -name notes.txt -exec nosuchcmd {} \\;')).toEqual(['find: ‘nosuchcmd’: No such file or directory']);
+  });
+
+  // Code review, 2 October 2026; expected values captured on Ubuntu.
+  it('review fixes: bad class, -type list, builtins under -exec/xargs, an error beats a note', () => {
+    expect(sh("find . -name '[z-a]'")).toEqual([]);
+    expect(sh('find . -type f,d -maxdepth 1')).toEqual(['.', './.bashrc', './.profile', './.zshrc', './documents', './downloads', './projets']);
+    expect(sh('find . -type x,f')).toEqual(['find: Unknown argument to -type: x']);
+    const s = createInitialState();
+    const cd = processCommand(s, 'find . -maxdepth 0 -exec cd documents \\;', 'linux');
+    expect(cd.lines.map((l) => l.text)).toEqual(['find: ‘cd’: No such file or directory']);
+    expect(cd.newState.cwd).toEqual(s.cwd);
+    expect(sh('find . -maxdepth 0 -exec export X=1 \\;')).toEqual(['find: ‘export’: No such file or directory']);
+    expect(sh('echo documents | xargs cd || echo KO')).toEqual(['xargs: cd: No such file or directory', 'KO']);
+    expect(sh('find . -mtime 1 -bogus')).toEqual(["find: unknown predicate `-bogus'"]);
+  });
+
+  it('audit fixes: rmdir -p, -v, --ignore-fail-on-non-empty, ".", options', () => {
+    expect(sh('mkdir -p a/b/c; rmdir -p a/b/c; ls -d a')).toEqual(["ls: cannot access 'a': No such file or directory"]);
+    expect(sh('mkdir -p a/b/c; touch a/x; rmdir -p a/b/c; ls a')).toEqual(["rmdir: failed to remove directory 'a': Directory not empty", 'x']);
+    expect(sh('mkdir -p a/b/c; rmdir -pv a/b/c')).toEqual([
+      "rmdir: removing directory, 'a/b/c'", "rmdir: removing directory, 'a/b'", "rmdir: removing directory, 'a'",
+    ]);
+    expect(sh('rmdir -v downloads')).toEqual(["rmdir: removing directory, 'downloads'"]);
+    expect(sh('rmdir .')).toEqual(["rmdir: failed to remove '.': Invalid argument"]);
+    expect(sh('rmdir -z downloads')).toEqual(["rmdir: invalid option -- 'z'", "Try 'rmdir --help' for more information."]);
+    expect(sh('rmdir --ignore-fail-on-non-empty documents')).toEqual([]);
+    expect(sh('rmdir')).toEqual(['rmdir: missing operand', "Try 'rmdir --help' for more information."]);
+  });
+
+  it('audit fixes: xargs -n x, -i, --max-args, quoted -t; bash \\" in double quotes; grep -L status', () => {
+    expect(sh('echo a b c | xargs -n x echo')).toEqual(['xargs: invalid number "x" for -n option', "Try 'xargs --help' for more information."]);
+    expect(sh('echo a b | xargs -i echo [{}]')).toEqual(['[a b]']);
+    expect(sh('echo a b c | xargs --max-args=2 echo')).toEqual(['a b', 'c']);
+    expect(sh("echo 'a b' | xargs -t -I X echo X hello")).toEqual(["echo 'a b' hello", 'a b hello']);
+    expect(sh('echo "say \\"hi\\""')).toEqual(['say "hi"']);
+    // grep 3.11: -L exits 0 when a line matched, whether or not a name was listed.
+    expect(processCommand(createInitialState(), 'grep -L Fin documents/notes.txt', 'linux').status).toBe(0);
+    const listed = processCommand(createInitialState(), 'grep -L zzz documents/notes.txt', 'linux');
+    expect(listed.lines.map((l) => l.text)).toEqual(['documents/notes.txt']);
+    expect(listed.status).toBe(1);
   });
 });

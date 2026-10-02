@@ -15,7 +15,7 @@ import type { SelectedEnvironment } from '../context/EnvironmentContext';
 // `src/test/landingTotals.test.ts` re-imports both and fails if these
 // constants get out of sync with the actual catalogue/curriculum.
 export const TOTAL_LESSONS = 66;
-export const TOTAL_COMMANDS = 79;
+export const TOTAL_COMMANDS = 81;
 /** Count of environments with `status: 'active'` in `types/curriculum.ts`. */
 export const ACTIVE_ENVIRONMENTS_COUNT = 3;
 
@@ -143,7 +143,7 @@ export const ROADMAP_IN_PROGRESS: readonly RoadmapGroup[] = [
   {
     group: 'Des bases au niveau intermédiaire',
     items: [
-      'Trier, compter et découper du texte : sort, uniq et cut sont là ; find, xargs et diff arrivent',
+      'Chercher, trier, compter et découper : sort, uniq, cut, find et xargs sont là ; diff arrive',
       'Archives et disque, sed et awk, les éditeurs nano et vim',
       'Enquêter dans des journaux, écrire ses premiers scripts',
       'Une mission finale sans indice, puis une page « Et après ? » vers des labos gratuits pour chaque métier',
