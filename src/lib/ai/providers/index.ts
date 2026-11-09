@@ -89,6 +89,7 @@ const MODEL_LABELS: ReadonlyArray<readonly [string, string]> = [
   ['gpt-5-nano', 'GPT-5 nano'],
   ['gpt-5', 'GPT-5'],
   // Gemini frontier 2025-2026 (more specific first)
+  ['gemini-3.6-flash', 'Gemini 3.6 Flash'],
   ['gemini-3.5-flash', 'Gemini 3.5 Flash'],
   ['gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite'],
   ['gemini-2.5-flash', 'Gemini 2.5 Flash'],

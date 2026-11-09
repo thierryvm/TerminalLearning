@@ -91,6 +91,7 @@ describe('getModelLabel — short human-friendly labels', () => {
   });
 
   it('normalises Gemini frontier (2.5 Flash Lite + 3.5 Flash + 2.5 Pro)', () => {
+    expect(getModelLabel('gemini-3.6-flash')).toBe('Gemini 3.6 Flash');
     expect(getModelLabel('google/gemini-3.5-flash')).toBe('Gemini 3.5 Flash');
     expect(getModelLabel('google/gemini-2.5-flash-lite')).toBe('Gemini 2.5 Flash Lite');
     expect(getModelLabel('google/gemini-2.5-flash')).toBe('Gemini 2.5 Flash');

@@ -6,7 +6,13 @@
  * with `contents` + `systemInstruction`, no [DONE] sentinel.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { chat, geminiUrl, GEMINI_DEFAULT_MODEL } from '@/lib/ai/providers/gemini';
+import {
+  chat,
+  geminiUrl,
+  GEMINI_DEFAULT_MODEL,
+  GEMINI_MAX_TOKENS,
+  supportsThinkingLevel,
+} from '@/lib/ai/providers/gemini';
 
 const FAKE_KEY = 'AIzaFAKE_TEST_KEY_DO_NOT_USE_0123';
 
@@ -181,5 +187,51 @@ describe('Gemini chat — streaming + errors', () => {
         messages: [{ role: 'user', content: 'hi' }],
       }),
     ).rejects.toMatchObject({ name: 'ChatError', code: 'rate_limited', status: 429 });
+  });
+});
+
+describe('Gemini chat — default model and thinking level', () => {
+  type Body = { generationConfig: { maxOutputTokens: number; thinkingConfig?: unknown } };
+  async function sentBody(model: string): Promise<Body> {
+    fetchSpy.mockResolvedValue(makeStreamResponse([geminiFrame('ok')]));
+    await collect(
+      await chat({
+        apiKey: FAKE_KEY,
+        model,
+        systemPrompt: 'sys',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    );
+    const init = fetchSpy.mock.calls[0]![1] as RequestInit;
+    return JSON.parse(init.body as string) as Body;
+  }
+
+  it('defaults to gemini-3.6-flash (gemini-2.0-flash was shut down on 1 June 2026)', () => {
+    expect(GEMINI_DEFAULT_MODEL).toBe('gemini-3.6-flash');
+  });
+
+  it('asks Gemini 3+ for minimal thinking so the 1024-token cap stays for the answer', async () => {
+    const body = await sentBody(GEMINI_DEFAULT_MODEL);
+    expect(body.generationConfig).toEqual({
+      maxOutputTokens: GEMINI_MAX_TOKENS,
+      thinkingConfig: { thinkingLevel: 'MINIMAL' },
+    });
+  });
+
+  it('sends no thinkingConfig to models before Gemini 3, which would reject it', async () => {
+    const body = await sentBody('gemini-2.5-flash-lite');
+    expect(body.generationConfig).toEqual({ maxOutputTokens: GEMINI_MAX_TOKENS });
+  });
+
+  it('detects Gemini 3 and later from the model id', () => {
+    expect(supportsThinkingLevel('gemini-3.6-flash')).toBe(true);
+    expect(supportsThinkingLevel('gemini-3.8-flash')).toBe(true);
+    expect(supportsThinkingLevel('gemini-4-argon')).toBe(true);
+    expect(supportsThinkingLevel('Gemini-3.5-Flash-Lite')).toBe(true);
+    expect(supportsThinkingLevel('gemini-2.5-pro')).toBe(false);
+    expect(supportsThinkingLevel('gemini-2.0-flash')).toBe(false);
+    expect(supportsThinkingLevel('gemini-1.5-flash')).toBe(false);
+    expect(supportsThinkingLevel('models/gemini-3.6-flash')).toBe(false);
+    expect(supportsThinkingLevel('')).toBe(false);
   });
 });

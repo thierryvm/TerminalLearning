@@ -21,8 +21,26 @@ import { ChatError, type ChatErrorCode, type ChatParams, type ChatStream } from 
 import { streamSseEvents } from './_sse';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.0-flash';
+// `gemini-2.0-flash` was shut down by Google on 1 June 2026; its official
+// replacement is `gemini-3.6-flash` (stable, no shutdown date announced on
+// 9 November 2026). Source: Gemini API deprecations page.
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.6-flash';
 export const GEMINI_MAX_TOKENS = 1024;
+
+/**
+ * Gemini 3+ models think by default (`gemini-3.6-flash`: medium), and
+ * thinking tokens count against `maxOutputTokens`: with our 1024 cap the
+ * answer could come back truncated or empty. `MINIMAL` keeps the tutor's
+ * previous behaviour (gemini-2.0-flash did not think). Earlier models reject
+ * `thinkingLevel` with an error, so it is only sent to Gemini 3 and later
+ * (a deploy may still point `VITE_AI_TUTOR_GEMINI_MODEL` at a 2.5 model).
+ */
+export const GEMINI_THINKING_LEVEL = 'MINIMAL';
+
+export function supportsThinkingLevel(model: string): boolean {
+  const match = /^gemini-(\d+)/.exec(model.toLowerCase());
+  return match !== null && Number(match[1]) >= 3;
+}
 
 interface GeminiFrame {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
@@ -69,7 +87,12 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
   const body = JSON.stringify({
     contents,
     systemInstruction: { parts: [{ text: params.systemPrompt }] },
-    generationConfig: { maxOutputTokens: GEMINI_MAX_TOKENS },
+    generationConfig: {
+      maxOutputTokens: GEMINI_MAX_TOKENS,
+      ...(supportsThinkingLevel(params.model)
+        ? { thinkingConfig: { thinkingLevel: GEMINI_THINKING_LEVEL } }
+        : {}),
+    },
   });
 
   let res: Response;
