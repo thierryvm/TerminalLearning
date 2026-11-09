@@ -38,6 +38,7 @@ import {
 } from '@/lib/ai/keyManager';
 import { getModelChoices, resolveModel, saveModelChoice } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
+import { subscribeToModelChoice } from '@/lib/hooks/useResolvedModel';
 import {
   CONSENT_KEY,
   readConsentRecord,
@@ -104,6 +105,8 @@ export function AiSettings() {
   const [statuses, setStatuses] = useState<readonly ProviderStatus[]>([]);
   const [consent, setConsent] = useState<ConsentRecord | null>(null);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
+  /** Provider whose last model choice could not be stored (storage blocked). */
+  const [modelSaveError, setModelSaveError] = useState<Provider | null>(null);
 
   // Refresh local-storage / IndexedDB-backed state. Called on mount and
   // whenever a save / forget / revoke action mutates that state so the UI
@@ -114,10 +117,12 @@ export function AiSettings() {
         provider: p,
         configured: await kmHasKey(p),
         encrypted: await kmIsEncrypted(p),
-        model: resolveModel(p),
       })),
     );
-    setStatuses(next);
+    // Resolve the model only after the IndexedDB awaits: a choice made while
+    // they were pending is already in localStorage and must not be replaced
+    // by an older snapshot.
+    setStatuses(next.map((s) => ({ ...s, model: resolveModel(s.provider) })));
     setConsent(readConsentRecord());
   }, []);
 
@@ -160,10 +165,20 @@ export function AiSettings() {
   // right away, from what `resolveModel` now returns, so the UI only shows a
   // choice that was actually stored.
   const onModelChange = useCallback((p: Provider, model: string) => {
-    saveModelChoice(p, model);
+    const saved = saveModelChoice(p, model);
+    setModelSaveError(saved ? null : p);
     const effective = resolveModel(p);
     setStatuses((cur) => cur.map((s) => (s.provider === p ? { ...s, model: effective } : s)));
   }, []);
+
+  // A choice changed in another tab: show what the tutor now uses.
+  useEffect(
+    () =>
+      subscribeToModelChoice(() => {
+        setStatuses((cur) => cur.map((s) => ({ ...s, model: resolveModel(s.provider) })));
+      }),
+    [],
+  );
 
   return (
     <div
@@ -307,6 +322,13 @@ export function AiSettings() {
                         );
                       })}
                     </div>
+                    {modelSaveError === s.provider && (
+                      <p role="alert" className="mt-2 text-xs text-[var(--github-red)]">
+                        Ton choix n’a pas pu être enregistré : ce navigateur
+                        bloque le stockage local. Le modèle coché reste celui
+                        qui est utilisé.
+                      </p>
+                    )}
                     <p className="mt-2 text-xs text-[var(--github-text-secondary)]">
                       Tu paies les questions avec ta propre clé, au tarif du
                       fournisseur.

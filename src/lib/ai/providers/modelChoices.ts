@@ -48,7 +48,7 @@ export const MODEL_CHOICES: Readonly<Partial<Record<Provider, readonly ModelChoi
     {
       id: 'anthropic/claude-opus-5.5',
       label: 'Claude Opus 5.5',
-      hint: 'Réponses plus poussées · environ 2 fois plus cher',
+      hint: 'Réponses plus poussées · bien plus cher : tarif doublé, et sa réflexion avant chaque réponse est payante aussi',
     },
   ],
   anthropic: [
@@ -60,7 +60,7 @@ export const MODEL_CHOICES: Readonly<Partial<Record<Provider, readonly ModelChoi
     {
       id: 'claude-opus-5-5',
       label: 'Claude Opus 5.5',
-      hint: 'Réponses plus poussées · environ 2 fois plus cher',
+      hint: 'Réponses plus poussées · bien plus cher : tarif doublé, et sa réflexion avant chaque réponse est payante aussi',
     },
   ],
   // Flash-Lite: $0.30 / $2.50 per million tokens. 3.6 Flash: $0.75 / $3.75

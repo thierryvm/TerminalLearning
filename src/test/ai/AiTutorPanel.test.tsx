@@ -10,6 +10,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  act,
   render as rtlRender,
   screen,
   waitFor,
@@ -56,6 +57,10 @@ let fetchSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  // Default-model checks must not depend on the runner's env (Sourcery #420).
+  for (const p of ['OPENROUTER', 'ANTHROPIC', 'OPENAI', 'GEMINI']) {
+    vi.stubEnv(`VITE_AI_TUTOR_${p}_MODEL`, '');
+  }
   fetchSpy = vi.spyOn(globalThis, 'fetch') as ReturnType<typeof vi.spyOn>;
 });
 
@@ -291,6 +296,24 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
 
     const heading = await screen.findByRole('heading', { level: 2 });
     expect(heading.textContent).toContain('Opus 5.5');
+  });
+
+  it('header follows a model picked in another tab while the panel stays open', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+    const heading = await screen.findByRole('heading', { level: 2 });
+    expect(heading.textContent).toContain('Sonnet 5.5');
+
+    // Another tab writes the choice; this tab only receives a `storage` event.
+    localStorage.setItem('ai_tutor_model_openrouter', 'anthropic/claude-opus-5.5');
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'ai_tutor_model_openrouter' }));
+    });
+
+    await waitFor(() => expect(heading.textContent).toContain('Opus 5.5'));
   });
 });
 

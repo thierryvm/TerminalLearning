@@ -9,7 +9,7 @@
  */
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
@@ -33,11 +33,25 @@ function renderSettings() {
   );
 }
 
+// The deploy-time overrides would change which model is "the default":
+// neutralise them so these tests check the code's defaults whatever the
+// runner's environment says (Sourcery on #420). Empty = unset for
+// `resolveModel`.
+const MODEL_ENV_VARS = [
+  'VITE_AI_TUTOR_OPENROUTER_MODEL',
+  'VITE_AI_TUTOR_ANTHROPIC_MODEL',
+  'VITE_AI_TUTOR_OPENAI_MODEL',
+  'VITE_AI_TUTOR_GEMINI_MODEL',
+] as const;
+
 beforeEach(() => {
   localStorage.clear();
+  for (const name of MODEL_ENV_VARS) vi.stubEnv(name, '');
 });
 
 afterEach(async () => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   await Promise.all([
     kmForgetKey('openrouter'),
     kmForgetKey('anthropic'),
@@ -292,5 +306,39 @@ describe('AiSettings — model choice', () => {
     await screen.findByText('OpenAI');
     expect(screen.queryByRole('group', { name: /Modèle utilisé avec OpenAI/ })).not.toBeInTheDocument();
     expect(screen.getAllByRole('group', { name: /Modèle utilisé avec/ })).toHaveLength(3);
+  });
+
+  it('explains in French when the browser refuses to store the choice', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    const realSetItem = localStorage.setItem.bind(localStorage);
+    vi.spyOn(localStorage, 'setItem').mockImplementation((k: string, v: string) => {
+      if (k.startsWith(MODEL_KEY_PREFIX)) throw new DOMException('blocked', 'SecurityError');
+      realSetItem(k, v);
+    });
+
+    await user.click(within(group).getByRole('radio', { name: /Gemini 3\.6 Flash/ }));
+
+    expect(within(group).getByRole('alert')).toHaveTextContent(/n’a pas pu être enregistré/);
+    expect(within(group).getByRole('radio', { name: /Gemini 3\.5 Flash-Lite/ })).toBeChecked();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  it('follows a choice made in another tab', async () => {
+    renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    await waitFor(() =>
+      expect(within(group).getByRole('radio', { name: /Gemini 3\.5 Flash-Lite/ })).toBeChecked(),
+    );
+
+    localStorage.setItem(MODEL_KEY_PREFIX + 'gemini', 'gemini-3.6-flash');
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: MODEL_KEY_PREFIX + 'gemini' }));
+    });
+
+    await waitFor(() =>
+      expect(within(group).getByRole('radio', { name: /Gemini 3\.6 Flash/ })).toBeChecked(),
+    );
   });
 });

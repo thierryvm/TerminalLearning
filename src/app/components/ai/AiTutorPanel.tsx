@@ -27,10 +27,11 @@ import {
   PROVIDER_KEY,
   type Provider,
 } from '@/lib/ai/keyManager';
-import { getModelLabel, resolveModel } from '@/lib/ai/providers';
+import { getModelLabel } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
 import type { TutorLang } from '@/lib/ai/systemPrompt';
 import { useAiTutor } from '@/lib/ai/useAiTutor';
+import { useResolvedModel } from '@/lib/hooks/useResolvedModel';
 import type { UserRole } from '@/app/types/database';
 
 import { AiConsentModal } from './AiConsentModal';
@@ -107,9 +108,9 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
   // `VITE_AI_TUTOR_<PROVIDER>_MODEL`, then `DEFAULT_MODELS`. Same helper as
   // `AiSettings`, so the two surfaces never disagree. Not memoised on purpose:
   // the choice can change on the Settings page while this panel stays
-  // mounted, and opening the panel re-renders it, which re-reads the choice
-  // (one localStorage read).
-  const model = resolveModel(provider);
+  // mounted: `useResolvedModel` re-reads it on every render and listens to
+  // the `storage` event, so a change made in another tab applies at once.
+  const model = useResolvedModel(provider);
 
   // THI-148 V1.0.1 — static, public-only platform overview injected as
   // <platform_context>. Same trust class as lessonContext (curriculum data,

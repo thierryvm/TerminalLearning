@@ -129,6 +129,19 @@ describe('chat — request shape', () => {
     ]);
   });
 
+  it('caps the output of Opus 5.5 (thinking always on) and leaves other models unchanged', async () => {
+    const send = async (model: string) => {
+      fetchSpy.mockResolvedValue(makeStreamResponse(['data: [DONE]\n\n']));
+      await collect(await chat({ apiKey: FAKE_KEY, model, systemPrompt: 'S', messages: [] }));
+      const init = fetchSpy.mock.calls.at(-1)![1] as RequestInit;
+      return JSON.parse(init.body as string) as { max_tokens?: number };
+    };
+
+    expect((await send('anthropic/claude-opus-5.5')).max_tokens).toBe(4096);
+    expect(await send(OPENROUTER_DEFAULT_MODEL)).not.toHaveProperty('max_tokens');
+    expect(await send('some/other-model')).not.toHaveProperty('max_tokens');
+  });
+
   it('never leaks the API key into the request URL or body', async () => {
     fetchSpy.mockResolvedValue(makeStreamResponse(['data: [DONE]\n\n']));
 

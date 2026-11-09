@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MODEL_KEY_PREFIX } from '@/lib/ai/keyManager';
 import {
@@ -14,6 +14,20 @@ import {
   resolveModel,
   saveModelChoice,
 } from '@/lib/ai/providers';
+
+// Neutralise the deploy-time overrides so the default checks below test the
+// code, whatever the runner's environment holds (Sourcery on #420). An empty
+// value counts as unset; tests that need an override stub it again.
+beforeEach(() => {
+  for (const name of [
+    'VITE_AI_TUTOR_OPENROUTER_MODEL',
+    'VITE_AI_TUTOR_ANTHROPIC_MODEL',
+    'VITE_AI_TUTOR_OPENAI_MODEL',
+    'VITE_AI_TUTOR_GEMINI_MODEL',
+  ]) {
+    vi.stubEnv(name, '');
+  }
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -32,7 +46,7 @@ describe('resolveModel — providers without a picker (OpenAI): env override > f
   });
 
   it('falls back to DEFAULT_MODELS when env override is unset', () => {
-    // No stubEnv call — the var is undefined in the test environment.
+    // Reset to unset in `beforeEach` (empty string, same as unset).
     expect(resolveModel('openai')).toBe(OPENAI_DEFAULT_MODEL);
   });
 });
