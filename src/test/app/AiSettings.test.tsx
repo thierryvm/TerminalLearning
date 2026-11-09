@@ -16,9 +16,10 @@ import { MemoryRouter } from 'react-router';
 import { AiSettings } from '@/app/components/AiSettings';
 import {
   forgetKey as kmForgetKey,
+  MODEL_KEY_PREFIX,
   saveKey as kmSaveKey,
 } from '@/lib/ai/keyManager';
-import { OPENROUTER_DEFAULT_MODEL } from '@/lib/ai/providers';
+import { OPENAI_DEFAULT_MODEL, OPENROUTER_DEFAULT_MODEL } from '@/lib/ai/providers';
 import { CONSENT_KEY, CONSENT_TTL_MS, CONSENT_VERSION } from '@/lib/ai/useAiTutor';
 
 const FAKE_OPENROUTER = 'sk-or-v1-FAKE_TEST_KEY_DO_NOT_USE_0123456789';
@@ -194,15 +195,24 @@ describe('AiSettings — accessibility landmarks', () => {
 // billed for the paid model the Drawer was actually calling.
 // Post-fix: both surfaces resolve the same model via `resolveModel()`.
 describe('AiSettings — Settings/Drawer model consistency (regression)', () => {
-  it('displays the env override value when set (not the hardcoded fallback)', async () => {
-    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+  it('checks the env override when it is one of the offered models (not the hardcoded fallback)', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-opus-5.5');
     try {
       renderSettings();
-      await screen.findByText('OpenRouter');
-      // The env override must be visible inside the OpenRouter row.
-      expect(await screen.findByText('anthropic/claude-sonnet-4-6')).toBeInTheDocument();
-      // The hardcoded fallback must NOT be visible when override is set.
-      expect(screen.queryByText(OPENROUTER_DEFAULT_MODEL)).not.toBeInTheDocument();
+      const group = await screen.findByRole('group', { name: /Modèle utilisé avec OpenRouter/ });
+      expect(within(group).getByRole('radio', { name: /Claude Opus 5\.5/ })).toBeChecked();
+      expect(within(group).getByRole('radio', { name: /Claude Sonnet 5\.5/ })).not.toBeChecked();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('displays the OpenAI env override as text (OpenAI has no picker)', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_OPENAI_MODEL', 'gpt-4o');
+    try {
+      renderSettings();
+      expect(await screen.findByText('gpt-4o')).toBeInTheDocument();
+      expect(screen.queryByText(OPENAI_DEFAULT_MODEL)).not.toBeInTheDocument();
     } finally {
       vi.unstubAllEnvs();
     }
@@ -210,8 +220,11 @@ describe('AiSettings — Settings/Drawer model consistency (regression)', () => 
 
   it('falls back to the hardcoded default when no env override is set', async () => {
     renderSettings();
-    await screen.findByText('OpenRouter');
-    expect(await screen.findByText(OPENROUTER_DEFAULT_MODEL)).toBeInTheDocument();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec OpenRouter/ });
+    const sonnet = within(group).getByRole('radio', { name: /Claude Sonnet 5\.5/ });
+    expect(sonnet).toBeChecked();
+    expect(sonnet).toHaveAttribute('value', OPENROUTER_DEFAULT_MODEL);
+    expect(await screen.findByText(OPENAI_DEFAULT_MODEL)).toBeInTheDocument();
   });
 
   it('uses the "Modèle utilisé" label (transparency wording, not "défaut")', async () => {
@@ -220,5 +233,64 @@ describe('AiSettings — Settings/Drawer model consistency (regression)', () => 
     expect(screen.getAllByText(/Modèle utilisé/i).length).toBeGreaterThan(0);
     // The pre-fix wording must NOT appear anymore on the page.
     expect(screen.queryByText(/Modèle par défaut/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('AiSettings — model choice', () => {
+  it('offers Gemini 3.5 Flash-Lite (default, cheapest) and Gemini 3.6 Flash, with a cost hint', async () => {
+    renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    const radios = within(group).getAllByRole('radio');
+    expect(radios).toHaveLength(2);
+    const lite = within(group).getByRole('radio', { name: /Gemini 3\.5 Flash-Lite/ });
+    expect(lite).toBeChecked();
+    expect(lite).toHaveAttribute('value', 'gemini-3.5-flash-lite');
+    expect(within(group).getByText(/Le moins cher/)).toBeInTheDocument();
+    expect(within(group).getByRole('radio', { name: /Gemini 3\.6 Flash/ })).not.toBeChecked();
+  });
+
+  it('stores the choice and keeps it after a new render', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    await user.click(within(group).getByRole('radio', { name: /Gemini 3\.6 Flash/ }));
+
+    expect(within(group).getByRole('radio', { name: /Gemini 3\.6 Flash/ })).toBeChecked();
+    expect(localStorage.getItem(MODEL_KEY_PREFIX + 'gemini')).toBe('gemini-3.6-flash');
+
+    unmount();
+    renderSettings();
+    const again = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    await waitFor(() =>
+      expect(within(again).getByRole('radio', { name: /Gemini 3\.6 Flash/ })).toBeChecked(),
+    );
+  });
+
+  it('falls back to the default when the stored value is a shut-down model', async () => {
+    localStorage.setItem(MODEL_KEY_PREFIX + 'gemini', 'gemini-2.0-flash');
+    renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Gemini/ });
+    await waitFor(() =>
+      expect(within(group).getByRole('radio', { name: /Gemini 3\.5 Flash-Lite/ })).toBeChecked(),
+    );
+    expect(localStorage.getItem(MODEL_KEY_PREFIX + 'gemini')).toBeNull();
+  });
+
+  it('can be changed with the keyboard (arrow keys inside the radio group)', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+    const group = await screen.findByRole('group', { name: /Modèle utilisé avec Anthropic/ });
+    const sonnet = within(group).getByRole('radio', { name: /Claude Sonnet 5\.5/ });
+    sonnet.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(within(group).getByRole('radio', { name: /Claude Opus 5\.5/ })).toBeChecked();
+    expect(localStorage.getItem(MODEL_KEY_PREFIX + 'anthropic')).toBe('claude-opus-5-5');
+  });
+
+  it('shows no picker for OpenAI', async () => {
+    renderSettings();
+    await screen.findByText('OpenAI');
+    expect(screen.queryByRole('group', { name: /Modèle utilisé avec OpenAI/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('group', { name: /Modèle utilisé avec/ })).toHaveLength(3);
   });
 });

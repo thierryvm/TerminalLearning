@@ -20,6 +20,7 @@ import {
   getKey,
   LS_PREFIX,
   MODE_KEY,
+  MODEL_KEY_PREFIX,
   PROVIDER_KEY,
   PROVIDERS,
   RATE_KEY,
@@ -80,6 +81,16 @@ describe('THI-207 clearAiSessionData — 5 items + IDB preserved by default', ()
 
     expect(localStorage.getItem(PROVIDER_KEY)).toBeNull();
     expect(localStorage.getItem(CONSENT_KEY)).toBeNull();
+  });
+
+  it('flushes the per-provider model choice from localStorage', async () => {
+    for (const p of PROVIDERS) localStorage.setItem(`${MODEL_KEY_PREFIX}${p}`, `model-${p}`);
+
+    await clearAiSessionData();
+
+    for (const p of PROVIDERS) {
+      expect(localStorage.getItem(`${MODEL_KEY_PREFIX}${p}`)).toBeNull();
+    }
   });
 
   it('flushes the rate counter and the tutor mode from sessionStorage', async () => {

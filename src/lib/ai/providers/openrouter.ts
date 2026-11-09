@@ -21,10 +21,12 @@ import { safeCancel, streamSseEvents } from './_sse';
 
 export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 /**
- * Default OpenRouter model when `VITE_AI_TUTOR_OPENROUTER_MODEL` env override
- * is unset (local dev, CI, preview without env). Bumped 2026-05-24 to align
- * with prod Vercel env (Sonnet 4.6, sync via API REST PR #279) and the Stage
- * B1 eval matrix verdict (THI-260 — `docs/audits/eval-tutor-matrix-2026-05-24.md`).
+ * Default OpenRouter model when no learner choice is stored and the
+ * `VITE_AI_TUTOR_OPENROUTER_MODEL` env override is unset or not one of the
+ * offered models (`modelChoices.ts`). Moved to Claude Sonnet 5.5 on
+ * 9 November 2026 (decision @thierry); id checked on
+ * GET https://openrouter.ai/api/v1/models the same day ($2 / $10 per million
+ * tokens). Previously Sonnet 4.6 (THI-260, 2026-05-24).
  *
  * Previous default `meta-llama/llama-3.3-70b-instruct:free` is legacy 2024,
  * hallucinatoire FR (cf. `feedback_llm_hallucinations_inter_phrase.md`), rate-
@@ -32,7 +34,7 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  * Sonnet 4.6 (default prod, 7/8 PASS, $0.054/run, stable) as VERIFIED finding
  * H2-AI of `llm-security-auditor` 2026-05-24 audit.
  */
-export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.6';
+export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-5.5';
 
 const APP_TITLE = 'Terminal Learning Tutor';
 const APP_REFERER = 'https://terminallearning.dev';

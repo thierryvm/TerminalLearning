@@ -103,10 +103,13 @@ export function AiTutorPanel({ lang = 'fr', lessonContext, role, liftAboveMobile
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Single source of truth for "which model is actually used" — `resolveModel`
-  // reads the Vercel env override `VITE_AI_TUTOR_<PROVIDER>_MODEL` first and
-  // falls back to `DEFAULT_MODELS` only when the var is unset. Same helper is
-  // used by `AiSettings` so the two surfaces never disagree.
-  const model = useMemo(() => resolveModel(provider), [provider]);
+  // reads the learner's choice (Settings page), then the Vercel env override
+  // `VITE_AI_TUTOR_<PROVIDER>_MODEL`, then `DEFAULT_MODELS`. Same helper as
+  // `AiSettings`, so the two surfaces never disagree. Not memoised on purpose:
+  // the choice can change on the Settings page while this panel stays
+  // mounted, and opening the panel re-renders it, which re-reads the choice
+  // (one localStorage read).
+  const model = resolveModel(provider);
 
   // THI-148 V1.0.1 — static, public-only platform overview injected as
   // <platform_context>. Same trust class as lessonContext (curriculum data,

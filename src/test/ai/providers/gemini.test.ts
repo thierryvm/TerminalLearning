@@ -11,7 +11,7 @@ import {
   geminiUrl,
   GEMINI_DEFAULT_MODEL,
   GEMINI_MAX_TOKENS,
-  supportsThinkingLevel,
+  acceptsMinimalThinking,
 } from '@/lib/ai/providers/gemini';
 
 const FAKE_KEY = 'AIzaFAKE_TEST_KEY_DO_NOT_USE_0123';
@@ -206,32 +206,42 @@ describe('Gemini chat — default model and thinking level', () => {
     return JSON.parse(init.body as string) as Body;
   }
 
-  it('defaults to gemini-3.6-flash (gemini-2.0-flash was shut down on 1 June 2026)', () => {
-    expect(GEMINI_DEFAULT_MODEL).toBe('gemini-3.6-flash');
+  it('defaults to gemini-3.5-flash-lite, the cheapest current model (gemini-2.0-flash was shut down on 1 June 2026)', () => {
+    expect(GEMINI_DEFAULT_MODEL).toBe('gemini-3.5-flash-lite');
   });
 
-  it('asks Gemini 3+ for minimal thinking so the 1024-token cap stays for the answer', async () => {
-    const body = await sentBody(GEMINI_DEFAULT_MODEL);
-    expect(body.generationConfig).toEqual({
-      maxOutputTokens: GEMINI_MAX_TOKENS,
-      thinkingConfig: { thinkingLevel: 'MINIMAL' },
-    });
-  });
+  it.each(['gemini-3.5-flash-lite', 'gemini-3.6-flash'])(
+    'asks %s for minimal thinking so the 1024-token cap stays for the answer',
+    async (model) => {
+      const body = await sentBody(model);
+      expect(body.generationConfig).toEqual({
+        maxOutputTokens: GEMINI_MAX_TOKENS,
+        thinkingConfig: { thinkingLevel: 'MINIMAL' },
+      });
+    },
+  );
 
-  it('sends no thinkingConfig to models before Gemini 3, which would reject it', async () => {
-    const body = await sentBody('gemini-2.5-flash-lite');
-    expect(body.generationConfig).toEqual({ maxOutputTokens: GEMINI_MAX_TOKENS });
-  });
+  it.each(['gemini-2.5-flash-lite', 'gemini-3.8-flash', 'gemini-4-argon'])(
+    'sends no thinkingConfig to %s, which does not accept the minimal level',
+    async (model) => {
+      const body = await sentBody(model);
+      expect(body.generationConfig).toEqual({ maxOutputTokens: GEMINI_MAX_TOKENS });
+    },
+  );
 
-  it('detects Gemini 3 and later from the model id', () => {
-    expect(supportsThinkingLevel('gemini-3.6-flash')).toBe(true);
-    expect(supportsThinkingLevel('gemini-3.8-flash')).toBe(true);
-    expect(supportsThinkingLevel('gemini-4-argon')).toBe(true);
-    expect(supportsThinkingLevel('Gemini-3.5-Flash-Lite')).toBe(true);
-    expect(supportsThinkingLevel('gemini-2.5-pro')).toBe(false);
-    expect(supportsThinkingLevel('gemini-2.0-flash')).toBe(false);
-    expect(supportsThinkingLevel('gemini-1.5-flash')).toBe(false);
-    expect(supportsThinkingLevel('models/gemini-3.6-flash')).toBe(false);
-    expect(supportsThinkingLevel('')).toBe(false);
+  it('accepts minimal thinking only for the documented models', () => {
+    expect(acceptsMinimalThinking('gemini-3.5-flash-lite')).toBe(true);
+    expect(acceptsMinimalThinking('gemini-3.6-flash')).toBe(true);
+    expect(acceptsMinimalThinking('Gemini-3.6-Flash')).toBe(true);
+    expect(acceptsMinimalThinking('gemini-3-flash-preview')).toBe(true);
+    // Gemini 3+ models whose levels start at `low` (thinking guide table).
+    expect(acceptsMinimalThinking('gemini-3.8-flash')).toBe(false);
+    expect(acceptsMinimalThinking('gemini-3.1-pro-preview')).toBe(false);
+    expect(acceptsMinimalThinking('gemini-4-argon')).toBe(false);
+    // Before Gemini 3: `thinkingLevel` is an error.
+    expect(acceptsMinimalThinking('gemini-2.5-pro')).toBe(false);
+    expect(acceptsMinimalThinking('gemini-2.0-flash')).toBe(false);
+    expect(acceptsMinimalThinking('models/gemini-3.6-flash')).toBe(false);
+    expect(acceptsMinimalThinking('')).toBe(false);
   });
 });

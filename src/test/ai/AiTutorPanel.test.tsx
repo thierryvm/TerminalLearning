@@ -239,7 +239,7 @@ describe('AiTutorPanel — conversation', () => {
 describe('AiTutorPanel — header displays the active model (transparency)', () => {
   it('header includes the model label when an env override is set', async () => {
     vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
-    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-opus-5.5');
 
     const user = userEvent.setup();
     render(<AiTutorPanel />);
@@ -247,7 +247,7 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
 
     const heading = await screen.findByRole('heading', { level: 2 });
     expect(heading.textContent).toContain('OpenRouter');
-    expect(heading.textContent).toContain('Sonnet 4.6');
+    expect(heading.textContent).toContain('Opus 5.5');
   });
 
   it('header falls back to the default model label when no env override is set', async () => {
@@ -259,15 +259,14 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
 
     const heading = await screen.findByRole('heading', { level: 2 });
     expect(heading.textContent).toContain('OpenRouter');
-    // The OpenRouter default was bumped to Sonnet 4.6 on 2026-05-24 (THI-260,
-    // H2-AI finding) — previously Llama 3.3 70B free (legacy 2024, hallucinatoire
-    // FR + rate-limited Venice provider).
-    expect(heading.textContent).toContain('Sonnet 4.6');
+    // The OpenRouter default moved to Sonnet 5.5 on 2026-11-09 (decision @thierry);
+    // before: Sonnet 4.6 (THI-260, 2026-05-24), Llama 3.3 70B free before that.
+    expect(heading.textContent).toContain('Sonnet 5.5');
   });
 
   it('header `title` attribute exposes the full string for truncated viewports', async () => {
     vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
-    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-sonnet-4-6');
+    vi.stubEnv('VITE_AI_TUTOR_OPENROUTER_MODEL', 'anthropic/claude-opus-5.5');
 
     const user = userEvent.setup();
     render(<AiTutorPanel />);
@@ -277,8 +276,21 @@ describe('AiTutorPanel — header displays the active model (transparency)', () 
     // Tooltip mirrors the visible text so hover/long-press reveals the full
     // model name when the title is clipped by `truncate`.
     expect(heading.getAttribute('title')).toBe(
-      'Tuteur IA — OpenRouter • Sonnet 4.6',
+      'Tuteur IA — OpenRouter • Opus 5.5',
     );
+  });
+
+  it('header shows the model the learner picked in Paramètres IA, re-read when the panel opens', async () => {
+    vi.stubEnv('VITE_AI_TUTOR_ENABLED', 'true');
+
+    const user = userEvent.setup();
+    render(<AiTutorPanel />);
+    // Picked while the panel is already mounted (Settings page in the same tab).
+    localStorage.setItem('ai_tutor_model_openrouter', 'anthropic/claude-opus-5.5');
+    await user.click(screen.getByLabelText(/Ouvrir le tuteur IA/));
+
+    const heading = await screen.findByRole('heading', { level: 2 });
+    expect(heading.textContent).toContain('Opus 5.5');
   });
 });
 

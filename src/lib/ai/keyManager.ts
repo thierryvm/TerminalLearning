@@ -30,6 +30,8 @@ export const PROVIDER_KEY = 'ai_tutor_provider';
 export const CONSENT_KEY = 'ai_consent_v1';
 export const RATE_KEY = 'ai_rate_v1';
 export const MODE_KEY = 'ai_tutor_mode';
+/** Prefix for the learner's model choice per provider (`providers/modelChoices.ts`). Not a secret. */
+export const MODEL_KEY_PREFIX = 'ai_tutor_model_';
 const DB_NAME = 'ai_keys_encrypted';
 const DB_VERSION = 1;
 const STORE_NAME = 'keys';
@@ -283,7 +285,8 @@ export async function forgetKey(provider: Provider): Promise<void> {
  *
  * RGPD critical: `ai_consent_v1` survives signout in localStorage by default
  * — next user on the same device inherits consent without seeing the modal.
- * Plain API keys, the last selected provider, the rate counter and the tutor
+ * Plain API keys, the last selected provider, the model choices, the rate
+ * counter and the tutor
  * mode are also flushed so a sequential user does not inherit a previous
  * user's state.
  *
@@ -297,7 +300,10 @@ export async function clearAiSessionData(opts?: { includeEncrypted?: boolean }):
   const ls = getLocalStorage();
   const ss = (globalThis as { sessionStorage?: Storage }).sessionStorage;
 
-  for (const p of PROVIDERS) ls.removeItem(LS_PREFIX + p);
+  for (const p of PROVIDERS) {
+    ls.removeItem(LS_PREFIX + p);
+    ls.removeItem(MODEL_KEY_PREFIX + p);
+  }
   ls.removeItem(PROVIDER_KEY);
   ls.removeItem(CONSENT_KEY);
 
