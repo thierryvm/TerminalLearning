@@ -9,9 +9,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   chat,
+  anthropicThinkingOptions,
+  ANTHROPIC_DEFAULT_MODEL,
   ANTHROPIC_URL,
   ANTHROPIC_VERSION,
   ANTHROPIC_MAX_TOKENS,
+  ANTHROPIC_THINKING_MAX_TOKENS,
 } from '@/lib/ai/providers/anthropic';
 
 const FAKE_KEY = 'sk-ant-FAKE_TEST_KEY_DO_NOT_USE_0123';
@@ -201,5 +204,55 @@ describe('Anthropic chat — streaming + errors', () => {
         messages: [{ role: 'user', content: 'hi' }],
       }),
     ).rejects.toMatchObject({ name: 'ChatError', code: 'rate_limited', status: 429 });
+  });
+});
+
+describe('Anthropic chat — default model and thinking settings', () => {
+  type Body = { model: string; max_tokens: number; thinking?: unknown };
+  async function sentBody(model: string): Promise<Body> {
+    fetchSpy.mockResolvedValue(makeStreamResponse(['event: message_stop\ndata: {}\n\n']));
+    await collect(
+      await chat({
+        apiKey: FAKE_KEY,
+        model,
+        systemPrompt: 'SYS',
+        messages: [{ role: 'user', content: 'q' }],
+      }),
+    );
+    const init = fetchSpy.mock.calls[0]![1] as RequestInit;
+    return JSON.parse(init.body as string) as Body;
+  }
+
+  it('defaults to Claude Sonnet 5.5 (`claude-sonnet-5-5`, Anthropic models overview)', () => {
+    expect(ANTHROPIC_DEFAULT_MODEL).toBe('claude-sonnet-5-5');
+  });
+
+  it('turns off up-front thinking on Sonnet 5.5 so the 1024-token cap stays for the answer', async () => {
+    const body = await sentBody('claude-sonnet-5-5');
+    expect(body.max_tokens).toBe(ANTHROPIC_MAX_TOKENS);
+    expect(body.thinking).toEqual({ type: 'between_tools' });
+  });
+
+  it('gives Opus 5.5 (thinking always on) a larger output cap and no thinking field', async () => {
+    const body = await sentBody('claude-opus-5-5');
+    expect(body.max_tokens).toBe(ANTHROPIC_THINKING_MAX_TOKENS);
+    expect(body).not.toHaveProperty('thinking');
+  });
+
+  it('leaves other models unchanged (no thinking field, 1024 cap)', async () => {
+    const body = await sentBody('claude-sonnet-4-6');
+    expect(body.max_tokens).toBe(ANTHROPIC_MAX_TOKENS);
+    expect(body).not.toHaveProperty('thinking');
+  });
+
+  it('maps each model to its documented options', () => {
+    expect(anthropicThinkingOptions('claude-sonnet-5-5')).toEqual({
+      max_tokens: ANTHROPIC_MAX_TOKENS,
+      thinking: { type: 'between_tools' },
+    });
+    expect(anthropicThinkingOptions('claude-opus-5-5')).toEqual({
+      max_tokens: ANTHROPIC_THINKING_MAX_TOKENS,
+    });
+    expect(anthropicThinkingOptions('claude-haiku-4-5')).toEqual({ max_tokens: ANTHROPIC_MAX_TOKENS });
   });
 });

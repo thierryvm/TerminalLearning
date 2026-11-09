@@ -18,13 +18,16 @@
 
 import { ChatError, type ChatErrorCode, type ChatParams, type ChatStream } from './types';
 import { safeCancel, streamSseEvents } from './_sse';
+import { ANTHROPIC_THINKING_MAX_TOKENS } from './anthropic';
 
 export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 /**
- * Default OpenRouter model when `VITE_AI_TUTOR_OPENROUTER_MODEL` env override
- * is unset (local dev, CI, preview without env). Bumped 2026-05-24 to align
- * with prod Vercel env (Sonnet 4.6, sync via API REST PR #279) and the Stage
- * B1 eval matrix verdict (THI-260 — `docs/audits/eval-tutor-matrix-2026-05-24.md`).
+ * Default OpenRouter model when no learner choice is stored and the
+ * `VITE_AI_TUTOR_OPENROUTER_MODEL` env override is unset or not one of the
+ * offered models (`modelChoices.ts`). Moved to Claude Sonnet 5.5 on
+ * 9 November 2026 (decision @thierry); id checked on
+ * GET https://openrouter.ai/api/v1/models the same day ($2 / $10 per million
+ * tokens). Previously Sonnet 4.6 (THI-260, 2026-05-24).
  *
  * Previous default `meta-llama/llama-3.3-70b-instruct:free` is legacy 2024,
  * hallucinatoire FR (cf. `feedback_llm_hallucinations_inter_phrase.md`), rate-
@@ -32,7 +35,22 @@ export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
  * Sonnet 4.6 (default prod, 7/8 PASS, $0.054/run, stable) as VERIFIED finding
  * H2-AI of `llm-security-auditor` 2026-05-24 audit.
  */
-export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-4.6';
+export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-5.5';
+
+/**
+ * Output ceiling for Claude models whose thinking cannot be turned off.
+ * Without `max_tokens` OpenRouter leaves the limit to the model (no 1024 cap
+ * here), so the risk is not a cut answer but an unbounded one on the
+ * learner's key. Same ceiling as the direct Anthropic route
+ * (`ANTHROPIC_THINKING_MAX_TOKENS`): thinking counts toward `max_tokens`
+ * (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens), so
+ * 4096 leaves room for the answer. A ceiling, not a spend.
+ */
+const ALWAYS_THINKING_MODELS: ReadonlySet<string> = new Set(['anthropic/claude-opus-5.5']);
+
+export function openRouterOutputOptions(model: string): { max_tokens?: number } {
+  return ALWAYS_THINKING_MODELS.has(model) ? { max_tokens: ANTHROPIC_THINKING_MAX_TOKENS } : {};
+}
 
 const APP_TITLE = 'Terminal Learning Tutor';
 const APP_REFERER = 'https://terminallearning.dev';
@@ -81,6 +99,7 @@ export async function chat(params: ChatParams): Promise<ChatStream> {
   const body = JSON.stringify({
     model: params.model,
     stream: true,
+    ...openRouterOutputOptions(params.model),
     messages: [
       { role: 'system', content: params.systemPrompt },
       ...params.messages,

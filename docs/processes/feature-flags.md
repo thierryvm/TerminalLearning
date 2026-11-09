@@ -12,10 +12,10 @@ Les feature flags Terminal Learning sont des **booléens read-once à l'init**, 
 | Flag | Default | Owner | Lieu | Usage |
 |---|---|---|---|---|
 | `VITE_AI_TUTOR_ENABLED` | `false` | THI-111 | `src/app/components/ai/AiTutorPanel.tsx` | Panel Tuteur IA — kill-switch ADR-005 V1 |
-| `VITE_AI_TUTOR_OPENROUTER_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Override le modèle OpenRouter sans modifier le code (utile pour échapper au rate limit `:free` partagé). Ex: `meta-llama/llama-3.3-70b-instruct` (payant, ~0.001 €/question, pas de rate limit). |
-| `VITE_AI_TUTOR_ANTHROPIC_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Override modèle Anthropic. Ex: `claude-sonnet-4-6`. |
-| `VITE_AI_TUTOR_OPENAI_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Override modèle OpenAI (utile une fois le proxy V2 en place). |
-| `VITE_AI_TUTOR_GEMINI_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Override modèle Gemini. Ex: `gemini-2.5-pro`. |
+| `VITE_AI_TUTOR_OPENROUTER_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Modèle OpenRouter par défaut du déploiement. Depuis le 9/11/2026, pris en compte seulement s'il fait partie des modèles proposés dans Paramètres IA (`modelChoices.ts` : `anthropic/claude-sonnet-5.5`, `anthropic/claude-opus-5.5`) ; sinon le défaut du code s'applique. Le choix de l'élève passe avant. |
+| `VITE_AI_TUTOR_ANTHROPIC_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Idem pour Anthropic direct : `claude-sonnet-5-5` ou `claude-opus-5-5`. |
+| `VITE_AI_TUTOR_OPENAI_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Override modèle OpenAI (utile une fois le proxy V2 en place). Pas de choix proposé à l'élève : la valeur est utilisée telle quelle. |
+| `VITE_AI_TUTOR_GEMINI_MODEL` | (DEFAULT_MODELS) | THI-111 | idem | Idem pour Gemini : `gemini-3.5-flash-lite` (défaut) ou `gemini-3.6-flash`. Une valeur arrêtée (`gemini-2.0-flash`, `gemini-2.5-*`) est ignorée. |
 
 ---
 

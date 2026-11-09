@@ -153,6 +153,17 @@ Stage B3 peut maintenant livrer un dropdown picker filtré par rôle :
 
 Sans ADR-009, ce filtrage UI aurait été cosmétique (le prompt élève ne changeait pas selon le modèle choisi). Avec ADR-009, le filtrage UI **encadre** un cloisonnement déjà réel au niveau system prompt.
 
+### Amendement du 9 novembre 2026 — picker identique pour tous les rôles (PR #420)
+
+Le picker livré par la PR #420 (`src/lib/ai/providers/modelChoices.ts`) **remplace** les listes par rôle ci-dessus, qui ne sont plus appliquées :
+
+- **Une seule liste courte par fournisseur, la même pour tous les rôles** : Claude Sonnet 5.5 (défaut) ou Claude Opus 5.5 sur OpenRouter et Anthropic ; Gemini 3.5 Flash-Lite (défaut) ou Gemini 3.6 Flash sur Gemini. OpenAI garde son modèle unique.
+- **Pourquoi pas de liste par rôle** : la sécurité ne dépend pas du modèle. Cette ADR l'établit elle-même (Option C rejetée : « le cloisonnement vient du prompt, pas du modèle »). Le prompt de chaque rôle reste appliqué quel que soit le modèle choisi. Le choix ne touche que la qualité et le coût, et c'est l'utilisateur qui paie avec sa propre clé (BYOK).
+- **Modèles des listes d'origine** : ils appartiennent à des générations remplacées depuis (5.5 chez Anthropic, 3.5 et 3.6 chez Gemini). Un modèle hors liste stocké en local est effacé et le défaut s'applique.
+- **Coût affiché** : le choix d'Opus indique à l'élève qu'il coûte nettement plus (tarif doublé, réflexion facturée).
+
+Une liste par rôle reste possible plus tard, si un besoin réel apparaît (budget d'école, par exemple). Elle demandera un nouvel amendement.
+
 ## Refs
 
 - **PR** : [#291](https://github.com/thierryvm/TerminalLearning/pull/291) — `feat(ai-tutor): THI-275 Stage B2 — system prompts par rôle (teacher/admin/superadmin)`

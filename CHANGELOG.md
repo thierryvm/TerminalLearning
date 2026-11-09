@@ -5,6 +5,18 @@
 
 ---
 
+## 🤖 9 novembre 2026 — Tuteur IA : choisir son modèle, Claude Sonnet 5.5 par défaut
+
+*Tuteur IA (clé personnelle) · identifiants et tarifs vérifiés le 9 novembre 2026 sur les pages officielles de Google, d'Anthropic et l'API d'OpenRouter*
+
+- **Gemini fonctionne de nouveau.** Google a arrêté `gemini-2.0-flash` le 1er juin 2026 : chaque question renvoyait une erreur. Le tuteur utilise maintenant **Gemini 3.5 Flash-Lite**, le modèle le moins cher (0,30 $ / 2,50 $ par million de jetons), puisque c'est l'élève qui paie avec sa propre clé.
+- **Choisir son modèle dans Paramètres IA.** Pour Gemini : 3.5 Flash-Lite (par défaut) ou 3.6 Flash (meilleures réponses, plus cher). Pour OpenRouter et Anthropic : **Claude Sonnet 5.5** (par défaut, 2 $ / 10 $) ou **Claude Opus 5.5** (nettement plus cher : tarif doublé, et sa réflexion avant chaque réponse est facturée aussi). Le choix reste enregistré dans le navigateur et s'efface à chaque fin de session (déconnexion, session fermée dans un autre onglet ou expirée), comme le fournisseur choisi. Un choix fait dans un autre onglet s'applique tout de suite au tuteur ouvert ; si le navigateur refuse d'enregistrer le choix, un message l'explique.
+- Un ancien choix qui pointe vers un modèle arrêté est ignoré : le tuteur reprend le modèle par défaut.
+- Les modèles récents réfléchissent avant de répondre, et cette réflexion compte dans la limite de longueur de la réponse. Le tuteur règle donc la réflexion au minimum là où le fournisseur le permet (Gemini 3.5 Flash-Lite et 3.6 Flash, Claude Sonnet 5.5), et laisse plus de place à Claude Opus 5.5, dont la réflexion ne se coupe pas, pour éviter des réponses coupées (4 096 jetons au plus, par Anthropic comme par OpenRouter).
+- OpenAI ne change pas : son modèle reste fixé par le déploiement.
+
+---
+
 ## ✳️ 2 octobre 2026 — Les jokers `*`, `?` et `[...]` fonctionnent
 
 *Terminal Linux et macOS · comportement vérifié sur bash 5.2 (Ubuntu 24.04)*

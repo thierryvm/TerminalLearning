@@ -74,8 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setLoading(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
         setSession(s);
+        // A SIGNED_OUT can reach this tab without going through `signOut`
+        // below: logout from another tab, session revoked or expired. Run the
+        // same teardown so the next learner on a shared school computer does
+        // not inherit the previous one's AI data (plain keys, consent, model
+        // choice). Idempotent, so the extra run after `signOut` is harmless.
+        if (event === 'SIGNED_OUT') void teardownClientState();
       });
       unsubscribe = () => subscription.unsubscribe();
     }).catch(() => {

@@ -12,7 +12,16 @@ import { chat as openrouterChat } from './openrouter';
 import { chat as anthropicChat } from './anthropic';
 import { chat as openaiChat } from './openai';
 import { chat as geminiChat } from './gemini';
+import { getModelChoices, isOfferedModel, readStoredModel } from './modelChoices';
 
+export {
+  MODEL_CHOICES,
+  getModelChoices,
+  isOfferedModel,
+  readStoredModel,
+  saveModelChoice,
+  type ModelChoice,
+} from './modelChoices';
 export { OPENROUTER_DEFAULT_MODEL, OPENROUTER_URL } from './openrouter';
 export { ANTHROPIC_DEFAULT_MODEL, ANTHROPIC_URL } from './anthropic';
 export { OPENAI_DEFAULT_MODEL, OPENAI_URL } from './openai';
@@ -38,13 +47,19 @@ export const DEFAULT_MODELS: Readonly<Record<Provider, string>> = {
 };
 
 /**
- * Single source of truth for "which model is actually used" — reads the
- * deploy-time Vercel env override `VITE_AI_TUTOR_<PROVIDER>_MODEL` first,
- * falls back to `DEFAULT_MODELS` only when the env var is unset/empty.
+ * Single source of truth for "which model is actually used". Settings page
+ * and Drawer panel must both use this helper so they never disagree (bug
+ * fixed in PR #280: Settings showed the fallback while the Drawer used the
+ * env override).
  *
- * Settings page and Drawer panel must use this helper to avoid the bug
- * where Settings showed the hardcoded fallback (e.g. Llama 3.3 70B free)
- * while the Drawer used the env override (e.g. Sonnet 4.6 paid).
+ * Order, for providers that offer a model picker (`modelChoices.ts`:
+ * OpenRouter, Anthropic, Gemini):
+ *  1. the learner's stored choice (validated; a stale value is dropped);
+ *  2. the deploy-time env override `VITE_AI_TUTOR_<PROVIDER>_MODEL`, only if
+ *     it is one of the offered models (an override pointing at a model the
+ *     provider has shut down, e.g. `gemini-2.0-flash`, is ignored);
+ *  3. `DEFAULT_MODELS`.
+ * Providers without a picker (OpenAI) keep env override > default.
  */
 export function resolveModel(provider: Provider): string {
   const envKeys: Readonly<Record<Provider, string>> = {
@@ -53,8 +68,16 @@ export function resolveModel(provider: Provider): string {
     openai: 'VITE_AI_TUTOR_OPENAI_MODEL',
     gemini: 'VITE_AI_TUTOR_GEMINI_MODEL',
   };
-  const override = import.meta.env[envKeys[provider]] as string | undefined;
-  return override && override.length > 0 ? override : DEFAULT_MODELS[provider];
+  const raw = import.meta.env[envKeys[provider]] as string | undefined;
+  const override = raw && raw.length > 0 ? raw : null;
+
+  if (getModelChoices(provider).length === 0) {
+    return override ?? DEFAULT_MODELS[provider];
+  }
+  const stored = readStoredModel(provider);
+  if (stored) return stored;
+  if (override && isOfferedModel(provider, override)) return override;
+  return DEFAULT_MODELS[provider];
 }
 
 /**
@@ -79,6 +102,8 @@ export function resolveModel(provider: Provider): string {
  */
 const MODEL_LABELS: ReadonlyArray<readonly [string, string]> = [
   // Claude family
+  ['opus-5.5', 'Opus 5.5'],
+  ['sonnet-5.5', 'Sonnet 5.5'],
   ['opus-4.7', 'Opus 4.7'],
   ['sonnet-4.6', 'Sonnet 4.6'],
   ['sonnet-4.5', 'Sonnet 4.5'],
@@ -89,6 +114,8 @@ const MODEL_LABELS: ReadonlyArray<readonly [string, string]> = [
   ['gpt-5-nano', 'GPT-5 nano'],
   ['gpt-5', 'GPT-5'],
   // Gemini frontier 2025-2026 (more specific first)
+  ['gemini-3.6-flash', 'Gemini 3.6 Flash'],
+  ['gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite'],
   ['gemini-3.5-flash', 'Gemini 3.5 Flash'],
   ['gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite'],
   ['gemini-2.5-flash', 'Gemini 2.5 Flash'],

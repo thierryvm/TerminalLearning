@@ -1305,6 +1305,14 @@ Les quarante captures faites sur le vrai bash ont fixé le reste : l'ordre des r
 
 L'auditeur de fidélité a ensuite rejoué 573 commandes contre le vrai bash. Le cœur des jokers tenait bon, mais l'étoile a révélé une famille entière de défauts cachés : `chmod`, `rm`, `mkdir`, `head` et `tail` ne traitaient que leur premier fichier. Personne ne l'avait vu, parce qu'avant les jokers, presque personne ne leur en donnait plusieurs. Une seule nouveauté a suffi à rendre visibles des écarts anciens : c'est pour cela que chaque PR repasse devant un vrai shell.
 
+### Le modèle qu'on ne pouvait plus appeler (9 novembre 2026)
+
+Un jour, l'option Gemini du tuteur IA a cessé de répondre : chaque question renvoyait une erreur. Aucune ligne de notre code n'avait changé. Google avait simplement arrêté `gemini-2.0-flash` le 1er juin 2026, et c'était le modèle inscrit en dur dans l'application.
+
+La réparation tenait en une ligne. La leçon, non : un modèle d'IA a une date de fin, comme une version de logiciel. Le tuteur propose donc maintenant une courte liste de modèles vérifiés, et un ancien choix qui pointe vers un modèle arrêté est ignoré au lieu de casser le tuteur. Comme c'est l'élève qui paie avec sa propre clé, le modèle par défaut est le moins cher qui répond bien, et le plus puissant affiche clairement son coût : Claude Opus coûte le double par mot, et sa réflexion avant chaque réponse est facturée aussi.
+
+La revue automatique a ensuite posé une question à laquelle on n'avait pas pensé : que se passe-t-il sur un ordinateur d'école partagé ? La déconnexion effaçait bien les données du tuteur, mais seulement quand l'élève cliquait sur « Se déconnecter » dans cet onglet. Une session fermée dans un autre onglet ou expirée laissait le choix de l'élève précédent au suivant. Le nettoyage se fait maintenant à chaque fin de session, d'où qu'elle vienne.
+
 ---
 
 ## Épilogue ouvert
@@ -1320,4 +1328,4 @@ Ce journal continuera d'être écrit tant que le projet continue d'être constru
 ---
 
 *Terminal Learning est un projet open source, construit bénévolement en Belgique.*
-*Dernière mise à jour : 2 octobre 2026.*
+*Dernière mise à jour : 9 novembre 2026.*

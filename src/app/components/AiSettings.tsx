@@ -7,6 +7,8 @@
  *    key body itself is never rendered, masked or otherwise, to keep
  *    zero-disclosure on a casual screen-share or screenshot
  *  - consent record (accepted? when? expires when? remaining days)
+ *  - model choice for OpenRouter, Anthropic and Gemini (`modelChoices.ts`),
+ *    stored locally; OpenAI shows the model in use without a picker
  *  - actions: edit a key (mounts AiKeySetup inline), forget a key,
  *    revoke consent
  *
@@ -34,8 +36,9 @@ import {
   isEncrypted as kmIsEncrypted,
   type Provider,
 } from '@/lib/ai/keyManager';
-import { resolveModel } from '@/lib/ai/providers';
+import { getModelChoices, resolveModel, saveModelChoice } from '@/lib/ai/providers';
 import { PROVIDER_LABELS } from '@/lib/ai/providers/meta';
+import { subscribeToModelChoice } from '@/lib/hooks/useResolvedModel';
 import {
   CONSENT_KEY,
   readConsentRecord,
@@ -50,6 +53,8 @@ interface ProviderStatus {
   provider: Provider;
   configured: boolean;
   encrypted: boolean;
+  /** Model actually used (`resolveModel`), shown and selectable below. */
+  model: string;
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -100,6 +105,8 @@ export function AiSettings() {
   const [statuses, setStatuses] = useState<readonly ProviderStatus[]>([]);
   const [consent, setConsent] = useState<ConsentRecord | null>(null);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
+  /** Provider whose last model choice could not be stored (storage blocked). */
+  const [modelSaveError, setModelSaveError] = useState<Provider | null>(null);
 
   // Refresh local-storage / IndexedDB-backed state. Called on mount and
   // whenever a save / forget / revoke action mutates that state so the UI
@@ -112,7 +119,10 @@ export function AiSettings() {
         encrypted: await kmIsEncrypted(p),
       })),
     );
-    setStatuses(next);
+    // Resolve the model only after the IndexedDB awaits: a choice made while
+    // they were pending is already in localStorage and must not be replaced
+    // by an older snapshot.
+    setStatuses(next.map((s) => ({ ...s, model: resolveModel(s.provider) })));
     setConsent(readConsentRecord());
   }, []);
 
@@ -150,6 +160,25 @@ export function AiSettings() {
     setEditingProvider(null);
     await refresh();
   }, [refresh]);
+
+  // Model choice is a plain local preference (not a secret). Update the row
+  // right away, from what `resolveModel` now returns, so the UI only shows a
+  // choice that was actually stored.
+  const onModelChange = useCallback((p: Provider, model: string) => {
+    const saved = saveModelChoice(p, model);
+    setModelSaveError(saved ? null : p);
+    const effective = resolveModel(p);
+    setStatuses((cur) => cur.map((s) => (s.provider === p ? { ...s, model: effective } : s)));
+  }, []);
+
+  // A choice changed in another tab: show what the tutor now uses.
+  useEffect(
+    () =>
+      subscribeToModelChoice(() => {
+        setStatuses((cur) => cur.map((s) => ({ ...s, model: resolveModel(s.provider) })));
+      }),
+    [],
+  );
 
   return (
     <div
@@ -198,12 +227,14 @@ export function AiSettings() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium">{PROVIDER_LABELS[s.provider]}</p>
-                    <p className="mt-1 text-xs text-[var(--github-text-secondary)]">
-                      Modèle utilisé :{' '}
-                      <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5">
-                        {resolveModel(s.provider)}
-                      </code>
-                    </p>
+                    {getModelChoices(s.provider).length === 0 && (
+                      <p className="mt-1 text-xs text-[var(--github-text-secondary)]">
+                        Modèle utilisé :{' '}
+                        <code className="rounded bg-[var(--github-bg-tertiary)] px-1 py-0.5">
+                          {s.model}
+                        </code>
+                      </p>
+                    )}
                     <p className="mt-2 text-sm">
                       Statut :{' '}
                       {s.configured ? (
@@ -243,6 +274,67 @@ export function AiSettings() {
                     )}
                   </div>
                 </div>
+                {getModelChoices(s.provider).length > 0 && (
+                  <fieldset className="mt-3 min-w-0">
+                    <legend className="text-xs text-[var(--github-text-secondary)]">
+                      Modèle utilisé{' '}
+                      <span className="sr-only">avec {PROVIDER_LABELS[s.provider]}</span>
+                    </legend>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {getModelChoices(s.provider).map((c) => {
+                        const inputId = `ai-settings-model-${s.provider}-${c.id.replace(/[^a-z0-9]+/gi, '-')}`;
+                        const checked = s.model === c.id;
+                        return (
+                          // The whole card is clickable; the radio's accessible
+                          // name is the model name, the hint is its description.
+                          <label
+                            key={c.id}
+                            htmlFor={inputId}
+                            className={`flex min-w-0 cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-500/60 ${
+                              checked
+                                ? 'border-emerald-500/60 bg-emerald-500/10'
+                                : 'border-[var(--github-border-primary)] bg-[var(--github-bg-secondary)]'
+                            }`}
+                          >
+                            <input
+                              id={inputId}
+                              type="radio"
+                              name={`ai-settings-model-${s.provider}`}
+                              value={c.id}
+                              checked={checked}
+                              onChange={() => onModelChange(s.provider, c.id)}
+                              aria-labelledby={`${inputId}-name`}
+                              aria-describedby={`${inputId}-hint`}
+                              className="mt-1 accent-emerald-500 focus-visible:outline-none"
+                            />
+                            <span className="min-w-0">
+                              <span id={`${inputId}-name`} className="block font-medium">
+                                {c.label}
+                              </span>
+                              <span
+                                id={`${inputId}-hint`}
+                                className="block text-xs text-[var(--github-text-secondary)]"
+                              >
+                                {c.hint}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {modelSaveError === s.provider && (
+                      <p role="alert" className="mt-2 text-xs text-[var(--github-red)]">
+                        Ton choix n’a pas pu être enregistré : ce navigateur
+                        bloque le stockage local. Le modèle coché reste celui
+                        qui est utilisé.
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-[var(--github-text-secondary)]">
+                      Tu paies les questions avec ta propre clé, au tarif du
+                      fournisseur.
+                    </p>
+                  </fieldset>
+                )}
                 {editingProvider === s.provider && (
                   <div
                     id={`ai-settings-editor-${s.provider}`}
